@@ -1,0 +1,150 @@
+{
+  "project": {
+    "key": "project",
+    "name": "Standard Project Structure",
+    "description": "Full-featured with organized data, work, and output directories",
+    "structure": {
+      "directories": {
+        "functions": "functions",
+        "notebooks": "notebooks",
+        "scripts": "scripts",
+        "inputs_raw": "inputs/raw",
+        "inputs_intermediate": "inputs/intermediate",
+        "inputs_final": "inputs/final",
+        "docs": "docs",
+        "outputs_tables": "outputs/tables",
+        "outputs_figures": "outputs/figures",
+        "outputs_models": "outputs/models",
+        "outputs_reports": "outputs/reports",
+        "cache": "outputs/cache",
+        "scratch": "scratch"
+      },
+      "render_dirs": {
+        "notebooks": "outputs/notebooks",
+        "docs": "outputs/docs"
+      },
+      "quarto": {
+        "render_dir": "outputs/notebooks"
+      }
+    },
+    "skills": [
+      "framework-workflow",
+      "framework-data",
+      "framework-packages",
+      "framework-outputs"
+    ]
+  },
+  "project_sensitive": {
+    "key": "project_sensitive",
+    "name": "Privacy Sensitive Project Structure",
+    "description": "Enhanced privacy controls for sensitive data with dedicated private/public flows",
+    "structure": {
+      "directories": {
+        "functions": "functions",
+        "notebooks": "notebooks",
+        "scripts": "scripts",
+        "docs": "docs",
+        "inputs_private_raw": "inputs/private/raw",
+        "inputs_public_raw": "inputs/public/raw",
+        "inputs_private_intermediate": "inputs/private/intermediate",
+        "inputs_public_intermediate": "inputs/public/intermediate",
+        "inputs_private_final": "inputs/private/final",
+        "inputs_public_final": "inputs/public/final",
+        "outputs_private_tables": "outputs/private/tables",
+        "outputs_public_tables": "outputs/public/tables",
+        "outputs_private_figures": "outputs/private/figures",
+        "outputs_public_figures": "outputs/public/figures",
+        "outputs_private_models": "outputs/private/models",
+        "outputs_public_models": "outputs/public/models",
+        "outputs_private_reports": "outputs/private/reports",
+        "outputs_public_reports": "outputs/public/reports",
+        "cache": "outputs/private/cache",
+        "scratch": "scratch"
+      },
+      "render_dirs": {
+        "notebooks": "outputs/private/notebooks",
+        "docs": "outputs/private/docs"
+      },
+      "quarto": {
+        "render_dir": "outputs/public/docs"
+      }
+    },
+    "skills": [
+      "framework-workflow",
+      "framework-data",
+      "framework-packages",
+      "framework-outputs",
+      "framework-sensitive-data"
+    ]
+  },
+  "presentation": {
+    "key": "presentation",
+    "name": "Presentation Structure",
+    "description": "Minimal structure for slides and presentations",
+    "structure": {
+      "directories": {
+        "presentation_source": "presentation.qmd",
+        "rendered_slides": ".",
+        "data": "data",
+        "scripts": "scripts",
+        "functions": "functions",
+        "outputs": "outputs",
+        "cache": "cache"
+      },
+      "render_dirs": [],
+      "quarto": {
+        "render_dir": "."
+      }
+    },
+    "skills": [
+      "framework-workflow",
+      "framework-data",
+      "framework-packages",
+      "framework-outputs"
+    ]
+  },
+  "course": {
+    "key": "course",
+    "name": "Course Structure",
+    "description": "Simplified structure for teaching materials with modules and assignments",
+    "structure": {
+      "directories": {
+        "data": "data",
+        "slides": "slides",
+        "assignments": "assignments",
+        "course_docs": "course_docs",
+        "readings": "readings",
+        "notebooks": "modules",
+        "functions": "functions",
+        "scripts": "scripts",
+        "cache": "cache"
+      },
+      "render_dirs": {
+        "slides": "rendered/slides",
+        "assignments": "rendered/assignments",
+        "course_docs": "rendered/course_docs",
+        "modules": "rendered/modules"
+      },
+      "quarto": {
+        "render_dir": "rendered/slides"
+      }
+    },
+    "skills": [
+      "framework-workflow",
+      "framework-data",
+      "framework-packages",
+      "framework-outputs"
+    ]
+  },
+  "bare": {
+    "key": "bare",
+    "name": "Bare",
+    "description": "Nearly empty: settings.yml, an RStudio project file, and git.",
+    "structure": {
+      "directories": {},
+      "render_dirs": {},
+      "quarto": null
+    },
+    "skills": []
+  }
+}
