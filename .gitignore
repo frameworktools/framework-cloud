@@ -28,3 +28,9 @@ yarn-error.log
 
 # Ansible app vault — never committed, even encrypted
 /ansible/vault/
+
+# Loose in the working tree, mode 0600, and named by nothing in the repo. A
+# plaintext secret store must not become stageable by a `git add -A`.
+/secrets.yml
+# A pre-scrub history bundle: an artifact, not source.
+/pre-scrub-backup.bundle
