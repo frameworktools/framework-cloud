@@ -10,6 +10,9 @@
 .env
 .env.backup
 .env.production
+# The per-machine runtime variants sit beside .env and hold the same credentials.
+.env.herd
+.env.docker
 .phpactor.json
 .phpunit.result.cache
 Homestead.json
