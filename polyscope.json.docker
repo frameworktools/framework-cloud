@@ -1,0 +1,20 @@
+{
+  "scripts": {
+    "setup": [
+      "printf 'docker\\n' > .dev-env",
+      "[ -f .env ] || cp \"$(git rev-parse --path-format=absolute --git-common-dir)/../.env\" .env 2>/dev/null || cp .env.example .env",
+      "grep -q \"^APP_KEY=base64:\" .env || APP_KEY=\"base64:$(openssl rand -base64 32)\" perl -i -pe 's/^APP_KEY=.*/APP_KEY=$ENV{APP_KEY}/' .env",
+      "projectctl workspace-link fwapp \"framework-cloud-$(basename \"$PWD\").test\" \"$PWD\"",
+      ". \"$HOME/.config/localdev/workspaces/framework-cloud-$(basename \"$PWD\").test.env\" && COMPOSE_PROJECT_NAME=\"$COMPOSE_PROJECT\" docker compose -f \"$OVERRIDE_PATH\" exec -T php composer install --no-interaction --prefer-dist --optimize-autoloader",
+      ". \"$HOME/.config/localdev/workspaces/framework-cloud-$(basename \"$PWD\").test.env\" && COMPOSE_PROJECT_NAME=\"$COMPOSE_PROJECT\" docker compose -f \"$OVERRIDE_PATH\" exec -T php php artisan migrate --force --no-interaction",
+      ". \"$HOME/.config/localdev/workspaces/framework-cloud-$(basename \"$PWD\").test.env\" && COMPOSE_PROJECT_NAME=\"$COMPOSE_PROJECT\" docker compose -f \"$OVERRIDE_PATH\" exec -T php npm install",
+      "rm -f public/hot",
+      ". \"$HOME/.config/localdev/workspaces/framework-cloud-$(basename \"$PWD\").test.env\" && COMPOSE_PROJECT_NAME=\"$COMPOSE_PROJECT\" docker compose -f \"$OVERRIDE_PATH\" exec -T php npm run build",
+      "rm -f public/hot"
+    ],
+    "archive": "projectctl workspace-unlink \"framework-cloud-$(basename \"$PWD\").test\""
+  },
+  "preview": {
+    "url": "http://framework-cloud-{{folder}}.test"
+  }
+}

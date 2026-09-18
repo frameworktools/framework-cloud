@@ -1,0 +1,45 @@
+# Local development stack. Polyscope workspaces on the Linux polyscope VM do
+# not start this file: projectctl builds each workspace from docker/ and joins
+# the VM's shared services instead. It is here for `docker compose up` and
+# because projectctl requires it.
+services:
+  php:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "127.0.0.1:8080:80"
+    volumes:
+      - ./:/var/www/html:ro
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - php
+
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: framework_cloud
+      POSTGRES_USER: framework_cloud
+      POSTGRES_PASSWORD: framework_cloud-dev-secret
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U framework_cloud -d framework_cloud"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+
+volumes:
+  postgres:
