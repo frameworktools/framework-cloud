@@ -12,7 +12,14 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Expose tunnels (Polyscope's remote preview) hand requests to the
+        // local web server from loopback, carrying the public host and https
+        // scheme in X-Forwarded-* headers. Only loopback is trusted, so
+        // production clients cannot spoof them.
+        $middleware->trustProxies(at: ['127.0.0.1', '::1']);
+
         $middleware->web(append: [
+            \App\Http\Middleware\ServeBuiltAssetsThroughTunnels::class,
             \App\Http\Middleware\HandleInertiaRequests::class,
         ]);
 
