@@ -18,7 +18,7 @@ const send = () => form.post('/auth/magic-link');
 
     <AuthLayout
         title="Create an account"
-        description="We'll email you a link to confirm your address and sign you in — no password to invent."
+        description="We'll email you a sign-in link."
     >
         <UiCallout v-if="sent" variant="success" heading="Check your email">
             Your confirmation link is on its way. It works once and expires in 15

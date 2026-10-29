@@ -41,7 +41,7 @@ async function signInWithPasskey() {
 <template>
     <Head title="Sign in" />
 
-    <AuthLayout title="Sign in" description="Use a passkey, or we'll email you a sign-in link. No passwords here.">
+    <AuthLayout title="Sign in" description="Use a passkey or get a sign-in link by email.">
         <UiCallout v-if="sent" variant="success" heading="Check your email">
             If an account exists for that address, a sign-in link is on its way.
             It works once and expires in 15 minutes.
