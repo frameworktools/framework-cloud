@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\GitHubController;
 use App\Http\Controllers\Auth\MagicLinkController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Http\Request;
@@ -19,6 +20,10 @@ Route::middleware('guest')->group(function () {
     // Passkey sign-in (GET passkeys/authentication-options + POST passkeys/authenticate)
     Route::passkeys();
 });
+
+// GitHub sign-in (guests) and connect (signed in) share one OAuth callback
+Route::get('auth/github/redirect', [GitHubController::class, 'redirect'])->middleware('throttle:12,1')->name('github.redirect');
+Route::get('auth/github/callback', [GitHubController::class, 'callback'])->middleware('throttle:12,1')->name('github.callback');
 
 // Consumable while logged in or out (clicking a second time shouldn't 403)
 Route::get('auth/magic/{token}', [MagicLinkController::class, 'consume'])

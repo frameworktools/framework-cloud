@@ -15,8 +15,6 @@ use Inertia\Response;
 
 class SkillsController extends Controller
 {
-    private const NAME = '/^[a-z0-9][a-z0-9-]{0,63}$/';
-
     public function index(Request $request): Response
     {
         $user = $request->user();
@@ -131,27 +129,15 @@ class SkillsController extends Controller
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
 
-        if (! preg_match('/\A---\R(.*?)\R---/s', $data['content'], $frontmatter)) {
-            throw ValidationException::withMessages(['content' => 'Start SKILL.md with frontmatter: a --- line, name: and description:, then another --- line.']);
-        }
+        ['key' => $key, 'description' => $description] = Skill::frontmatter($data['content'], 'content');
 
-        preg_match('/^name:\s*["\']?([^"\'\r\n]+?)["\']?\s*$/m', $frontmatter[1], $name);
-        preg_match('/^description:\s*(.+)$/m', $frontmatter[1], $description);
-        $key = $name[1] ?? '';
-
-        if (! preg_match(self::NAME, $key)) {
-            throw ValidationException::withMessages(['content' => 'The frontmatter name must be lowercase letters, numbers, and hyphens.']);
-        }
         if ($skill && $key !== $skill->key) {
             throw ValidationException::withMessages(['content' => "This skill is named {$skill->key}. Fork it to make one with a new name."]);
-        }
-        if (blank($description[1] ?? null)) {
-            throw ValidationException::withMessages(['content' => 'Add a description: assistants use it to decide when to load the skill.']);
         }
 
         return [
             'key' => $key,
-            'description' => trim($description[1]),
+            'description' => $description,
             'content' => $data['content'],
             'visibility' => $data['visibility'],
             'notes' => $data['notes'] ?? null,

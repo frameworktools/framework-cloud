@@ -55,6 +55,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('projects', [\App\Http\Controllers\App\ProjectsController::class, 'store']);
     Route::post('projects/{project}/token', [\App\Http\Controllers\App\ProjectsController::class, 'issueToken']);
     Route::delete('projects/{project}', [\App\Http\Controllers\App\ProjectsController::class, 'destroy']);
+    Route::post('projects/{project}/scaffold/refresh', [\App\Http\Controllers\App\ProjectsController::class, 'refreshScaffold']);
+    Route::post('projects/{project}/scaffold/retry', [\App\Http\Controllers\App\ProjectsController::class, 'retryScaffold']);
 
     // The shared library: blueprints compose facets, facets carry skills
     foreach ([
@@ -64,6 +66,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     ] as $name => $controller) {
         Route::post("{$name}/{".str($name)->singular().'}/fork', [$controller, 'fork'])->name("{$name}.fork");
     }
+    Route::post('skills/import', [\App\Http\Controllers\App\GitHubLibraryController::class, 'importSkill'])->middleware('throttle:20,1');
+    Route::post('facets/import', [\App\Http\Controllers\App\GitHubLibraryController::class, 'importFacet'])->middleware('throttle:20,1');
+    Route::post('skills/{skill}/publish', [\App\Http\Controllers\App\GitHubLibraryController::class, 'publishSkill'])->middleware('throttle:20,1');
+    Route::post('facets/{facet}/publish', [\App\Http\Controllers\App\GitHubLibraryController::class, 'publishFacet'])->middleware('throttle:20,1');
     Route::resource('blueprints', \App\Http\Controllers\App\BlueprintsController::class);
     Route::resource('facets', \App\Http\Controllers\App\FacetsController::class)->except('show');
     Route::resource('skills', \App\Http\Controllers\App\SkillsController::class)->except('show');
@@ -79,6 +85,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('settings/defaults', [\App\Http\Controllers\Settings\DefaultsController::class, 'edit'])->name('settings.defaults');
     Route::patch('settings/defaults', [\App\Http\Controllers\Settings\DefaultsController::class, 'update']);
+
+    Route::get('settings/github', [\App\Http\Controllers\Settings\GitHubController::class, 'show'])->name('settings.github');
+    Route::delete('settings/github', [\App\Http\Controllers\Auth\GitHubController::class, 'destroy']);
 
     Route::get('settings/passkeys', [\App\Http\Controllers\Settings\PasskeysController::class, 'index'])->name('settings.passkeys');
     Route::post('settings/passkeys/options', [\App\Http\Controllers\Settings\PasskeysController::class, 'options']);

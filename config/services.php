@@ -35,4 +35,18 @@ return [
         ],
     ],
 
+    // The Framework GitHub App. Its OAuth client signs users in and acts on
+    // their behalf (user tokens), limited to the accounts where it is installed.
+    'github' => [
+        'client_id' => env('GITHUB_CLIENT_ID'),
+        'client_secret' => env('GITHUB_CLIENT_SECRET'),
+        'redirect' => env('GITHUB_REDIRECT_URI', '/auth/github/callback'),
+        'app_slug' => env('GITHUB_APP_SLUG'),
+        'webhook_secret' => env('GITHUB_WEBHOOK_SECRET'),
+        // The framework package commit the scaffold workflow installs. A SHA,
+        // never a branch, so a repo's scaffold is reproducible. Unset turns
+        // GitHub scaffolding off.
+        'framework_sha' => env('GITHUB_FRAMEWORK_SHA'),
+    ],
+
 ];

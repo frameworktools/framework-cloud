@@ -5,6 +5,7 @@ import AuthLayout from '@/Layouts/AuthLayout.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiInput from '@/Components/UiInput.vue';
 import UiCallout from '@/Components/UiCallout.vue';
+import GitHubButton from '@/Components/GitHubButton.vue';
 
 const page = usePage();
 const sent = computed(() => page.props.flash.status === 'magic-link-sent');
@@ -41,11 +42,16 @@ async function signInWithPasskey() {
 <template>
     <Head title="Sign in" />
 
-    <AuthLayout title="Sign in" description="Use a passkey or get a sign-in link by email.">
+    <AuthLayout
+        title="Sign in"
+        :description="page.props.githubSignIn ? 'Use GitHub, a passkey, or a sign-in link by email.' : 'Use a passkey or get a sign-in link by email.'"
+    >
         <UiCallout v-if="sent" variant="success" heading="Check your email">
             If an account exists for that address, a sign-in link is on its way.
             It works once and expires in 15 minutes.
         </UiCallout>
+
+        <GitHubButton v-if="page.props.githubSignIn" label="Sign in with GitHub" />
 
         <div v-if="passkeySupported" class="flex flex-col gap-3">
             <form ref="assertionForm" method="post" action="/passkeys/authenticate" class="hidden">
@@ -60,11 +66,12 @@ async function signInWithPasskey() {
                 {{ passkeyBusy ? 'Waiting for your device…' : 'Sign in with a passkey' }}
             </UiButton>
 
-            <div class="flex items-center gap-3 text-xs text-neutral-400">
-                <div class="h-px flex-1 bg-neutral-200 dark:bg-neutral-700" />
-                or
-                <div class="h-px flex-1 bg-neutral-200 dark:bg-neutral-700" />
-            </div>
+        </div>
+
+        <div v-if="passkeySupported || page.props.githubSignIn" class="flex items-center gap-3 text-xs text-neutral-400">
+            <div class="h-px flex-1 bg-neutral-200 dark:bg-neutral-700" />
+            or
+            <div class="h-px flex-1 bg-neutral-200 dark:bg-neutral-700" />
         </div>
 
         <form class="flex flex-col gap-4" @submit.prevent="send">

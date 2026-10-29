@@ -81,6 +81,7 @@ class Library
             'version' => $latest?->version,
             'version_id' => $latest?->id,
             'summary' => $latest ? LayerSummary::of($latest->layer) : [],
+            'source_url' => $facet->source_url,
         ];
     }
 
@@ -132,6 +133,7 @@ class Library
             'owner' => self::owner($skill),
             'editable' => $skill->isEditableBy($user),
             'version' => $skill->latestVersion?->version,
+            'source_url' => $skill->source_url,
         ];
     }
 

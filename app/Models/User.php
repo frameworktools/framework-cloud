@@ -2,8 +2,11 @@
 
 namespace App\Models;
 
+use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
@@ -13,7 +16,7 @@ use Spatie\LaravelPasskeys\Models\Concerns\InteractsWithPasskeys;
 
 class User extends Authenticatable implements HasPasskeys, MustVerifyEmail
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, InteractsWithPasskeys, Notifiable;
 
     /**
@@ -52,7 +55,12 @@ class User extends Authenticatable implements HasPasskeys, MustVerifyEmail
         ];
     }
 
-    public function projects(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function githubAccount(): HasOne
+    {
+        return $this->hasOne(GitHubAccount::class);
+    }
+
+    public function projects(): HasMany
     {
         return $this->hasMany(Project::class);
     }

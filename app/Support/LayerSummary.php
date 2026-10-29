@@ -17,9 +17,7 @@ class LayerSummary
         $sections = [];
         $add = function (string $label, array $items) use (&$sections) {
             $items = array_values(array_filter(array_map('strval', $items), 'strlen'));
-            if ($label !== 'AI assistants') {
-                sort($items);
-            }
+            sort($items);
             if ($items !== []) {
                 $sections[] = ['label' => $label, 'items' => $items];
             }
@@ -30,11 +28,15 @@ class LayerSummary
         }
 
         $directories = $layer['directories'] ?? [];
+        $extra = $layer['extra_directories'] ?? [];
         $add('Folders', [
             ...array_values(array_filter($directories, fn ($path) => $path !== null)),
-            ...array_map(fn ($d) => $d['path'] ?? $d['key'] ?? '', $layer['extra_directories'] ?? []),
+            ...array_map(fn ($d) => $d['path'], array_filter($extra, fn ($d) => is_array($d) && isset($d['path']))),
         ]);
-        $add('Removes folders', array_keys(array_filter($directories, fn ($path) => $path === null)));
+        $add('Removes folders', array_keys([
+            ...array_filter($directories, fn ($path) => $path === null),
+            ...array_filter($extra, fn ($d) => $d === null),
+        ]));
 
         $add('Renders', array_map(
             fn ($from, $to) => "{$from} → {$to}",
@@ -43,7 +45,8 @@ class LayerSummary
         ));
 
         $packages = $layer['packages'] ?? [];
-        $add('Packages', array_map(fn ($p) => $p['name'] ?? '', $packages['default_packages'] ?? []));
+        $add('Packages', array_keys(array_filter($packages['default_packages'] ?? [], fn ($p) => $p !== null)));
+        $add('Removes packages', array_keys(array_filter($packages['default_packages'] ?? [], fn ($p) => $p === null)));
         if (array_key_exists('use_renv', $packages)) {
             $add('renv', [$packages['use_renv'] ? 'On' : 'Off']);
         }
@@ -54,7 +57,9 @@ class LayerSummary
             $add('.gitignore', ['Adds rules']);
         }
 
-        $add('AI assistants', $layer['ai']['assistants'] ?? []);
+        $assistants = $layer['ai']['assistants'] ?? [];
+        $add('AI assistants', array_keys(array_filter($assistants, fn ($on) => $on === true)));
+        $add('Removes AI assistants', array_keys(array_filter($assistants, fn ($on) => $on !== true)));
 
         $add('Skills', array_map(
             fn ($name, $skill) => match (true) {
@@ -74,6 +79,15 @@ class LayerSummary
 
         if (array_key_exists('sensitive', $layer['security'] ?? [])) {
             $add('Sensitive data', [$layer['security']['sensitive'] ? 'Yes' : 'No']);
+        }
+
+        // With the flag on, the framework package writes each assistant's deny
+        // rules (for Claude Code, permissions.deny) over the private folders
+        if (($layer['security']['sensitive'] ?? false) === true) {
+            $private = array_filter($directories, fn ($path) => is_string($path) && preg_match('#(^|/)private(/|$)#', $path));
+            $add('Kept from AI assistants', $private
+                ? array_values(array_unique(array_map(fn ($path) => preg_replace('#(^|/)private/.*$#', '$1private/', $path), $private)))
+                : ['Private data folders']);
         }
 
         foreach (['scaffold', 'quarto', 'connections', 'env', 'data_hooks'] as $key) {

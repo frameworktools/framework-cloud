@@ -5,6 +5,7 @@ import AuthLayout from '@/Layouts/AuthLayout.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiInput from '@/Components/UiInput.vue';
 import UiCallout from '@/Components/UiCallout.vue';
+import GitHubButton from '@/Components/GitHubButton.vue';
 
 const page = usePage();
 const sent = computed(() => page.props.flash.status === 'magic-link-sent');
@@ -24,6 +25,15 @@ const send = () => form.post('/auth/magic-link');
             Your confirmation link is on its way. It works once and expires in 15
             minutes. Once you're in, add a passkey in Settings for one-touch sign-in.
         </UiCallout>
+
+        <template v-if="page.props.githubSignIn">
+            <GitHubButton label="Sign up with GitHub" />
+            <div class="flex items-center gap-3 text-xs text-neutral-400">
+                <div class="h-px flex-1 bg-neutral-200 dark:bg-neutral-700" />
+                or
+                <div class="h-px flex-1 bg-neutral-200 dark:bg-neutral-700" />
+            </div>
+        </template>
 
         <form class="flex flex-col gap-4" @submit.prevent="send">
             <UiInput v-model="form.name" label="Name" placeholder="Full name" autocomplete="name" required autofocus :error="form.errors.name" />

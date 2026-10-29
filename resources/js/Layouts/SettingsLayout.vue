@@ -9,6 +9,7 @@ const tabs = [
     { label: 'Profile', href: '/settings/profile' },
     { label: 'Framework defaults', href: '/settings/defaults' },
     { label: 'Passkeys', href: '/settings/passkeys' },
+    { label: 'GitHub', href: '/settings/github' },
 ];
 const current = (href) => page.url.startsWith(href);
 </script>

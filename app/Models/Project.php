@@ -28,12 +28,15 @@ class Project extends Model
 
     public const PULL_ABILITY = 'project:pull';
 
+    public const SCAFFOLD_STATUSES = ['pending', 'running', 'done', 'failed'];
+
     protected $guarded = [];
 
     protected function casts(): array
     {
         return [
             'payload' => 'array',
+            'github_private' => 'boolean',
         ];
     }
 
@@ -41,6 +44,11 @@ class Project extends Model
     public function blueprintVersion(): BelongsTo
     {
         return $this->belongsTo(BlueprintVersion::class);
+    }
+
+    public function githubUrl(): ?string
+    {
+        return $this->github_repo ? "https://github.com/{$this->github_repo}" : null;
     }
 
     public function user(): BelongsTo

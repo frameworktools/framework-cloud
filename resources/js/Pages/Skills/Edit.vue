@@ -4,6 +4,7 @@ import { router, useForm, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiCallout from '@/Components/UiCallout.vue';
+import GitHubPublish from '@/Components/GitHubPublish.vue';
 import UiInput from '@/Components/UiInput.vue';
 import UiSelect from '@/Components/UiSelect.vue';
 import UiTextarea from '@/Components/UiTextarea.vue';
@@ -60,6 +61,12 @@ const destroy = () => {
                 <UiButton @click="fork">Copy and edit</UiButton>
             </div>
             <p v-if="page.props.errors.skill" class="text-xs text-red-600 dark:text-red-400">{{ page.props.errors.skill }}</p>
+            <p v-if="page.props.errors.github" class="text-sm text-red-600 dark:text-red-400">{{ page.props.errors.github }}</p>
+
+            <p v-if="skill?.source_url" class="text-sm text-neutral-500">
+                Imported from <a :href="skill.source_url" class="underline">{{ skill.source_url }}</a>
+            </p>
+            <GitHubPublish v-if="skill" :action="`/skills/${skill.id}/publish`" :path="`skills/${skill.key}/SKILL.md`" />
         </form>
     </AppLayout>
 </template>

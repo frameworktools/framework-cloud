@@ -1,9 +1,12 @@
 # Pinned spec schemas
 
-`layer.v1.json` is copied from the framework R package, where it is generated
-by `data-raw/spec_schema.R`. Do not edit it here. To update it, copy the file
-from a newer package commit or tag and change the pin below.
+These files are copied from the framework R package, where
+`data-raw/spec_schema.R` generates them. Do not edit them here. To update one,
+copy it from a newer package commit or tag and change its pin below.
 
-- Source: `inst/schema/layer.v1.json` in the framework repository
-- Pin: commit `444fdecf267cccf996513d0b0a1966082bd04dab` on the `v2` branch
-  (no release tag yet)
+| File | Validates | Source commit (`v2` branch, no tag yet) |
+| --- | --- | --- |
+| `layer.v1.json` | One stored layer (base, facet, blueprint) | `93085bb` (full SHA below) |
+| `layers.v1.json` | The layers envelope: `.framework/layers.json` and the pull v2 body | `93085bb` (full SHA below) |
+
+Both files are pinned at `93085bb9ac74baac36913abca28da41710517435`.

@@ -5,6 +5,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiCallout from '@/Components/UiCallout.vue';
 import { group, groups } from '@/library.js';
+import GitHubImport from '@/Components/GitHubImport.vue';
 
 const props = defineProps({ skills: Array });
 
@@ -37,6 +38,12 @@ const fork = (id) => router.post(`/skills/${id}/fork`);
             </div>
 
             <UiCallout v-if="errors.length" variant="danger">{{ errors.join(' ') }}</UiCallout>
+
+            <GitHubImport
+                action="/skills/import"
+                label="Import a skill from GitHub"
+                placeholder="https://github.com/owner/repo/tree/main/skills/my-skill"
+            />
 
             <section v-for="section in sections" :key="section.key" class="flex flex-col gap-3">
                 <h2 class="text-sm font-medium uppercase tracking-wide text-neutral-500">{{ section.label }}</h2>

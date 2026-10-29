@@ -33,8 +33,10 @@ class Layer
 
     public const SCHEMA_ID = 'https://framework.pub/schema/layer/v1.json';
 
+    public const ENVELOPE_SCHEMA_ID = 'https://framework.pub/schema/layers/v1.json';
+
     /** Keys whose values the spec defines as lists, so an empty one stays []. */
-    private const LIST_KEYS = ['extra_directories', 'default_packages', 'assistants', 'fragments'];
+    private const LIST_KEYS = ['fragments'];
 
     private const PATH_PATTERN = '^(?!/)(?!.*(^|/)\\.\\.(/|$))[^\\\\]+$';
 
@@ -125,14 +127,34 @@ class Layer
         return $object;
     }
 
-    /** Shape rules come from the framework package's layer schema, pinned in resources/schema. */
-    private static function schemaProblems(array $layer): array
+    /**
+     * Problems with a whole layers envelope before it leaves the cloud. The
+     * committed .framework/layers.json stays in the repository's history, so
+     * every layer in it gets the credential and env checks again.
+     *
+     * @return list<string>
+     */
+    public static function envelopeProblems(array $envelope): array
+    {
+        $problems = self::schemaProblems($envelope, self::ENVELOPE_SCHEMA_ID, 'layers.v1.json');
+
+        foreach ($envelope['layers'] ?? [] as $entry) {
+            $layer = is_array($entry['layer'] ?? null) ? $entry['layer'] : [];
+            $problems = [...$problems, ...self::credentialProblems($layer['connections'] ?? [], 'connections')];
+            $problems = [...$problems, ...self::envProblems($layer['env'] ?? [])];
+        }
+
+        return array_values(array_unique($problems));
+    }
+
+    /** Shape rules come from the framework package's schemas, pinned in resources/schema. */
+    private static function schemaProblems(array $value, string $id = self::SCHEMA_ID, string $file = 'layer.v1.json'): array
     {
         $validator = new Validator;
         $validator->setMaxErrors(20);
-        $validator->resolver()->registerFile(self::SCHEMA_ID, resource_path('schema/layer.v1.json'));
+        $validator->resolver()->registerFile($id, resource_path("schema/{$file}"));
 
-        $result = $validator->validate(self::toJsonValue($layer), self::SCHEMA_ID);
+        $result = $validator->validate(self::toJsonValue($value), $id);
 
         return $result->isValid() ? [] : array_map(self::describe(...), self::leafErrors($result->error()));
     }

@@ -46,6 +46,7 @@ class HandleInertiaRequests extends Middleware
                 ['label' => 'API tokens', 'href' => '/tokens'],
             ])),
 
+            'githubSignIn' => filled(config('services.github.client_id')),
             'appUrl' => rtrim(config('app.url'), '/'),
             'csrf' => $request->session()->token(),
         ];

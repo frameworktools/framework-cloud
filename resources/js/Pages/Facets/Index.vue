@@ -4,6 +4,7 @@ import { router, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiCallout from '@/Components/UiCallout.vue';
+import GitHubImport from '@/Components/GitHubImport.vue';
 import LayerSummary from '@/Components/LayerSummary.vue';
 import { group, groups } from '@/library.js';
 
@@ -42,6 +43,12 @@ const fork = (id) => router.post(`/facets/${id}/fork`);
             </div>
 
             <UiCallout v-if="errors.length" variant="danger">{{ errors.join(' ') }}</UiCallout>
+
+            <GitHubImport
+                action="/facets/import"
+                label="Import a facet from GitHub"
+                placeholder="https://github.com/owner/repo/blob/main/facets/my-facet.facet.yml"
+            />
 
             <section v-for="section in sections" :key="section.key" class="flex flex-col gap-3">
                 <h2 class="text-sm font-medium uppercase tracking-wide text-neutral-500">{{ section.label }}</h2>

@@ -6,6 +6,7 @@ use App\Models\Concerns\HasVersions;
 use App\Models\Concerns\Shareable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Validation\ValidationException;
 
 /**
  * A skill in the shared library: a SKILL.md, plus optional files beside it,
@@ -52,5 +53,31 @@ class Skill extends Model
         }
 
         return $entry;
+    }
+
+    /**
+     * The name and description from SKILL.md frontmatter, which is what
+     * assistants read.
+     *
+     * @return array{key: string, description: string}
+     */
+    public static function frontmatter(string $content, string $field): array
+    {
+        if (! preg_match('/\A---\R(.*?)\R---/s', $content, $frontmatter)) {
+            throw ValidationException::withMessages([$field => 'Start SKILL.md with frontmatter: a --- line, name: and description:, then another --- line.']);
+        }
+
+        preg_match('/^name:\s*["\']?([^"\'\r\n]+?)["\']?\s*$/m', $frontmatter[1], $name);
+        preg_match('/^description:\s*(.+)$/m', $frontmatter[1], $description);
+        $key = $name[1] ?? '';
+
+        if (! preg_match('/^[a-z0-9][a-z0-9-]{0,63}$/', $key)) {
+            throw ValidationException::withMessages([$field => 'The frontmatter name must be lowercase letters, numbers, and hyphens.']);
+        }
+        if (blank($description[1] ?? null)) {
+            throw ValidationException::withMessages([$field => 'Add a description: assistants use it to decide when to load the skill.']);
+        }
+
+        return ['key' => $key, 'description' => trim($description[1])];
     }
 }

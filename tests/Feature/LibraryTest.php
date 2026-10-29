@@ -45,7 +45,7 @@ class LibraryTest extends TestCase
             'category' => 'data',
             'question' => 'Is this under an IRB protocol?',
             'visibility' => 'private',
-            'settings_yaml' => "extra_directories:\n  - key: irb\n    label: IRB\n    path: irb\n",
+            'settings_yaml' => "extra_directories:\n  irb:\n    label: IRB\n    path: irb\n",
             'files' => [],
             'skills' => [],
         ];
@@ -145,8 +145,8 @@ class LibraryTest extends TestCase
             "directories:\n  raw: ../outside\n" => 'relative path',
             "author:\n  name: Someone\n" => 'not a setting',
             "env:\n  DB_PASSWORD: hunter2\n" => 'secret',
-            "packages:\n  default_packages:\n    - name: targets\n" => 'needs source and auto_attach',
-            "ai:\n  assistants: [gemini]\n" => 'must be one of: claude, codex, copilot',
+            "packages:\n  default_packages:\n    targets:\n      source: cran\n" => 'needs auto_attach',
+            "ai:\n  assistants:\n    gemini: true\n" => 'claude, codex, copilot',
             "directories: [\n" => '',
         ];
 
@@ -185,7 +185,7 @@ class LibraryTest extends TestCase
 
         // A new facet version does not move the blueprint
         $pinned = $renv->latestVersion->id;
-        $renv->publishVersion(['layer' => ['packages' => ['use_renv' => true, 'default_packages' => []]]]);
+        $renv->publishVersion(['layer' => ['packages' => ['use_renv' => true, 'default_packages' => ['targets' => null]]]]);
         $this->assertSame($pinned, $blueprint->fresh()->latestVersion->facetVersions->first()->id);
 
         // Resubmitting the same pins keeps v1; reordering is a change

@@ -56,13 +56,12 @@
         "question": "Will this project produce a paper?",
         "description": "Adds a manuscript folder with a Quarto manuscript to start from.",
         "layer": {
-            "extra_directories": [
-                {
-                    "key": "manuscript",
+            "extra_directories": {
+                "manuscript": {
                     "label": "Manuscript",
                     "path": "manuscript"
                 }
-            ],
+            },
             "files": {
                 "manuscript/manuscript.qmd": {
                     "template": true,
@@ -80,13 +79,12 @@
         "question": "Will you present results as slides?",
         "description": "Adds a slides folder that renders with Quarto RevealJS.",
         "layer": {
-            "extra_directories": [
-                {
-                    "key": "slides",
+            "extra_directories": {
+                "slides": {
                     "label": "Slides",
                     "path": "slides"
                 }
-            ],
+            },
             "render_dirs": {
                 "slides": "outputs/slides"
             }
@@ -110,18 +108,16 @@
         "description": "Adds the targets and tarchetypes packages and a starter _targets.R.",
         "layer": {
             "packages": {
-                "default_packages": [
-                    {
-                        "name": "targets",
+                "default_packages": {
+                    "targets": {
                         "source": "cran",
                         "auto_attach": false
                     },
-                    {
-                        "name": "tarchetypes",
+                    "tarchetypes": {
                         "source": "cran",
                         "auto_attach": false
                     }
-                ]
+                }
             },
             "files": {
                 "_targets.R": {
@@ -136,13 +132,12 @@
         "question": "Will you use Python as well as R?",
         "description": "Adds a python folder and ignores virtual environments.",
         "layer": {
-            "extra_directories": [
-                {
-                    "key": "python",
+            "extra_directories": {
+                "python": {
                     "label": "Python",
                     "path": "python"
                 }
-            ],
+            },
             "git": {
                 "gitignore_content": "# Python\n.venv/\n__pycache__/\n"
             }
@@ -156,9 +151,9 @@
         "layer": {
             "ai": {
                 "enabled": true,
-                "assistants": [
-                    "claude"
-                ]
+                "assistants": {
+                    "claude": true
+                }
             }
         }
     },
@@ -170,9 +165,9 @@
         "layer": {
             "ai": {
                 "enabled": true,
-                "assistants": [
-                    "codex"
-                ]
+                "assistants": {
+                    "codex": true
+                }
             }
         }
     },
@@ -184,9 +179,9 @@
         "layer": {
             "ai": {
                 "enabled": true,
-                "assistants": [
-                    "copilot"
-                ]
+                "assistants": {
+                    "copilot": true
+                }
             }
         }
     }

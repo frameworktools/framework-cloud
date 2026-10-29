@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Route;
 Route::get('/metrics', \App\Http\Controllers\MetricsController::class)
     ->middleware(\App\Http\Middleware\VerifyMetricsToken::class);
 
+// Framework GitHub App events (signed with the webhook secret)
+Route::post('/github/webhook', \App\Http\Controllers\Api\GitHubWebhookController::class)->middleware('throttle:120,1');
+
 Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::get('/me', MeController::class);
 

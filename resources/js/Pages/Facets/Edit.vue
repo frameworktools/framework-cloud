@@ -4,6 +4,7 @@ import { router, useForm, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiCallout from '@/Components/UiCallout.vue';
+import GitHubPublish from '@/Components/GitHubPublish.vue';
 import UiInput from '@/Components/UiInput.vue';
 import UiSelect from '@/Components/UiSelect.vue';
 import UiSwitch from '@/Components/UiSwitch.vue';
@@ -156,6 +157,12 @@ const errorFor = (prefix) => Object.entries(form.errors).filter(([k]) => k.start
                 </div>
                 <p v-if="page.props.errors.facet" class="text-xs text-red-600 dark:text-red-400">{{ page.props.errors.facet }}</p>
             </section>
+
+            <p v-if="page.props.errors.github" class="text-sm text-red-600 dark:text-red-400">{{ page.props.errors.github }}</p>
+            <p v-if="facet?.source_url" class="text-sm text-neutral-500">
+                Imported from <a :href="facet.source_url" class="underline">{{ facet.source_url }}</a>
+            </p>
+            <GitHubPublish v-if="facet" :action="`/facets/${facet.id}/publish`" :path="`facets/${facet.key}.facet.yml`" />
 
             <section v-if="facet?.versions?.length" class="flex flex-col gap-1">
                 <h2 class="text-sm font-medium">Versions</h2>
