@@ -11,7 +11,7 @@
 
     <div class="mt-8 max-w-2xl overflow-x-auto rounded-lg bg-neutral-900 p-5 font-mono text-sm text-neutral-100 dark:ring-1 dark:ring-neutral-700">
         <div><span class="text-neutral-500"># install</span></div>
-        <div>remotes::install_github(<span class="text-orange-400">"table1/framework"</span>)</div>
+        <div>remotes::install_github(<span class="text-orange-400">"frameworktools/framework"</span>)</div>
         <div class="mt-3"><span class="text-neutral-500"># start a project</span></div>
         <div>framework::new(<span class="text-orange-400">"my-study"</span>)</div>
         <div class="mt-3"><span class="text-neutral-500"># every notebook starts with</span></div>

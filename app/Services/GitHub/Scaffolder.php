@@ -37,7 +37,7 @@ class Scaffolder
             throw new RuntimeException('GITHUB_FRAMEWORK_SHA must be a full 40-character commit SHA.');
         }
 
-        return str_replace('{{framework_ref}}', "table1/framework@{$sha}", File::get(resource_path('github/'.self::WORKFLOW)));
+        return str_replace('{{framework_ref}}', "frameworktools/framework@{$sha}", File::get(resource_path('github/'.self::WORKFLOW)));
     }
 
     /**

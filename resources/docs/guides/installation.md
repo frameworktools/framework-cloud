@@ -18,7 +18,7 @@ Framework is currently only available via GitHub. Install using the `remotes` pa
 
 ```r
 install.packages("remotes")
-remotes::install_github("table1/framework")
+remotes::install_github("frameworktools/framework")
 ```
 
 ## Verify Installation
@@ -37,7 +37,7 @@ You should see the version number displayed.
 To update to the latest version:
 
 ```r
-remotes::install_github("table1/framework")
+remotes::install_github("frameworktools/framework")
 ```
 
 ---

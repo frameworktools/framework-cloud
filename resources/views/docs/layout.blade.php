@@ -22,7 +22,7 @@
             <nav class="flex items-center gap-4 text-sm">
                 <a href="{{ route('docs.reference') }}" class="text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100">Reference</a>
                 <a href="https://framework.pub" class="text-orange-600 hover:underline dark:text-orange-400">framework.pub</a>
-                <a href="https://github.com/table1/framework" class="text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100">GitHub</a>
+                <a href="https://github.com/frameworktools/framework" class="text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100">GitHub</a>
             </nav>
         </div>
     </header>

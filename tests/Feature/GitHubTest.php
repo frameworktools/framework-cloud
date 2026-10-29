@@ -189,7 +189,7 @@ class GitHubTest extends TestCase
         $this->assertStringEndsWith('/contents/.github/workflows/framework-scaffold.yml', $puts[1]->url());
 
         $workflow = base64_decode($puts[1]['content']);
-        $this->assertStringContainsString('table1/framework@'.self::SHA, $workflow);
+        $this->assertStringContainsString('frameworktools/framework@'.self::SHA, $workflow);
         $this->assertStringContainsString('project_create_from_layers(".framework/layers.json"', $workflow);
 
         $layers = json_decode(base64_decode($puts[0]['content']), true);

@@ -97,7 +97,7 @@
             <a href="{{ route('terms') }}" class="hover:text-neutral-900 dark:hover:text-neutral-100">Terms</a>
             <a href="{{ route('privacy') }}" class="hover:text-neutral-900 dark:hover:text-neutral-100">Privacy</a>
             <a href="https://framework.table1.org" class="hover:text-neutral-900 dark:hover:text-neutral-100">Documentation</a>
-            <a href="https://github.com/table1/framework" class="hover:text-neutral-900 dark:hover:text-neutral-100">GitHub</a>
+            <a href="https://github.com/frameworktools/framework" class="hover:text-neutral-900 dark:hover:text-neutral-100">GitHub</a>
         </nav>
     </footer>
 

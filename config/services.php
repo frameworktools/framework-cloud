@@ -47,7 +47,7 @@ return [
         // never a branch, so a repo's scaffold is reproducible. Bump it here
         // deliberately; the env var overrides it, and an empty one turns
         // GitHub scaffolding off.
-        'framework_sha' => env('GITHUB_FRAMEWORK_SHA', 'ccbfe5faf27cc69b007335a5c9bf7f01fdd829dc'),
+        'framework_sha' => env('GITHUB_FRAMEWORK_SHA', '398cfbf1638502e73a084317f3b90ee472101296'),
     ],
 
 ];
