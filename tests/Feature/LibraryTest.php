@@ -11,6 +11,7 @@ use App\Models\Skill;
 use App\Models\SkillVersion;
 use App\Models\User;
 use App\Support\Layer;
+use App\Support\LayerSummary;
 use Database\Seeders\BlueprintSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
@@ -367,5 +368,17 @@ class LibraryTest extends TestCase
         $this->actingAs($user)->get("/blueprints/{$system->id}")->assertInertia(fn (Assert $page) => $page
             ->component('Blueprints/Show')->where('version.base.handle', 'framework/project_sensitive'));
         $this->actingAs($user)->get("/skills/{$this->system(Skill::class, 'framework-data')->id}/edit")->assertOk();
+    }
+
+    public function test_sensitive_layers_say_what_assistants_are_kept_from(): void
+    {
+        $this->seed(BlueprintSeeder::class);
+
+        $summary = collect(LayerSummary::of(Facet::where('key', 'restricted-data')->firstOrFail()->latestVersion->layer))
+            ->pluck('items', 'label');
+
+        $this->assertSame(['.env', 'inputs/private/', 'outputs/private/'], $summary['Kept from AI assistants']);
+        $this->assertStringContainsString('Claude Code: enforced', $summary['Protection'][0]);
+        $this->assertStringContainsString('guidance only', $summary['Protection'][1]);
     }
 }

@@ -16,7 +16,7 @@ class LayerSummary
     {
         $sections = [];
         $add = function (string $label, array $items) use (&$sections) {
-            $items = array_values(array_filter(array_map('strval', $items), 'strlen'));
+            $items = array_values(array_unique(array_filter(array_map('strval', $items), 'strlen')));
             sort($items);
             if ($items !== []) {
                 $sections[] = ['label' => $label, 'items' => $items];
@@ -81,13 +81,23 @@ class LayerSummary
             $add('Sensitive data', [$layer['security']['sensitive'] ? 'Yes' : 'No']);
         }
 
-        // With the flag on, the framework package writes each assistant's deny
-        // rules (for Claude Code, permissions.deny) over the private folders
+        // With the flag on, the framework package keeps assistants out of every
+        // folder with a "private" segment (cut there) and .env. Claude Code gets
+        // deny rules and a sandbox; the others get written rules only.
         if (($layer['security']['sensitive'] ?? false) === true) {
-            $private = array_filter($directories, fn ($path) => is_string($path) && preg_match('#(^|/)private(/|$)#', $path));
-            $add('Kept from AI assistants', $private
-                ? array_values(array_unique(array_map(fn ($path) => preg_replace('#(^|/)private/.*$#', '$1private/', $path), $private)))
-                : ['Private data folders']);
+            $paths = [
+                ...array_values($directories),
+                ...array_map(fn ($d) => is_array($d) ? ($d['path'] ?? null) : null, array_values($extra)),
+            ];
+            $private = array_filter($paths, fn ($path) => is_string($path) && preg_match('#(^|/)private(/|$)#', $path));
+            $add('Kept from AI assistants', [
+                ...($private ? array_map(fn ($path) => preg_replace('#((^|/)private)(/.*)?$#', '$1/', $path), $private) : ['Folders with "private" in their path']),
+                '.env',
+            ]);
+            $sections[] = ['label' => 'Protection', 'items' => [
+                'Claude Code: enforced (deny rules and sandbox in .claude/settings.json)',
+                'Codex and Copilot: guidance only (AGENTS.md rule and the sensitive-data skill)',
+            ]];
         }
 
         foreach (['scaffold', 'quarto', 'connections', 'env', 'data_hooks'] as $key) {

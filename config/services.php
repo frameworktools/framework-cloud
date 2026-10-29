@@ -44,9 +44,10 @@ return [
         'app_slug' => env('GITHUB_APP_SLUG'),
         'webhook_secret' => env('GITHUB_WEBHOOK_SECRET'),
         // The framework package commit the scaffold workflow installs. A SHA,
-        // never a branch, so a repo's scaffold is reproducible. Unset turns
+        // never a branch, so a repo's scaffold is reproducible. Bump it here
+        // deliberately; the env var overrides it, and an empty one turns
         // GitHub scaffolding off.
-        'framework_sha' => env('GITHUB_FRAMEWORK_SHA'),
+        'framework_sha' => env('GITHUB_FRAMEWORK_SHA', 'ccbfe5faf27cc69b007335a5c9bf7f01fdd829dc'),
     ],
 
 ];
