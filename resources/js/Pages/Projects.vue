@@ -7,16 +7,19 @@ import UiInput from '@/Components/UiInput.vue';
 import UiSelect from '@/Components/UiSelect.vue';
 import UiCallout from '@/Components/UiCallout.vue';
 
-const props = defineProps({ projects: Array, blueprints: Array });
+const props = defineProps({ projects: Array, blueprints: Array, selected: Number });
 
 const page = usePage();
 const pullToken = computed(() =>
     page.props.flash.status === 'project-token' ? page.props.flash.token : null,
 );
 
-const options = computed(() => props.blueprints.map((b) => ({ value: b.key, label: b.name })));
+const options = computed(() =>
+    props.blueprints.map((b) => ({ value: b.id, label: b.handle.startsWith('framework/') ? b.name : `${b.name} (${b.handle})` })),
+);
+const bare = props.blueprints.find((b) => b.handle === 'framework/bare');
 
-const form = useForm({ name: '', project_type: 'bare', description: '' });
+const form = useForm({ name: '', blueprint_id: props.selected ?? bare?.id ?? props.blueprints[0]?.id, description: '' });
 const create = () => form.post('/projects', { onSuccess: () => form.reset('name', 'description') });
 
 const issueToken = (id) => router.post(`/projects/${id}/token`);
@@ -44,7 +47,7 @@ const headline = (key) => key.split('_').map((w) => w[0].toUpperCase() + w.slice
 
             <form class="flex flex-wrap items-end gap-3" @submit.prevent="create">
                 <div class="w-56"><UiInput v-model="form.name" label="Name" placeholder="e.g. NHANES Study" :error="form.errors.name" /></div>
-                <div class="w-44"><UiSelect v-model="form.project_type" label="Type" :options="options" :error="form.errors.project_type" /></div>
+                <div class="w-64"><UiSelect v-model="form.blueprint_id" label="Blueprint" :options="options" :error="form.errors.blueprint_id" /></div>
                 <div class="w-64"><UiInput v-model="form.description" label="Description (optional)" :error="form.errors.description" /></div>
                 <UiButton type="submit" :disabled="form.processing">Create project</UiButton>
             </form>
@@ -62,6 +65,10 @@ const headline = (key) => key.split('_').map((w) => w[0].toUpperCase() + w.slice
                             <span class="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
                                 {{ headline(project.project_type) }}
                             </span>
+                            <Link
+                                v-if="project.blueprint" :href="`/blueprints/${project.blueprint.id}?version=${project.blueprint.version}`"
+                                class="font-mono text-xs text-neutral-500 hover:underline"
+                            >{{ project.blueprint.handle }} v{{ project.blueprint.version }}</Link>
                         </div>
                         <p class="text-sm text-neutral-500 dark:text-neutral-400">
                             {{ project.slug }}<span v-if="project.description"> · {{ project.description }}</span>

@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class ProjectsController extends Controller
 {
@@ -34,7 +35,7 @@ class ProjectsController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:100'],
-            'project_type' => ['required', 'exists:blueprints,key'],
+            'project_type' => ['required', Rule::in(Project::TYPES)],
             'description' => ['nullable', 'string', 'max:500'],
         ]);
 

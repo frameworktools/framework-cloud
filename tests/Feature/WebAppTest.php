@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\Blueprint;
 use App\Models\User;
+use Database\Seeders\BlueprintSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -14,7 +16,12 @@ class WebAppTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->seed(\Database\Seeders\BlueprintSeeder::class);
+        $this->seed(BlueprintSeeder::class);
+    }
+
+    private function systemBlueprint(string $key): Blueprint
+    {
+        return Blueprint::whereNull('user_id')->where('key', $key)->firstOrFail();
     }
 
     private function user(): User
@@ -44,12 +51,13 @@ class WebAppTest extends TestCase
         $user = $this->user();
 
         $this->actingAs($user)
-            ->post('/projects', ['name' => 'NHANES Study', 'project_type' => 'bare'])
+            ->post('/projects', ['name' => 'NHANES Study', 'blueprint_id' => $this->systemBlueprint('bare')->id])
             ->assertRedirect();
 
         $project = $user->projects()->first();
         $this->assertSame('nhanes-study', $project->slug);
         $this->assertSame('bare', $project->project_type);
+        $this->assertSame($this->systemBlueprint('bare')->latestVersion->id, $project->blueprint_version_id);
 
         $this->actingAs($user)
             ->post("/projects/{$project->id}/token")
@@ -67,7 +75,7 @@ class WebAppTest extends TestCase
 
         $this->actingAs($user)
             ->from('/projects')
-            ->post('/projects', ['name' => 'Thing', 'project_type' => 'bare'])
+            ->post('/projects', ['name' => 'Thing', 'blueprint_id' => $this->systemBlueprint('bare')->id])
             ->assertSessionHasErrors('name');
     }
 
@@ -105,6 +113,6 @@ class WebAppTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Projects')
                 ->has('blueprints', 5)
-                ->where('blueprints.0.key', 'bare'));
+                ->where('blueprints.0.handle', 'framework/bare'));
     }
 }

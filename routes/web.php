@@ -56,6 +56,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('projects/{project}/token', [\App\Http\Controllers\App\ProjectsController::class, 'issueToken']);
     Route::delete('projects/{project}', [\App\Http\Controllers\App\ProjectsController::class, 'destroy']);
 
+    // The shared library: blueprints compose facets, facets carry skills
+    foreach ([
+        'blueprints' => \App\Http\Controllers\App\BlueprintsController::class,
+        'facets' => \App\Http\Controllers\App\FacetsController::class,
+        'skills' => \App\Http\Controllers\App\SkillsController::class,
+    ] as $name => $controller) {
+        Route::post("{$name}/{".str($name)->singular().'}/fork', [$controller, 'fork'])->name("{$name}.fork");
+    }
+    Route::resource('blueprints', \App\Http\Controllers\App\BlueprintsController::class);
+    Route::resource('facets', \App\Http\Controllers\App\FacetsController::class)->except('show');
+    Route::resource('skills', \App\Http\Controllers\App\SkillsController::class)->except('show');
+
     Route::get('tokens', [\App\Http\Controllers\App\TokensController::class, 'index'])->name('tokens');
     Route::post('tokens', [\App\Http\Controllers\App\TokensController::class, 'store']);
     Route::delete('tokens/{tokenId}', [\App\Http\Controllers\App\TokensController::class, 'destroy']);
@@ -72,12 +84,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('settings/passkeys/options', [\App\Http\Controllers\Settings\PasskeysController::class, 'options']);
     Route::post('settings/passkeys', [\App\Http\Controllers\Settings\PasskeysController::class, 'store']);
     Route::delete('settings/passkeys/{passkeyId}', [\App\Http\Controllers\Settings\PasskeysController::class, 'destroy']);
-});
-
-Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::redirect('/', '/admin/blueprints');
-    Route::get('blueprints', [\App\Http\Controllers\Admin\BlueprintsController::class, 'index'])->name('blueprints');
-    Route::patch('blueprints/{blueprint}', [\App\Http\Controllers\Admin\BlueprintsController::class, 'update']);
 });
 
 require __DIR__.'/auth.php';

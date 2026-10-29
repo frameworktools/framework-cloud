@@ -1,8 +1,12 @@
 <?php
 
+use App\Http\Middleware\EnsureAdmin;
+use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\ServeBuiltAssetsThroughTunnels;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -18,13 +22,19 @@ return Application::configure(basePath: dirname(__DIR__))
         // production clients cannot spoof them.
         $middleware->trustProxies(at: ['127.0.0.1', '::1']);
 
+        // Library forms carry file text (SKILL.md, YAML, templates) whose
+        // whitespace is content, so they skip input trimming.
+        $middleware->trimStrings(except: [
+            fn (Request $request) => $request->is('blueprints*', 'facets*', 'skills*'),
+        ]);
+
         $middleware->web(append: [
-            \App\Http\Middleware\ServeBuiltAssetsThroughTunnels::class,
-            \App\Http\Middleware\HandleInertiaRequests::class,
+            ServeBuiltAssetsThroughTunnels::class,
+            HandleInertiaRequests::class,
         ]);
 
         $middleware->alias([
-            'admin' => \App\Http\Middleware\EnsureAdmin::class,
+            'admin' => EnsureAdmin::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

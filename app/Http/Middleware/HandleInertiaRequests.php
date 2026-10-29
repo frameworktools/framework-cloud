@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -14,7 +15,7 @@ class HandleInertiaRequests extends Middleware
         // The resolved "user" can be a Project (Sanctum tokenable) when a
         // bearer token accompanies a web request — only real users share
         $user = $request->user();
-        $user = $user instanceof \App\Models\User ? $user : null;
+        $user = $user instanceof User ? $user : null;
 
         return [
             ...parent::share($request),
@@ -39,10 +40,10 @@ class HandleInertiaRequests extends Middleware
             'nav' => array_values(array_filter([
                 ['label' => 'Dashboard', 'href' => '/dashboard'],
                 ['label' => 'Projects', 'href' => '/projects'],
+                ['label' => 'Blueprints', 'href' => '/blueprints'],
+                ['label' => 'Facets', 'href' => '/facets'],
+                ['label' => 'Skills', 'href' => '/skills'],
                 ['label' => 'API tokens', 'href' => '/tokens'],
-                $user?->is_admin
-                    ? ['label' => 'Blueprints', 'href' => '/admin/blueprints', 'section' => 'Admin']
-                    : null,
             ])),
 
             'appUrl' => rtrim(config('app.url'), '/'),

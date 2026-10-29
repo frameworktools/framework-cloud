@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\ProjectFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +11,7 @@ use Laravel\Sanctum\HasApiTokens;
 
 class Project extends Model
 {
-    /** @use HasFactory<\Database\Factories\ProjectFactory> */
+    /** @use HasFactory<ProjectFactory> */
     use HasApiTokens, HasFactory, SoftDeletes;
 
     /**
@@ -34,6 +35,12 @@ class Project extends Model
         return [
             'payload' => 'array',
         ];
+    }
+
+    /** The blueprint version this project was made from, when it came from one. */
+    public function blueprintVersion(): BelongsTo
+    {
+        return $this->belongsTo(BlueprintVersion::class);
     }
 
     public function user(): BelongsTo

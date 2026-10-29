@@ -19,7 +19,7 @@ class DefaultsController extends Controller
 
         return Inertia::render('Settings/Defaults', [
             'revision' => $setting->revision,
-            'blueprints' => Blueprint::orderBy('position')->get(['key', 'name']),
+            'blueprints' => Blueprint::systemTypes()->get(['key', 'name']),
             'values' => [
                 'author_name' => Arr::get($doc, 'author.name', '') ?? '',
                 'author_email' => Arr::get($doc, 'author.email', '') ?? '',

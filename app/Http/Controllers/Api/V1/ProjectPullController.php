@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\Blueprint;
 use App\Models\Project;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 
 class ProjectPullController extends Controller
 {
@@ -22,7 +24,7 @@ class ProjectPullController extends Controller
         abort_unless($request->user()->tokenCan(Project::PULL_ABILITY), 403, 'Token lacks the project:pull ability.');
 
         $settings = $project->user->globalSettings();
-        $blueprint = \App\Models\Blueprint::where('key', $project->project_type)->first();
+        $blueprint = Blueprint::systemTypes()->where('key', $project->project_type)->first();
 
         return response()->json([
             'project' => [
@@ -37,7 +39,7 @@ class ProjectPullController extends Controller
                 'schema_version' => $settings->schema_version,
                 'document' => $settings->document,
             ],
-            'blueprint' => $blueprint?->only(['key', 'name', 'structure', 'agents_md', 'skills']),
+            'blueprint' => $blueprint ? Arr::only($blueprint->toV1Array(), ['key', 'name', 'structure', 'agents_md', 'skills']) : null,
         ]);
     }
 }

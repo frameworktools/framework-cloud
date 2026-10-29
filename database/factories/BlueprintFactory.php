@@ -18,9 +18,7 @@ class BlueprintFactory extends Factory
             'key' => Str::slug($name, '_'),
             'name' => $name,
             'description' => $this->faker->sentence(),
-            'structure' => ['directories' => [], 'render_dirs' => [], 'quarto' => null],
-            'agents_md' => null,
-            'skills' => [],
+            'visibility' => 'private',
             'is_system' => false,
             'position' => 0,
         ];
