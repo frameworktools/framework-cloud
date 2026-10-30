@@ -1,12 +1,23 @@
 # Pinned spec schemas
 
 These files are copied from the framework R package, where
-`data-raw/spec_schema.R` generates them. Do not edit them here. To update one,
-copy it from a newer package commit or tag and change its pin below.
+`data-raw/spec_schema.R` generates them. Do not edit them here.
 
-| File | Validates | Source commit (`v2` branch, no tag yet) |
+| File | Validates | Source in the R package |
 | --- | --- | --- |
-| `layer.v1.json` | One stored layer (base, facet, blueprint) | `19f9d28` (full SHA below) |
-| `layers.v1.json` | The layers envelope: `.framework/layers.json` and the pull v2 body | `19f9d28` (full SHA below) |
+| `layer.v1.json` | One stored layer (base, facet, blueprint) | `inst/schema/layer.v1.json` |
+| `layers.v1.json` | The layers envelope: `.framework/layers.json` and the pull v2 body | `inst/schema/layers.v1.json` |
 
-Both files are pinned at `19f9d286d35c074c532a1e5b13ad6223c50af0aa`.
+`schema.lock.json` records the R package commit they came from and each
+file's SHA-256. To update them, copy them from a newer commit:
+
+```bash
+php artisan fw:sync-schemas ../framework <full commit SHA>
+```
+
+The command rewrites both files and the lock. `tests/Feature/SchemaLockTest.php`
+fails when a file no longer matches its lock entry.
+
+When the commit changes, also check `GITHUB_FRAMEWORK_SHA`'s default in
+`config/services.php`. It is the R package commit that GitHub scaffolding
+installs, and it usually moves with the schemas.

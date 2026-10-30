@@ -1,0 +1,24 @@
+# Fails when a schema copied from the framework R package no longer matches
+# resources/schema/schema.lock.json. Copy them with `php artisan fw:sync-schemas`.
+
+name: Schema lock
+
+on:
+  push:
+    paths: ['resources/schema/**']
+  pull_request:
+    paths: ['resources/schema/**']
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check copies against the lock
+        working-directory: resources/schema
+        run: |
+          jq -r '.files | to_entries[] | "\(.value.sha256)  \(.key)"' schema.lock.json | sha256sum --check --strict

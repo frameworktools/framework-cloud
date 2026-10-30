@@ -1,0 +1,13 @@
+{
+    "commit": "c74051f2f75a5b20f41a2281bb548ff57310cf58",
+    "files": {
+        "layer.v1.json": {
+            "source": "inst/schema/layer.v1.json",
+            "sha256": "99f1f1d673304103a2b0afd0b62ca7b7f66b995fb4b802b393e36f561ff84b39"
+        },
+        "layers.v1.json": {
+            "source": "inst/schema/layers.v1.json",
+            "sha256": "dc74cac172b3edbfb09bc0731f2db9e09fe2a29c542c6094ef1e29e1970487f6"
+        }
+    }
+}
