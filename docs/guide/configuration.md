@@ -12,7 +12,7 @@ restart with `docker compose up -d`. Without Docker, run
 | `APP_KEY` | none | Encryption key. Required. Generate it once and back it up. |
 | `APP_PREVIOUS_KEYS` | none | Old keys, comma-separated, so saved credentials stay readable after you change `APP_KEY`. |
 | `APP_URL` | none | The address people use, such as `https://framework.example.edu`. |
-| `FW_MODE` | `self` | `self` for your own server, where every feature is on. `hosted` is for framework.pub. |
+| `FW_MODE` | `self` | `self` for your own server, where every feature is on. `hosted` is for Framework Public Cloud (framework.pub). |
 | `FW_ADMIN_EMAIL` | none | The admin account, created on first start. |
 | `FW_ADMIN_NAME` | from the email | The admin's name when the account is created. |
 | `FW_REGISTRATION` | `open` | `closed` stops new sign-ups. Admins can still create accounts with `fw:login-link --create`. |

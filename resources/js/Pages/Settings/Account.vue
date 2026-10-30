@@ -10,6 +10,7 @@ import UiModal from '@/Components/UiModal.vue';
 const props = defineProps({ profile: Object, hasPassword: Boolean });
 
 const page = usePage();
+const host = computed(() => String(page.props.appUrl ?? '').replace(/^https?:\/\//, '').replace(/\/$/, ''));
 const saved = computed(() => page.props.flash.status === 'profile-updated');
 
 const form = useForm({
@@ -44,13 +45,13 @@ const destroy = () => deleteForm.delete('/settings/account');
                 v-model="form.handle"
                 label="Handle"
                 placeholder="e.g. erik"
-                description="Your public profile lives at framework.pub/@handle. Treat it as permanent once shared."
+                :description="`Your public profile lives at ${host}/@${form.handle || 'handle'}. Treat it as permanent once shared.`"
                 :error="form.errors.handle"
             />
             <UiSwitch
                 v-model="form.profile_public"
                 label="Public profile"
-                description="Show your name and member-since date at /@handle. Off, the page 404s. Requires a handle."
+                description="Shows your name and the date you joined at /@handle. When this is off, nobody can see the page. It needs a handle."
             />
             <div class="flex items-center gap-3">
                 <UiButton type="submit" :disabled="form.processing">Save</UiButton>

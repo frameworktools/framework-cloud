@@ -7,8 +7,8 @@ GitHub and host the notebooks you publish from R.
 
 Framework Cloud is open source. You can use it in two ways:
 
-- **framework.pub.** Create a free account and start working. Hosting
-  published notebooks on framework.pub is an optional paid add-on.
+- **Framework Public Cloud (framework.pub).** Create a free account and start
+  working. Hosting published notebooks there is an optional paid add-on.
 - **Your own server.** Run Framework Cloud for yourself, a lab, or an
   institution. Every feature is included.
 

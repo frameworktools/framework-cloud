@@ -146,6 +146,8 @@ class LibraryTest extends TestCase
             "directories:\n  raw: ../outside\n" => 'relative path',
             "author:\n  name: Someone\n" => 'not a setting',
             "env:\n  DB_PASSWORD: hunter2\n" => 'secret',
+            "env:\n  OPENAI_API_KEY: sk-123\n" => 'secret',
+            "env:\n  GCP_CREDENTIALS: /keys/gcp.json\n" => 'secret',
             "packages:\n  default_packages:\n    targets:\n      source: cran\n" => 'needs auto_attach',
             "ai:\n  assistants:\n    gemini: true\n" => 'claude, codex, copilot',
             "directories: [\n" => '',

@@ -27,7 +27,8 @@ or connects to an existing account with the same verified email address.
 
 ## Passwords
 
-Self-hosted servers allow passwords by default. framework.pub does not.
+Self-hosted servers allow passwords by default. Framework Public Cloud does
+not.
 
 Accounts start without a password. To add one, open **Settings > Account**
 and use the **Password** section. Passwords must have at least 10 characters.

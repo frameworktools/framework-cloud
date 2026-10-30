@@ -40,7 +40,8 @@ class Layer
 
     private const PATH_PATTERN = '^(?!/)(?!.*(^|/)\\.\\.(/|$))[^\\\\]+$';
 
-    private const CREDENTIAL_KEY = '/(password|secret|token|access_key)/i';
+    // The R package's spec_check() matches PASSWORD, SECRET, TOKEN, API_KEY, PRIVATE_KEY, and CREDENTIAL
+    private const CREDENTIAL_KEY = '/(password|secret|token|access_key|api_key|private_key|credential)/i';
 
     private const ENV_REFERENCE = '/^env\(\s*["\'][A-Za-z_][A-Za-z0-9_]*["\']\s*\)$/';
 

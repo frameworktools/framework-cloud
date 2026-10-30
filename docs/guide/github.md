@@ -1,7 +1,7 @@
 # GitHub integration
 
 GitHub integration lets you sign in with GitHub and create projects as GitHub
-repositories. It is free on framework.pub. On your own server, an admin sets
+repositories. It is free on Framework Public Cloud. On your own server, an admin sets
 it up first (see [Server setup](server-setup.md#github)).
 
 ## Connect your account

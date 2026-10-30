@@ -1,7 +1,7 @@
 # Getting started
 
-This page uses framework.pub. On your own server, replace framework.pub with
-your server's address.
+This page uses Framework Public Cloud at framework.pub. On your own server,
+replace framework.pub with your server's address.
 
 ## 1. Create an account
 
