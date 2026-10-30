@@ -50,12 +50,15 @@ return [
         // deliberately; the env var overrides it, and an empty one turns
         // GitHub scaffolding off.
         'framework_sha' => env('GITHUB_FRAMEWORK_SHA', 'c74051f2f75a5b20f41a2281bb548ff57310cf58'),
-        // The fw release that scaffolds Stata projects, such as 0.1.0. Empty
-        // turns Stata scaffolding on GitHub off. The workflow checks the
-        // download against fw_sha256 when it is set, and otherwise against
-        // the release's checksums file.
-        'fw_version' => env('GITHUB_FW_VERSION'),
-        'fw_sha256' => env('GITHUB_FW_SHA256'),
+        // The fw release that scaffolds Stata projects. Empty turns Stata
+        // scaffolding on GitHub off. The workflow checks the download against
+        // fw_sha256 when it is set, and otherwise against the release's
+        // checksums file. The default checksum applies only to the default
+        // release.
+        'fw_version' => env('GITHUB_FW_VERSION', '0.1.0'),
+        'fw_sha256' => env('GITHUB_FW_SHA256', env('GITHUB_FW_VERSION', '0.1.0') === '0.1.0'
+            ? '6a7e2bff88021a7f896cf726b42dbe15ad0feb08309de9203b55f1186c3637cc'
+            : null),
     ],
 
 ];

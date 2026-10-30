@@ -67,8 +67,8 @@ result.
 | Variable | Default | What it does |
 |---|---|---|
 | `GITHUB_FRAMEWORK_SHA` | a tested commit | The framework R package commit that builds R projects. A full 40-character SHA. Empty turns GitHub scaffolding off. |
-| `GITHUB_FW_VERSION` | none | The `fw` release that builds Stata projects, such as `0.1.0`. Without it, Stata projects can be set up on a computer but not on GitHub. |
-| `GITHUB_FW_SHA256` | none | The SHA-256 checksum of the `fw` Linux download. Without it, the workflow checks the download against the release's checksums file. |
+| `GITHUB_FW_VERSION` | a tested release | The `fw` release that builds Stata projects, such as `0.1.0`. Empty turns off Stata projects on GitHub. They can still be set up on a computer. |
+| `GITHUB_FW_SHA256` | the tested release's checksum | The SHA-256 checksum of the `fw` Linux download. It applies only to the default release. For another release, set it or leave it empty. Empty makes the workflow check the download against the release's checksums file. |
 
 ## R
 
