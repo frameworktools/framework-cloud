@@ -7,6 +7,7 @@ use App\Models\LoginToken;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
+use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
 class MagicLinkAuthTest extends TestCase
@@ -18,7 +19,7 @@ class MagicLinkAuthTest extends TestCase
         $response = $this->get('/login');
 
         $response->assertOk();
-        $response->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page->component('Auth/Login'));
+        $response->assertInertia(fn (AssertableInertia $page) => $page->component('Auth/Login'));
     }
 
     public function test_register_screen_renders(): void
@@ -77,10 +78,76 @@ class MagicLinkAuthTest extends TestCase
         $user = User::factory()->unverified()->create(['password' => null]);
         $plain = LoginToken::issue($user);
 
-        $this->get("/auth/magic/{$plain}")->assertRedirect(route('dashboard'));
+        $this->post("/auth/magic/{$plain}")->assertRedirect(route('dashboard'));
 
         $this->assertAuthenticatedAs($user);
         $this->assertNotNull($user->fresh()->email_verified_at);
+    }
+
+    public function test_opening_a_link_shows_a_confirm_page_and_keeps_it_usable(): void
+    {
+        $user = User::factory()->unverified()->create(['password' => null]);
+        $plain = LoginToken::issue($user);
+
+        // A mail scanner opening the link twice must not use it up
+        $this->get("/auth/magic/{$plain}")->assertOk()
+            ->assertInertia(fn ($page) => $page->component('Auth/MagicLink')
+                ->where('email', $user->email)
+                ->where('isNewAccount', true));
+        $this->get("/auth/magic/{$plain}")->assertOk();
+        $this->assertGuest();
+
+        $this->post("/auth/magic/{$plain}")->assertRedirect(route('dashboard'));
+        $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_the_browser_that_asked_signs_in_directly(): void
+    {
+        Mail::fake();
+        $user = User::factory()->create();
+
+        $browser = $this->post('/auth/magic-link', ['email' => $user->email])
+            ->assertCookie(LoginToken::BROWSER_COOKIE)
+            ->getCookie(LoginToken::BROWSER_COOKIE, decrypt: true)
+            ->getValue();
+
+        $url = null;
+        Mail::assertSent(MagicLinkMail::class, function (MagicLinkMail $mail) use (&$url) {
+            $url = $mail->url;
+
+            return true;
+        });
+
+        // A scanner, or another device, gets the confirm page
+        $this->get($url)->assertOk();
+        $this->assertGuest();
+
+        $this->withCookie(LoginToken::BROWSER_COOKIE, $browser)
+            ->get($url)
+            ->assertRedirect(route('dashboard'));
+        $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_another_browsers_cookie_does_not_sign_in_directly(): void
+    {
+        $user = User::factory()->create();
+        $plain = LoginToken::issue($user, 'the-browser-that-asked');
+
+        $this->withCookie(LoginToken::BROWSER_COOKIE, 'some-other-browser')
+            ->get("/auth/magic/{$plain}")
+            ->assertOk();
+        $this->assertGuest();
+    }
+
+    public function test_opening_a_used_link_says_it_expired(): void
+    {
+        $user = User::factory()->create();
+        $plain = LoginToken::issue($user);
+        LoginToken::consume($plain);
+
+        $this->get("/auth/magic/{$plain}")
+            ->assertRedirect(route('login'))
+            ->assertSessionHasErrors('email');
     }
 
     public function test_links_are_single_use(): void
@@ -88,10 +155,10 @@ class MagicLinkAuthTest extends TestCase
         $user = User::factory()->create();
         $plain = LoginToken::issue($user);
 
-        $this->get("/auth/magic/{$plain}")->assertRedirect(route('dashboard'));
+        $this->post("/auth/magic/{$plain}")->assertRedirect(route('dashboard'));
 
         $this->post('/logout');
-        $this->get("/auth/magic/{$plain}")
+        $this->post("/auth/magic/{$plain}")
             ->assertRedirect(route('login'))
             ->assertSessionHasErrors('email');
         $this->assertGuest();
@@ -103,7 +170,7 @@ class MagicLinkAuthTest extends TestCase
         $plain = LoginToken::issue($user);
         LoginToken::where('user_id', $user->id)->update(['expires_at' => now()->subMinute()]);
 
-        $this->get("/auth/magic/{$plain}")
+        $this->post("/auth/magic/{$plain}")
             ->assertRedirect(route('login'))
             ->assertSessionHasErrors('email');
         $this->assertGuest();
@@ -121,5 +188,4 @@ class MagicLinkAuthTest extends TestCase
 
         $this->actingAs($user)->get('/settings/passkeys')->assertOk();
     }
-
 }

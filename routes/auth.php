@@ -25,10 +25,14 @@ Route::middleware('guest')->group(function () {
 Route::get('auth/github/redirect', [GitHubController::class, 'redirect'])->middleware('throttle:12,1')->name('github.redirect');
 Route::get('auth/github/callback', [GitHubController::class, 'callback'])->middleware('throttle:12,1')->name('github.callback');
 
-// Consumable while logged in or out (clicking a second time shouldn't 403)
-Route::get('auth/magic/{token}', [MagicLinkController::class, 'consume'])
+// Usable while logged in or out (clicking a second time shouldn't 403).
+// GET only shows a confirm page, so mail scanners can't use the link up.
+Route::get('auth/magic/{token}', [MagicLinkController::class, 'show'])
     ->middleware('throttle:12,1')
     ->name('magic-link.consume');
+Route::post('auth/magic/{token}', [MagicLinkController::class, 'consume'])
+    ->middleware('throttle:12,1')
+    ->name('magic-link.confirm');
 
 Route::middleware('auth')->group(function () {
     Route::get('verify-email', fn () => Inertia::render('Auth/VerifyEmail'))

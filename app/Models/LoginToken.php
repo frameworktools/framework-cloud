@@ -31,10 +31,13 @@ class LoginToken extends Model
         return $this->belongsTo(User::class);
     }
 
+    public const BROWSER_COOKIE = 'fw_magic_browser';
+
     /**
      * Issue a token for a user, returning the PLAIN token for the email URL.
+     * A browser value ties the link to the browser that asked for it.
      */
-    public static function issue(User $user): string
+    public static function issue(User $user, ?string $browser = null): string
     {
         $plain = Str::random(64);
 
@@ -42,6 +45,7 @@ class LoginToken extends Model
             'user_id' => $user->id,
             'token_hash' => hash('sha256', $plain),
             'expires_at' => now()->addMinutes(self::LIFETIME_MINUTES),
+            'browser_hash' => $browser !== null ? hash('sha256', $browser) : null,
             'created_at' => now(),
         ]);
 
@@ -53,11 +57,7 @@ class LoginToken extends Model
      */
     public static function consume(string $plain): ?User
     {
-        $token = static::query()
-            ->where('token_hash', hash('sha256', $plain))
-            ->whereNull('used_at')
-            ->where('expires_at', '>', now())
-            ->first();
+        $token = static::usable($plain)->first();
 
         if (! $token) {
             return null;
@@ -66,5 +66,30 @@ class LoginToken extends Model
         $token->forceFill(['used_at' => now()])->save();
 
         return $token->user;
+    }
+
+    /**
+     * The user a plain token would sign in, without using it up.
+     */
+    public static function peek(string $plain): ?User
+    {
+        return static::usable($plain)->first()?->user;
+    }
+
+    /**
+     * Whether a plain token was issued to the browser holding this value.
+     */
+    public static function issuedTo(string $plain, ?string $browser): bool
+    {
+        return $browser !== null && $browser !== ''
+            && static::usable($plain)->where('browser_hash', hash('sha256', $browser))->exists();
+    }
+
+    private static function usable(string $plain)
+    {
+        return static::query()
+            ->where('token_hash', hash('sha256', $plain))
+            ->whereNull('used_at')
+            ->where('expires_at', '>', now());
     }
 }

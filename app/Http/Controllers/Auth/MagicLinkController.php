@@ -10,13 +10,22 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
+use Inertia\Inertia;
+use Inertia\Response;
 
 /**
  * Passwordless auth: accounts are created and signed in via emailed
  * single-use links. Consuming a link also verifies the email address —
  * one ceremony, both jobs. Passkeys (spatie/laravel-passkeys) are the
  * fast path once an account exists.
+ *
+ * Mail scanners such as Outlook Safe Links open every link in a message,
+ * so opening a link must not use it up. Requesting a link sets a cookie;
+ * opening the link in that browser signs in directly. Anywhere else (a
+ * scanner, another device) shows a confirm page whose button signs in.
  */
 class MagicLinkController extends Controller
 {
@@ -31,6 +40,11 @@ class MagicLinkController extends Controller
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255'],
             'name' => ['sometimes', 'required', 'string', 'max:255'],
         ]);
+
+        // Set for every request, so the response says nothing about whether
+        // the account exists
+        $browser = Str::random(40);
+        Cookie::queue(LoginToken::BROWSER_COOKIE, $browser, LoginToken::LIFETIME_MINUTES);
 
         $user = User::where('email', $validated['email'])->first();
         $isNew = false;
@@ -51,11 +65,33 @@ class MagicLinkController extends Controller
         }
 
         if ($user) {
-            $url = route('magic-link.consume', ['token' => LoginToken::issue($user)]);
+            $url = route('magic-link.consume', ['token' => LoginToken::issue($user, $browser)]);
             Mail::to($user->email)->send(new MagicLinkMail($url, $isNew));
         }
 
         return back()->with('status', 'magic-link-sent');
+    }
+
+    /**
+     * Show the confirm page for a link, leaving the token unused.
+     */
+    public function show(Request $request, string $token): Response|RedirectResponse
+    {
+        if (LoginToken::issuedTo($token, $request->cookie(LoginToken::BROWSER_COOKIE))) {
+            return $this->consume($request, $token);
+        }
+
+        $user = LoginToken::peek($token);
+
+        if (! $user) {
+            return $this->expired();
+        }
+
+        return Inertia::render('Auth/MagicLink', [
+            'token' => $token,
+            'email' => $user->email,
+            'isNewAccount' => ! $user->hasVerifiedEmail(),
+        ]);
     }
 
     /**
@@ -66,8 +102,7 @@ class MagicLinkController extends Controller
         $user = LoginToken::consume($token);
 
         if (! $user) {
-            return redirect()->route('login')
-                ->withErrors(['email' => 'That sign-in link is invalid or has expired. Request a new one.']);
+            return $this->expired();
         }
 
         if (! $user->hasVerifiedEmail()) {
@@ -77,7 +112,14 @@ class MagicLinkController extends Controller
 
         Auth::login($user, remember: true);
         $request->session()->regenerate();
+        Cookie::expire(LoginToken::BROWSER_COOKIE);
 
         return redirect()->intended(route('dashboard'));
+    }
+
+    private function expired(): RedirectResponse
+    {
+        return redirect()->route('login')
+            ->withErrors(['email' => 'That sign-in link is invalid or has expired. Request a new one.']);
     }
 }

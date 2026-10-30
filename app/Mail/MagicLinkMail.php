@@ -28,6 +28,6 @@ class MagicLinkMail extends Mailable
 
     public function content(): Content
     {
-        return new Content(markdown: 'mail.magic-link');
+        return new Content(view: 'mail.magic-link', text: 'mail.magic-link-text');
     }
 }
