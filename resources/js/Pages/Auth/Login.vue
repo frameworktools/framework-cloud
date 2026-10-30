@@ -12,12 +12,22 @@ const sent = computed(() => page.props.flash.status === 'magic-link-sent');
 const passwordReset = computed(() => page.props.flash.status === 'password-reset');
 const passwords = computed(() => page.props.passwords);
 
-const methods = computed(() => {
-    const list = [page.props.githubSignIn && 'GitHub', passwords.value && 'a password', 'a passkey'].filter(Boolean);
-    return `Use ${list.join(', ')}, or a link sent to your email.`;
-});
-
 const form = useForm({ email: '', password: '' });
+
+// A sign-in link is the default. People who use a password can switch, and
+// this browser remembers the choice.
+const MODE_KEY = 'sign-in-with-password';
+const remembered = () => { try { return localStorage.getItem(MODE_KEY) === '1'; } catch { return false; } };
+const usePassword = ref(passwords.value && remembered());
+const setUsePassword = (value) => {
+    usePassword.value = value;
+    form.clearErrors();
+    try { value ? localStorage.setItem(MODE_KEY, '1') : localStorage.removeItem(MODE_KEY); } catch { /* storage unavailable */ }
+};
+
+const description = computed(() => (usePassword.value
+    ? 'Sign in with your email address and password.'
+    : "We'll email you a link to sign in."));
 const send = () => form.transform((data) => ({ email: data.email })).post('/auth/magic-link');
 const signIn = () => form.transform((data) => data).post('/login/password', { onFinish: () => form.reset('password') });
 
@@ -50,10 +60,7 @@ async function signInWithPasskey() {
 <template>
     <Head title="Sign in" />
 
-    <AuthLayout
-        title="Sign in"
-        :description="methods"
-    >
+    <AuthLayout title="Sign in" :description="description">
         <UiCallout v-if="passwordReset" variant="success" heading="Password changed">
             Sign in with your new password.
         </UiCallout>
@@ -63,30 +70,7 @@ async function signInWithPasskey() {
             It works once and expires in 15 minutes.
         </UiCallout>
 
-        <GitHubButton v-if="page.props.githubSignIn" label="Sign in with GitHub" />
-
-        <div v-if="passkeySupported" class="flex flex-col gap-3">
-            <form ref="assertionForm" method="post" action="/passkeys/authenticate" class="hidden">
-                <input type="hidden" name="_token" :value="page.props.csrf">
-                <input ref="assertionInput" type="hidden" name="start_authentication_response">
-                <input type="hidden" name="remember" value="1">
-            </form>
-
-            <p v-if="passkeyError" class="text-sm text-red-600 dark:text-red-400">{{ passkeyError }}</p>
-
-            <UiButton class="w-full" :variant="passwords ? 'outline' : 'primary'" :disabled="passkeyBusy" @click="signInWithPasskey">
-                {{ passkeyBusy ? 'Waiting for your device…' : 'Sign in with a passkey' }}
-            </UiButton>
-
-        </div>
-
-        <div v-if="passkeySupported || page.props.githubSignIn" class="flex items-center gap-3 text-xs text-slate-400">
-            <div class="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
-            or
-            <div class="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
-        </div>
-
-        <form class="flex flex-col gap-4" @submit.prevent="passwords ? signIn() : send()">
+        <form class="flex flex-col gap-4" @submit.prevent="usePassword ? signIn() : send()">
             <UiInput
                 v-model="form.email"
                 label="Email address"
@@ -97,37 +81,61 @@ async function signInWithPasskey() {
                 autofocus
                 :error="form.errors.email"
             />
-            <template v-if="passwords">
-                <div class="flex flex-col gap-1.5">
-                    <UiInput
-                        v-model="form.password"
-                        label="Password"
-                        type="password"
-                        autocomplete="current-password"
-                        :error="form.errors.password"
-                    />
-                    <Link href="/forgot-password" class="self-end text-xs text-sky-600 hover:underline dark:text-sky-400">
-                        Forgot your password?
-                    </Link>
-                </div>
-                <UiButton type="submit" class="w-full" :disabled="form.processing">Sign in</UiButton>
-                <div class="flex items-center gap-3 text-xs text-slate-400">
-                    <div class="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
-                    or skip the password
-                    <div class="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
-                </div>
-                <UiButton variant="outline" class="w-full" :disabled="form.processing" @click="send">
-                    Email me a sign-in link
-                </UiButton>
-            </template>
-            <UiButton v-else type="submit" variant="outline" class="w-full" :disabled="form.processing">
-                Email me a sign-in link
+            <div v-if="usePassword" class="flex flex-col gap-1.5">
+                <UiInput
+                    v-model="form.password"
+                    label="Password"
+                    type="password"
+                    autocomplete="current-password"
+                    required
+                    :error="form.errors.password"
+                />
+                <Link href="/forgot-password" class="self-end text-xs text-sky-700 hover:underline dark:text-sky-400">
+                    Forgot your password?
+                </Link>
+            </div>
+            <UiButton type="submit" class="w-full" :disabled="form.processing">
+                {{ usePassword ? 'Sign in' : 'Email me a sign-in link' }}
             </UiButton>
+            <button
+                v-if="passwords"
+                type="button"
+                class="self-center text-sm text-sky-700 hover:underline dark:text-sky-400"
+                @click="setUsePassword(!usePassword)"
+            >
+                {{ usePassword ? 'Email me a sign-in link instead' : 'Use a password instead' }}
+            </button>
         </form>
+
+        <template v-if="passkeySupported || page.props.githubSignIn">
+            <div class="flex items-center gap-3 text-xs text-slate-400">
+                <div class="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+                or
+                <div class="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <GitHubButton v-if="page.props.githubSignIn" label="Sign in with GitHub" />
+
+                <template v-if="passkeySupported">
+                    <form ref="assertionForm" method="post" action="/passkeys/authenticate" class="hidden">
+                        <input type="hidden" name="_token" :value="page.props.csrf">
+                        <input ref="assertionInput" type="hidden" name="start_authentication_response">
+                        <input type="hidden" name="remember" value="1">
+                    </form>
+
+                    <p v-if="passkeyError" class="text-sm text-red-600 dark:text-red-400">{{ passkeyError }}</p>
+
+                    <UiButton class="w-full" variant="outline" :disabled="passkeyBusy" @click="signInWithPasskey">
+                        {{ passkeyBusy ? 'Waiting for your device…' : 'Sign in with a passkey' }}
+                    </UiButton>
+                </template>
+            </div>
+        </template>
 
         <p class="text-center text-sm text-slate-500 dark:text-slate-400">
             Don't have an account?
-            <Link href="/register" class="text-sky-600 hover:underline dark:text-sky-400">Sign up</Link>
+            <Link href="/register" class="text-sky-700 hover:underline dark:text-sky-400">Sign up</Link>
         </p>
     </AuthLayout>
 </template>

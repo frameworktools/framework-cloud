@@ -49,10 +49,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Same tag rules as the merge job, so the version label reads 1.2.0
       - id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.IMAGE }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=ref,event=branch
 
       # Pushed by digest only. The merge job adds the tags.
       - id: build
