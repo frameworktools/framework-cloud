@@ -8,11 +8,13 @@ computer is signed in as you.
 
 ## With Docker
 
+Download the Compose file and the settings template, and generate a key:
+
 ```sh
-git clone https://github.com/frameworktools/framework-cloud.git
-cd framework-cloud/docker/selfhost
-cp .env.example .env
-docker compose run --rm --no-deps app php artisan key:generate --show
+mkdir framework-cloud && cd framework-cloud
+curl -fsSLO https://raw.githubusercontent.com/frameworktools/framework-cloud/main/docker/selfhost/compose.yml
+curl -fsSL https://raw.githubusercontent.com/frameworktools/framework-cloud/main/docker/selfhost/.env.example -o .env
+docker run --rm ghcr.io/frameworktools/framework-cloud php artisan key:generate --show
 ```
 
 Put the key in `.env` as `APP_KEY`, then set these:
@@ -34,14 +36,16 @@ DB_PASSWORD=<a long random string>
 Start it and open http://localhost:8080:
 
 ```sh
-docker compose up -d --build
+docker compose up -d
 ```
 
-Point R at it by adding this line to your `.Renviron` file:
+Create a token on the **API tokens** page and connect R:
 
-```sh
-FW_CLOUD_URL=http://localhost:8080
+```r
+framework::cloud_login("<your token>", url = "http://localhost:8080")
 ```
+
+R allows plain `http` only for localhost addresses.
 
 ### Why HTTP_BIND matters
 

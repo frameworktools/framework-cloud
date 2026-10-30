@@ -1,17 +1,20 @@
-# Framework Cloud, self-hosted with Docker. From this directory:
+# Framework Cloud, self-hosted with Docker. In a folder with this file and
+# a filled-in .env:
 #
-#   cp .env.example .env        # then fill it in
-#   docker compose up -d --build
+#   docker compose up -d
 #
-# See README.md in this directory.
+# The image comes from ghcr.io/frameworktools/framework-cloud. To build it
+# from a clone of the repository instead, add compose.build.yml:
+#
+#   docker compose -f compose.yml -f compose.build.yml up -d --build
+#
+# Guide: https://framework.pub/docs/install-docker
 
 name: framework-cloud
 
 x-app: &app
-  build:
-    context: ../..
-    dockerfile: docker/selfhost/Dockerfile
-  image: framework-cloud:local
+  # FRAMEWORK_CLOUD_VERSION pins a release, such as 1.2.0
+  image: ghcr.io/frameworktools/framework-cloud:${FRAMEWORK_CLOUD_VERSION:-latest}
   env_file: .env
   environment:
     DB_CONNECTION: pgsql
@@ -53,6 +56,9 @@ services:
       FW_PREPARE_DATABASE: "false"
     volumes:
       - storage:/app/storage
+      # The base image declares these; mounting them avoids anonymous volumes
+      - caddy_data:/data
+      - caddy_config:/config
     healthcheck:
       test: ["CMD-SHELL", "pgrep -f 'artisan queue:work' > /dev/null"]
       interval: 30s

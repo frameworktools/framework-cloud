@@ -8,6 +8,7 @@ use App\Models\Project;
 use App\Support\BundleExtractor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -15,7 +16,12 @@ class DocumentsController extends Controller
 {
     /**
      * Publish a rendered document to this project. Republishing the same
-     * slug replaces the content in place (same URL, views preserved).
+     * slug adds a new version under the same links; earlier versions stay
+     * available until their owner deletes them.
+     *
+     * `slug` names the document within the project. `readable` turns on the
+     * readable URL, /@{handle}/{project}/{slug}. Leaving it out keeps the
+     * document's current setting (new documents start private).
      */
     public function store(Request $request): JsonResponse
     {
@@ -43,6 +49,7 @@ class DocumentsController extends Controller
             'entrypoint' => ['required_with:bundle', 'string', 'max:255', 'not_regex:/\.\.|^\//'],
             'slug' => ['sometimes', 'string', 'max:120'],
             'title' => ['sometimes', 'string', 'max:200'],
+            'readable' => ['sometimes', 'boolean'],
         ]);
 
         $disk = config('framework.documents_disk');
@@ -59,11 +66,8 @@ class DocumentsController extends Controller
             'slug' => $slug ?: 'document',
         ]);
 
-        // Store the NEW content first; only then remove the old, so a failed
-        // upload never strands an existing document
-        $oldPath = $document->exists ? $document->disk_path : null;
-        $oldWasBundle = $document->entrypoint !== null;
-
+        // Each publish stores its files under a new prefix, so earlier
+        // versions keep their own copies
         if ($isBundle) {
             $prefix = 'documents/'.$project->id.'/'.Str::uuid();
 
@@ -79,37 +83,46 @@ class DocumentsController extends Controller
                 abort(422, 'The bundle does not contain the declared entrypoint.');
             }
 
-            $document->fill([
-                'disk_path' => $prefix,
-                'entrypoint' => $validated['entrypoint'],
-                'size_bytes' => $stats['bytes'],
-            ]);
+            $stored = ['disk_path' => $prefix, 'entrypoint' => $validated['entrypoint'], 'size_bytes' => $stats['bytes']];
         } else {
             $path = $upload->storeAs('documents/'.$project->id, Str::uuid().'.html', $disk);
-            $document->fill([
-                'disk_path' => $path,
-                'entrypoint' => null,
-                'size_bytes' => $upload->getSize(),
+            $stored = ['disk_path' => $path, 'entrypoint' => null, 'size_bytes' => $upload->getSize()];
+        }
+
+        $stored['content_type'] = 'text/html; charset=utf-8';
+
+        $version = DB::transaction(function () use ($document, $stored, $validated, $slug) {
+            $document->fill($stored + [
+                'key' => $document->key ?? Document::newKey(),
+                'title' => $validated['title'] ?? $document->title ?? Str::headline($slug),
             ]);
-        }
 
-        // Replace stored bytes; the key (and therefore the URL) stays stable
-        if ($oldPath) {
-            $oldWasBundle
-                ? Storage::disk($disk)->deleteDirectory($oldPath)
-                : Storage::disk($disk)->delete($oldPath);
-        }
+            if (array_key_exists('readable', $validated)) {
+                $document->visibility = $validated['readable'] ? 'public' : 'unlisted';
+            }
 
-        $document->fill([
-            'key' => $document->key ?? Document::newKey(),
-            'title' => $validated['title'] ?? $document->title ?? Str::headline($slug),
-            'content_type' => 'text/html; charset=utf-8',
-        ])->save();
+            $document->save();
+
+            $number = (int) $document->versions()->max('number') + 1;
+
+            return $document->versions()->create($stored + ['number' => $number]);
+        });
+
+        $document->load('project.user');
+        $readableUrl = $document->readableUrl();
 
         return response()->json([
             'slug' => $document->slug,
-            'url' => $document->publicUrl(),
+            'version' => $version->number,
+            // The link to share: readable when available, else private
+            'url' => $readableUrl ?? $document->publicUrl(),
+            'private_url' => $document->publicUrl(),
+            'readable_url' => $readableUrl,
+            'version_url' => $readableUrl ? $document->readableUrl($version->number) : $version->url(),
             'raw_url' => $document->rawUrl(),
+            'notice' => $document->isReadable() && ! $readableUrl
+                ? 'Set a handle in Settings > Account to get a readable URL. The private link works now.'
+                : null,
         ], 201);
     }
 }

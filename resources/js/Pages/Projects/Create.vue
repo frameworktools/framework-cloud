@@ -9,6 +9,7 @@ import UiSwitch from '@/Components/UiSwitch.vue';
 import UiTextarea from '@/Components/UiTextarea.vue';
 import UiCallout from '@/Components/UiCallout.vue';
 import BlueprintContents from '@/Components/BlueprintContents.vue';
+import { useServerArg } from '@/cloud.js';
 import { group, groups } from '@/library.js';
 
 const props = defineProps({ blueprints: Array, selected: Number, github: Object });
@@ -53,6 +54,8 @@ const create = () => form
     .post('/projects');
 
 const githubError = computed(() => page.props.errors.github ?? form.errors['github.enabled']);
+
+const serverArg = useServerArg();
 </script>
 
 <template>
@@ -238,7 +241,7 @@ const githubError = computed(() => page.props.errors.github ?? form.errors['gith
                             </ol>
                             <ol v-else class="list-decimal space-y-1 pl-4 text-neutral-600 dark:text-neutral-400">
                                 <li>You get a project token. Copy it.</li>
-                                <li>In R, run <code class="font-mono text-xs">framework::setup("&lt;token&gt;")</code>.</li>
+                                <li>In R, run <code class="font-mono text-xs">framework::setup("&lt;token&gt;"{{ serverArg }})</code>.</li>
                             </ol>
                         </div>
                     </div>

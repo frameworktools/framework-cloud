@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Framework Cloud</title>
-    <meta name="description" content="Start, share, and publish research projects in R. Blueprints, GitHub integration, and notebook publishing for the Framework R package. Open source, hosted or self-hosted.">
+    <meta name="description" content="Framework brings project structure, AI guidance, data integrity checks, and safeguards for sensitive data into your R workflow. Framework Cloud helps you set up these practices and reuse them across projects.">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔬</text></svg>">
     <x-theme-script />
     @vite(['resources/css/app.css'])
@@ -13,129 +13,486 @@
 
     @php
         $features = [
-            [
-                'heading' => 'Get projects started quickly with blueprints',
-                'body' => 'A blueprint sets up a whole project at once: folders, R packages, Quarto templates, and settings. Pick one for an analysis, a course, or a talk, and start working in minutes.',
-            ],
-            [
-                'heading' => 'Borrow and remix other people\'s blueprints',
-                'body' => 'Copy a colleague\'s blueprint, change what you need, and share your version with your lab or the community.',
-            ],
-            [
-                'heading' => 'Create projects directly on GitHub',
-                'body' => 'With GitHub integration, a new project becomes a repository with its structure already committed. Clone it on any computer and run one command to finish setup.',
-            ],
-            [
-                'heading' => 'Publish notebooks with one command',
-                'body' => 'Run publish() in R to render a Quarto notebook and post it at a stable link you can send to collaborators.',
-            ],
-            [
-                'heading' => 'Bring your settings to every computer',
-                'body' => 'Your author details, ORCID, affiliations, and project defaults are saved once and used in every new notebook, report, and slide deck.',
-            ],
-            [
-                'heading' => 'Give AI assistants the right context',
-                'body' => 'Projects come with instructions and skills for Claude, Copilot, and other assistants, so they follow your project\'s conventions.',
-            ],
+            ['anchor' => 'structure', 'icon' => 'heroicon-o-square-3-stack-3d', 'heading' => 'Start with a clear project structure', 'body' => 'Give data, code, notebooks, and results a consistent place.'],
+            ['anchor' => 'ai', 'icon' => 'heroicon-o-sparkles', 'heading' => 'Guide AI assistants', 'body' => 'Give assistants project context and task-specific instructions that follow your research workflow.'],
+            ['anchor' => 'data', 'icon' => 'heroicon-o-shield-check', 'heading' => 'Help protect sensitive data', 'body' => 'Set up private folders, assistant restrictions, and Git checks that help reduce accidental data exposure.'],
+            ['anchor' => 'integrity', 'icon' => 'heroicon-o-finger-print', 'heading' => 'Check data integrity', 'body' => 'Record file fingerprints and check whether a cataloged dataset has changed since it was recorded.'],
+            ['anchor' => 'environments', 'icon' => 'heroicon-o-cube', 'heading' => 'Manage reproducible environments', 'body' => 'List project packages, install them automatically, and use optional version snapshots to restore them.'],
+            ['anchor' => 'settings', 'icon' => 'heroicon-o-cog-6-tooth', 'heading' => 'Keep your project defaults', 'body' => 'Carry your author details and preferred settings into each new project, on any computer.'],
+            ['anchor' => 'copy', 'icon' => 'heroicon-o-document-duplicate', 'heading' => 'Copy and share project setups', 'body' => 'Adapt a colleague\'s blueprint, or share a reusable setup with your lab or team.'],
+            ['anchor' => 'github', 'icon' => 'icon-github', 'heading' => 'Create projects on GitHub', 'body' => 'Create a GitHub repository with your project files committed and ready to clone.'],
+            ['anchor' => 'publishing', 'icon' => 'heroicon-o-paper-airplane', 'heading' => 'Publish and share notebooks', 'body' => 'Publish Quarto notebooks as web pages that collaborators can open from a link.'],
         ];
+
+        $screens = [
+            ['key' => 'blueprints', 'label' => 'Blueprints', 'caption' => 'Each blueprint lists the folders, skills, and files a new project receives.', 'alt' => 'The Blueprints page, with the Standard Project Structure blueprint expanded to show its folders, skills, and files.'],
+            ['key' => 'new-project', 'label' => 'New project', 'caption' => 'Choose a blueprint, name the project, and choose where to set it up.', 'alt' => 'The New project page, with a list of blueprints to choose from and a summary of the next steps.'],
+            ['key' => 'skills', 'label' => 'Skills', 'caption' => 'Skills are instruction files for AI assistants. Copy Framework\'s or import your own from GitHub.', 'alt' => 'The Skills page, listing Framework\'s skills for data, outputs, packages, sensitive data, and workflow.'],
+            ['key' => 'profile', 'label' => 'Author profile', 'caption' => 'Your author details go into the front matter of new notebooks, reports, and slides.', 'alt' => 'The Profile settings page, with name, email, ORCID iD, website, and an affiliation filled in.'],
+        ];
+
+        $c = 'text-neutral-500'; // code comments
+        $s = 'text-orange-400'; // code strings
+        $em = 'font-medium text-neutral-900 dark:text-neutral-100';
+        $section = 'scroll-mt-6 border-t border-neutral-200 py-12 sm:py-16 dark:border-neutral-800';
+        $h2 = 'text-2xl font-semibold tracking-tight text-balance sm:text-3xl';
+        $prose = 'mt-4 flex flex-col gap-3 text-neutral-600 dark:text-neutral-400';
+        $code = 'rounded bg-neutral-100 px-1 py-0.5 font-mono text-[0.9em] text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200';
     @endphp
 
-    <header class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-6">
-        <div class="font-semibold tracking-tight">Framework <span class="text-orange-500">Cloud</span></div>
-        <nav class="flex items-center gap-4 text-sm">
-            <x-theme-toggle class="max-sm:hidden" />
-            <a href="{{ route('guide') }}" class="text-neutral-600 hover:text-neutral-900 max-sm:hidden dark:text-neutral-400 dark:hover:text-neutral-100">Docs</a>
-            @auth
-                <a href="{{ route('dashboard') }}" class="rounded-md bg-orange-500 px-4 py-2 font-medium text-white hover:bg-orange-600">Dashboard</a>
-            @else
-                <a href="{{ route('login') }}" class="text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100">Sign in</a>
-                <a href="{{ route('register') }}" class="rounded-md bg-orange-500 px-4 py-2 font-medium text-white hover:bg-orange-600">Sign up</a>
-            @endauth
-        </nav>
-    </header>
+    <div class="dark relative overflow-hidden border-b border-white/10 bg-neutral-950 text-stone-50">
+    <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_80%_at_100%_0%,rgba(249,115,22,0.28),transparent_70%)]"></div>
+    <x-site-header overlay />
 
-    <main class="mx-auto max-w-5xl px-6">
-
-        <section class="grid items-center gap-12 py-16 sm:py-24 lg:grid-cols-[1.1fr_1fr]">
-            <div>
-                <h1 class="text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
-                    Start, share, and publish research projects in R.
+    {{-- Hero: always dark, with a warm glow toward the top right --}}
+    <section class="relative">
+        <div class="relative mx-auto max-w-6xl px-6 py-20 sm:py-28">
+            <div class="max-w-3xl">
+                <h1 class="text-4xl font-semibold tracking-tight text-balance sm:text-6xl">
+                    Make safe, effective data science easier in the AI age
                 </h1>
-                <p class="mt-6 text-lg text-neutral-600 dark:text-neutral-400">
-                    Framework Cloud works with the
-                    <a href="https://framework.table1.org" class="text-orange-600 hover:underline dark:text-orange-400">Framework</a>
-                    R package. Set up every project from a blueprint, create it on GitHub,
-                    and publish your notebooks to a link you can share.
+                <p class="mt-6 max-w-2xl text-lg leading-relaxed text-neutral-200">
+                    <a href="https://framework.table1.org" class="text-orange-400 underline-offset-2 hover:underline">Framework</a>
+                    is an R package that brings project structure, guidance for AI assistants,
+                    data integrity checks, and safeguards for sensitive data into your R workflow.
                 </p>
-                <div class="mt-8 flex flex-wrap items-center gap-3">
-                    <a href="{{ route('register') }}" class="rounded-md bg-orange-500 px-5 py-2.5 font-medium text-white hover:bg-orange-600">Create an account</a>
-                    <a href="#self-host" class="rounded-md border border-neutral-300 px-5 py-2.5 font-medium text-neutral-800 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-100 dark:hover:bg-neutral-900">Host it yourself</a>
+                <p class="mt-4 max-w-2xl leading-relaxed text-neutral-300">
+                    Framework Cloud helps you set up these practices once and reuse them across
+                    projects. Use our cloud or host it yourself.
+                </p>
+                <div class="mt-10 flex flex-wrap items-center gap-3">
+                    <a href="{{ route('register') }}" class="rounded-md bg-orange-500 px-5 py-2.5 font-medium text-white hover:bg-orange-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400">Create an account</a>
+                    <a href="{{ route('self-hosting') }}" class="rounded-md border border-neutral-500 px-5 py-2.5 font-medium text-stone-50 hover:border-neutral-300 hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400">Host it yourself</a>
                 </div>
             </div>
+        </div>
+    </section>
+    </div>
 
-            <div class="overflow-x-auto rounded-xl bg-neutral-900 p-6 font-mono text-sm leading-relaxed text-neutral-100 dark:ring-1 dark:ring-neutral-800">
-                <div class="text-neutral-500"># Connect R to your account</div>
-                <div>framework::cloud_login(<span class="text-orange-400">"&lt;your token&gt;"</span>)</div>
-                <div class="mt-4 text-neutral-500"># Set up a project you created on the site</div>
-                <div>framework::setup(<span class="text-orange-400">"&lt;project token&gt;"</span>)</div>
-                <div class="mt-4 text-neutral-500"># Share your results</div>
-                <div>framework::publish(<span class="text-orange-400">"analysis.qmd"</span>)</div>
-            </div>
-        </section>
+    <main class="mx-auto max-w-6xl px-6">
 
-        <section class="border-t border-neutral-200 py-16 sm:py-20 dark:border-neutral-800">
-            <h2 class="max-w-xl text-2xl font-semibold tracking-tight">Everything a research project needs on day one</h2>
-            <div class="mt-10 grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+        {{-- Features --}}
+        <section id="features" class="py-12 sm:py-16">
+            <h2 class="text-center {{ $h2 }}">Features</h2>
+            <div class="mx-auto mt-8 grid max-w-5xl gap-4 md:grid-cols-2 lg:grid-cols-3">
                 @foreach ($features as $feature)
-                    <div class="border-l-2 border-orange-500 pl-5">
-                        <h3 class="font-semibold">{{ $feature['heading'] }}</h3>
-                        <p class="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">{{ $feature['body'] }}</p>
+                    <div class="group relative flex flex-col rounded-xl border border-neutral-200 p-6 transition-colors focus-within:border-orange-400 hover:border-orange-400 hover:bg-orange-50/50 dark:border-neutral-800 dark:hover:border-orange-800 dark:hover:bg-orange-950/20">
+                        <span class="flex size-9 items-center justify-center rounded-lg bg-orange-100 text-orange-600 dark:bg-orange-950/60 dark:text-orange-400">
+                            <x-dynamic-component :component="$feature['icon']" class="size-5" />
+                        </span>
+                        <h3 class="mt-4 leading-snug font-semibold">
+                            <a href="#{{ $feature['anchor'] }}" class="after:absolute after:inset-0 after:rounded-xl focus:outline-none">{{ $feature['heading'] }}</a>
+                        </h3>
+                        <p class="mt-2 flex-1 text-sm leading-normal text-neutral-600 dark:text-neutral-400">{{ $feature['body'] }}</p>
+                        <span aria-hidden="true" class="mt-4 text-sm font-medium text-orange-600 dark:text-orange-400">
+                            How it works <span class="inline-block transition-transform group-hover:translate-x-0.5">&rarr;</span>
+                        </span>
                     </div>
                 @endforeach
             </div>
         </section>
 
-        <section id="self-host" class="border-t border-neutral-200 py-16 sm:py-20 dark:border-neutral-800">
-            <h2 class="max-w-xl text-2xl font-semibold tracking-tight">Open source. Use ours or run your own.</h2>
-            <p class="mt-3 max-w-2xl text-neutral-600 dark:text-neutral-400">
-                Framework Cloud and the Framework R package are open source. Sign up on
-                framework.pub, or run the same server for your lab, department, or institution.
-            </p>
+        {{-- Screens from the application --}}
+        <section id="screens" class="border-t border-neutral-200 py-12 sm:py-16 dark:border-neutral-800" data-carousel>
+            <h2 class="text-center {{ $h2 }}">In the app</h2>
+            <div class="mt-6 flex flex-wrap justify-center gap-2" role="tablist" aria-label="Screens">
+                @foreach ($screens as $i => $screen)
+                    <button type="button" role="tab" data-slide-tab="{{ $i }}" aria-selected="{{ $i === 0 ? 'true' : 'false' }}"
+                        class="rounded-full border px-4 py-1.5 text-sm font-medium transition-colors aria-selected:border-orange-500 aria-selected:bg-orange-500 aria-selected:text-white border-neutral-300 text-neutral-700 hover:border-neutral-400 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-500">
+                        {{ $screen['label'] }}
+                    </button>
+                @endforeach
+            </div>
 
-            <div class="mt-10 grid gap-6 md:grid-cols-2">
-                <div class="flex flex-col rounded-xl border border-neutral-200 p-6 dark:border-neutral-800">
-                    <h3 class="font-semibold">Use framework.pub</h3>
-                    <p class="mt-2 flex-1 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
-                        Create a free account and start a project right away. We run the
-                        server and keep it updated. Hosting your published notebooks with us
-                        is an optional, low-cost add-on.
-                    </p>
-                    <a href="{{ route('register') }}" class="mt-6 self-start rounded-md bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600">Create a free account</a>
+            <div class="relative mt-8">
+                <div class="relative overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50 shadow-lg shadow-neutral-900/5 dark:border-neutral-800 dark:bg-neutral-900 dark:shadow-black/40">
+                    @foreach ($screens as $i => $screen)
+                        <figure data-slide="{{ $i }}" @class(['transition-opacity duration-300', 'hidden' => $i !== 0]) role="tabpanel">
+                            <img src="/images/landing/{{ $screen['key'] }}-light.png" width="2560" height="1660" alt="{{ $screen['alt'] }}" class="block w-full dark:hidden" @if ($i) loading="lazy" @endif>
+                            <img src="/images/landing/{{ $screen['key'] }}-dark.png" width="2560" height="1660" alt="{{ $screen['alt'] }}" class="hidden w-full dark:block" @if ($i) loading="lazy" @endif>
+                        </figure>
+                    @endforeach
+                    <div class="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white to-transparent dark:from-neutral-950"></div>
                 </div>
-                <div class="flex flex-col rounded-xl border border-neutral-200 p-6 dark:border-neutral-800">
-                    <h3 class="font-semibold">Host it yourself</h3>
-                    <p class="mt-2 flex-1 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
-                        Run Framework Cloud on your own server with Docker. Every feature is
-                        included, and published notebooks go to your server or your own bucket.
-                    </p>
-                    <a href="{{ route('guide', 'self-hosting') }}" class="mt-6 self-start rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-800 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-100 dark:hover:bg-neutral-900">Self-hosting guide</a>
+
+                <button type="button" data-slide-step="-1" aria-label="Previous screen" class="absolute top-1/2 -left-4 hidden size-10 -translate-y-1/2 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-700 shadow-sm hover:text-orange-600 sm:flex dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300">
+                    <x-heroicon-o-chevron-left class="size-5" />
+                </button>
+                <button type="button" data-slide-step="1" aria-label="Next screen" class="absolute top-1/2 -right-4 hidden size-10 -translate-y-1/2 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-700 shadow-sm hover:text-orange-600 sm:flex dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300">
+                    <x-heroicon-o-chevron-right class="size-5" />
+                </button>
+            </div>
+
+            @foreach ($screens as $i => $screen)
+                <p data-slide-caption="{{ $i }}" @class(['mt-4 text-center text-sm text-neutral-500 dark:text-neutral-400', 'hidden' => $i !== 0])>{{ $screen['caption'] }}</p>
+            @endforeach
+
+            <script>
+                (() => {
+                    const root = document.currentScript.closest('[data-carousel]');
+                    const tabs = root.querySelectorAll('[data-slide-tab]');
+                    const count = tabs.length;
+                    let current = 0;
+                    const show = (index) => {
+                        current = (index + count) % count;
+                        root.querySelectorAll('[data-slide]').forEach((el) => el.classList.toggle('hidden', +el.dataset.slide !== current));
+                        root.querySelectorAll('[data-slide-caption]').forEach((el) => el.classList.toggle('hidden', +el.dataset.slideCaption !== current));
+                        tabs.forEach((tab) => tab.setAttribute('aria-selected', +tab.dataset.slideTab === current ? 'true' : 'false'));
+                    };
+                    tabs.forEach((tab) => tab.addEventListener('click', () => show(+tab.dataset.slideTab)));
+                    root.querySelectorAll('[data-slide-step]').forEach((button) => button.addEventListener('click', () => show(current + +button.dataset.slideStep)));
+                    root.querySelector('[role=tablist]').addEventListener('keydown', (event) => {
+                        if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+                            show(current + (event.key === 'ArrowRight' ? 1 : -1));
+                            tabs[current].focus();
+                        }
+                    });
+                })();
+            </script>
+        </section>
+
+        {{-- Project structure --}}
+        <section id="structure" class="{{ $section }}">
+            <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
+                <div>
+                    <h2 class="{{ $h2 }}">Start with a clear project structure</h2>
+                    <div class="{{ $prose }}">
+                        <p>
+                            A blueprint is a reusable project setup. It defines a project's
+                            folders, R packages, Quarto settings, and instructions for AI
+                            assistants.
+                        </p>
+                        <p>
+                            Framework includes blueprints for analysis projects, projects with
+                            sensitive data, presentations, and courses. Raw inputs, intermediate
+                            files, notebooks, and results each have a place.
+                        </p>
+                        <p>
+                            Choose a blueprint in Framework Cloud to get a project token.
+                            <code class="{{ $code }}">setup()</code> builds the project on your
+                            computer.
+                        </p>
+                    </div>
                 </div>
+<x-code-panel title="R console">
+framework::setup(<span class="{{ $s }}">"&lt;project token&gt;"</span>)
+
+<span class="{{ $c }}"># Standard Project Structure creates:</span>
+my-study/
+├── AGENTS.md
+├── settings.yml
+├── docs/
+├── functions/
+├── inputs/
+│   ├── raw/
+│   ├── intermediate/
+│   └── final/
+├── notebooks/
+├── outputs/
+│   ├── cache/
+│   ├── figures/
+│   ├── models/
+│   ├── reports/
+│   └── tables/
+├── scratch/
+└── scripts/</x-code-panel>
+            </div>
+        </section>
+
+        {{-- AI guidance --}}
+        <section id="ai" class="{{ $section }}">
+            <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
+                <div class="lg:order-2">
+                    <h2 class="{{ $h2 }}">Guide AI assistants</h2>
+                    <div class="{{ $prose }}">
+                        <p>
+                            Framework adds written guidance to each project for AI coding
+                            assistants such as Claude Code, GitHub Copilot, and Codex.
+                        </p>
+                        <p>
+                            <span class="{{ $em }}">A context file</span>, AGENTS.md, describes the
+                            project, how it is organized, and the rules for working in it.
+                        </p>
+                        <p>
+                            <span class="{{ $em }}">Skills</span> are instructions for particular
+                            tasks, such as reading and saving data, writing notebooks, and
+                            publishing results. Each skill names the Framework functions to use and
+                            explains the project's working conventions.
+                        </p>
+                        <p>
+                            Assistants decide when to read a skill. You can edit Framework's
+                            skills or write your own in Framework Cloud and add them to your
+                            blueprints.
+                        </p>
+                    </div>
+                </div>
+                <div class="flex flex-col gap-4 lg:order-1">
+<x-code-panel title="my-study">
+my-study/
+├── AGENTS.md
+└── .claude/skills/
+    ├── framework-data/
+    ├── framework-outputs/
+    ├── framework-packages/
+    └── framework-workflow/</x-code-panel>
+<x-code-panel title=".claude/skills/framework-data/SKILL.md" wrap>
+---
+name: framework-data
+description: <span class="{{ $s }}">Use whenever reading or writing data files in this Framework project - data_read() and data_save() are mandatory; base R and readr I/O functions are forbidden.</span>
+---</x-code-panel>
+                </div>
+            </div>
+        </section>
+
+        {{-- Sensitive data --}}
+        <section id="data" class="{{ $section }}">
+            <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
+                <div>
+                    <h2 class="{{ $h2 }}">Help protect sensitive data</h2>
+                    <div class="{{ $prose }}">
+                        <p>
+                            The blueprint for sensitive data separates private and public folders.
+                            Its <code class="{{ $code }}">.gitignore</code> keeps the private
+                            folders out of Git.
+                        </p>
+                        <p>
+                            <span class="{{ $em }}">A sensitive-data skill</span> instructs
+                            assistants to keep identifiable data in private folders and not to
+                            commit or publish from them.
+                        </p>
+                        <p>
+                            <span class="{{ $em }}">For Claude Code</span>, the project also adds
+                            permission rules and sandbox settings that block reads of
+                            <code class="{{ $code }}">.env</code> and the private folders. Other
+                            assistants receive the written rules only.
+                        </p>
+                        <p>
+                            <span class="{{ $em }}">An optional pre-commit check</span> stops a
+                            commit when private data is tracked by Git, when private folders are
+                            missing from <code class="{{ $code }}">.gitignore</code>, or when data
+                            files appear in the repository's history. It checks commits, not other
+                            ways data can leave a computer.
+                        </p>
+                    </div>
+                </div>
+                <div class="flex flex-col gap-4">
+<x-code-panel title=".gitignore">
+<span class="{{ $c }}"># Private directories</span>
+/inputs/private/
+/reference/private/
+/outputs/private/</x-code-panel>
+<x-code-panel title="R console">
+<span class="{{ $c }}"># Run the data check before each commit</span>
+framework::git_hooks_enable(<span class="{{ $s }}">"data_security"</span>)</x-code-panel>
+                </div>
+            </div>
+        </section>
+
+        {{-- Data integrity --}}
+        <section id="integrity" class="{{ $section }}">
+            <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
+                <div class="lg:order-2">
+                    <h2 class="{{ $h2 }}">Check data integrity</h2>
+                    <div class="{{ $prose }}">
+                        <p>
+                            Framework helps you check that you are using the dataset you expect.
+                        </p>
+                        <p>
+                            Register a dataset in the project's data catalog. Saving it records a
+                            fingerprint of the file. Reading it by its catalog name compares the
+                            file with that record.
+                        </p>
+                        <p>
+                            A changed file produces a warning. For a dataset marked as locked, the
+                            read stops with an error.
+                        </p>
+                        <p>
+                            <code class="{{ $code }}">data_verify()</code> compares a file with its
+                            local record and, for projects connected to Framework Cloud, with the
+                            project's ledger there. The ledger receives file fingerprints and
+                            associated metadata, such as the dataset name, file size, and time,
+                            when you push them or turn on live updates. Dataset contents are not
+                            uploaded.
+                        </p>
+                    </div>
+                </div>
+<x-code-panel title="R console" class="lg:order-1">
+<span class="{{ $c }}"># Register a file in the data catalog</span>
+framework::data_add(<span class="{{ $s }}">"inputs/raw/survey.csv"</span>,
+                    name = <span class="{{ $s }}">"inputs.raw.survey"</span>)
+
+<span class="{{ $c }}"># Reads by catalog name compare the fingerprint</span>
+survey &lt;- framework::data_read(<span class="{{ $s }}">"inputs.raw.survey"</span>)
+
+<span class="{{ $c }}"># Compare with the local record and the cloud ledger</span>
+framework::data_verify(<span class="{{ $s }}">"inputs.raw.survey"</span>)
+
+<span class="{{ $c }}"># Send recorded fingerprints to Framework Cloud</span>
+framework::ledger_push()</x-code-panel>
+            </div>
+        </section>
+
+        {{-- Environments --}}
+        <section id="environments" class="{{ $section }}">
+            <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
+                <div>
+                    <h2 class="{{ $h2 }}">Manage reproducible environments</h2>
+                    <div class="{{ $prose }}">
+                        <p>
+                            A project lists its R packages in
+                            <code class="{{ $code }}">settings.yml</code>. When a notebook or script
+                            starts with <code class="{{ $code }}">scaffold()</code>, Framework
+                            installs missing packages and attaches the ones marked to load.
+                        </p>
+                        <p>
+                            To record exact versions, turn on Framework's optional renv
+                            integration. A snapshot records the versions in use, and a restore
+                            reinstalls them on another computer.
+                        </p>
+                        <p>
+                            Package versions are one part of reproducing an analysis. R itself,
+                            system libraries, and the data still need their own records.
+                        </p>
+                    </div>
+                </div>
+                <div class="flex flex-col gap-4">
+<x-code-panel title="settings.yml">
+packages:
+  - name: dplyr
+    auto_attach: <span class="{{ $s }}">true</span>
+  - name: ggplot2
+    auto_attach: <span class="{{ $s }}">true</span></x-code-panel>
+<x-code-panel title="R console">
+framework::renv_enable()
+framework::packages_snapshot()  <span class="{{ $c }}"># record versions</span>
+framework::packages_restore()   <span class="{{ $c }}"># reinstall them</span></x-code-panel>
+                </div>
+            </div>
+        </section>
+
+        {{-- Settings --}}
+        <section id="settings" class="{{ $section }}">
+            <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
+                <div class="lg:order-2">
+                    <h2 class="{{ $h2 }}">Keep your project defaults</h2>
+                    <div class="{{ $prose }}">
+                        <p>
+                            Your name, email, ORCID iD, and affiliations go into the author block
+                            of each new notebook, report, and slide deck.
+                        </p>
+                        <p>
+                            Your defaults set the notebook format, IDE, Git, and renv options for
+                            new projects. R reads both from your Framework Cloud account on each
+                            computer you connect.
+                        </p>
+                    </div>
+                </div>
+<x-code-panel title="notebooks/analysis.qmd" class="lg:order-1">
+---
+title: <span class="{{ $s }}">"Analysis"</span>
+author:
+  - name: <span class="{{ $s }}">"Ada Lovelace"</span>
+    email: ada@example.edu
+    orcid: 0000-0002-1825-0097
+    affiliations:
+      - name: <span class="{{ $s }}">"Example University"</span>
+        department: <span class="{{ $s }}">"Biostatistics"</span>
+---</x-code-panel>
+            </div>
+        </section>
+
+        {{-- Copy and share --}}
+        <section id="copy" class="{{ $section }}">
+            <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
+                <div>
+                    <h2 class="{{ $h2 }}">Copy and share project setups</h2>
+                    <div class="{{ $prose }}">
+                        <p>
+                            Copy any blueprint you can see, then change its folders, packages,
+                            templates, or skills.
+                        </p>
+                        <p>
+                            Each save creates a new version. Existing projects keep the version
+                            they were made with.
+                        </p>
+                        <p>Skills can also be imported from a GitHub repository.</p>
+                    </div>
+                </div>
+                <dl class="divide-y divide-neutral-200 rounded-xl border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
+                    @foreach ([
+                        ['Private', 'Only you can see and use it.'],
+                        ['Unlisted', 'Anyone with the link can use and copy it.'],
+                        ['Public', 'Everyone on the server can find, use, and copy it.'],
+                    ] as [$level, $meaning])
+                        <div class="flex items-center gap-4 px-5 py-4">
+                            <dt class="w-20 shrink-0"><span class="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">{{ $level }}</span></dt>
+                            <dd class="text-sm text-neutral-600 dark:text-neutral-400">{{ $meaning }}</dd>
+                        </div>
+                    @endforeach
+                </dl>
+            </div>
+        </section>
+
+        {{-- GitHub --}}
+        <section id="github" class="{{ $section }}">
+            <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
+                <div class="lg:order-2">
+                    <h2 class="{{ $h2 }}">Create projects on GitHub</h2>
+                    <div class="{{ $prose }}">
+                        <p>
+                            Connect GitHub and install the Framework app on your account or
+                            organization. The app can reach only the repositories it creates or
+                            that you give it.
+                        </p>
+                        <p>
+                            Repositories are private by default. Projects from the sensitive-data
+                            blueprint must be private.
+                        </p>
+                    </div>
+                </div>
+                <ol class="flex flex-col gap-5 rounded-xl border border-neutral-200 p-6 lg:order-1 dark:border-neutral-800">
+                    @foreach ([
+                        'Create a project and choose On GitHub.',
+                        'Framework Cloud creates the repository.',
+                        'A one-time GitHub Action builds the project files and commits them.',
+                        'Clone the repository and start working.',
+                    ] as $i => $step)
+                        <li class="flex items-start gap-3">
+                            <span class="flex size-7 shrink-0 items-center justify-center rounded-full bg-orange-100 text-sm font-semibold text-orange-700 dark:bg-orange-950/60 dark:text-orange-300">{{ $i + 1 }}</span>
+                            <span class="pt-0.5 text-neutral-700 dark:text-neutral-300">{{ $step }}</span>
+                        </li>
+                    @endforeach
+                </ol>
+            </div>
+        </section>
+
+        {{-- Publishing --}}
+        <section id="publishing" class="{{ $section }}">
+            <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
+                <div>
+                    <h2 class="{{ $h2 }}">Publish and share notebooks</h2>
+                    <div class="{{ $prose }}">
+                        <p>
+                            <code class="{{ $code }}">publish()</code> renders a Quarto notebook and
+                            uploads it. Publishing the same file again updates the page at the
+                            same link.
+                        </p>
+                        <p>
+                            The Published page in Framework Cloud lists your notebooks. If a
+                            project has its own S3 bucket, <code class="{{ $code }}">publish()</code>
+                            uploads there instead.
+                        </p>
+                    </div>
+                </div>
+<x-code-panel title="R console" wrap>
+framework::publish(<span class="{{ $s }}">"notebooks/analysis.qmd"</span>)
+<span class="{{ $c }}">#> Published: https://framework.pub/d/q7w2k9m4x8c1v5b3n6z0p2rt</span></x-code-panel>
             </div>
         </section>
 
     </main>
 
-    <footer class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 border-t border-neutral-200 px-6 py-8 text-sm text-neutral-500 dark:border-neutral-800 dark:text-neutral-400">
-        <div>Framework Cloud</div>
-        <nav class="flex flex-wrap items-center gap-5">
-            <a href="{{ route('terms') }}" class="hover:text-neutral-900 dark:hover:text-neutral-100">Terms</a>
-            <a href="{{ route('privacy') }}" class="hover:text-neutral-900 dark:hover:text-neutral-100">Privacy</a>
-            <a href="{{ route('guide') }}" class="hover:text-neutral-900 dark:hover:text-neutral-100">Documentation</a>
-            <a href="https://framework.table1.org" class="hover:text-neutral-900 dark:hover:text-neutral-100">R package</a>
-            <a href="https://github.com/frameworktools/framework-cloud" class="hover:text-neutral-900 dark:hover:text-neutral-100">Source code</a>
-            <x-theme-toggle class="sm:hidden" />
-        </nav>
-    </footer>
+    <x-site-footer />
 
 </body>
 </html>

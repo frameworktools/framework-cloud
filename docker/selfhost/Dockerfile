@@ -1,7 +1,9 @@
 # syntax=docker/dockerfile:1
 #
 # Framework Cloud, self-hosted. One image runs both the web server and the
-# queue worker (see compose.yml). Build from the repository root:
+# queue worker (see compose.yml). Releases are published as
+# ghcr.io/frameworktools/framework-cloud by .github/workflows/docker-image.yml.
+# To build it yourself, from the repository root:
 #
 #   docker build -f docker/selfhost/Dockerfile -t framework-cloud .
 #
@@ -26,6 +28,13 @@ RUN composer dump-autoload --optimize --no-dev --no-scripts
 
 # 3. Runtime: FrankenPHP (Caddy + PHP), which also handles HTTPS certificates
 FROM dunglas/frankenphp:1.13-php8.4-alpine
+
+ARG VERSION=dev
+LABEL org.opencontainers.image.title="Framework Cloud" \
+      org.opencontainers.image.description="Framework Cloud, the web application for the Framework R package" \
+      org.opencontainers.image.source="https://github.com/frameworktools/framework-cloud" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.version="${VERSION}"
 
 RUN install-php-extensions pdo_pgsql intl zip bcmath pcntl exif opcache \
     && cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"

@@ -3,8 +3,10 @@ import { computed } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import UiCallout from '@/Components/UiCallout.vue';
+import { useServerArg } from '@/cloud.js';
 
 const page = usePage();
+const serverArg = useServerArg();
 const props = defineProps({ counts: Object, steps: Array, setup: Array });
 
 const copy = {
@@ -78,7 +80,7 @@ const setupCopy = {
 
             <div class="rounded-lg bg-neutral-900 p-5 font-mono text-sm text-neutral-100 dark:ring-1 dark:ring-neutral-700">
                 <div class="text-neutral-500"># connect a machine (token from API tokens)</div>
-                <div>framework::cloud_login(<span class="text-orange-400">"fw_..."</span>)</div>
+                <div>framework::cloud_login(<span class="text-orange-400">"fw_..."</span><span v-if="serverArg">, url = <span class="text-orange-400">"{{ page.props.appUrl }}"</span></span>)</div>
                 <div class="mt-2 text-neutral-500"># then</div>
                 <div>framework::new(<span class="text-orange-400">"my-study"</span>)</div>
             </div>

@@ -19,11 +19,18 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // Expose tunnels (Polyscope's remote preview) hand requests to the
-        // local web server from loopback, carrying the public host and https
-        // scheme in X-Forwarded-* headers. Only loopback is trusted, so
-        // production clients cannot spoof them.
-        $middleware->trustProxies(at: ['127.0.0.1', '::1']);
+        // Proxies in front of the app pass the public host and https scheme
+        // in X-Forwarded-* headers. Loopback is trusted by default (Expose
+        // tunnels, a local web server). TRUSTED_PROXIES adds a reverse proxy
+        // in front of a self-hosted server: "*" or a comma-separated list of
+        // addresses and CIDR ranges. Read from the process environment, which
+        // Docker sets.
+        $proxies = trim((string) env('TRUSTED_PROXIES', ''));
+        $middleware->trustProxies(at: match (true) {
+            $proxies === '*' => '*',
+            $proxies !== '' => array_values(array_filter(array_map('trim', explode(',', $proxies)))),
+            default => ['127.0.0.1', '::1'],
+        });
 
         // Library forms carry file text (SKILL.md, YAML, templates) whose
         // whitespace is content, so they skip input trimming.

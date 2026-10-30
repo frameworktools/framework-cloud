@@ -36,6 +36,8 @@ Route::get('/', function () {
     return view('welcome');
 })->name('home');
 
+Route::view('self-hosting', 'self-hosting')->name('self-hosting');
+
 // Framework Cloud guide, rendered from docs/guide
 Route::get('docs/{page?}', [GuideController::class, 'show'])
     ->where('page', '[a-z0-9-]+')
@@ -55,11 +57,26 @@ Route::get('/@{handle}', function (string $handle) {
 Route::view('terms', 'legal.terms')->name('terms');
 Route::view('privacy', 'legal.privacy')->name('privacy');
 
-// Published documents (public capability URLs)
+// Published documents. Private links use the key; versions are kept until
+// their owner deletes them.
 Route::get('d/{key}', [DocumentViewController::class, 'show'])->name('documents.show');
 Route::get('d/{key}/raw', [DocumentViewController::class, 'raw'])->name('documents.raw');
+Route::get('d/{key}/versions/{number}', [DocumentViewController::class, 'showVersion'])
+    ->whereNumber('number')->name('documents.version');
+Route::get('d/{key}/versions/{number}/raw', [DocumentViewController::class, 'versionRaw'])
+    ->whereNumber('number')->name('documents.version.raw');
+Route::get('d/{key}/versions/{number}/{path}', [DocumentViewController::class, 'versionAsset'])
+    ->whereNumber('number')->where('path', '.*')->name('documents.version.asset');
 Route::get('d/{key}/{path}', [DocumentViewController::class, 'asset'])
     ->where('path', '.*')->name('documents.asset');
+
+// Readable links for public documents: /@{handle}/{project}/{slug}
+Route::get('/@{handle}/{project}/{slug}', [DocumentViewController::class, 'readable'])
+    ->where(['handle' => '[a-z0-9][a-z0-9-]*', 'project' => '[A-Za-z0-9_-]+', 'slug' => '[A-Za-z0-9_-]+'])
+    ->name('documents.readable');
+Route::get('/@{handle}/{project}/{slug}/versions/{number}', [DocumentViewController::class, 'readableVersion'])
+    ->where(['handle' => '[a-z0-9][a-z0-9-]*', 'project' => '[A-Za-z0-9_-]+', 'slug' => '[A-Za-z0-9_-]+'])
+    ->whereNumber('number')->name('documents.readable.version');
 
 // The app (Inertia + Vue)
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -93,6 +110,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('projects', [ProjectsController::class, 'index'])->name('projects');
     Route::get('published', [DocumentsController::class, 'index'])->name('published');
     Route::delete('published/{document}', [DocumentsController::class, 'destroy']);
+    Route::patch('published/{document}', [DocumentsController::class, 'update']);
+    Route::delete('published/{document}/versions/{number}', [DocumentsController::class, 'destroyVersion'])->whereNumber('number');
     Route::get('projects/create', [ProjectsController::class, 'create'])->name('projects.create');
     Route::post('projects', [ProjectsController::class, 'store']);
     Route::post('projects/{project}/token', [ProjectsController::class, 'issueToken']);

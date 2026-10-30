@@ -5,10 +5,12 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiInput from '@/Components/UiInput.vue';
 import UiCallout from '@/Components/UiCallout.vue';
+import { useServerArg } from '@/cloud.js';
 
 defineProps({ tokens: Array });
 
 const page = usePage();
+const serverArg = useServerArg();
 const plainToken = computed(() =>
     page.props.flash.status === 'user-token' ? page.props.flash.token : null,
 );
@@ -45,7 +47,7 @@ const revoke = (id) => {
                 <code class="break-all font-mono text-sm">{{ plainToken }}</code>
                 <div>
                     <div class="text-neutral-500">Connect this machine — in R:</div>
-                    <code class="break-all font-mono text-xs">framework::cloud_login("{{ plainToken }}")</code>
+                    <code class="break-all font-mono text-xs">framework::cloud_login("{{ plainToken }}"{{ serverArg }})</code>
                 </div>
                 <p class="text-xs text-neutral-500">
                     Stored in your system keychain (macOS Keychain, Windows Credential Manager, Linux Secret Service).

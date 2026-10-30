@@ -52,7 +52,7 @@ class PublishTest extends TestCase
         $this->get('/d/'.$document->key)
             ->assertOk()
             ->assertSee($document->title)
-            ->assertSee('published with framework');
+            ->assertSee('published with Framework Cloud');
 
         $this->get('/d/'.$document->key.'/raw')
             ->assertOk()
@@ -61,7 +61,7 @@ class PublishTest extends TestCase
         $this->assertSame(1, $document->fresh()->views);
     }
 
-    public function test_republishing_keeps_the_url_and_replaces_content(): void
+    public function test_republishing_keeps_the_url_and_adds_a_version(): void
     {
         Storage::fake('local');
         $project = Project::factory()->create();
@@ -80,7 +80,13 @@ class PublishTest extends TestCase
         $fresh = Document::first();
         $this->assertSame($firstKey, $fresh->key);
         $this->assertNotSame($firstPath, $fresh->disk_path);
-        Storage::disk('local')->assertMissing($firstPath);
+
+        // The first version keeps its files and its own link
+        Storage::disk('local')->assertExists($firstPath);
+        $this->assertSame([2, 1], $fresh->versions()->pluck('number')->all());
+        $this->get('/d/'.$firstKey.'/versions/1')->assertOk()->assertSee('Version 1 of 2');
+        $this->get('/d/'.$firstKey.'/versions/1/raw')->assertOk();
+        $this->get('/d/'.$firstKey.'/versions/3')->assertNotFound();
     }
 
     public function test_user_tokens_cannot_publish(): void

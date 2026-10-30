@@ -1,7 +1,7 @@
 # Configuration reference
 
 Framework Cloud reads its settings from environment variables, usually in the
-`.env` file. With Docker, that is `docker/selfhost/.env`. After changing it,
+`.env` file. With Docker, it sits next to `compose.yml`. After changing it,
 restart with `docker compose up -d`. Without Docker, run
 `php artisan config:cache`.
 
@@ -28,14 +28,16 @@ restart with `docker compose up -d`. Without Docker, run
 
 ## Docker
 
-These apply only to `docker/selfhost`.
+These apply only to the Docker setup.
 
 | Variable | Default | What it does |
 |---|---|---|
+| `FRAMEWORK_CLOUD_VERSION` | `latest` | The release to run, such as `1.2.0`. |
 | `SERVER_NAME` | none | The domain to get an HTTPS certificate for. `:80` serves plain HTTP. |
 | `HTTP_PORT` | `80` | The machine's port for HTTP. |
 | `HTTPS_PORT` | `443` | The machine's port for HTTPS. |
 | `HTTP_BIND` | `0.0.0.0` | The address the ports listen on. `127.0.0.1` makes the server reachable only from this machine. |
+| `TRUSTED_PROXIES` | loopback only | Reverse proxies whose forwarded host and scheme the app trusts: `*`, or a comma-separated list of addresses and CIDR ranges. |
 | `DB_PASSWORD` | none | The database password. Required. |
 | `FW_PREPARE_DATABASE` | `true` | Runs migrations and seeding on start. |
 
@@ -58,8 +60,15 @@ set wins. See [Server setup](server-setup.md#where-credentials-are-kept).
 
 ## R
 
-R finds the server through one variable, set in each user's `.Renviron`:
+R finds the server in this order:
 
-| Variable | Default | What it does |
-|---|---|---|
-| `FW_CLOUD_URL` | `https://framework.pub` | The Framework Cloud server that `cloud_login()`, `setup()`, and `publish()` use. |
+1. The `url` argument, as in `cloud_login("<token>", url = "https://framework.example.edu")`.
+2. For commands that work on a project, such as `publish()`: the
+   `FW_CLOUD_URL` line in the project's `.env` file. `setup()` and `new()`
+   write it, so a project always goes back to the server that created it.
+3. The `FW_CLOUD_URL` environment variable.
+4. For your own commands, such as `cloud_status()` and `new()`: the server
+   you last connected with `cloud_login()`.
+5. `https://framework.pub`.
+
+Each server has its own token. `cloud_logout(url = ...)` removes one.

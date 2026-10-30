@@ -111,8 +111,13 @@ async function signInWithPasskey() {
                     </Link>
                 </div>
                 <UiButton type="submit" class="w-full" :disabled="form.processing">Sign in</UiButton>
+                <div class="flex items-center gap-3 text-xs text-neutral-400">
+                    <div class="h-px flex-1 bg-neutral-200 dark:bg-neutral-700" />
+                    or skip the password
+                    <div class="h-px flex-1 bg-neutral-200 dark:bg-neutral-700" />
+                </div>
                 <UiButton variant="outline" class="w-full" :disabled="form.processing" @click="send">
-                    Email me a sign-in link instead
+                    Email me a sign-in link
                 </UiButton>
             </template>
             <UiButton v-else type="submit" variant="outline" class="w-full" :disabled="form.processing">

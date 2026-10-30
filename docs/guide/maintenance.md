@@ -2,14 +2,19 @@
 
 ## Upgrade
 
-With Docker:
+With Docker, from the folder with `compose.yml`:
 
 ```sh
-cd framework-cloud
-git pull
-cd docker/selfhost
-docker compose up -d --build
+docker compose pull
+docker compose up -d
 ```
+
+This moves to the newest release, unless `FRAMEWORK_CLOUD_VERSION` in `.env`
+names a version. To move to a pinned version, change that line first. Read
+the release notes on
+[GitHub](https://github.com/frameworktools/framework-cloud/releases) before
+upgrading. If you build the image yourself, run `git pull` and then
+`docker compose -f compose.yml -f compose.build.yml up -d --build`.
 
 Each start runs new database migrations and updates the built-in blueprints.
 A built-in blueprint that hasn't changed gets no new version.
@@ -34,7 +39,7 @@ Back up three things:
 - published notebooks, if they are stored on the server's disk
 - `APP_KEY`, which decrypts the credentials saved on the Server setup page
 
-With Docker, from `docker/selfhost`:
+With Docker, from the folder with `compose.yml`:
 
 ```sh
 docker compose exec postgres pg_dump -U framework_cloud framework_cloud > backup.sql

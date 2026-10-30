@@ -56,7 +56,7 @@ const fork = (id) => router.post(`/skills/${id}/fork`);
                             <span class="font-mono text-xs text-neutral-500"> · {{ skill.handle }} · v{{ skill.version }}</span>
                             <p class="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{{ skill.description }}</p>
                         </div>
-                        <UiButton v-if="!skill.editable" size="sm" variant="outline" @click="fork(skill.id)">Copy and edit</UiButton>
+                        <UiButton v-if="!skill.editable" size="sm" variant="outline" class="shrink-0 whitespace-nowrap" @click="fork(skill.id)">Copy and edit</UiButton>
                     </div>
                 </div>
             </section>

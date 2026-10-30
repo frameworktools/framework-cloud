@@ -46,8 +46,12 @@ unless you turn it on.
    - **On GitHub.** Framework Cloud creates the repository and builds the
      project there. See [GitHub integration](github.md).
 
+On your own server, the page shows the command with the server's address,
+such as `framework::setup("<project token>", url = "https://framework.example.edu")`.
+
 The project token also lets that project publish notebooks. It is saved in
-the project's `.env` file, which Git ignores.
+the project's `.env` file, which Git ignores, together with the server's
+address.
 
 ## What Framework Cloud keeps
 

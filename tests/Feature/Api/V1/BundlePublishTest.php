@@ -69,7 +69,7 @@ class BundlePublishTest extends TestCase
         $this->get('/d/'.$document->key.'/analysis_files/figure-html/plot-1.png')->assertOk();
 
         // Wrapper page still works
-        $this->get('/d/'.$document->key)->assertOk()->assertSee('published with framework');
+        $this->get('/d/'.$document->key)->assertOk()->assertSee('published with Framework Cloud');
     }
 
     public function test_traversal_and_missing_assets_404(): void
@@ -177,7 +177,9 @@ class BundlePublishTest extends TestCase
         $fresh = Document::first();
         $this->assertSame($firstKey, $fresh->key);
         $this->assertNotSame($firstPrefix, $fresh->disk_path);
-        Storage::disk('local')->assertMissing($firstPrefix.'/analysis.html');
+        // The first version keeps its files, and its assets load under its own link
+        Storage::disk('local')->assertExists($firstPrefix.'/analysis.html');
         $this->assertStringContainsString('REVISED', $this->get('/d/'.$firstKey.'/raw')->streamedContent());
+        $this->assertStringNotContainsString('REVISED', $this->get('/d/'.$firstKey.'/versions/1/raw')->streamedContent());
     }
 }

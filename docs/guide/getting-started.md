@@ -35,12 +35,15 @@ Framework Cloud talks to R with a token.
 token is stored in your system's credential store, such as the macOS
 Keychain. Run it once on each computer you use.
 
-On your own server, tell R where the server is before you connect. Add this
-line to your `.Renviron` file:
+On your own server, add the server's address. The **API tokens** page shows
+the full command:
 
-```sh
-FW_CLOUD_URL=https://framework.example.edu
+```r
+framework::cloud_login("<your token>", url = "https://framework.example.edu")
 ```
+
+R remembers the server, so later commands such as `framework::new()` use it.
+Run `framework::cloud_status()` to see which server R is using.
 
 ## 4. Start a project
 

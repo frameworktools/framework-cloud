@@ -4,10 +4,12 @@ import { usePage, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiCallout from '@/Components/UiCallout.vue';
+import { useServerArg } from '@/cloud.js';
 
 const props = defineProps({ projects: Array });
 
 const page = usePage();
+const serverArg = useServerArg();
 const pullToken = computed(() =>
     page.props.flash.status === 'project-token' ? page.props.flash.token : null,
 );
@@ -46,7 +48,7 @@ const headline = (key) => key.split('_').map((w) => w[0].toUpperCase() + w.slice
                     <h1 class="text-2xl font-semibold tracking-tight">Projects</h1>
                     <p class="mt-1 max-w-2xl text-neutral-600 dark:text-neutral-400">
                         Set a project up on GitHub, or on any machine with
-                        <code class="font-mono text-sm">framework::setup("&lt;project-token&gt;")</code>.
+                        <code class="font-mono text-sm">framework::setup("&lt;project-token&gt;"{{ serverArg }})</code>.
                     </p>
                 </div>
                 <Link href="/projects/create"><UiButton>New project</UiButton></Link>
@@ -56,7 +58,7 @@ const headline = (key) => key.split('_').map((w) => w[0].toUpperCase() + w.slice
 
             <UiCallout v-if="pullToken" variant="success" heading="Project token — copy it now, it won't be shown again">
                 <code class="break-all font-mono text-sm">{{ pullToken }}</code>
-                <code class="break-all font-mono text-xs">framework::setup("{{ pullToken }}")</code>
+                <code class="break-all font-mono text-xs">framework::setup("{{ pullToken }}"{{ serverArg }})</code>
             </UiCallout>
 
             <div class="flex flex-col divide-y divide-neutral-200 dark:divide-neutral-800">

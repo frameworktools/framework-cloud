@@ -1,8 +1,8 @@
 # Install with Docker
 
-The Docker setup in
-[`docker/selfhost`](https://github.com/frameworktools/framework-cloud/tree/main/docker/selfhost)
-runs three containers:
+Framework Cloud releases are published as a Docker image,
+`ghcr.io/frameworktools/framework-cloud`. A Compose file runs it as three
+containers:
 
 - **app**: the web server. FrankenPHP serves the app and gets an HTTPS
   certificate from Let's Encrypt for your domain.
@@ -23,16 +23,19 @@ To run it only on your own computer instead, see
 
 ## Install
 
+Make a folder for the server and download the Compose file and the settings
+template:
+
 ```sh
-git clone https://github.com/frameworktools/framework-cloud.git
-cd framework-cloud/docker/selfhost
-cp .env.example .env
+mkdir framework-cloud && cd framework-cloud
+curl -fsSLO https://raw.githubusercontent.com/frameworktools/framework-cloud/main/docker/selfhost/compose.yml
+curl -fsSL https://raw.githubusercontent.com/frameworktools/framework-cloud/main/docker/selfhost/.env.example -o .env
 ```
 
 Generate an application key:
 
 ```sh
-docker compose run --rm --no-deps app php artisan key:generate --show
+docker run --rm ghcr.io/frameworktools/framework-cloud php artisan key:generate --show
 ```
 
 Put the printed key in `.env` as `APP_KEY`. Keep a copy with your backups,
@@ -45,16 +48,35 @@ Then set these in `.env`:
 - `FW_ADMIN_EMAIL`: your email address
 - `DB_PASSWORD`: a long random string, such as the output of
   `openssl rand -hex 24`
+- `FRAMEWORK_CLOUD_VERSION`: optional, a release such as `1.2.0`. Without it,
+  the server uses the newest release.
 
 Start the server:
 
 ```sh
-docker compose up -d --build
+docker compose up -d
 ```
 
-The first start builds the image, creates the database tables, and adds the
-built-in blueprints and your admin account. It takes a minute or two. Check
-progress with `docker compose ps` and `docker compose logs -f app`.
+The first start downloads the images, creates the database tables, and adds
+the built-in blueprints and your admin account. Check progress with
+`docker compose ps` and `docker compose logs -f app`.
+
+## Behind a reverse proxy
+
+If another web server already handles HTTPS on the machine, such as nginx,
+Traefik, or Nginx Proxy Manager, let it pass requests to Framework Cloud over
+plain HTTP. Set these in `.env`:
+
+```sh
+SERVER_NAME=:80
+HTTP_PORT=8080
+TRUSTED_PROXIES=*
+```
+
+Point the proxy at port 8080. `TRUSTED_PROXIES` lets the app read the
+proxy's forwarded host and scheme, so it builds `https://` links. Use `*` only
+when nothing but the proxy can reach the port. Otherwise list the proxy's
+address, such as `TRUSTED_PROXIES=192.168.1.10`.
 
 ## Sign in
 
@@ -88,3 +110,15 @@ docker compose exec app php artisan fw:login-link someone@example.edu --create
 - [Server setup](server-setup.md): email, GitHub, and storage
 - [Maintenance](maintenance.md): upgrades and backups
 - [Configuration reference](configuration.md)
+
+## Build the image yourself
+
+To run code that isn't in a release, such as your own changes, build the image
+from a clone of the repository:
+
+```sh
+git clone https://github.com/frameworktools/framework-cloud.git
+cd framework-cloud/docker/selfhost
+cp .env.example .env    # then fill it in as above
+docker compose -f compose.yml -f compose.build.yml up -d --build
+```

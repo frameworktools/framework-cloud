@@ -65,7 +65,7 @@ const fork = (id) => router.post(`/facets/${id}/fork`);
                             <p v-if="facet.description" class="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{{ facet.description }}</p>
                         </div>
                         <LayerSummary :sections="facet.summary" />
-                        <div class="flex items-start gap-2">
+                        <div class="flex shrink-0 items-start gap-2 whitespace-nowrap">
                             <Link v-if="facet.editable" :href="`/facets/${facet.id}/edit`"><UiButton size="sm" variant="outline">Edit</UiButton></Link>
                             <UiButton v-else size="sm" variant="outline" @click="fork(facet.id)">Copy and edit</UiButton>
                         </div>
