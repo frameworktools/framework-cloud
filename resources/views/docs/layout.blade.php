@@ -6,6 +6,7 @@
     <title>@yield('title', 'Framework docs')</title>
     <meta name="description" content="Documentation for the Framework R package.">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📖</text></svg>">
+    <x-theme-script />
     @vite(['resources/css/app.css'])
 </head>
 <body class="bg-white text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100">
@@ -23,6 +24,7 @@
                 <a href="{{ route('docs.reference') }}" class="text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100">Reference</a>
                 <a href="https://framework.pub" class="text-orange-600 hover:underline dark:text-orange-400">Framework Cloud</a>
                 <a href="https://github.com/frameworktools/framework" class="text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100">GitHub</a>
+                <x-theme-toggle />
             </nav>
         </div>
     </header>

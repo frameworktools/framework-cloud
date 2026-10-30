@@ -19,7 +19,7 @@ const send = () => form.post('/auth/magic-link');
 
     <AuthLayout
         title="Create an account"
-        description="We'll email you a sign-in link."
+        :description="page.props.githubSignIn ? 'Sign up with GitHub or your email address. There is no password to set.' : 'Sign up with your email address. There is no password to set.'"
     >
         <UiCallout v-if="sent" variant="success" heading="Check your email">
             Your confirmation link is on its way. It works once and expires in 15
@@ -37,7 +37,11 @@ const send = () => form.post('/auth/magic-link');
 
         <form class="flex flex-col gap-4" @submit.prevent="send">
             <UiInput v-model="form.name" label="Name" placeholder="Full name" autocomplete="name" required autofocus :error="form.errors.name" />
-            <UiInput v-model="form.email" label="Email address" type="email" placeholder="you@university.edu" autocomplete="email" required :error="form.errors.email" />
+            <UiInput
+                v-model="form.email" label="Email address" type="email" placeholder="you@example.com" autocomplete="email" required
+                description="Use any address, including a personal one. It is only for signing in. You can show a different email on your work, such as your university address, in Settings > Profile."
+                :error="form.errors.email"
+            />
             <UiButton type="submit" class="w-full" :disabled="form.processing">Send me a sign-in link</UiButton>
         </form>
 

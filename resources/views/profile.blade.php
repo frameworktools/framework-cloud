@@ -4,11 +4,13 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ '@'.$user->handle }} — Framework Cloud</title>
+    <x-theme-script />
     @vite(['resources/css/app.css'])
 </head>
 <body class="bg-white text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100">
     <header class="mx-auto flex max-w-3xl items-center justify-between px-6 py-6">
         <a href="/" class="font-semibold tracking-tight">Framework <span class="text-orange-500">Cloud</span></a>
+        <x-theme-toggle />
     </header>
 
     <main class="mx-auto max-w-3xl px-6 py-16">

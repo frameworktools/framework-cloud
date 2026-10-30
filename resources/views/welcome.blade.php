@@ -6,13 +6,15 @@
     <title>Framework Cloud</title>
     <meta name="description" content="The cloud companion to the Framework R package: settings sync, project definitions, and publishing for rendered notebooks.">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔬</text></svg>">
+    <x-theme-script />
     @vite(['resources/css/app.css'])
 </head>
 <body class="bg-white text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100">
 
-    <header class="mx-auto flex max-w-4xl items-center justify-between px-6 py-6">
+    <header class="mx-auto flex max-w-4xl items-center justify-between gap-4 px-6 py-6">
         <div class="font-semibold tracking-tight">Framework <span class="text-orange-500">Cloud</span></div>
         <nav class="flex items-center gap-4 text-sm">
+            <x-theme-toggle />
             <a href="https://framework.table1.org" class="text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100">Docs</a>
             @auth
                 <a href="{{ route('dashboard') }}" class="rounded-md bg-orange-500 px-4 py-2 font-medium text-white hover:bg-orange-600">Dashboard</a>

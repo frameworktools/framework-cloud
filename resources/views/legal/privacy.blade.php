@@ -4,11 +4,15 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Privacy — Framework Cloud</title>
+    <x-theme-script />
     @vite(['resources/css/app.css'])
 </head>
 <body class="bg-white text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100">
     <main class="mx-auto max-w-2xl px-6 py-16">
-        <a href="/" class="text-sm text-orange-600 hover:underline dark:text-orange-400">&larr; Framework Cloud</a>
+        <div class="flex items-center justify-between">
+            <a href="/" class="text-sm text-orange-600 hover:underline dark:text-orange-400">&larr; Framework Cloud</a>
+            <x-theme-toggle />
+        </div>
         <h1 class="mt-6 text-3xl font-semibold tracking-tight">Privacy</h1>
         <p class="mt-2 text-sm text-neutral-500">Draft — last updated {{ date('F j, Y') }}. Plain-language summary; formal review before launch.</p>
 

@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
+import ThemeToggle from '@/Components/ThemeToggle.vue';
 
 const page = usePage();
 const user = computed(() => page.props.auth.user);
@@ -47,6 +48,11 @@ const logout = () => router.post('/logout');
                 </div>
             </nav>
 
+            <div class="mb-3 flex items-center justify-between px-2">
+                <span class="text-xs text-neutral-500">Theme</span>
+                <ThemeToggle />
+            </div>
+
             <div class="flex items-center justify-between gap-2 border-t border-neutral-200 pt-3 dark:border-neutral-800">
                 <Link href="/settings/profile" class="flex min-w-0 items-center gap-2 rounded-md px-1 py-1 hover:bg-neutral-100 dark:hover:bg-neutral-800">
                     <span class="flex size-7 shrink-0 items-center justify-center rounded-full bg-orange-500 text-xs font-semibold text-white">
@@ -63,7 +69,10 @@ const logout = () => router.post('/logout');
         <div class="flex min-w-0 flex-1 flex-col">
             <header class="flex items-center justify-between border-b border-neutral-200 px-4 py-3 md:hidden dark:border-neutral-800">
                 <Link href="/dashboard" class="font-semibold">Framework <span class="text-orange-500">Cloud</span></Link>
-                <button class="text-sm text-neutral-500" @click="logout">Sign out</button>
+                <div class="flex items-center gap-3">
+                    <ThemeToggle />
+                    <button class="text-sm text-neutral-500" @click="logout">Sign out</button>
+                </div>
             </header>
 
             <main class="mx-auto w-full max-w-4xl flex-1 px-6 py-10">

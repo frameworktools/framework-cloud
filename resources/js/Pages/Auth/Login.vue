@@ -44,7 +44,7 @@ async function signInWithPasskey() {
 
     <AuthLayout
         title="Sign in"
-        :description="page.props.githubSignIn ? 'Use GitHub, a passkey, or a sign-in link by email.' : 'Use a passkey or get a sign-in link by email.'"
+        :description="page.props.githubSignIn ? 'Use GitHub, a passkey, or a link sent to your email.' : 'Use a passkey or a link sent to your email.'"
     >
         <UiCallout v-if="sent" variant="success" heading="Check your email">
             If an account exists for that address, a sign-in link is on its way.

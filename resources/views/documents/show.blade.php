@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex">
     <title>{{ $document->title }}</title>
+    <x-theme-script />
     @vite(['resources/css/app.css'])
 </head>
 <body class="flex h-full flex-col bg-neutral-100 dark:bg-neutral-900">
@@ -20,6 +21,7 @@
             <a href="{{ config('app.url') }}" class="text-neutral-500 hover:underline dark:text-neutral-400">
                 published with framework
             </a>
+            <x-theme-toggle />
         </div>
     </header>
 
