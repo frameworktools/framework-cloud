@@ -31,10 +31,12 @@ class ProductionSeeder extends Seeder
             return;
         }
 
-        $user = User::updateOrCreate(
+        // Created once; later runs (every Docker start) leave the account as
+        // its owner edited it, and only make sure it is an admin
+        $user = User::firstOrCreate(
             ['email' => strtolower($email)],
             [
-                'name' => env('FW_ADMIN_NAME', ucfirst(strtok($email, '@'))),
+                'name' => env('FW_ADMIN_NAME') ?: ucfirst(strtok($email, '@')),
                 'password' => null,
             ],
         );

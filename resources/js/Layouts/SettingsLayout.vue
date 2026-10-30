@@ -7,6 +7,7 @@ defineProps({ heading: String, subheading: String });
 const page = usePage();
 const tabs = [
     { label: 'Profile', href: '/settings/profile' },
+    { label: 'Account', href: '/settings/account' },
     { label: 'Framework defaults', href: '/settings/defaults' },
     { label: 'Passkeys', href: '/settings/passkeys' },
     { label: 'GitHub', href: '/settings/github' },

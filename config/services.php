@@ -41,13 +41,15 @@ return [
         'client_id' => env('GITHUB_CLIENT_ID'),
         'client_secret' => env('GITHUB_CLIENT_SECRET'),
         'redirect' => env('GITHUB_REDIRECT_URI', '/auth/github/callback'),
+        'app_id' => env('GITHUB_APP_ID'),
         'app_slug' => env('GITHUB_APP_SLUG'),
+        'private_key' => env('GITHUB_APP_PRIVATE_KEY'),
         'webhook_secret' => env('GITHUB_WEBHOOK_SECRET'),
         // The framework package commit the scaffold workflow installs. A SHA,
         // never a branch, so a repo's scaffold is reproducible. Bump it here
         // deliberately; the env var overrides it, and an empty one turns
         // GitHub scaffolding off.
-        'framework_sha' => env('GITHUB_FRAMEWORK_SHA', '398cfbf1638502e73a084317f3b90ee472101296'),
+        'framework_sha' => env('GITHUB_FRAMEWORK_SHA', '7eb0879a6b8581b14ab46e9821db43161d7905bd'),
     ],
 
 ];

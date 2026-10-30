@@ -41,7 +41,7 @@ class ProfilePageTest extends TestCase
         $user = $this->user();
 
         $this->actingAs($user)
-            ->patch('/settings/profile', [
+            ->patch('/settings/account', [
                 'name' => $user->name,
                 'email' => $user->email,
                 'handle' => 'my-handle',
@@ -59,7 +59,7 @@ class ProfilePageTest extends TestCase
     {
         $user = $this->user();
 
-        $this->actingAs($user)->patch('/settings/profile', [
+        $this->actingAs($user)->patch('/settings/account', [
             'name' => $user->name,
             'email' => 'new@example.com',
             'handle' => '',
@@ -78,11 +78,11 @@ class ProfilePageTest extends TestCase
         $base = ['name' => $user->name, 'email' => $user->email, 'profile_public' => false];
 
         $this->actingAs($user)
-            ->patch('/settings/profile', [...$base, 'handle' => 'admin'])
+            ->patch('/settings/account', [...$base, 'handle' => 'admin'])
             ->assertSessionHasErrors('handle');
 
         $this->actingAs($user)
-            ->patch('/settings/profile', [...$base, 'handle' => 'taken'])
+            ->patch('/settings/account', [...$base, 'handle' => 'taken'])
             ->assertSessionHasErrors('handle');
     }
 
@@ -90,7 +90,7 @@ class ProfilePageTest extends TestCase
     {
         $user = $this->user();
 
-        $this->actingAs($user)->patch('/settings/profile', [
+        $this->actingAs($user)->patch('/settings/account', [
             'name' => $user->name,
             'email' => $user->email,
             'handle' => '',
@@ -105,12 +105,12 @@ class ProfilePageTest extends TestCase
         $user = $this->user();
 
         $this->actingAs($user)
-            ->delete('/settings/profile', ['confirm_email' => 'wrong@example.com'])
+            ->delete('/settings/account', ['confirm_email' => 'wrong@example.com'])
             ->assertSessionHasErrors('confirm_email');
         $this->assertNotNull($user->fresh());
 
         $this->actingAs($user)
-            ->delete('/settings/profile', ['confirm_email' => $user->email])
+            ->delete('/settings/account', ['confirm_email' => $user->email])
             ->assertRedirect('/');
         $this->assertNull(User::find($user->id));
         $this->assertGuest();

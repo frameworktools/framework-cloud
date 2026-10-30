@@ -1,5 +1,7 @@
 <?php
 
+use App\Support\Credentials;
+
 return [
 
     /*
@@ -52,4 +54,27 @@ return [
     | per document (sync needs history; unbounded history is just bloat).
     */
     'setting_revisions_kept' => (int) env('FW_REVISIONS_KEPT', 200),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Mode
+    |--------------------------------------------------------------------------
+    |
+    | "self" for a self-hosted server: everything is on, and the admin setup
+    | page manages this server's credentials. "hosted" for framework.pub,
+    | where publishing documents is a paid feature.
+    |
+    */
+
+    'mode' => env('FW_MODE', 'self') === 'hosted' ? 'hosted' : 'self',
+
+    /*
+    | Which credential variables are set, recorded here because env() returns
+    | null at runtime once config is cached. See App\Support\Credentials.
+    */
+
+    'env_set' => array_values(array_filter(
+        Credentials::envVars(),
+        fn (string $var) => ! in_array(env($var), [null, ''], true),
+    )),
 ];

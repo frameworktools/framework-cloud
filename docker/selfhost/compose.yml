@@ -1,0 +1,83 @@
+# Framework Cloud, self-hosted with Docker. From this directory:
+#
+#   cp .env.example .env        # then fill it in
+#   docker compose up -d --build
+#
+# See README.md in this directory.
+
+name: framework-cloud
+
+x-app: &app
+  build:
+    context: ../..
+    dockerfile: docker/selfhost/Dockerfile
+  image: framework-cloud:local
+  env_file: .env
+  environment:
+    DB_CONNECTION: pgsql
+    DB_HOST: postgres
+    DB_PORT: 5432
+  restart: unless-stopped
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+services:
+  app:
+    <<: *app
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+      - "${HTTPS_PORT:-443}:443/udp"
+    volumes:
+      - storage:/app/storage
+      - caddy_data:/data
+      - caddy_config:/config
+    healthcheck:
+      # Set once migrations and seeding are done and the server is starting
+      test: ["CMD", "test", "-f", "/tmp/framework-cloud-ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 60
+      start_period: 10s
+
+  worker:
+    <<: *app
+    command: ["php", "artisan", "queue:work", "--sleep=3", "--tries=1", "--max-time=3600"]
+    environment:
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      # The app container migrates and seeds; the worker waits for it
+      FW_PREPARE_DATABASE: "false"
+    volumes:
+      - storage:/app/storage
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'artisan queue:work' > /dev/null"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    depends_on:
+      app:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-framework_cloud}
+      POSTGRES_USER: ${DB_USERNAME:-framework_cloud}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  storage:
+  postgres:
+  caddy_data:
+  caddy_config:

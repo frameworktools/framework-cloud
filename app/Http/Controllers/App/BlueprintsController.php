@@ -28,7 +28,9 @@ class BlueprintsController extends Controller
         return Inertia::render('Blueprints/Index', [
             'blueprints' => Blueprint::listedFor($user)->with(Library::BLUEPRINT_WITH)
                 ->orderByRaw('user_id is not null')->orderBy('position')->orderBy('name')
-                ->get()->map(fn ($b) => Library::blueprint($b, $user)),
+                ->get()->map(fn ($b) => Library::blueprint($b, $user) + [
+                    'fragments' => $b->latestVersion ? Library::blueprintVersion($b->latestVersion) : null,
+                ]),
         ]);
     }
 

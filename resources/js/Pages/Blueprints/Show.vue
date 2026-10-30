@@ -42,7 +42,7 @@ const date = (value) => new Date(value).toLocaleDateString();
                     <p v-if="blueprint.description" class="mt-2 max-w-2xl text-neutral-600 dark:text-neutral-400">{{ blueprint.description }}</p>
                 </div>
                 <div class="flex gap-2">
-                    <Link :href="`/projects?blueprint=${blueprint.id}`"><UiButton>Use</UiButton></Link>
+                    <Link :href="`/projects/create?blueprint=${blueprint.id}`"><UiButton>Use</UiButton></Link>
                     <Link v-if="blueprint.editable" :href="`/blueprints/${blueprint.id}/edit`"><UiButton variant="outline">Edit</UiButton></Link>
                     <UiButton variant="outline" @click="fork">Copy and edit</UiButton>
                     <UiButton v-if="blueprint.editable && !blueprint.is_system" variant="ghost" @click="destroy">Delete</UiButton>

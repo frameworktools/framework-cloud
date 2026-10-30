@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Document;
 use App\Models\Project;
+use App\Support\BundleExtractor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -21,6 +22,10 @@ class DocumentsController extends Controller
         $project = $request->user();
         abort_unless($project instanceof Project, 403, 'Publishing requires a project token.');
         abort_unless($request->user()->tokenCan(Project::PULL_ABILITY), 403, 'Token lacks publish rights.');
+        abort_unless(
+            $project->user->canPublish(), 402,
+            'Publishing to '.config('app.name').' is part of a paid plan. Ask about it in your account, or publish to your own bucket with a connection.',
+        );
 
         $validated = $request->validate([
             // Either a single self-contained HTML file...
@@ -63,7 +68,7 @@ class DocumentsController extends Controller
             $prefix = 'documents/'.$project->id.'/'.Str::uuid();
 
             try {
-                $stats = \App\Support\BundleExtractor::extract($upload, $disk, $prefix);
+                $stats = BundleExtractor::extract($upload, $disk, $prefix);
             } catch (\RuntimeException $e) {
                 Storage::disk($disk)->deleteDirectory($prefix);
                 abort(422, $e->getMessage());

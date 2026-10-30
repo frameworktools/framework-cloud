@@ -10,6 +10,7 @@ use App\Models\Project;
 use App\Services\GitHub\GitHubNotConnected;
 use App\Services\GitHub\Installations;
 use App\Services\GitHub\Scaffolder;
+use App\Support\Library;
 use App\Support\ProjectLayers;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\RedirectResponse;
@@ -24,7 +25,6 @@ class ProjectsController extends Controller
     public function index(Request $request): Response
     {
         $user = $request->user();
-        $account = $user->githubAccount;
 
         return Inertia::render('Projects', [
             'projects' => $user->projects()->latest()->with('blueprintVersion.blueprint.owner')->get()
@@ -44,15 +44,22 @@ class ProjectsController extends Controller
                         'version' => $p->blueprintVersion->version,
                     ] : null,
                 ]),
-            'blueprints' => Blueprint::listedFor($user)->with('owner')
+        ]);
+    }
+
+    public function create(Request $request): Response
+    {
+        $user = $request->user();
+        $account = $user->githubAccount;
+
+        return Inertia::render('Projects/Create', [
+            'blueprints' => Blueprint::listedFor($user)->with(Library::BLUEPRINT_WITH)
                 ->orderByRaw('user_id is not null')->orderBy('position')->orderBy('name')
-                ->with('latestVersion.base', 'latestVersion.facetVersions')
-                ->get()->map(fn (Blueprint $b) => [
-                    'id' => $b->id,
-                    'name' => $b->name,
-                    'handle' => $b->handle,
-                    'sensitive' => $b->latestVersion && self::sensitive($b->latestVersion),
-                ]),
+                ->get()->filter(fn (Blueprint $b) => $b->latestVersion)
+                ->map(fn (Blueprint $b) => Library::blueprint($b, $user) + [
+                    'sensitive' => self::sensitive($b->latestVersion),
+                    'fragments' => Library::blueprintVersion($b->latestVersion),
+                ])->values(),
             'selected' => $request->integer('blueprint') ?: null,
             'github' => [
                 'enabled' => Scaffolder::enabled(),
@@ -107,9 +114,15 @@ class ProjectsController extends Controller
 
         if ($github) {
             ScaffoldOnGitHub::dispatch($project, $github['org'], $github['name'], $github['private']);
+
+            return to_route('projects');
         }
 
-        return to_route('projects');
+        // Set up locally: hand over the token now, since that is the next step
+        return to_route('projects')->with([
+            'token' => $project->issuePullToken(),
+            'status' => 'project-token',
+        ]);
     }
 
     /** Ask GitHub how the scaffold run went, in case a webhook was missed. */

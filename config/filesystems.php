@@ -58,6 +58,21 @@ return [
             'report' => false,
         ],
 
+        // Any S3-compatible bucket (AWS S3, Cloudflare R2, MinIO) for
+        // published documents. App\Support\Credentials fills these in from
+        // the admin setup page when the variables are unset.
+        'bucket' => [
+            'driver' => 's3',
+            'key' => env('FW_BUCKET_KEY'),
+            'secret' => env('FW_BUCKET_SECRET'),
+            'region' => env('FW_BUCKET_REGION', 'auto'),
+            'bucket' => env('FW_BUCKET_NAME'),
+            'endpoint' => env('FW_BUCKET_ENDPOINT'),
+            'use_path_style_endpoint' => true,
+            'throw' => false,
+            'report' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

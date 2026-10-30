@@ -1,40 +1,16 @@
 <script setup>
 import { computed, watch, onBeforeUnmount } from 'vue';
-import { useForm, usePage, router } from '@inertiajs/vue3';
+import { usePage, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import UiButton from '@/Components/UiButton.vue';
-import UiInput from '@/Components/UiInput.vue';
-import UiSelect from '@/Components/UiSelect.vue';
 import UiCallout from '@/Components/UiCallout.vue';
-import UiSwitch from '@/Components/UiSwitch.vue';
 
-const props = defineProps({ projects: Array, blueprints: Array, selected: Number, github: Object });
+const props = defineProps({ projects: Array });
 
 const page = usePage();
 const pullToken = computed(() =>
     page.props.flash.status === 'project-token' ? page.props.flash.token : null,
 );
-
-const options = computed(() =>
-    props.blueprints.map((b) => ({ value: b.id, label: b.handle.startsWith('framework/') ? b.name : `${b.name} (${b.handle})` })),
-);
-const bare = props.blueprints.find((b) => b.handle === 'framework/bare');
-
-const form = useForm({
-    name: '',
-    blueprint_id: props.selected ?? bare?.id ?? props.blueprints[0]?.id,
-    description: '',
-    github: { enabled: false, owner: props.github.owners?.[0]?.login ?? null, name: '', private: true, nameEdited: false },
-});
-const create = () => form
-    .transform((data) => ({ ...data, github: data.github.enabled ? { ...data.github, name: repoName.value } : { enabled: false } }))
-    .post('/projects', { onSuccess: () => form.reset('name', 'description', 'github') });
-
-const ownerOptions = computed(() => (props.github.owners ?? []).map((o) => ({ value: o.login, label: o.login })));
-const sensitive = computed(() => props.blueprints.find((b) => b.id === form.blueprint_id)?.sensitive ?? false);
-const repoName = computed(() => (form.github.nameEdited ? form.github.name : form.name.trim().toLowerCase().replace(/[^a-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '')));
-const editRepoName = (value) => { form.github.name = value; form.github.nameEdited = true; };
-watch(sensitive, (value) => { if (value) form.github.private = true; });
 
 const githubError = computed(() => page.props.errors.github);
 const refresh = (id) => router.post(`/projects/${id}/scaffold/refresh`, {}, { preserveScroll: true });
@@ -65,56 +41,16 @@ const headline = (key) => key.split('_').map((w) => w[0].toUpperCase() + w.slice
 
     <AppLayout>
         <div class="flex flex-col gap-6">
-            <div>
-                <h1 class="text-2xl font-semibold tracking-tight">Projects</h1>
-                <p class="mt-1 text-neutral-600 dark:text-neutral-400">
-                    Define a project here, generate its token, and set it up on any machine with
-                    <code class="font-mono text-sm">framework::setup("&lt;project-token&gt;")</code>.
-                </p>
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <h1 class="text-2xl font-semibold tracking-tight">Projects</h1>
+                    <p class="mt-1 max-w-2xl text-neutral-600 dark:text-neutral-400">
+                        Set a project up on GitHub, or on any machine with
+                        <code class="font-mono text-sm">framework::setup("&lt;project-token&gt;")</code>.
+                    </p>
+                </div>
+                <Link href="/projects/create"><UiButton>New project</UiButton></Link>
             </div>
-
-            <form class="flex flex-col gap-4 rounded-lg border border-neutral-200 p-4 dark:border-neutral-700" @submit.prevent="create">
-                <div class="flex flex-wrap items-end gap-3">
-                    <div class="w-56"><UiInput v-model="form.name" label="Name" placeholder="e.g. NHANES Study" :error="form.errors.name" /></div>
-                    <div class="w-64"><UiSelect v-model="form.blueprint_id" label="Blueprint" :options="options" :error="form.errors.blueprint_id" /></div>
-                    <div class="w-64"><UiInput v-model="form.description" label="Description (optional)" :error="form.errors.description" /></div>
-                </div>
-
-                <div v-if="github.enabled" class="flex max-w-2xl flex-col gap-3">
-                    <UiSwitch
-                        v-model="form.github.enabled"
-                        label="Create it on GitHub"
-                        description="Framework makes the repository and scaffolds it there with a one-time GitHub Action. Then you clone it."
-                    />
-                    <p v-if="form.errors['github.enabled']" class="text-sm text-red-600 dark:text-red-400">{{ form.errors['github.enabled'] }}</p>
-
-                    <template v-if="form.github.enabled">
-                        <p v-if="!github.login" class="text-sm text-neutral-600 dark:text-neutral-400">
-                            <Link href="/settings/github" class="text-orange-600 hover:underline dark:text-orange-400">Connect GitHub</Link> first.
-                        </p>
-                        <p v-else-if="github.owners === null" class="text-sm text-neutral-600 dark:text-neutral-400">
-                            GitHub could not be reached. Reload to try again.
-                        </p>
-                        <p v-else-if="!ownerOptions.length" class="text-sm text-neutral-600 dark:text-neutral-400">
-                            <a :href="github.install_url" class="text-orange-600 hover:underline dark:text-orange-400">Install the Framework app</a>
-                            on your account or an organization, then reload this page.
-                        </p>
-                        <div v-else class="flex flex-wrap items-end gap-3">
-                            <div class="w-48"><UiSelect v-model="form.github.owner" label="Owner" :options="ownerOptions" :error="form.errors['github.owner']" /></div>
-                            <span class="pb-2 text-neutral-400">/</span>
-                            <div class="w-56">
-                                <UiInput :model-value="repoName" label="Repository" placeholder="nhanes-study" :error="form.errors['github.name']" @update:model-value="editRepoName" />
-                            </div>
-                            <div class="w-56 pb-1">
-                                <UiSwitch v-model="form.github.private" label="Private" :description="sensitive ? 'Required: this blueprint handles restricted data.' : null" />
-                            </div>
-                        </div>
-                        <p v-if="form.errors['github.private']" class="text-sm text-red-600 dark:text-red-400">{{ form.errors['github.private'] }}</p>
-                    </template>
-                </div>
-
-                <div><UiButton type="submit" :disabled="form.processing || (form.github.enabled && sensitive && !form.github.private)">Create project</UiButton></div>
-            </form>
 
             <UiCallout v-if="githubError" variant="danger" heading="GitHub">{{ githubError }}</UiCallout>
 
@@ -123,7 +59,7 @@ const headline = (key) => key.split('_').map((w) => w[0].toUpperCase() + w.slice
                 <code class="break-all font-mono text-xs">framework::setup("{{ pullToken }}")</code>
             </UiCallout>
 
-            <div class="flex flex-col divide-y divide-neutral-200 dark:divide-neutral-700">
+            <div class="flex flex-col divide-y divide-neutral-200 dark:divide-neutral-800">
                 <div v-for="project in projects" :key="project.id" class="flex items-center justify-between gap-4 py-3">
                     <div class="min-w-0">
                         <div class="flex items-center gap-2">
@@ -164,7 +100,10 @@ const headline = (key) => key.split('_').map((w) => w[0].toUpperCase() + w.slice
                         <UiButton variant="danger" size="sm" @click="destroy(project.id)">Delete</UiButton>
                     </div>
                 </div>
-                <p v-if="!projects.length" class="py-3 text-sm text-neutral-500">No projects yet.</p>
+                <div v-if="!projects.length" class="flex flex-col items-start gap-3 rounded-lg border border-dashed border-neutral-300 p-8 dark:border-neutral-700">
+                    <p class="text-neutral-600 dark:text-neutral-400">No projects yet.</p>
+                    <Link href="/projects/create"><UiButton>Create your first project</UiButton></Link>
+                </div>
             </div>
         </div>
     </AppLayout>

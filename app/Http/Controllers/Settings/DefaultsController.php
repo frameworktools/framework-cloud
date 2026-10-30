@@ -21,9 +21,6 @@ class DefaultsController extends Controller
             'revision' => $setting->revision,
             'blueprints' => Blueprint::systemTypes()->get(['key', 'name']),
             'values' => [
-                'author_name' => Arr::get($doc, 'author.name', '') ?? '',
-                'author_email' => Arr::get($doc, 'author.email', '') ?? '',
-                'author_affiliation' => Arr::get($doc, 'author.affiliation', '') ?? '',
                 'project_type' => Arr::get($doc, 'defaults.project_type', 'bare'),
                 'notebook_format' => Arr::get($doc, 'defaults.notebook_format', 'quarto'),
                 'ide' => Arr::get($doc, 'defaults.ide', 'positron'),
@@ -40,9 +37,6 @@ class DefaultsController extends Controller
     public function update(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'author_name' => ['nullable', 'string', 'max:120'],
-            'author_email' => ['nullable', 'email', 'max:190'],
-            'author_affiliation' => ['nullable', 'string', 'max:190'],
             'project_type' => ['required', 'exists:blueprints,key'],
             'notebook_format' => ['required', 'in:quarto,rmarkdown'],
             'ide' => ['required', 'in:positron,vscode,rstudio,both,none'],
@@ -57,9 +51,6 @@ class DefaultsController extends Controller
         $setting = $request->user()->globalSettings();
         $doc = $setting->document;
 
-        Arr::set($doc, 'author.name', $validated['author_name'] ?? '');
-        Arr::set($doc, 'author.email', $validated['author_email'] ?? '');
-        Arr::set($doc, 'author.affiliation', $validated['author_affiliation'] ?? '');
         Arr::set($doc, 'defaults.project_type', $validated['project_type']);
         Arr::set($doc, 'defaults.notebook_format', $validated['notebook_format']);
         Arr::set($doc, 'defaults.ide', $validated['ide']);

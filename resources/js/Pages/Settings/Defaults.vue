@@ -38,13 +38,6 @@ const save = () => form.patch('/settings/defaults');
     >
         <form class="flex flex-col gap-8" @submit.prevent="save">
             <fieldset class="flex flex-col gap-4">
-                <legend class="mb-2 text-sm font-semibold">Author</legend>
-                <UiInput v-model="form.author_name" label="Name" :error="form.errors.author_name" />
-                <UiInput v-model="form.author_email" label="Email" type="email" :error="form.errors.author_email" />
-                <UiInput v-model="form.author_affiliation" label="Affiliation" :error="form.errors.author_affiliation" />
-            </fieldset>
-
-            <fieldset class="flex flex-col gap-4">
                 <legend class="mb-2 text-sm font-semibold">New projects</legend>
                 <UiSelect v-model="form.project_type" label="Default project type" :options="blueprintOptions" :error="form.errors.project_type" />
                 <UiSelect v-model="form.notebook_format" label="Notebook format" :options="formatOptions" />

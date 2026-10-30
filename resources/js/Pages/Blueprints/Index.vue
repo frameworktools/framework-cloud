@@ -1,8 +1,9 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, reactive } from 'vue';
 import { router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import UiButton from '@/Components/UiButton.vue';
+import BlueprintContents from '@/Components/BlueprintContents.vue';
 import { group, groups } from '@/library.js';
 
 const props = defineProps({ blueprints: Array });
@@ -12,6 +13,9 @@ const sections = computed(() =>
         .map((g) => ({ ...g, rows: props.blueprints.filter((b) => group(b) === g.key) }))
         .filter((g) => g.rows.length || g.key === 'mine'),
 );
+
+const open = reactive(new Set());
+const toggle = (id) => (open.has(id) ? open.delete(id) : open.add(id));
 
 const fork = (id) => router.post(`/blueprints/${id}/fork`);
 </script>
@@ -39,27 +43,39 @@ const fork = (id) => router.post(`/blueprints/${id}/fork`);
                     You haven't made a blueprint yet.
                 </p>
 
-                <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                    <div
-                        v-for="blueprint in section.rows" :key="blueprint.id"
-                        class="flex flex-col gap-3 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800"
-                    >
-                        <div class="min-w-0">
-                            <Link :href="`/blueprints/${blueprint.id}`" class="font-medium hover:underline">{{ blueprint.name }}</Link>
-                            <div class="truncate font-mono text-xs text-neutral-500">{{ blueprint.handle }} · v{{ blueprint.version }}</div>
+                <div v-if="section.rows.length" class="flex flex-col divide-y divide-neutral-200 rounded-lg border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
+                    <div v-for="blueprint in section.rows" :key="blueprint.id">
+                        <div class="flex items-start gap-3 p-4">
+                            <button
+                                type="button" class="flex min-w-0 flex-1 items-start gap-3 text-left"
+                                :aria-expanded="open.has(blueprint.id)"
+                                @click="toggle(blueprint.id)"
+                            >
+                                <svg
+                                    class="mt-1 size-4 shrink-0 text-neutral-400 transition-transform" :class="open.has(blueprint.id) ? '' : '-rotate-90'"
+                                    viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"
+                                ><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.17l3.71-3.94a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z" clip-rule="evenodd" /></svg>
+                                <span class="flex min-w-0 flex-col gap-1">
+                                    <span class="flex flex-wrap items-center gap-2">
+                                        <span class="font-medium">{{ blueprint.name }}</span>
+                                        <span class="font-mono text-xs text-neutral-500">{{ blueprint.handle }} · v{{ blueprint.version }}</span>
+                                        <span
+                                            v-for="facet in blueprint.facets" :key="facet"
+                                            class="rounded bg-orange-50 px-1.5 py-0.5 text-xs text-orange-800 dark:bg-orange-950/50 dark:text-orange-300"
+                                        >+ {{ facet }}</span>
+                                    </span>
+                                    <span v-if="blueprint.description" class="text-sm text-neutral-600 dark:text-neutral-400">{{ blueprint.description }}</span>
+                                </span>
+                            </button>
+                            <div class="flex shrink-0 gap-2">
+                                <Link :href="`/projects/create?blueprint=${blueprint.id}`"><UiButton size="sm">Use</UiButton></Link>
+                                <Link v-if="blueprint.editable" :href="`/blueprints/${blueprint.id}/edit`"><UiButton size="sm" variant="outline">Edit</UiButton></Link>
+                                <UiButton v-else size="sm" variant="outline" @click="fork(blueprint.id)">Copy and edit</UiButton>
+                            </div>
                         </div>
-                        <p v-if="blueprint.description" class="text-sm text-neutral-600 dark:text-neutral-400">{{ blueprint.description }}</p>
-                        <div class="flex flex-wrap gap-1.5 text-xs">
-                            <span class="rounded bg-neutral-100 px-1.5 py-0.5 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">{{ blueprint.base }}</span>
-                            <span
-                                v-for="facet in blueprint.facets" :key="facet"
-                                class="rounded bg-orange-50 px-1.5 py-0.5 text-orange-800 dark:bg-orange-950/50 dark:text-orange-300"
-                            >+ {{ facet }}</span>
-                        </div>
-                        <div class="mt-auto flex gap-2 pt-1">
-                            <Link :href="`/projects?blueprint=${blueprint.id}`"><UiButton size="sm">Use</UiButton></Link>
-                            <Link v-if="blueprint.editable" :href="`/blueprints/${blueprint.id}/edit`"><UiButton size="sm" variant="outline">Edit</UiButton></Link>
-                            <UiButton v-else size="sm" variant="outline" @click="fork(blueprint.id)">Copy and edit</UiButton>
+                        <div v-if="open.has(blueprint.id) && blueprint.fragments" class="px-4 pb-4 pl-11">
+                            <BlueprintContents :version="blueprint.fragments" />
+                            <Link :href="`/blueprints/${blueprint.id}`" class="mt-3 inline-block text-sm text-orange-600 hover:underline dark:text-orange-400">Full details and versions</Link>
                         </div>
                     </div>
                 </div>

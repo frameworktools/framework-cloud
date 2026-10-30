@@ -41,14 +41,26 @@ class ProjectLayers
         // Per-project overrides are not editable in the cloud yet
         $layers[] = ['kind' => 'project', 'key' => $project->slug, 'layer' => []];
 
+        // The Profile tab's byline, falling back to the account
+        $author = Arr::get($user->globalSettings()->document, 'author', []) ?? [];
+        $affiliations = collect($author['affiliations'] ?? [])
+            ->filter(fn ($a) => is_array($a) && filled($a['name'] ?? null))
+            ->map(fn (array $a) => array_filter(Arr::only($a, ['name', 'department', 'city', 'country']), 'filled'))
+            ->values()->all();
+
         $envelope = [
             'spec_version' => 1,
             'name' => $project->name,
             'author' => [
-                'name' => $user->name,
-                'email' => $user->email,
-                'affiliation' => (string) Arr::get($user->globalSettings()->document, 'author.affiliation', ''),
-            ],
+                'name' => (string) (($author['name'] ?? '') ?: $user->name),
+                'email' => (string) (($author['email'] ?? '') ?: $user->email),
+                'affiliation' => (string) ($author['affiliation'] ?? ''),
+            ] + array_filter([
+                'orcid' => (string) ($author['orcid'] ?? ''),
+                'url' => (string) ($author['url'] ?? ''),
+                // R replaces the list as a whole, so it always goes in full
+                'affiliations' => $affiliations,
+            ]),
             'layers' => $layers,
         ];
 

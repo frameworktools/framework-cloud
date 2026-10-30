@@ -6,7 +6,7 @@ defineProps({
 
 const variants = {
     info: 'border-neutral-200 bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900',
-    success: 'border-orange-200 bg-orange-50 dark:border-orange-900 dark:bg-orange-950/40',
+    success: 'border-emerald-200 bg-emerald-50 dark:border-emerald-800/70 dark:bg-emerald-950/40',
     danger: 'border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/40',
 };
 </script>

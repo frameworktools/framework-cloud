@@ -40,10 +40,12 @@ class HandleInertiaRequests extends Middleware
             'nav' => array_values(array_filter([
                 ['label' => 'Dashboard', 'href' => '/dashboard'],
                 ['label' => 'Projects', 'href' => '/projects'],
+                ['label' => 'Published', 'href' => '/published'],
                 ['label' => 'Blueprints', 'href' => '/blueprints'],
                 ['label' => 'Facets', 'href' => '/facets'],
                 ['label' => 'Skills', 'href' => '/skills'],
                 ['label' => 'API tokens', 'href' => '/tokens'],
+                $user?->is_admin ? ['label' => 'Server setup', 'href' => '/admin/setup', 'section' => 'Admin'] : null,
             ])),
 
             'githubSignIn' => filled(config('services.github.client_id')),

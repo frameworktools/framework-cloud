@@ -11,11 +11,11 @@ use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class ProfileController extends Controller
+class AccountController extends Controller
 {
     public function edit(Request $request): Response
     {
-        return Inertia::render('Settings/Profile', [
+        return Inertia::render('Settings/Account', [
             'profile' => [
                 'name' => $request->user()->name,
                 'email' => $request->user()->email,

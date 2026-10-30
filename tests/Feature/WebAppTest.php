@@ -65,7 +65,8 @@ class WebAppTest extends TestCase
             ->assertSessionHas('status', 'project-token')
             ->assertSessionHas('token');
 
-        $this->assertSame(1, $project->tokens()->count());
+        // One from creating it, one from asking again
+        $this->assertSame(2, $project->tokens()->count());
     }
 
     public function test_duplicate_project_names_are_rejected(): void
@@ -106,13 +107,28 @@ class WebAppTest extends TestCase
         $this->assertSame(0, $user->tokens()->count());
     }
 
-    public function test_projects_page_lists_blueprints_for_the_select(): void
+    public function test_new_project_page_lists_blueprints_with_what_they_set_up(): void
     {
         $this->actingAs($this->user())
-            ->get('/projects')
+            ->get('/projects/create?blueprint='.$this->systemBlueprint('project')->id)
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Projects')
+                ->component('Projects/Create')
                 ->has('blueprints', 5)
-                ->where('blueprints.0.handle', 'framework/bare'));
+                ->where('blueprints.0.handle', 'framework/bare')
+                ->has('blueprints.0.fragments.base.summary')
+                ->where('selected', $this->systemBlueprint('project')->id));
+    }
+
+    public function test_a_project_set_up_locally_hands_over_its_token(): void
+    {
+        $user = $this->user();
+
+        $this->actingAs($user)
+            ->post('/projects', ['name' => 'Local Study', 'blueprint_id' => $this->systemBlueprint('bare')->id])
+            ->assertRedirect('/projects')
+            ->assertSessionHas('status', 'project-token')
+            ->assertSessionHas('token');
+
+        $this->assertSame(1, $user->projects()->first()->tokens()->count());
     }
 }

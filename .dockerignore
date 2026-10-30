@@ -1,0 +1,21 @@
+# Keeps local files out of image builds (docker/selfhost/Dockerfile)
+.git
+.env
+.env.*
+!.env.example
+.dev-env
+node_modules
+vendor
+public/build
+public/hot
+storage/*.key
+storage/app/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/logs/*
+bootstrap/cache/*.php
+tests
+ansible
+polyscope.json*
+docker/selfhost/.env
