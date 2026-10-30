@@ -43,7 +43,7 @@ class ProjectsController extends Controller
 
         if ($user->projects()->where('slug', $slug)->exists()) {
             return response()->json([
-                'message' => "You already have a project named '{$slug}' on framework.pub.",
+                'message' => "You already have a project named '{$slug}' on Framework Cloud.",
             ], 422);
         }
 

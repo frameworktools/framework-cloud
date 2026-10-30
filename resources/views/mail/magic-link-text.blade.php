@@ -1,4 +1,4 @@
-{{ $isNewAccount ? 'Confirm your Framework account' : 'Sign in to Framework' }}
+{{ $isNewAccount ? 'Confirm your Framework Cloud account' : 'Sign in to Framework Cloud' }}
 
 @if ($isNewAccount)
 Open this link to confirm your email and finish creating your account:

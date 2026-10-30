@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>framework.pub</title>
+    <title>Framework Cloud</title>
     <meta name="description" content="The cloud companion to the Framework R package: settings sync, project definitions, and publishing for rendered notebooks.">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔬</text></svg>">
     @vite(['resources/css/app.css'])
@@ -11,7 +11,7 @@
 <body class="bg-white text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100">
 
     <header class="mx-auto flex max-w-4xl items-center justify-between px-6 py-6">
-        <div class="font-semibold tracking-tight">framework<span class="text-orange-500">.pub</span></div>
+        <div class="font-semibold tracking-tight">Framework <span class="text-orange-500">Cloud</span></div>
         <nav class="flex items-center gap-4 text-sm">
             <a href="https://framework.table1.org" class="text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100">Docs</a>
             @auth
@@ -32,7 +32,7 @@
                 R package.
             </h1>
             <p class="mt-5 max-w-2xl text-lg text-neutral-600 dark:text-neutral-400">
-                Framework structures data-science projects in R. framework.pub keeps your
+                Framework structures data-science projects in R. Framework Cloud keeps your
                 settings with you across machines, lets you hand a project to any computer
                 with one token, and gives rendered notebooks a clean URL. Free for settings
                 and project definitions; storage tiers later.
@@ -92,7 +92,7 @@
     </main>
 
     <footer class="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-4 border-t border-neutral-200 px-6 py-8 text-sm text-neutral-500 dark:border-neutral-800 dark:text-neutral-400">
-        <div>framework.pub</div>
+        <div>Framework Cloud</div>
         <nav class="flex gap-5">
             <a href="{{ route('terms') }}" class="hover:text-neutral-900 dark:hover:text-neutral-100">Terms</a>
             <a href="{{ route('privacy') }}" class="hover:text-neutral-900 dark:hover:text-neutral-100">Privacy</a>

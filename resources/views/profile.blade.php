@@ -3,12 +3,12 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ '@'.$user->handle }} — framework.pub</title>
+    <title>{{ '@'.$user->handle }} — Framework Cloud</title>
     @vite(['resources/css/app.css'])
 </head>
 <body class="bg-white text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100">
     <header class="mx-auto flex max-w-3xl items-center justify-between px-6 py-6">
-        <a href="/" class="font-semibold tracking-tight">framework<span class="text-orange-500">.pub</span></a>
+        <a href="/" class="font-semibold tracking-tight">Framework <span class="text-orange-500">Cloud</span></a>
     </header>
 
     <main class="mx-auto max-w-3xl px-6 py-16">
@@ -32,7 +32,7 @@
     </main>
 
     <footer class="mx-auto max-w-3xl border-t border-neutral-200 px-6 py-8 text-sm text-neutral-500 dark:border-neutral-800 dark:text-neutral-400">
-        <a href="/" class="hover:underline">framework.pub</a> — structured, reproducible data science in R
+        <a href="/" class="hover:underline">Framework Cloud</a> — structured, reproducible data science in R
     </footer>
 </body>
 </html>

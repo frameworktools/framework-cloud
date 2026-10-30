@@ -3,12 +3,12 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Privacy — framework.pub</title>
+    <title>Privacy — Framework Cloud</title>
     @vite(['resources/css/app.css'])
 </head>
 <body class="bg-white text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100">
     <main class="mx-auto max-w-2xl px-6 py-16">
-        <a href="/" class="text-sm text-orange-600 hover:underline dark:text-orange-400">&larr; framework.pub</a>
+        <a href="/" class="text-sm text-orange-600 hover:underline dark:text-orange-400">&larr; Framework Cloud</a>
         <h1 class="mt-6 text-3xl font-semibold tracking-tight">Privacy</h1>
         <p class="mt-2 text-sm text-neutral-500">Draft — last updated {{ date('F j, Y') }}. Plain-language summary; formal review before launch.</p>
 

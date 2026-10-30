@@ -1,5 +1,5 @@
 @php
-    $heading = $isNewAccount ? 'Confirm your account' : 'Sign in to Framework';
+    $heading = $isNewAccount ? 'Confirm your account' : 'Sign in to Framework Cloud';
     $action = $isNewAccount ? 'Confirm and sign in' : 'Sign in';
     $minutes = \App\Models\LoginToken::LIFETIME_MINUTES;
     $font = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
@@ -19,7 +19,7 @@
 </head>
 <body style="margin: 0; padding: 0; background-color: #f5f5f5; -webkit-text-size-adjust: 100%;">
     <div style="display: none; max-height: 0; overflow: hidden;">
-        {{ $isNewAccount ? 'Confirm your email to finish creating your Framework account.' : "Your sign-in link expires in {$minutes} minutes." }}
+        {{ $isNewAccount ? 'Confirm your email to finish creating your Framework Cloud account.' : "Your sign-in link expires in {$minutes} minutes." }}
     </div>
 
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f5f5f5" style="background-color: #f5f5f5;">
@@ -28,7 +28,7 @@
                 <table role="presentation" width="480" cellpadding="0" cellspacing="0" border="0" style="width: 100%; max-width: 480px;">
                     <tr>
                         <td align="center" style="padding: 0 0 24px; font-family: {!! $font !!}; font-size: 18px; font-weight: 600; color: #171717;">
-                            framework<span style="color: #f97316;">.pub</span>
+                            Framework <span style="color: #f97316;">Cloud</span>
                         </td>
                     </tr>
                     <tr>

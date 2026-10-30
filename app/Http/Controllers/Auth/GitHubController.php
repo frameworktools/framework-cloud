@@ -53,7 +53,7 @@ class GitHubController extends Controller
         // Connecting from settings
         if ($current) {
             if ($account && $account->user_id !== $current->id) {
-                return $failed("@{$github->getNickname()} is connected to another Framework account.");
+                return $failed("@{$github->getNickname()} is connected to another Framework Cloud account.");
             }
 
             $this->store($current, $github, $account);

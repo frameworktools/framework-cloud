@@ -159,7 +159,7 @@ class GitHub
     {
         $request = Http::acceptJson()
             ->withHeaders(['X-GitHub-Api-Version' => '2022-11-28'])
-            ->withUserAgent('framework.pub')
+            ->withUserAgent('Framework-Cloud')
             ->timeout(20);
 
         return $this->account ? $request->withToken(Tokens::fresh($this->account)) : $request;

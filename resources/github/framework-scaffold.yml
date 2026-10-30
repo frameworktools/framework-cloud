@@ -1,6 +1,6 @@
-# Committed by framework.pub to scaffold this project once. It runs the
+# Committed by Framework Cloud to scaffold this project once. It runs the
 # framework R package on .framework/layers.json, commits the result, and
-# framework.pub removes this file when the run succeeds.
+# Framework Cloud removes this file when the run succeeds.
 name: Framework scaffold
 
 on:
@@ -55,6 +55,6 @@ jobs:
         run: |
           git rm -q .framework/layers.json
           git add -A
-          git -c user.name="framework.pub" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+          git -c user.name="Framework Cloud" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
             commit -q -m "Scaffold with Framework"
           git push

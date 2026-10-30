@@ -100,7 +100,7 @@ class LibraryRepo
     {
         $version = $skill->latestVersion;
         $dir = "skills/{$skill->key}";
-        $message = "Publish skill {$skill->key} v{$version->version} from framework.pub";
+        $message = "Publish skill {$skill->key} v{$version->version} from Framework Cloud";
 
         $this->github->putFile($repo, "{$dir}/SKILL.md", $version->content, $message);
         foreach ($version->files ?? [] as $path => $content) {
@@ -125,7 +125,7 @@ class LibraryRepo
             'question' => $facet->question,
         ], fn ($value) => $value !== null) + ['layer' => $version->layer];
 
-        $this->github->putFile($repo, $path, Yaml::dump($document, 8, 2, Yaml::DUMP_MULTI_LINE_LITERAL_BLOCK), "Publish facet {$facet->key} v{$version->version} from framework.pub");
+        $this->github->putFile($repo, $path, Yaml::dump($document, 8, 2, Yaml::DUMP_MULTI_LINE_LITERAL_BLOCK), "Publish facet {$facet->key} v{$version->version} from Framework Cloud");
 
         return "https://github.com/{$repo}/blob/HEAD/{$path}";
     }

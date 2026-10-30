@@ -5,7 +5,7 @@ import { createInertiaApp, Head, Link } from '@inertiajs/vue3';
 import './passkeys.js';
 
 createInertiaApp({
-    title: (title) => (title ? `${title} — framework.pub` : 'framework.pub'),
+    title: (title) => (title ? `${title} — Framework Cloud` : 'Framework Cloud'),
     resolve: (name) => {
         const pages = import.meta.glob('./Pages/**/*.vue', { eager: true });
         return pages[`./Pages/${name}.vue`];

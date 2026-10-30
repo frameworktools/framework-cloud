@@ -21,8 +21,8 @@ class MagicLinkMail extends Mailable
     {
         return new Envelope(
             subject: $this->isNewAccount
-                ? 'Confirm your Framework account'
-                : 'Your Framework sign-in link',
+                ? 'Confirm your Framework Cloud account'
+                : 'Your Framework Cloud sign-in link',
         );
     }
 

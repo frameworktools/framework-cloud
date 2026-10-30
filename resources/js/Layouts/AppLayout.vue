@@ -16,7 +16,7 @@ const logout = () => router.post('/logout');
     <div class="flex min-h-screen">
         <aside class="hidden w-60 shrink-0 flex-col border-r border-neutral-200 bg-neutral-50 p-4 md:flex dark:border-neutral-800 dark:bg-neutral-900">
             <Link href="/dashboard" class="px-2 py-1 font-semibold tracking-tight">
-                framework<span class="text-orange-500">.pub</span>
+                Framework <span class="text-orange-500">Cloud</span>
             </Link>
 
             <nav class="mt-6 flex flex-1 flex-col gap-6">
@@ -62,7 +62,7 @@ const logout = () => router.post('/logout');
 
         <div class="flex min-w-0 flex-1 flex-col">
             <header class="flex items-center justify-between border-b border-neutral-200 px-4 py-3 md:hidden dark:border-neutral-800">
-                <Link href="/dashboard" class="font-semibold">framework<span class="text-orange-500">.pub</span></Link>
+                <Link href="/dashboard" class="font-semibold">Framework <span class="text-orange-500">Cloud</span></Link>
                 <button class="text-sm text-neutral-500" @click="logout">Sign out</button>
             </header>
 
