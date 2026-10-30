@@ -12,7 +12,7 @@
         @php($guideHits = $results->get('guides', collect()))
 
         @if ($functions->isEmpty() && $guideHits->isEmpty())
-            <p class="mt-4 text-neutral-600 dark:text-neutral-400">Nothing matched. Try a function name like <code class="font-mono">data_read</code>.</p>
+            <p class="mt-4 text-slate-600 dark:text-slate-400">Nothing matched. Try a function name like <code class="font-mono">data_read</code>.</p>
         @endif
 
         @if ($guideHits->isNotEmpty())
@@ -20,8 +20,8 @@
             <ul class="mt-3 flex flex-col gap-2">
                 @foreach ($guideHits as $g)
                     <li>
-                        <a href="{{ route('docs.guide', $g['slug']) }}" class="text-orange-600 hover:underline dark:text-orange-400">{{ $g['title'] }}</a>
-                        <span class="text-sm text-neutral-500">— {{ $g['description'] }}</span>
+                        <a href="{{ route('docs.guide', $g['slug']) }}" class="text-sky-600 hover:underline dark:text-sky-400">{{ $g['title'] }}</a>
+                        <span class="text-sm text-slate-500">— {{ $g['description'] }}</span>
                     </li>
                 @endforeach
             </ul>
@@ -31,8 +31,8 @@
             <h2 class="mt-8 text-lg font-semibold">Functions</h2>
             <dl class="mt-3 grid gap-x-8 gap-y-3 sm:grid-cols-[max-content_1fr]">
                 @foreach ($functions as $fn)
-                    <dt><a href="{{ route('docs.function', $fn->name) }}" class="font-mono text-sm text-orange-600 hover:underline dark:text-orange-400">{{ $fn->name }}()</a></dt>
-                    <dd class="text-sm text-neutral-600 dark:text-neutral-400">{{ $fn->title }}</dd>
+                    <dt><a href="{{ route('docs.function', $fn->name) }}" class="font-mono text-sm text-sky-600 hover:underline dark:text-sky-400">{{ $fn->name }}()</a></dt>
+                    <dd class="text-sm text-slate-600 dark:text-slate-400">{{ $fn->title }}</dd>
                 @endforeach
             </dl>
         @endif

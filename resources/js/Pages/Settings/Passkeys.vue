@@ -64,21 +64,21 @@ const remove = (id) => {
                     {{ busy ? 'Waiting for your device…' : 'Add a passkey' }}
                 </UiButton>
             </div>
-            <span v-if="added" class="text-sm text-neutral-500">Passkey added.</span>
+            <span v-if="added" class="text-sm text-slate-500">Passkey added.</span>
         </div>
-        <p v-else class="text-sm text-neutral-500">This browser does not support passkeys.</p>
+        <p v-else class="text-sm text-slate-500">This browser does not support passkeys.</p>
 
-        <div class="flex flex-col divide-y divide-neutral-200 dark:divide-neutral-700">
+        <div class="flex flex-col divide-y divide-slate-200 dark:divide-slate-700">
             <div v-for="passkey in passkeys" :key="passkey.id" class="flex items-center justify-between gap-4 py-3">
                 <div>
                     <div class="text-sm font-medium">{{ passkey.name }}</div>
-                    <p class="text-xs text-neutral-500">
+                    <p class="text-xs text-slate-500">
                         Added {{ passkey.created_at }} · {{ passkey.last_used_at ? `Last used ${passkey.last_used_at}` : 'Never used' }}
                     </p>
                 </div>
                 <UiButton variant="danger" size="sm" @click="remove(passkey.id)">Remove</UiButton>
             </div>
-            <p v-if="!passkeys.length" class="py-3 text-sm text-neutral-500">No passkeys yet.</p>
+            <p v-if="!passkeys.length" class="py-3 text-sm text-slate-500">No passkeys yet.</p>
         </div>
     </SettingsLayout>
 </template>

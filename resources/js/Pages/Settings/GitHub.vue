@@ -31,10 +31,10 @@ const disconnect = () => {
             Install the Framework app on each account or organization where you want new repositories.
         </UiCallout>
 
-        <p v-if="!available" class="text-sm text-neutral-500">GitHub is not set up on this server.</p>
+        <p v-if="!available" class="text-sm text-slate-500">GitHub is not set up on this server.</p>
 
         <template v-else-if="!account">
-            <p class="text-sm text-neutral-600 dark:text-neutral-400">
+            <p class="text-sm text-slate-600 dark:text-slate-400">
                 Framework uses a GitHub App. You choose which accounts and organizations it can reach,
                 and it can only work in repositories it creates or that you give it.
             </p>
@@ -45,25 +45,25 @@ const disconnect = () => {
             <div class="flex items-center justify-between gap-4">
                 <div>
                     <div class="text-sm font-medium">Connected as <a :href="`https://github.com/${account.login}`" class="font-mono hover:underline">@{{ account.login }}</a></div>
-                    <p class="text-xs text-neutral-500">Since {{ account.connected_at }}</p>
+                    <p class="text-xs text-slate-500">Since {{ account.connected_at }}</p>
                 </div>
                 <UiButton variant="outline" size="sm" @click="disconnect">Disconnect</UiButton>
             </div>
 
             <div class="flex flex-col gap-2">
                 <h2 class="text-sm font-semibold">Where Framework can create repositories</h2>
-                <p v-if="installations === null" class="text-sm text-neutral-500">GitHub could not be reached. Reload to try again.</p>
-                <div v-else class="flex flex-col divide-y divide-neutral-200 dark:divide-neutral-700">
+                <p v-if="installations === null" class="text-sm text-slate-500">GitHub could not be reached. Reload to try again.</p>
+                <div v-else class="flex flex-col divide-y divide-slate-200 dark:divide-slate-700">
                     <div v-for="i in installations" :key="i.id" class="flex items-center justify-between py-2 text-sm">
                         <span class="font-mono">{{ i.login }}</span>
-                        <span class="text-xs text-neutral-500">
+                        <span class="text-xs text-slate-500">
                             {{ i.type === 'Organization' ? 'Organization' : 'Your account' }} ·
                             {{ i.repository_selection === 'all' ? 'all repositories' : 'selected repositories' }}
                         </span>
                     </div>
-                    <p v-if="!installations.length" class="py-2 text-sm text-neutral-500">The app isn't installed anywhere yet.</p>
+                    <p v-if="!installations.length" class="py-2 text-sm text-slate-500">The app isn't installed anywhere yet.</p>
                 </div>
-                <a v-if="install_url" :href="install_url" class="text-sm text-orange-600 hover:underline dark:text-orange-400">
+                <a v-if="install_url" :href="install_url" class="text-sm text-sky-600 hover:underline dark:text-sky-400">
                     Install on another account or organization
                 </a>
             </div>

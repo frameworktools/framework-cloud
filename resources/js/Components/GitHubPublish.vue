@@ -18,7 +18,7 @@ const submit = () => form.post(props.action, { preserveScroll: true });
 <template>
     <section v-if="connected" class="flex flex-col gap-2">
         <h2 class="text-sm font-medium">Publish to GitHub</h2>
-        <p class="text-sm text-neutral-500">
+        <p class="text-sm text-slate-500">
             Writes <code class="font-mono">{{ path }}</code> to a repository the Framework app can reach, so others can import it.
         </p>
         <div class="flex flex-wrap items-end gap-2">

@@ -28,7 +28,7 @@
                 <table role="presentation" width="480" cellpadding="0" cellspacing="0" border="0" style="width: 100%; max-width: 480px;">
                     <tr>
                         <td align="center" style="padding: 0 0 24px; font-family: {!! $font !!}; font-size: 18px; font-weight: 600; color: #171717;">
-                            Framework <span style="color: #f97316;">Cloud</span>
+                            Framework <span style="color: #0284c7;">Cloud</span>
                         </td>
                     </tr>
                     <tr>
@@ -45,8 +45,8 @@
 
                             <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                                 <tr>
-                                    <td bgcolor="#f97316" style="background-color: #f97316; border-radius: 6px;">
-                                        <a href="{{ $url }}" target="_blank" style="display: inline-block; padding: 12px 24px; border: 1px solid #f97316; border-radius: 6px; font-family: {!! $font !!}; font-size: 15px; font-weight: 600; line-height: 20px; color: #ffffff; text-decoration: none;">{{ $action }}</a>
+                                    <td bgcolor="#0284c7" style="background-color: #0284c7; border-radius: 6px;">
+                                        <a href="{{ $url }}" target="_blank" style="display: inline-block; padding: 12px 24px; border: 1px solid #0284c7; border-radius: 6px; font-family: {!! $font !!}; font-size: 15px; font-weight: 600; line-height: 20px; color: #ffffff; text-decoration: none;">{{ $action }}</a>
                                     </td>
                                 </tr>
                             </table>
@@ -55,7 +55,7 @@
                                 If the button doesn't work, paste this link into your browser:
                             </p>
                             <p style="margin: 4px 0 0; font-size: 13px; line-height: 20px; word-break: break-all;">
-                                <a href="{{ $url }}" target="_blank" style="color: #ea580c; text-decoration: underline;">{{ $url }}</a>
+                                <a href="{{ $url }}" target="_blank" style="color: #0369a1; text-decoration: underline;">{{ $url }}</a>
                             </p>
                         </td>
                     </tr>

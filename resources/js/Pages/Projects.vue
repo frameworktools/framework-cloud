@@ -46,7 +46,7 @@ const headline = (key) => key.split('_').map((w) => w[0].toUpperCase() + w.slice
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
                     <h1 class="text-2xl font-semibold tracking-tight">Projects</h1>
-                    <p class="mt-1 max-w-2xl text-neutral-600 dark:text-neutral-400">
+                    <p class="mt-1 max-w-2xl text-slate-600 dark:text-slate-400">
                         Set a project up on GitHub, or on any machine with
                         <code class="font-mono text-sm">framework::setup("&lt;project-token&gt;"{{ serverArg }})</code>.
                     </p>
@@ -61,25 +61,25 @@ const headline = (key) => key.split('_').map((w) => w[0].toUpperCase() + w.slice
                 <code class="break-all font-mono text-xs">framework::setup("{{ pullToken }}"{{ serverArg }})</code>
             </UiCallout>
 
-            <div class="flex flex-col divide-y divide-neutral-200 dark:divide-neutral-800">
+            <div class="flex flex-col divide-y divide-slate-200 dark:divide-slate-800">
                 <div v-for="project in projects" :key="project.id" class="flex items-center justify-between gap-4 py-3">
                     <div class="min-w-0">
                         <div class="flex items-center gap-2">
                             <span class="font-medium">{{ project.name }}</span>
-                            <span class="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
+                            <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                                 {{ headline(project.project_type) }}
                             </span>
                             <Link
                                 v-if="project.blueprint" :href="`/blueprints/${project.blueprint.id}?version=${project.blueprint.version}`"
-                                class="font-mono text-xs text-neutral-500 hover:underline"
+                                class="font-mono text-xs text-slate-500 hover:underline"
                             >{{ project.blueprint.handle }} v{{ project.blueprint.version }}</Link>
                         </div>
-                        <p class="text-sm text-neutral-500 dark:text-neutral-400">
+                        <p class="text-sm text-slate-500 dark:text-slate-400">
                             {{ project.slug }}<span v-if="project.description"> · {{ project.description }}</span>
                         </p>
                         <div v-if="project.github" class="mt-1 flex flex-wrap items-center gap-2 text-sm">
                             <a v-if="project.github.url" :href="project.github.url" class="font-mono text-xs hover:underline">{{ project.github.repo }}</a>
-                            <span v-if="project.github.private" class="text-xs text-neutral-500">private</span>
+                            <span v-if="project.github.private" class="text-xs text-slate-500">private</span>
                             <span
                                 class="rounded-full px-2 py-0.5 text-xs"
                                 :class="{
@@ -88,10 +88,10 @@ const headline = (key) => key.split('_').map((w) => w[0].toUpperCase() + w.slice
                                     'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200': project.github.status === 'failed',
                                 }"
                             >{{ statusLabel[project.github.status] }}</span>
-                            <a v-if="project.github.run_url" :href="project.github.run_url" class="text-xs text-neutral-500 hover:underline">Run log</a>
+                            <a v-if="project.github.run_url" :href="project.github.run_url" class="text-xs text-slate-500 hover:underline">Run log</a>
                         </div>
                         <p v-if="project.github?.error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ project.github.error }}</p>
-                        <code v-if="project.github?.status === 'done'" class="mt-1 block font-mono text-xs text-neutral-600 dark:text-neutral-300">
+                        <code v-if="project.github?.status === 'done'" class="mt-1 block font-mono text-xs text-slate-600 dark:text-slate-300">
                             git clone {{ project.github.url }}.git
                         </code>
                     </div>
@@ -102,8 +102,8 @@ const headline = (key) => key.split('_').map((w) => w[0].toUpperCase() + w.slice
                         <UiButton variant="danger" size="sm" @click="destroy(project.id)">Delete</UiButton>
                     </div>
                 </div>
-                <div v-if="!projects.length" class="flex flex-col items-start gap-3 rounded-lg border border-dashed border-neutral-300 p-8 dark:border-neutral-700">
-                    <p class="text-neutral-600 dark:text-neutral-400">No projects yet.</p>
+                <div v-if="!projects.length" class="flex flex-col items-start gap-3 rounded-lg border border-dashed border-slate-300 p-8 dark:border-slate-700">
+                    <p class="text-slate-600 dark:text-slate-400">No projects yet.</p>
                     <Link href="/projects/create"><UiButton>Create your first project</UiButton></Link>
                 </div>
             </div>

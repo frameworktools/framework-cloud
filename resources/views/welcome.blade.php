@@ -3,13 +3,13 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Framework Cloud</title>
+    <title>Framework Cloud: rigorous, responsible, and reproducible data science for the AI age</title>
     <meta name="description" content="Framework brings project structure, AI guidance, data integrity checks, and safeguards for sensitive data into your R workflow. Framework Cloud helps you set up these practices and reuse them across projects.">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔬</text></svg>">
+    <link rel="icon" type="image/png" href="/images/favicon.png">
     <x-theme-script />
     @vite(['resources/css/app.css'])
 </head>
-<body class="bg-white text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100">
+<body class="bg-white text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100">
 
     @php
         $features = [
@@ -31,38 +31,40 @@
             ['key' => 'profile', 'label' => 'Author profile', 'caption' => 'Your author details go into the front matter of new notebooks, reports, and slides.', 'alt' => 'The Profile settings page, with name, email, ORCID iD, website, and an affiliation filled in.'],
         ];
 
-        $c = 'text-neutral-500'; // code comments
-        $s = 'text-orange-400'; // code strings
-        $em = 'font-medium text-neutral-900 dark:text-neutral-100';
-        $section = 'scroll-mt-6 border-t border-neutral-200 py-12 sm:py-16 dark:border-neutral-800';
+        $c = 'text-slate-500'; // code comments
+        $s = 'text-sky-400'; // code strings
+        $em = 'font-medium text-slate-900 dark:text-slate-100';
+        $section = 'scroll-mt-6 border-t border-slate-200 py-12 sm:py-16 dark:border-slate-800';
         $h2 = 'text-2xl font-semibold tracking-tight text-balance sm:text-3xl';
-        $prose = 'mt-4 flex flex-col gap-3 text-neutral-600 dark:text-neutral-400';
-        $code = 'rounded bg-neutral-100 px-1 py-0.5 font-mono text-[0.9em] text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200';
+        $prose = 'mt-4 flex flex-col gap-3 text-slate-600 dark:text-slate-400';
+        $code = 'rounded bg-slate-100 px-1 py-0.5 font-mono text-[0.9em] text-slate-800 dark:bg-slate-800 dark:text-slate-200';
     @endphp
 
-    <div class="dark relative overflow-hidden border-b border-white/10 bg-neutral-950 text-stone-50">
-    <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_80%_at_100%_0%,rgba(249,115,22,0.28),transparent_70%)]"></div>
+    <div class="relative overflow-hidden border-b border-sky-900/10 bg-gradient-to-b from-sky-100 via-sky-50 to-white text-slate-900 dark:border-white/10 dark:from-slate-900 dark:via-slate-950 dark:to-slate-950 dark:text-slate-50">
+    <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(40%_60%_at_85%_20%,rgba(255,255,255,0.9),transparent_70%),radial-gradient(30%_45%_at_65%_75%,rgba(255,255,255,0.7),transparent_70%)] dark:bg-[radial-gradient(60%_80%_at_100%_0%,rgba(14,165,233,0.18),transparent_70%)]"></div>
     <x-site-header overlay />
 
-    {{-- Hero: always dark, with a warm glow toward the top right --}}
+    {{-- Hero: a light sky gradient, or slate in dark mode --}}
     <section class="relative">
         <div class="relative mx-auto max-w-6xl px-6 py-20 sm:py-28">
-            <div class="max-w-3xl">
-                <h1 class="text-4xl font-semibold tracking-tight text-balance sm:text-6xl">
-                    Make safe, effective data science easier in the AI age
+            <div class="max-w-5xl">
+                <h1 class="text-4xl font-semibold tracking-tight text-balance sm:text-5xl xl:text-6xl">
+                    Rigorous, responsible, and reproducible data science for the AI age
                 </h1>
-                <p class="mt-6 max-w-2xl text-lg leading-relaxed text-neutral-200">
-                    <a href="https://framework.table1.org" class="text-orange-400 underline-offset-2 hover:underline">Framework</a>
-                    is an R package that brings project structure, guidance for AI assistants,
-                    data integrity checks, and safeguards for sensitive data into your R workflow.
+                <p class="mt-6 max-w-2xl text-lg leading-relaxed text-slate-700 dark:text-slate-200">
+                    Framework Cloud helps you build and share consistent research workflows in R,
+                    with reusable project setups, instructions for AI assistants, and tools for
+                    managing data integrity and sensitive data.
                 </p>
-                <p class="mt-4 max-w-2xl leading-relaxed text-neutral-300">
-                    Framework Cloud helps you set up these practices once and reuse them across
-                    projects. Use our cloud or host it yourself.
+                <p class="mt-4 max-w-2xl leading-relaxed text-slate-600 dark:text-slate-300">
+                    It works with the
+                    <a href="https://framework.table1.org" class="font-medium text-sky-700 underline-offset-2 hover:underline dark:text-sky-400">Framework R package</a>,
+                    which brings those setups and tools into your local analysis workflow.
                 </p>
-                <div class="mt-10 flex flex-wrap items-center gap-3">
-                    <a href="{{ route('register') }}" class="rounded-md bg-orange-500 px-5 py-2.5 font-medium text-white hover:bg-orange-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400">Create an account</a>
-                    <a href="{{ route('self-hosting') }}" class="rounded-md border border-neutral-500 px-5 py-2.5 font-medium text-stone-50 hover:border-neutral-300 hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400">Host it yourself</a>
+                <p class="mt-3 text-sm font-medium text-slate-500 dark:text-slate-400">Use our cloud or host it yourself.</p>
+                <div class="mt-8 flex flex-wrap items-center gap-3">
+                    <a href="{{ route('register') }}" class="rounded-md bg-sky-600 px-5 py-2.5 font-medium text-white hover:bg-sky-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500">Create an account</a>
+                    <a href="{{ route('self-hosting') }}" class="rounded-md border border-slate-300 bg-white/60 px-5 py-2.5 font-medium text-slate-800 hover:border-slate-400 hover:bg-white dark:border-slate-500 dark:bg-transparent dark:text-slate-50 dark:hover:border-slate-300 dark:hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500">Host it yourself</a>
                 </div>
             </div>
         </div>
@@ -76,15 +78,15 @@
             <h2 class="text-center {{ $h2 }}">Features</h2>
             <div class="mx-auto mt-8 grid max-w-5xl gap-4 md:grid-cols-2 lg:grid-cols-3">
                 @foreach ($features as $feature)
-                    <div class="group relative flex flex-col rounded-xl border border-neutral-200 p-6 transition-colors focus-within:border-orange-400 hover:border-orange-400 hover:bg-orange-50/50 dark:border-neutral-800 dark:hover:border-orange-800 dark:hover:bg-orange-950/20">
-                        <span class="flex size-9 items-center justify-center rounded-lg bg-orange-100 text-orange-600 dark:bg-orange-950/60 dark:text-orange-400">
+                    <div class="group relative flex flex-col rounded-xl border border-slate-200 p-6 transition-colors focus-within:border-sky-400 hover:border-sky-400 hover:bg-sky-50/50 dark:border-slate-800 dark:hover:border-sky-800 dark:hover:bg-sky-950/20">
+                        <span class="flex size-9 items-center justify-center rounded-lg bg-sky-100 text-sky-600 dark:bg-sky-950/60 dark:text-sky-400">
                             <x-dynamic-component :component="$feature['icon']" class="size-5" />
                         </span>
                         <h3 class="mt-4 leading-snug font-semibold">
                             <a href="#{{ $feature['anchor'] }}" class="after:absolute after:inset-0 after:rounded-xl focus:outline-none">{{ $feature['heading'] }}</a>
                         </h3>
-                        <p class="mt-2 flex-1 text-sm leading-normal text-neutral-600 dark:text-neutral-400">{{ $feature['body'] }}</p>
-                        <span aria-hidden="true" class="mt-4 text-sm font-medium text-orange-600 dark:text-orange-400">
+                        <p class="mt-2 flex-1 text-sm leading-normal text-slate-600 dark:text-slate-400">{{ $feature['body'] }}</p>
+                        <span aria-hidden="true" class="mt-4 text-sm font-medium text-sky-600 dark:text-sky-400">
                             How it works <span class="inline-block transition-transform group-hover:translate-x-0.5">&rarr;</span>
                         </span>
                     </div>
@@ -93,38 +95,38 @@
         </section>
 
         {{-- Screens from the application --}}
-        <section id="screens" class="border-t border-neutral-200 py-12 sm:py-16 dark:border-neutral-800" data-carousel>
+        <section id="screens" class="border-t border-slate-200 py-12 sm:py-16 dark:border-slate-800" data-carousel>
             <h2 class="text-center {{ $h2 }}">In the app</h2>
             <div class="mt-6 flex flex-wrap justify-center gap-2" role="tablist" aria-label="Screens">
                 @foreach ($screens as $i => $screen)
                     <button type="button" role="tab" data-slide-tab="{{ $i }}" aria-selected="{{ $i === 0 ? 'true' : 'false' }}"
-                        class="rounded-full border px-4 py-1.5 text-sm font-medium transition-colors aria-selected:border-orange-500 aria-selected:bg-orange-500 aria-selected:text-white border-neutral-300 text-neutral-700 hover:border-neutral-400 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-500">
+                        class="rounded-full border px-4 py-1.5 text-sm font-medium transition-colors aria-selected:border-sky-500 aria-selected:bg-sky-600 aria-selected:text-white border-slate-300 text-slate-700 hover:border-slate-400 dark:border-slate-700 dark:text-slate-300 dark:hover:border-slate-500">
                         {{ $screen['label'] }}
                     </button>
                 @endforeach
             </div>
 
             <div class="relative mt-8">
-                <div class="relative overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50 shadow-lg shadow-neutral-900/5 dark:border-neutral-800 dark:bg-neutral-900 dark:shadow-black/40">
+                <div class="relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50 shadow-lg shadow-slate-900/5 dark:border-slate-800 dark:bg-slate-900 dark:shadow-black/40">
                     @foreach ($screens as $i => $screen)
                         <figure data-slide="{{ $i }}" @class(['transition-opacity duration-300', 'hidden' => $i !== 0]) role="tabpanel">
                             <img src="/images/landing/{{ $screen['key'] }}-light.png" width="2560" height="1660" alt="{{ $screen['alt'] }}" class="block w-full dark:hidden" @if ($i) loading="lazy" @endif>
                             <img src="/images/landing/{{ $screen['key'] }}-dark.png" width="2560" height="1660" alt="{{ $screen['alt'] }}" class="hidden w-full dark:block" @if ($i) loading="lazy" @endif>
                         </figure>
                     @endforeach
-                    <div class="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white to-transparent dark:from-neutral-950"></div>
+                    <div class="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white to-transparent dark:from-slate-950"></div>
                 </div>
 
-                <button type="button" data-slide-step="-1" aria-label="Previous screen" class="absolute top-1/2 -left-4 hidden size-10 -translate-y-1/2 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-700 shadow-sm hover:text-orange-600 sm:flex dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300">
+                <button type="button" data-slide-step="-1" aria-label="Previous screen" class="absolute top-1/2 -left-4 hidden size-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm hover:text-sky-600 sm:flex dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
                     <x-heroicon-o-chevron-left class="size-5" />
                 </button>
-                <button type="button" data-slide-step="1" aria-label="Next screen" class="absolute top-1/2 -right-4 hidden size-10 -translate-y-1/2 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-700 shadow-sm hover:text-orange-600 sm:flex dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300">
+                <button type="button" data-slide-step="1" aria-label="Next screen" class="absolute top-1/2 -right-4 hidden size-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm hover:text-sky-600 sm:flex dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
                     <x-heroicon-o-chevron-right class="size-5" />
                 </button>
             </div>
 
             @foreach ($screens as $i => $screen)
-                <p data-slide-caption="{{ $i }}" @class(['mt-4 text-center text-sm text-neutral-500 dark:text-neutral-400', 'hidden' => $i !== 0])>{{ $screen['caption'] }}</p>
+                <p data-slide-caption="{{ $i }}" @class(['mt-4 text-center text-sm text-slate-500 dark:text-slate-400', 'hidden' => $i !== 0])>{{ $screen['caption'] }}</p>
             @endforeach
 
             <script>
@@ -418,15 +420,15 @@ author:
                         <p>Skills can also be imported from a GitHub repository.</p>
                     </div>
                 </div>
-                <dl class="divide-y divide-neutral-200 rounded-xl border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
+                <dl class="divide-y divide-slate-200 rounded-xl border border-slate-200 dark:divide-slate-800 dark:border-slate-800">
                     @foreach ([
                         ['Private', 'Only you can see and use it.'],
                         ['Unlisted', 'Anyone with the link can use and copy it.'],
                         ['Public', 'Everyone on the server can find, use, and copy it.'],
                     ] as [$level, $meaning])
                         <div class="flex items-center gap-4 px-5 py-4">
-                            <dt class="w-20 shrink-0"><span class="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">{{ $level }}</span></dt>
-                            <dd class="text-sm text-neutral-600 dark:text-neutral-400">{{ $meaning }}</dd>
+                            <dt class="w-20 shrink-0"><span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">{{ $level }}</span></dt>
+                            <dd class="text-sm text-slate-600 dark:text-slate-400">{{ $meaning }}</dd>
                         </div>
                     @endforeach
                 </dl>
@@ -450,7 +452,7 @@ author:
                         </p>
                     </div>
                 </div>
-                <ol class="flex flex-col gap-5 rounded-xl border border-neutral-200 p-6 lg:order-1 dark:border-neutral-800">
+                <ol class="flex flex-col gap-5 rounded-xl border border-slate-200 p-6 lg:order-1 dark:border-slate-800">
                     @foreach ([
                         'Create a project and choose On GitHub.',
                         'Framework Cloud creates the repository.',
@@ -458,8 +460,8 @@ author:
                         'Clone the repository and start working.',
                     ] as $i => $step)
                         <li class="flex items-start gap-3">
-                            <span class="flex size-7 shrink-0 items-center justify-center rounded-full bg-orange-100 text-sm font-semibold text-orange-700 dark:bg-orange-950/60 dark:text-orange-300">{{ $i + 1 }}</span>
-                            <span class="pt-0.5 text-neutral-700 dark:text-neutral-300">{{ $step }}</span>
+                            <span class="flex size-7 shrink-0 items-center justify-center rounded-full bg-sky-100 text-sm font-semibold text-sky-700 dark:bg-sky-950/60 dark:text-sky-300">{{ $i + 1 }}</span>
+                            <span class="pt-0.5 text-slate-700 dark:text-slate-300">{{ $step }}</span>
                         </li>
                     @endforeach
                 </ol>

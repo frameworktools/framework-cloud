@@ -54,13 +54,13 @@ const destroy = () => deleteForm.delete('/settings/account');
             />
             <div class="flex items-center gap-3">
                 <UiButton type="submit" :disabled="form.processing">Save</UiButton>
-                <span v-if="saved" class="text-sm text-neutral-500">Saved.</span>
+                <span v-if="saved" class="text-sm text-slate-500">Saved.</span>
             </div>
         </form>
 
-        <div v-if="page.props.passwords" class="mt-6 border-t border-neutral-200 pt-6 dark:border-neutral-800">
+        <div v-if="page.props.passwords" class="mt-6 border-t border-slate-200 pt-6 dark:border-slate-800">
             <h2 class="font-semibold">Password</h2>
-            <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
                 {{ hasPassword
                     ? 'You can sign in with your email address and this password.'
                     : 'Add a password to sign in with your email address and a password, as well as passkeys and email links.' }}
@@ -78,21 +78,21 @@ const destroy = () => deleteForm.delete('/settings/account');
                 <div class="flex items-center gap-3">
                     <UiButton type="submit" :disabled="passwordForm.processing">{{ hasPassword ? 'Change password' : 'Add password' }}</UiButton>
                     <UiButton v-if="hasPassword" variant="ghost" :disabled="passwordForm.processing" @click="removePassword">Remove password</UiButton>
-                    <span v-if="passwordStatus" class="text-sm text-neutral-500">{{ passwordStatus }}</span>
+                    <span v-if="passwordStatus" class="text-sm text-slate-500">{{ passwordStatus }}</span>
                 </div>
             </form>
         </div>
 
-        <div class="mt-6 border-t border-neutral-200 pt-6 dark:border-neutral-800">
+        <div class="mt-6 border-t border-slate-200 pt-6 dark:border-slate-800">
             <h2 class="font-semibold">Delete account</h2>
-            <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
                 Deletes your settings, projects, tokens, and published documents.
             </p>
             <UiButton variant="danger" class="mt-3" @click="showDelete = true">Delete account</UiButton>
         </div>
 
         <UiModal v-model="showDelete" title="Are you sure you want to delete your account?">
-            <p class="text-sm text-neutral-600 dark:text-neutral-400">
+            <p class="text-sm text-slate-600 dark:text-slate-400">
                 All of your resources will be permanently deleted. Type your account
                 email to confirm.
             </p>

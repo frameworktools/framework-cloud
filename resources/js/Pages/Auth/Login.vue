@@ -80,10 +80,10 @@ async function signInWithPasskey() {
 
         </div>
 
-        <div v-if="passkeySupported || page.props.githubSignIn" class="flex items-center gap-3 text-xs text-neutral-400">
-            <div class="h-px flex-1 bg-neutral-200 dark:bg-neutral-700" />
+        <div v-if="passkeySupported || page.props.githubSignIn" class="flex items-center gap-3 text-xs text-slate-400">
+            <div class="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
             or
-            <div class="h-px flex-1 bg-neutral-200 dark:bg-neutral-700" />
+            <div class="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
         </div>
 
         <form class="flex flex-col gap-4" @submit.prevent="passwords ? signIn() : send()">
@@ -106,15 +106,15 @@ async function signInWithPasskey() {
                         autocomplete="current-password"
                         :error="form.errors.password"
                     />
-                    <Link href="/forgot-password" class="self-end text-xs text-orange-600 hover:underline dark:text-orange-400">
+                    <Link href="/forgot-password" class="self-end text-xs text-sky-600 hover:underline dark:text-sky-400">
                         Forgot your password?
                     </Link>
                 </div>
                 <UiButton type="submit" class="w-full" :disabled="form.processing">Sign in</UiButton>
-                <div class="flex items-center gap-3 text-xs text-neutral-400">
-                    <div class="h-px flex-1 bg-neutral-200 dark:bg-neutral-700" />
+                <div class="flex items-center gap-3 text-xs text-slate-400">
+                    <div class="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
                     or skip the password
-                    <div class="h-px flex-1 bg-neutral-200 dark:bg-neutral-700" />
+                    <div class="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
                 </div>
                 <UiButton variant="outline" class="w-full" :disabled="form.processing" @click="send">
                     Email me a sign-in link
@@ -125,9 +125,9 @@ async function signInWithPasskey() {
             </UiButton>
         </form>
 
-        <p class="text-center text-sm text-neutral-500 dark:text-neutral-400">
+        <p class="text-center text-sm text-slate-500 dark:text-slate-400">
             Don't have an account?
-            <Link href="/register" class="text-orange-600 hover:underline dark:text-orange-400">Sign up</Link>
+            <Link href="/register" class="text-sky-600 hover:underline dark:text-sky-400">Sign up</Link>
         </p>
     </AuthLayout>
 </template>

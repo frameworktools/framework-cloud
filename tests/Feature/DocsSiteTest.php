@@ -73,6 +73,6 @@ class DocsSiteTest extends TestCase
         // The apex still serves the app landing page, not docs
         $this->get('http://framework.test/')
             ->assertOk()
-            ->assertSee('Make safe, effective data science easier');
+            ->assertSee('Rigorous, responsible, and reproducible data science');
     }
 }

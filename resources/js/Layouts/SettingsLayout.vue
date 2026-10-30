@@ -23,8 +23,8 @@ const current = (href) => page.url.startsWith(href);
                     v-for="tab in tabs" :key="tab.href" :href="tab.href"
                     class="rounded-md px-2 py-1.5 text-sm"
                     :class="current(tab.href)
-                        ? 'bg-neutral-100 font-medium text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100'
-                        : 'text-neutral-600 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-neutral-800/50'"
+                        ? 'bg-slate-100 font-medium text-slate-900 dark:bg-slate-800 dark:text-slate-100'
+                        : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800/50'"
                 >
                     {{ tab.label }}
                 </Link>
@@ -32,7 +32,7 @@ const current = (href) => page.url.startsWith(href);
 
             <div class="w-full max-w-lg flex-1">
                 <h1 class="text-lg font-semibold">{{ heading }}</h1>
-                <p v-if="subheading" class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">{{ subheading }}</p>
+                <p v-if="subheading" class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ subheading }}</p>
                 <div class="mt-6 flex flex-col gap-6">
                     <slot />
                 </div>

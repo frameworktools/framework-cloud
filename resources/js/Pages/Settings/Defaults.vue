@@ -56,7 +56,7 @@ const save = () => form.patch('/settings/defaults');
 
             <div class="flex items-center gap-3">
                 <UiButton type="submit" :disabled="form.processing">Save</UiButton>
-                <span v-if="saved" class="text-sm text-neutral-500">Saved.</span>
+                <span v-if="saved" class="text-sm text-slate-500">Saved.</span>
             </div>
         </form>
     </SettingsLayout>

@@ -5,18 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Self-hosting — Framework Cloud</title>
     <meta name="description" content="Run Framework Cloud on your own server or computer with Docker. What a self-hosted installation includes, what you manage, and where to start.">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔬</text></svg>">
+    <link rel="icon" type="image/png" href="/images/favicon.png">
     <x-theme-script />
     @vite(['resources/css/app.css'])
 </head>
-<body class="bg-white text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100">
+<body class="bg-white text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100">
 
     @php
-        $section = 'border-t border-neutral-200 py-12 sm:py-16 dark:border-neutral-800';
+        $section = 'border-t border-slate-200 py-12 sm:py-16 dark:border-slate-800';
         $h2 = 'text-2xl font-semibold tracking-tight text-balance sm:text-3xl';
-        $muted = 'text-neutral-600 dark:text-neutral-400';
-        $code = 'rounded bg-neutral-100 px-1 py-0.5 font-mono text-[0.9em] text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200';
-        $link = 'font-medium text-orange-600 hover:underline dark:text-orange-400';
+        $muted = 'text-slate-600 dark:text-slate-400';
+        $code = 'rounded bg-slate-100 px-1 py-0.5 font-mono text-[0.9em] text-slate-800 dark:bg-slate-800 dark:text-slate-200';
+        $link = 'font-medium text-sky-600 hover:underline dark:text-sky-400';
 
         $includes = [
             ['heroicon-o-square-3-stack-3d', 'Blueprints and projects', 'Built-in blueprints, your own blueprints and skills, and projects set up on computers or on GitHub.'],
@@ -43,27 +43,27 @@
         ];
     @endphp
 
-    <div class="dark relative overflow-hidden border-b border-white/10 bg-neutral-950 text-stone-50">
-    <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_80%_at_100%_0%,rgba(249,115,22,0.24),transparent_70%)]"></div>
+    <div class="relative overflow-hidden border-b border-sky-900/10 bg-gradient-to-b from-sky-100 via-sky-50 to-white text-slate-900 dark:border-white/10 dark:from-slate-900 dark:via-slate-950 dark:to-slate-950 dark:text-slate-50">
+    <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(40%_60%_at_85%_20%,rgba(255,255,255,0.9),transparent_70%),radial-gradient(30%_45%_at_65%_75%,rgba(255,255,255,0.7),transparent_70%)] dark:bg-[radial-gradient(60%_80%_at_100%_0%,rgba(14,165,233,0.18),transparent_70%)]"></div>
     <x-site-header overlay />
 
-    {{-- Intro: dark, matching the landing page hero --}}
+    {{-- Intro: matches the landing page hero --}}
     <section class="relative">
         <div class="relative mx-auto max-w-6xl px-6 py-16 sm:py-20">
             <div class="max-w-2xl">
                 <h1 class="text-4xl font-semibold tracking-tight text-balance sm:text-5xl">Host Framework Cloud yourself</h1>
-                <p class="mt-6 text-lg leading-relaxed text-neutral-300">
+                <p class="mt-6 text-lg leading-relaxed text-slate-700 dark:text-slate-300">
                     Framework Cloud is open source. You can run your own installation for a lab,
                     a department, or an institution, or on your own computer for yourself.
                 </p>
-                <p class="mt-4 text-neutral-400">
+                <p class="mt-4 text-slate-600 dark:text-slate-400">
                     A self-hosted server includes the same features as Framework Public Cloud.
                     You run it, keep it updated, and decide where its data and published
                     notebooks are stored.
                 </p>
                 <div class="mt-10 flex flex-wrap items-center gap-3">
-                    <a href="{{ route('guide', 'install-docker') }}" class="rounded-md bg-orange-500 px-5 py-2.5 font-medium text-white hover:bg-orange-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400">Read the installation guide</a>
-                    <a href="https://github.com/frameworktools/framework-cloud" class="rounded-md border border-neutral-500 px-5 py-2.5 font-medium text-stone-50 hover:border-neutral-300 hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400">Source code on GitHub</a>
+                    <a href="{{ route('guide', 'install-docker') }}" class="rounded-md bg-sky-600 px-5 py-2.5 font-medium text-white hover:bg-sky-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500">Read the installation guide</a>
+                    <a href="https://github.com/frameworktools/framework-cloud" class="rounded-md border border-slate-300 bg-white/60 px-5 py-2.5 font-medium text-slate-800 hover:border-slate-400 hover:bg-white dark:border-slate-500 dark:bg-transparent dark:text-slate-50 dark:hover:border-slate-300 dark:hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500">Source code on GitHub</a>
                 </div>
             </div>
         </div>
@@ -101,11 +101,11 @@
                     </div>
                 </div>
 <x-code-panel title="Terminal" wrap>
-<span class="text-neutral-500"># Download the Compose file and the settings template</span>
+<span class="text-slate-500"># Download the Compose file and the settings template</span>
 curl -fsSLO https://raw.githubusercontent.com/frameworktools/framework-cloud/main/docker/selfhost/compose.yml
 curl -fsSL https://raw.githubusercontent.com/frameworktools/framework-cloud/main/docker/selfhost/.env.example -o .env
 
-<span class="text-neutral-500"># Fill in .env, then start it</span>
+<span class="text-slate-500"># Fill in .env, then start it</span>
 docker compose up -d</x-code-panel>
             </div>
         </section>
@@ -115,8 +115,8 @@ docker compose up -d</x-code-panel>
             <h2 class="{{ $h2 }}">What a self-hosted server includes</h2>
             <div class="mt-8 grid gap-4 md:grid-cols-2">
                 @foreach ($includes as [$icon, $title, $body])
-                    <div class="flex gap-4 rounded-xl border border-neutral-200 p-5 dark:border-neutral-800">
-                        <span class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-orange-100 text-orange-600 dark:bg-orange-950/60 dark:text-orange-400">
+                    <div class="flex gap-4 rounded-xl border border-slate-200 p-5 dark:border-slate-800">
+                        <span class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-600 dark:bg-sky-950/60 dark:text-sky-400">
                             <x-dynamic-component :component="$icon" class="size-5" />
                         </span>
                         <div>
@@ -151,7 +151,7 @@ docker compose up -d</x-code-panel>
         {{-- What you manage --}}
         <section class="{{ $section }}">
             <h2 class="{{ $h2 }}">What you manage</h2>
-            <dl class="mt-8 divide-y divide-neutral-200 border-y border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
+            <dl class="mt-8 divide-y divide-slate-200 border-y border-slate-200 dark:divide-slate-800 dark:border-slate-800">
                 @foreach ($manage as [$title, $body])
                     <div class="grid gap-1 py-4 sm:grid-cols-[16rem_1fr] sm:gap-6">
                         <dt class="font-medium">{{ $title }}</dt>
@@ -168,13 +168,13 @@ docker compose up -d</x-code-panel>
 
         {{-- Get started --}}
         <section class="{{ $section }}">
-            <div class="rounded-2xl bg-neutral-50 p-6 sm:p-10 dark:bg-neutral-900">
+            <div class="rounded-2xl bg-slate-50 p-6 sm:p-10 dark:bg-slate-900">
                 <h2 class="{{ $h2 }}">Get started</h2>
                 <p class="mt-3 max-w-2xl {{ $muted }}">
                     The installation guide covers requirements, configuration, and the first
                     sign-in. Start with Docker unless you already run PHP applications.
                 </p>
-                <a href="{{ route('guide', 'install-docker') }}" class="mt-6 inline-block rounded-md bg-orange-500 px-5 py-2.5 font-medium text-white hover:bg-orange-600">Install with Docker</a>
+                <a href="{{ route('guide', 'install-docker') }}" class="mt-6 inline-block rounded-md bg-sky-600 px-5 py-2.5 font-medium text-white hover:bg-sky-700">Install with Docker</a>
 
                 <ul class="mt-10 grid gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
                     @foreach ($docs as [$slug, $title, $body])
@@ -194,7 +194,7 @@ docker compose up -d</x-code-panel>
                 Framework Public Cloud at framework.pub is free to use. We run and update the
                 server. Hosting published notebooks there is an optional, low-cost add-on.
             </p>
-            <a href="{{ route('register') }}" class="mt-6 inline-block rounded-md border border-neutral-300 px-5 py-2.5 font-medium text-neutral-800 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-100 dark:hover:bg-neutral-900">Create an account on Framework Public Cloud</a>
+            <a href="{{ route('register') }}" class="mt-6 inline-block rounded-md border border-slate-300 px-5 py-2.5 font-medium text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-900">Create an account on Framework Public Cloud</a>
         </section>
 
     </main>

@@ -75,10 +75,10 @@ const errorFor = (prefix) => Object.entries(form.errors).filter(([k]) => k.start
     <AppLayout>
         <form class="flex max-w-3xl flex-col gap-8" @submit.prevent="save">
             <div>
-                <Link href="/facets" class="text-sm text-neutral-500 hover:underline">Facets</Link>
+                <Link href="/facets" class="text-sm text-slate-500 hover:underline">Facets</Link>
                 <h1 class="text-2xl font-semibold tracking-tight">{{ facet ? `Edit ${facet.name}` : `New ${noun}` }}</h1>
-                <div v-if="facet" class="font-mono text-xs text-neutral-500">{{ facet.handle }} · v{{ facet.version }}</div>
-                <p class="mt-1 text-neutral-600 dark:text-neutral-400">
+                <div v-if="facet" class="font-mono text-xs text-slate-500">{{ facet.handle }} · v{{ facet.version }}</div>
+                <p class="mt-1 text-slate-600 dark:text-slate-400">
                     <template v-if="isBase">A project type is the starting layer of a blueprint. It sets the type and the core folders.</template>
                     <template v-else>A facet holds only what it adds. Blueprints that use it apply it after the project type, in order.</template>
                     Saving makes a new version; blueprints keep the version they chose until their owner updates.
@@ -116,8 +116,8 @@ const errorFor = (prefix) => Object.entries(form.errors).filter(([k]) => k.start
                     <h2 class="font-medium">Files</h2>
                     <UiButton size="sm" variant="outline" @click="addFile">Add file</UiButton>
                 </div>
-                <p class="text-sm text-neutral-500">Text files Framework writes into the project, such as a manuscript template. Templates fill in placeholders like <code class="font-mono">&#123;&#123;author&#125;&#125;</code>.</p>
-                <div v-for="(file, index) in form.files" :key="index" class="flex flex-col gap-2 rounded-lg border border-neutral-200 p-3 dark:border-neutral-800">
+                <p class="text-sm text-slate-500">Text files Framework writes into the project, such as a manuscript template. Templates fill in placeholders like <code class="font-mono">&#123;&#123;author&#125;&#125;</code>.</p>
+                <div v-for="(file, index) in form.files" :key="index" class="flex flex-col gap-2 rounded-lg border border-slate-200 p-3 dark:border-slate-800">
                     <div class="flex items-end gap-3">
                         <div class="flex-1"><UiInput v-model="file.path" label="Path" placeholder="manuscript/manuscript.qmd" /></div>
                         <UiButton size="sm" variant="ghost" @click="removeFile(index)">Remove</UiButton>
@@ -130,14 +130,14 @@ const errorFor = (prefix) => Object.entries(form.errors).filter(([k]) => k.start
 
             <section class="flex flex-col gap-3">
                 <h2 class="font-medium">Skills</h2>
-                <p class="text-sm text-neutral-500">
+                <p class="text-sm text-slate-500">
                     Instructions an AI assistant loads when a task matches. Framework installs them where the project's assistants read them.
                 </p>
-                <div class="flex flex-col divide-y divide-neutral-200 rounded-lg border border-neutral-200 empty:hidden dark:divide-neutral-800 dark:border-neutral-800">
+                <div class="flex flex-col divide-y divide-slate-200 rounded-lg border border-slate-200 empty:hidden dark:divide-slate-800 dark:border-slate-800">
                     <div v-for="(skill, index) in form.skills" :key="skill.name" class="flex items-center justify-between gap-3 px-3 py-2">
                         <div>
                             <span class="font-mono text-sm">{{ skill.name }}</span>
-                            <span class="text-xs text-neutral-500"> · {{ skillSource(skill) }}</span>
+                            <span class="text-xs text-slate-500"> · {{ skillSource(skill) }}</span>
                         </div>
                         <UiButton size="sm" variant="ghost" @click="removeSkill(index)">Remove</UiButton>
                     </div>
@@ -159,7 +159,7 @@ const errorFor = (prefix) => Object.entries(form.errors).filter(([k]) => k.start
             </section>
 
             <p v-if="page.props.errors.github" class="text-sm text-red-600 dark:text-red-400">{{ page.props.errors.github }}</p>
-            <p v-if="facet?.source_url" class="text-sm text-neutral-500">
+            <p v-if="facet?.source_url" class="text-sm text-slate-500">
                 Imported from <a :href="facet.source_url" class="underline">{{ facet.source_url }}</a>
             </p>
             <GitHubPublish v-if="facet" :action="`/facets/${facet.id}/publish`" :path="`facets/${facet.key}.facet.yml`" />
@@ -168,8 +168,8 @@ const errorFor = (prefix) => Object.entries(form.errors).filter(([k]) => k.start
                 <h2 class="text-sm font-medium">Versions</h2>
                 <div v-for="v in [...facet.versions].reverse()" :key="v.id" class="text-sm">
                     <span class="font-mono">v{{ v.version }}</span>
-                    <span class="text-neutral-500"> · {{ new Date(v.created_at).toLocaleDateString() }}</span>
-                    <span v-if="v.notes" class="text-neutral-500"> · {{ v.notes }}</span>
+                    <span class="text-slate-500"> · {{ new Date(v.created_at).toLocaleDateString() }}</span>
+                    <span v-if="v.notes" class="text-slate-500"> · {{ v.notes }}</span>
                 </div>
             </section>
         </form>

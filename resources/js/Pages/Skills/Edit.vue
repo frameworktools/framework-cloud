@@ -35,10 +35,10 @@ const destroy = () => {
     <AppLayout>
         <form class="flex max-w-3xl flex-col gap-6" @submit.prevent="save">
             <div>
-                <Link href="/skills" class="text-sm text-neutral-500 hover:underline">Skills</Link>
+                <Link href="/skills" class="text-sm text-slate-500 hover:underline">Skills</Link>
                 <h1 class="font-mono text-2xl font-semibold tracking-tight">{{ skill ? skill.key : 'New skill' }}</h1>
-                <div v-if="skill" class="font-mono text-xs text-neutral-500">{{ skill.handle }} · v{{ skill.version }}</div>
-                <p class="mt-1 text-neutral-600 dark:text-neutral-400">
+                <div v-if="skill" class="font-mono text-xs text-slate-500">{{ skill.handle }} · v{{ skill.version }}</div>
+                <p class="mt-1 text-slate-600 dark:text-slate-400">
                     The frontmatter <code class="font-mono">name</code> is the skill's name, and the
                     <code class="font-mono">description</code> tells an assistant when to load it.
                     <template v-if="skill?.is_system"> Framework skills ship with the R package, so facets use the installed copy.</template>
@@ -63,7 +63,7 @@ const destroy = () => {
             <p v-if="page.props.errors.skill" class="text-xs text-red-600 dark:text-red-400">{{ page.props.errors.skill }}</p>
             <p v-if="page.props.errors.github" class="text-sm text-red-600 dark:text-red-400">{{ page.props.errors.github }}</p>
 
-            <p v-if="skill?.source_url" class="text-sm text-neutral-500">
+            <p v-if="skill?.source_url" class="text-sm text-slate-500">
                 Imported from <a :href="skill.source_url" class="underline">{{ skill.source_url }}</a>
             </p>
             <GitHubPublish v-if="skill" :action="`/skills/${skill.id}/publish`" :path="`skills/${skill.key}/SKILL.md`" />

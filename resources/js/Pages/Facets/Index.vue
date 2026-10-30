@@ -31,7 +31,7 @@ const fork = (id) => router.post(`/facets/${id}/fork`);
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
                     <h1 class="text-2xl font-semibold tracking-tight">Facets</h1>
-                    <p class="mt-1 max-w-2xl text-neutral-600 dark:text-neutral-400">
+                    <p class="mt-1 max-w-2xl text-slate-600 dark:text-slate-400">
                         A facet adds one thing to a project: folders, packages, git hooks, skills, or files.
                         Blueprints stack facets on a project type.
                     </p>
@@ -51,18 +51,18 @@ const fork = (id) => router.post(`/facets/${id}/fork`);
             />
 
             <section v-for="section in sections" :key="section.key" class="flex flex-col gap-3">
-                <h2 class="text-sm font-medium uppercase tracking-wide text-neutral-500">{{ section.label }}</h2>
-                <p v-if="!section.rows.length" class="text-sm text-neutral-500">You haven't made a facet yet.</p>
+                <h2 class="text-sm font-medium uppercase tracking-wide text-slate-500">{{ section.label }}</h2>
+                <p v-if="!section.rows.length" class="text-sm text-slate-500">You haven't made a facet yet.</p>
 
-                <div class="flex flex-col divide-y divide-neutral-200 rounded-lg border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
+                <div class="flex flex-col divide-y divide-slate-200 rounded-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-800">
                     <div v-for="facet in section.rows" :key="facet.id" class="grid gap-3 p-4 md:grid-cols-[1fr_1fr_auto]">
                         <div class="min-w-0">
                             <div class="flex flex-wrap items-baseline gap-2">
                                 <span class="font-medium">{{ facet.name }}</span>
-                                <span class="rounded bg-neutral-100 px-1.5 py-0.5 text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">{{ label(facet) }}</span>
+                                <span class="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-400">{{ label(facet) }}</span>
                             </div>
-                            <div class="truncate font-mono text-xs text-neutral-500">{{ facet.handle }} · v{{ facet.version }}</div>
-                            <p v-if="facet.description" class="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{{ facet.description }}</p>
+                            <div class="truncate font-mono text-xs text-slate-500">{{ facet.handle }} · v{{ facet.version }}</div>
+                            <p v-if="facet.description" class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{ facet.description }}</p>
                         </div>
                         <LayerSummary :sections="facet.summary" />
                         <div class="flex shrink-0 items-start gap-2 whitespace-nowrap">

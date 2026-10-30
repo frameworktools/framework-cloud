@@ -10,7 +10,7 @@ defineProps({ version: { type: Object, required: true } });
         <div v-for="fragment in [version.base, ...version.facets]" :key="fragment.id" class="flex flex-col gap-1.5">
             <div class="text-sm font-medium">
                 {{ fragment.kind === 'base' ? fragment.name : `+ ${fragment.name}` }}
-                <span class="font-normal text-neutral-500">{{ fragment.kind === 'base' ? 'project type' : 'facet' }}</span>
+                <span class="font-normal text-slate-500">{{ fragment.kind === 'base' ? 'project type' : 'facet' }}</span>
             </div>
             <LayerSummary :sections="fragment.summary" />
         </div>

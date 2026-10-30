@@ -70,7 +70,7 @@ const testMail = () => router.post('/admin/setup/mail/test', {}, { preserveScrol
 
 const pill = (ready) => (ready
     ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200'
-    : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300');
+    : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300');
 </script>
 
 <template>
@@ -80,7 +80,7 @@ const pill = (ready) => (ready
         <div class="flex max-w-3xl flex-col gap-8">
             <div>
                 <h1 class="text-2xl font-semibold tracking-tight">Server setup</h1>
-                <p class="mt-1 text-neutral-600 dark:text-neutral-400">
+                <p class="mt-1 text-slate-600 dark:text-slate-400">
                     This server's own credentials: the GitHub App, where published documents are stored, and how email is sent.
                     Fill them in here, or with environment variables. A variable that is set always wins over a value saved here.
                 </p>
@@ -101,15 +101,15 @@ const pill = (ready) => (ready
             </UiCallout>
 
             <!-- 1. GitHub -->
-            <section class="flex flex-col gap-4 rounded-lg border border-neutral-200 p-5 dark:border-neutral-800">
+            <section class="flex flex-col gap-4 rounded-lg border border-slate-200 p-5 dark:border-slate-800">
                 <div class="flex flex-wrap items-center justify-between gap-2">
                     <h2 class="flex items-center gap-2.5 text-lg font-semibold">
-                        <span class="flex size-6 items-center justify-center rounded-full bg-orange-500 text-xs text-white">1</span>
+                        <span class="flex size-6 items-center justify-center rounded-full bg-sky-600 text-xs text-white">1</span>
                         GitHub
                     </h2>
                     <span class="rounded-full px-2 py-0.5 text-xs" :class="pill(status.github)">{{ status.github ? 'Ready' : 'Not set up' }}</span>
                 </div>
-                <p class="text-sm text-neutral-600 dark:text-neutral-400">
+                <p class="text-sm text-slate-600 dark:text-slate-400">
                     Lets people sign in with GitHub and create projects as GitHub repositories. Each server needs its own GitHub App.
                     Optional: everything else works without it.
                 </p>
@@ -121,10 +121,10 @@ const pill = (ready) => (ready
                 <UiCallout v-if="errors.github" variant="danger" heading="GitHub">{{ errors.github }}</UiCallout>
 
                 <template v-if="!githubFromEnv && !field('github.client_id').set">
-                    <form method="post" :action="githubAction" class="flex flex-col gap-3 rounded-md bg-neutral-50 p-4 dark:bg-neutral-900/60">
+                    <form method="post" :action="githubAction" class="flex flex-col gap-3 rounded-md bg-slate-50 p-4 dark:bg-slate-900/60">
                         <input type="hidden" name="manifest" :value="manifestJson">
                         <div class="text-sm font-medium">Create the app on GitHub</div>
-                        <p class="text-sm text-neutral-600 dark:text-neutral-400">
+                        <p class="text-sm text-slate-600 dark:text-slate-400">
                             GitHub opens with everything filled in: name, permissions, sign-in callback, and webhook. Click
                             <span class="font-medium">Create GitHub App</span> there and you'll come back here with it saved.
                         </p>
@@ -133,7 +133,7 @@ const pill = (ready) => (ready
                         </div>
                         <div><UiButton type="submit">Create GitHub App</UiButton></div>
                     </form>
-                    <button type="button" class="self-start text-sm text-neutral-500 hover:underline" @click="showManualGitHub = !showManualGitHub">
+                    <button type="button" class="self-start text-sm text-slate-500 hover:underline" @click="showManualGitHub = !showManualGitHub">
                         {{ showManualGitHub ? 'Hide' : 'Or enter an app you already have' }}
                     </button>
                 </template>
@@ -152,35 +152,35 @@ const pill = (ready) => (ready
                     <CredentialField v-model="forms.github.github__private_key" :field="field('github.private_key')" multiline placeholder="-----BEGIN RSA PRIVATE KEY-----" :error="forms.github.errors.github__private_key" />
 
                     <dl class="grid gap-x-3 gap-y-1 text-xs sm:grid-cols-[auto_1fr]">
-                        <dt class="text-neutral-500">Sign-in callback</dt><dd class="break-all font-mono">{{ github.callback_url }}</dd>
-                        <dt class="text-neutral-500">Webhook</dt><dd class="break-all font-mono">{{ github.webhook_url }}</dd>
+                        <dt class="text-slate-500">Sign-in callback</dt><dd class="break-all font-mono">{{ github.callback_url }}</dd>
+                        <dt class="text-slate-500">Webhook</dt><dd class="break-all font-mono">{{ github.webhook_url }}</dd>
                     </dl>
 
                     <div v-if="!allEnv('github')" class="flex flex-wrap items-center gap-3">
                         <UiButton type="submit" :disabled="forms.github.processing">Save</UiButton>
                         <a v-if="installUrl" :href="installUrl" target="_blank"><UiButton variant="outline">Install the app</UiButton></a>
                         <UiButton v-if="savedIn('github')" variant="ghost" @click="clear('github', 'GitHub App')">Remove saved app</UiButton>
-                        <span v-if="flash === 'github-saved'" class="text-sm text-neutral-500">Saved.</span>
+                        <span v-if="flash === 'github-saved'" class="text-sm text-slate-500">Saved.</span>
                     </div>
                 </form>
             </section>
 
             <!-- 2. Storage -->
-            <section class="flex flex-col gap-4 rounded-lg border border-neutral-200 p-5 dark:border-neutral-800">
+            <section class="flex flex-col gap-4 rounded-lg border border-slate-200 p-5 dark:border-slate-800">
                 <div class="flex flex-wrap items-center justify-between gap-2">
                     <h2 class="flex items-center gap-2.5 text-lg font-semibold">
-                        <span class="flex size-6 items-center justify-center rounded-full bg-orange-500 text-xs text-white">2</span>
+                        <span class="flex size-6 items-center justify-center rounded-full bg-sky-600 text-xs text-white">2</span>
                         Published documents
                     </h2>
                     <span class="rounded-full px-2 py-0.5 text-xs" :class="pill(usingBucket)">
                         {{ usingBucket ? `Bucket (${status.storage})` : "This server's disk" }}
                     </span>
                 </div>
-                <p class="text-sm text-neutral-600 dark:text-neutral-400">
+                <p class="text-sm text-slate-600 dark:text-slate-400">
                     Where notebooks published with <span class="font-mono">framework::publish()</span> are stored. Without a bucket they go on this
                     server's disk, which is fine for a small group. Any S3-compatible bucket works: Amazon S3, Cloudflare R2, MinIO, or Backblaze B2.
                 </p>
-                <p v-if="documentsDiskFromEnv" class="text-sm text-neutral-600 dark:text-neutral-400">
+                <p v-if="documentsDiskFromEnv" class="text-sm text-slate-600 dark:text-slate-400">
                     <span class="font-mono">FW_DOCUMENTS_DISK</span> is set, so the environment picks the disk. A bucket saved here is used only if it names <span class="font-mono">bucket</span>.
                 </p>
 
@@ -204,7 +204,7 @@ const pill = (ready) => (ready
                         v-model="forms.storage.storage__public_url" :field="field('storage.public_url')"
                         placeholder="https://files.example.org (optional)" :error="forms.storage.errors.storage__public_url"
                     />
-                    <p class="-mt-2 text-xs text-neutral-500">
+                    <p class="-mt-2 text-xs text-slate-500">
                         Optional: a public domain attached to the bucket. Documents then load from there, a separate site from this one, which keeps
                         scripts in published pages away from people's sign-ins. Without it, this server streams them.
                     </p>
@@ -213,21 +213,21 @@ const pill = (ready) => (ready
                         <UiButton type="submit" :disabled="forms.storage.processing">Save</UiButton>
                         <UiButton variant="outline" :disabled="forms.storage.processing" @click="testStorage">Test connection</UiButton>
                         <UiButton v-if="savedIn('storage')" variant="ghost" @click="clear('storage', 'bucket')">Remove saved bucket</UiButton>
-                        <span v-if="flash === 'storage-saved'" class="text-sm text-neutral-500">Saved.</span>
+                        <span v-if="flash === 'storage-saved'" class="text-sm text-slate-500">Saved.</span>
                     </div>
                 </form>
             </section>
 
             <!-- 3. Mail -->
-            <section class="flex flex-col gap-4 rounded-lg border border-neutral-200 p-5 dark:border-neutral-800">
+            <section class="flex flex-col gap-4 rounded-lg border border-slate-200 p-5 dark:border-slate-800">
                 <div class="flex flex-wrap items-center justify-between gap-2">
                     <h2 class="flex items-center gap-2.5 text-lg font-semibold">
-                        <span class="flex size-6 items-center justify-center rounded-full bg-orange-500 text-xs text-white">3</span>
+                        <span class="flex size-6 items-center justify-center rounded-full bg-sky-600 text-xs text-white">3</span>
                         Email
                     </h2>
                     <span class="rounded-full px-2 py-0.5 text-xs" :class="pill(mailReady)">{{ mailReady ? `Sending with ${status.mail}` : 'Not sending' }}</span>
                 </div>
-                <p class="text-sm text-neutral-600 dark:text-neutral-400">
+                <p class="text-sm text-slate-600 dark:text-slate-400">
                     Sign-in links go out by email, so people can't sign in until this works (unless they use GitHub or a passkey).
                 </p>
 
@@ -261,7 +261,7 @@ const pill = (ready) => (ready
                         <UiButton v-if="!allEnv('mail')" type="submit" :disabled="forms.mail.processing">Save</UiButton>
                         <UiButton variant="outline" :disabled="!mailReady" @click="testMail">Send a test email</UiButton>
                         <UiButton v-if="savedIn('mail')" variant="ghost" @click="clear('mail', 'email settings')">Remove saved settings</UiButton>
-                        <span v-if="flash === 'mail-saved'" class="text-sm text-neutral-500">Saved. Send a test email to check it.</span>
+                        <span v-if="flash === 'mail-saved'" class="text-sm text-slate-500">Saved. Send a test email to check it.</span>
                     </div>
                 </form>
             </section>

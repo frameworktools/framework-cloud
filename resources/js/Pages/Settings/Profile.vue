@@ -63,14 +63,14 @@ const yaml = computed(() => {
 
             <fieldset class="flex flex-col gap-4">
                 <legend class="mb-2 text-sm font-semibold">Affiliations</legend>
-                <p class="-mt-2 text-sm text-neutral-500 dark:text-neutral-400">The first one is your main affiliation.</p>
+                <p class="-mt-2 text-sm text-slate-500 dark:text-slate-400">The first one is your main affiliation.</p>
 
                 <div
                     v-for="(affiliation, index) in form.affiliations" :key="index"
-                    class="flex flex-col gap-3 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800"
+                    class="flex flex-col gap-3 rounded-lg border border-slate-200 p-4 dark:border-slate-800"
                 >
                     <div class="flex items-center justify-between gap-2">
-                        <span class="text-xs font-medium uppercase tracking-wide text-neutral-500">{{ index === 0 ? 'Main' : `Affiliation ${index + 1}` }}</span>
+                        <span class="text-xs font-medium uppercase tracking-wide text-slate-500">{{ index === 0 ? 'Main' : `Affiliation ${index + 1}` }}</span>
                         <div class="flex gap-1">
                             <UiButton v-if="index > 0" variant="ghost" size="sm" @click="move(index, -1)">Move up</UiButton>
                             <UiButton variant="ghost" size="sm" @click="remove(index)">Remove</UiButton>
@@ -91,12 +91,12 @@ const yaml = computed(() => {
 
             <div class="flex flex-col gap-2">
                 <div class="text-sm font-semibold">In Quarto</div>
-                <pre class="overflow-x-auto rounded-lg border border-neutral-200 bg-neutral-50 p-4 font-mono text-xs leading-5 text-neutral-800 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-200">{{ yaml }}</pre>
+                <pre class="overflow-x-auto rounded-lg border border-slate-200 bg-slate-50 p-4 font-mono text-xs leading-5 text-slate-800 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">{{ yaml }}</pre>
             </div>
 
             <div class="flex items-center gap-3">
                 <UiButton type="submit" :disabled="form.processing">Save</UiButton>
-                <span v-if="saved" class="text-sm text-neutral-500">Saved.</span>
+                <span v-if="saved" class="text-sm text-slate-500">Saved.</span>
             </div>
         </form>
     </SettingsLayout>

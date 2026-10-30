@@ -18,15 +18,15 @@ const options = [
 </script>
 
 <template>
-    <div class="inline-flex items-center gap-0.5 rounded-full border border-neutral-200 p-0.5 dark:border-neutral-700" role="radiogroup" aria-label="Color theme">
+    <div class="inline-flex items-center gap-0.5 rounded-full border border-slate-200 p-0.5 dark:border-slate-700" role="radiogroup" aria-label="Color theme">
         <button
             v-for="option in options" :key="option.value"
             type="button" role="radio" :aria-checked="choice === option.value"
             :title="option.label" :aria-label="option.label"
             class="flex size-6 items-center justify-center rounded-full"
             :class="choice === option.value
-                ? 'bg-neutral-200 text-neutral-900 dark:bg-neutral-700 dark:text-neutral-100'
-                : 'text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100'"
+                ? 'bg-slate-200 text-slate-900 dark:bg-slate-700 dark:text-slate-100'
+                : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100'"
             @click="pick(option.value)"
         >
             <svg v-if="option.value === 'light'" class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg>

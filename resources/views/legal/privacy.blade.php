@@ -7,14 +7,14 @@
     <x-theme-script />
     @vite(['resources/css/app.css'])
 </head>
-<body class="bg-white text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100">
+<body class="bg-white text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100">
     <main class="mx-auto max-w-2xl px-6 py-16">
         <div class="flex items-center justify-between">
-            <a href="/" class="text-sm text-orange-600 hover:underline dark:text-orange-400">&larr; Framework Cloud</a>
+            <a href="/" class="text-sm text-sky-600 hover:underline dark:text-sky-400">&larr; Framework Cloud</a>
             <x-theme-toggle />
         </div>
         <h1 class="mt-6 text-3xl font-semibold tracking-tight">Privacy</h1>
-        <p class="mt-2 text-sm text-neutral-500">Draft — last updated {{ date('F j, Y') }}. Plain-language summary; formal review before launch.</p>
+        <p class="mt-2 text-sm text-slate-500">Draft — last updated {{ date('F j, Y') }}. Plain-language summary; formal review before launch.</p>
 
         <div class="prose prose-neutral mt-8 dark:prose-invert">
             <h2>What we store</h2>
