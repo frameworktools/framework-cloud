@@ -53,7 +53,10 @@ docker compose exec app php artisan fw:login-link you@example.edu
 
 Open the link, then open **Server setup** in the sidebar to set up email,
 GitHub, and storage for published documents.
-[`docs/self-hosting.md`](../../docs/self-hosting.md) explains each step.
+[Server setup](../../docs/guide/server-setup.md) explains each step. The full
+guide is in [`docs/guide`](../../docs/guide/index.md), including
+[running it on your own computer](../../docs/guide/running-at-home.md) in
+single-user mode.
 
 ## Try it on your own computer
 
@@ -65,7 +68,9 @@ SERVER_NAME=:80
 HTTP_PORT=8080
 ```
 
-Then open http://localhost:8080.
+Then open http://localhost:8080. To use it as your own private server with
+no sign-in screen, see
+[Run it on your own computer](../../docs/guide/running-at-home.md).
 
 ## Everyday commands
 

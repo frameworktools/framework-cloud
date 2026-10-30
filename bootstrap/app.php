@@ -1,8 +1,11 @@
 <?php
 
 use App\Http\Middleware\EnsureAdmin;
+use App\Http\Middleware\EnsurePasswordsEnabled;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\ServeBuiltAssetsThroughTunnels;
+use App\Http\Middleware\SingleUserMode;
+use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -30,11 +33,20 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->web(append: [
             ServeBuiltAssetsThroughTunnels::class,
+            SingleUserMode::class,
             HandleInertiaRequests::class,
         ]);
 
+        // Route middleware such as auth is sorted ahead of the web group's
+        // appended middleware, so single-user sign-in must be ranked first
+        $middleware->prependToPriorityList(
+            before: AuthenticatesRequests::class,
+            prepend: SingleUserMode::class,
+        );
+
         $middleware->alias([
             'admin' => EnsureAdmin::class,
+            'passwords' => EnsurePasswordsEnabled::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

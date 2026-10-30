@@ -69,6 +69,30 @@ return [
     'mode' => env('FW_MODE', 'self') === 'hosted' ? 'hosted' : 'self',
 
     /*
+    | Password sign-in, alongside passkeys and email links. On by default
+    | for a self-hosted server, where email may not be set up.
+    */
+
+    'passwords' => (bool) env('FW_PASSWORDS', env('FW_MODE', 'self') !== 'hosted'),
+
+    /*
+    | Single-user mode signs every request from this computer in as the
+    | admin, with no sign-in screen. It applies only to requests that come
+    | straight from one of these networks (loopback by default) to a
+    | localhost address, and only while APP_URL is a localhost address.
+    | See App\Http\Middleware\SingleUserMode.
+    */
+
+    'single_user' => (bool) env('FW_SINGLE_USER', false),
+
+    'single_user_networks' => array_values(array_filter(array_map(
+        'trim',
+        explode(',', (string) env('FW_SINGLE_USER_NETWORKS', '127.0.0.1/32,::1/128')),
+    ))),
+
+    'admin_email' => env('FW_ADMIN_EMAIL'),
+
+    /*
     | Which credential variables are set, recorded here because env() returns
     | null at runtime once config is cached. See App\Support\Credentials.
     */

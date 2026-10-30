@@ -14,7 +14,7 @@ class MagicLinkAuthTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_login_screen_renders_without_password_fields(): void
+    public function test_login_screen_renders(): void
     {
         $response = $this->get('/login');
 
@@ -27,10 +27,12 @@ class MagicLinkAuthTest extends TestCase
         $this->get('/register')->assertOk();
     }
 
-    public function test_password_routes_are_gone(): void
+    public function test_password_routes_are_gone_when_passwords_are_off(): void
     {
+        config(['framework.passwords' => false]);
+
         $this->get('/forgot-password')->assertNotFound();
-        $this->get('/settings/password')->assertNotFound();
+        $this->post('/login/password', ['email' => 'a@b.test', 'password' => 'x'])->assertNotFound();
     }
 
     public function test_existing_user_receives_magic_link(): void

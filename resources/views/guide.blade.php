@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ $page === 'index' ? 'Documentation' : $title }} — Framework Cloud</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔬</text></svg>">
+    <x-theme-script />
+    @vite(['resources/css/app.css'])
+</head>
+<body class="bg-white text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100">
+
+    <header class="border-b border-neutral-200 dark:border-neutral-800">
+        <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
+            <a href="/" class="font-semibold tracking-tight">
+                Framework <span class="text-orange-500">Cloud</span>
+                <span class="ml-1 text-sm font-normal text-neutral-500">docs</span>
+            </a>
+            <nav class="flex items-center gap-4 text-sm">
+                <x-theme-toggle class="max-sm:hidden" />
+                @auth
+                    <a href="{{ route('dashboard') }}" class="rounded-md bg-orange-500 px-4 py-2 font-medium text-white hover:bg-orange-600">Dashboard</a>
+                @else
+                    <a href="{{ route('login') }}" class="text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100">Sign in</a>
+                @endauth
+            </nav>
+        </div>
+    </header>
+
+    <div class="mx-auto flex max-w-6xl gap-12 px-6 py-10 max-md:flex-col max-md:gap-6">
+        <nav class="w-56 shrink-0 text-sm max-md:w-full">
+            @foreach ($pages as $section => $items)
+                <div class="mb-6">
+                    <div class="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">{{ $section }}</div>
+                    <ul class="flex flex-col gap-0.5">
+                        @foreach ($items as $slug => $label)
+                            <li>
+                                <a href="{{ $slug === 'index' ? url('/docs') : url('/docs/'.$slug) }}"
+                                   @class([
+                                       'block rounded-md px-2 py-1.5',
+                                       'bg-orange-100 font-medium text-orange-700 dark:bg-orange-950/50 dark:text-orange-300' => $slug === $page,
+                                       'text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-900' => $slug !== $page,
+                                   ])>{{ $label }}</a>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endforeach
+        </nav>
+
+        <main class="prose prose-neutral min-w-0 max-w-3xl flex-1 dark:prose-invert prose-a:text-orange-600 dark:prose-a:text-orange-400 prose-code:before:content-none prose-code:after:content-none prose-table:text-sm">
+            {!! $html !!}
+
+            <p class="mt-12 text-sm text-neutral-500">
+                <a href="https://github.com/frameworktools/framework-cloud/blob/main/docs/guide/{{ $page }}.md">Edit this page on GitHub</a>
+            </p>
+        </main>
+    </div>
+
+</body>
+</html>

@@ -177,7 +177,7 @@ const pill = (ready) => (ready
                     </span>
                 </div>
                 <p class="text-sm text-neutral-600 dark:text-neutral-400">
-                    Where notebooks published with <span class="font-mono">framework::publish_notebook()</span> are stored. Without a bucket they go on this
+                    Where notebooks published with <span class="font-mono">framework::publish()</span> are stored. Without a bucket they go on this
                     server's disk, which is fine for a small group. Any S3-compatible bucket works: Amazon S3, Cloudflare R2, MinIO, or Backblaze B2.
                 </p>
                 <p v-if="documentsDiskFromEnv" class="text-sm text-neutral-600 dark:text-neutral-400">

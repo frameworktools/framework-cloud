@@ -26,9 +26,10 @@ services:
   app:
     <<: *app
     ports:
-      - "${HTTP_PORT:-80}:80"
-      - "${HTTPS_PORT:-443}:443"
-      - "${HTTPS_PORT:-443}:443/udp"
+      # HTTP_BIND=127.0.0.1 makes the server reachable only from this computer
+      - "${HTTP_BIND:-0.0.0.0}:${HTTP_PORT:-80}:80"
+      - "${HTTP_BIND:-0.0.0.0}:${HTTPS_PORT:-443}:443"
+      - "${HTTP_BIND:-0.0.0.0}:${HTTPS_PORT:-443}:443/udp"
     volumes:
       - storage:/app/storage
       - caddy_data:/data

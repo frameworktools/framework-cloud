@@ -73,7 +73,7 @@ const date = (value) => new Date(value).toLocaleDateString(undefined, { year: 'n
                 <p class="max-w-xl text-sm text-neutral-600 dark:text-neutral-400">
                     In a project set up from Framework Cloud, render and publish a notebook from R. It shows up here with a link you can share.
                 </p>
-                <pre class="w-fit rounded-md bg-neutral-100 px-3 py-2 font-mono text-xs text-neutral-800 dark:bg-neutral-900 dark:text-neutral-200">framework::publish_notebook("notebooks/analysis.qmd")</pre>
+                <pre class="w-fit rounded-md bg-neutral-100 px-3 py-2 font-mono text-xs text-neutral-800 dark:bg-neutral-900 dark:text-neutral-200">framework::publish("notebooks/analysis.qmd")</pre>
             </div>
         </div>
     </AppLayout>

@@ -49,6 +49,9 @@ class HandleInertiaRequests extends Middleware
             ])),
 
             'githubSignIn' => filled(config('services.github.client_id')),
+            'passwords' => (bool) config('framework.passwords'),
+            // Signing out would sign straight back in, so the app hides it
+            'singleUser' => SingleUserMode::appliesTo($request),
             'appUrl' => rtrim(config('app.url'), '/'),
             'csrf' => $request->session()->token(),
         ];

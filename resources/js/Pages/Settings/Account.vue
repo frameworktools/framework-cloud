@@ -7,7 +7,7 @@ import UiInput from '@/Components/UiInput.vue';
 import UiSwitch from '@/Components/UiSwitch.vue';
 import UiModal from '@/Components/UiModal.vue';
 
-const props = defineProps({ profile: Object });
+const props = defineProps({ profile: Object, hasPassword: Boolean });
 
 const page = usePage();
 const saved = computed(() => page.props.flash.status === 'profile-updated');
@@ -19,6 +19,14 @@ const form = useForm({
     profile_public: props.profile.profile_public,
 });
 const save = () => form.patch('/settings/account');
+
+const passwordStatus = computed(() => ({
+    'password-updated': 'Password saved.',
+    'password-removed': 'Password removed.',
+})[page.props.flash.status]);
+const passwordForm = useForm({ current_password: '', password: '', password_confirmation: '' });
+const savePassword = () => passwordForm.put('/settings/password', { preserveScroll: true, onFinish: () => passwordForm.reset() });
+const removePassword = () => passwordForm.delete('/settings/password', { preserveScroll: true, onFinish: () => passwordForm.reset() });
 
 const showDelete = ref(false);
 const deleteForm = useForm({ confirm_email: '' });
@@ -49,6 +57,31 @@ const destroy = () => deleteForm.delete('/settings/account');
                 <span v-if="saved" class="text-sm text-neutral-500">Saved.</span>
             </div>
         </form>
+
+        <div v-if="page.props.passwords" class="mt-6 border-t border-neutral-200 pt-6 dark:border-neutral-800">
+            <h2 class="font-semibold">Password</h2>
+            <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                {{ hasPassword
+                    ? 'You can sign in with your email address and this password.'
+                    : 'Add a password to sign in with your email address and a password, as well as passkeys and email links.' }}
+            </p>
+            <form class="mt-4 flex flex-col gap-4" @submit.prevent="savePassword">
+                <UiInput
+                    v-if="hasPassword" v-model="passwordForm.current_password" label="Current password" type="password"
+                    autocomplete="current-password" :error="passwordForm.errors.current_password"
+                />
+                <UiInput
+                    v-model="passwordForm.password" :label="hasPassword ? 'New password' : 'Password'" type="password"
+                    autocomplete="new-password" description="At least 10 characters." :error="passwordForm.errors.password"
+                />
+                <UiInput v-model="passwordForm.password_confirmation" label="Repeat the password" type="password" autocomplete="new-password" />
+                <div class="flex items-center gap-3">
+                    <UiButton type="submit" :disabled="passwordForm.processing">{{ hasPassword ? 'Change password' : 'Add password' }}</UiButton>
+                    <UiButton v-if="hasPassword" variant="ghost" :disabled="passwordForm.processing" @click="removePassword">Remove password</UiButton>
+                    <span v-if="passwordStatus" class="text-sm text-neutral-500">{{ passwordStatus }}</span>
+                </div>
+            </form>
+        </div>
 
         <div class="mt-6 border-t border-neutral-200 pt-6 dark:border-neutral-800">
             <h2 class="font-semibold">Delete account</h2>

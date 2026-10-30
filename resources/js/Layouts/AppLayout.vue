@@ -60,7 +60,7 @@ const logout = () => router.post('/logout');
                     </span>
                     <span class="truncate text-sm text-neutral-800 dark:text-neutral-200">{{ user?.name }}</span>
                 </Link>
-                <button class="rounded-md px-2 py-1 text-xs text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100" @click="logout">
+                <button v-if="!page.props.singleUser" class="rounded-md px-2 py-1 text-xs text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100" @click="logout">
                     Sign out
                 </button>
             </div>
@@ -71,7 +71,7 @@ const logout = () => router.post('/logout');
                 <Link href="/dashboard" class="font-semibold">Framework <span class="text-orange-500">Cloud</span></Link>
                 <div class="flex items-center gap-3">
                     <ThemeToggle />
-                    <button class="text-sm text-neutral-500" @click="logout">Sign out</button>
+                    <button v-if="!page.props.singleUser" class="text-sm text-neutral-500" @click="logout">Sign out</button>
                 </div>
             </header>
 

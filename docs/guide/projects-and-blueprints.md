@@ -1,0 +1,57 @@
+# Projects and blueprints
+
+## Blueprints
+
+A blueprint describes how a new project is set up: its folders, R packages,
+Quarto templates, settings, and instructions for AI assistants. Each
+blueprint is built from smaller pieces called facets, and skills hold
+instructions for AI assistants.
+
+**Blueprints** lists the built-in blueprints, the ones other people have made
+public, and your own. Open one to see what it sets up.
+
+### Borrowing and remixing
+
+To start from someone else's blueprint, click **Copy and edit**. You get your
+own copy, and you can change anything in it. Saving creates a new version, so
+earlier projects keep the version they were made with.
+
+Each blueprint, facet, and skill has a visibility setting:
+
+- **Private.** Only you can see it.
+- **Unlisted.** Anyone with the link can see and copy it. It doesn't appear
+  in lists.
+- **Public.** Everyone on the server can find, use, and copy it.
+
+Facets and skills can also be imported from a GitHub repository and published
+back to one. Imported items start out private and record where they came
+from.
+
+### Sensitive data
+
+Some blueprints are marked for restricted data. Projects made from them must
+be private repositories on GitHub, and they don't record data provenance
+unless you turn it on.
+
+## Projects
+
+**Projects > New project** opens the project builder.
+
+1. Choose a blueprint.
+2. Give the project a name and, if you like, a description.
+3. Choose where to set it up:
+   - **On your computer.** Framework Cloud gives you a project token. In R,
+     run `framework::setup("<project token>")`. Framework builds the project
+     in a folder you choose.
+   - **On GitHub.** Framework Cloud creates the repository and builds the
+     project there. See [GitHub integration](github.md).
+
+The project token also lets that project publish notebooks. It is saved in
+the project's `.env` file, which Git ignores.
+
+## What Framework Cloud keeps
+
+Framework Cloud keeps project settings, blueprints, and templates. It never
+receives your data or your analysis code. Connection details for databases
+and storage refer to environment variables on your computer, such as
+`env("DB_PASSWORD")`. Their values are never sent.

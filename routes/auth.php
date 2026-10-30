@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\GitHubController;
 use App\Http\Controllers\Auth\MagicLinkController;
+use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,6 +20,30 @@ Route::middleware('guest')->group(function () {
 
     // Passkey sign-in (GET passkeys/authentication-options + POST passkeys/authenticate)
     Route::passkeys();
+});
+
+// Password sign-in and reset, when FW_PASSWORDS is on
+Route::middleware(['guest', 'passwords'])->group(function () {
+    Route::post('login/password', [PasswordController::class, 'login'])
+        ->middleware('throttle:6,1')
+        ->name('password.login');
+    Route::get('forgot-password', [PasswordController::class, 'forgot'])->name('password.request');
+    Route::post('forgot-password', [PasswordController::class, 'sendResetLink'])
+        ->middleware('throttle:6,1')
+        ->name('password.email');
+    Route::get('reset-password/{token}', [PasswordController::class, 'edit'])->name('password.reset');
+    Route::post('reset-password', [PasswordController::class, 'reset'])
+        ->middleware('throttle:6,1')
+        ->name('password.store');
+});
+
+Route::middleware(['auth', 'passwords'])->group(function () {
+    Route::put('settings/password', [PasswordController::class, 'update'])
+        ->middleware('throttle:6,1')
+        ->name('password.update');
+    Route::delete('settings/password', [PasswordController::class, 'destroy'])
+        ->middleware('throttle:6,1')
+        ->name('password.destroy');
 });
 
 // GitHub sign-in (guests) and connect (signed in) share one OAuth callback

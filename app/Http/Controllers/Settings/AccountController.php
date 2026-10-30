@@ -22,6 +22,7 @@ class AccountController extends Controller
                 'handle' => $request->user()->handle,
                 'profile_public' => (bool) $request->user()->profile_public,
             ],
+            'hasPassword' => filled($request->user()->password),
         ]);
     }
 

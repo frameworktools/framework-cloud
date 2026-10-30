@@ -9,9 +9,17 @@ import GitHubButton from '@/Components/GitHubButton.vue';
 
 const page = usePage();
 const sent = computed(() => page.props.flash.status === 'magic-link-sent');
+const passwordReset = computed(() => page.props.flash.status === 'password-reset');
+const passwords = computed(() => page.props.passwords);
 
-const form = useForm({ email: '' });
-const send = () => form.post('/auth/magic-link');
+const methods = computed(() => {
+    const list = [page.props.githubSignIn && 'GitHub', passwords.value && 'a password', 'a passkey'].filter(Boolean);
+    return `Use ${list.join(', ')}, or a link sent to your email.`;
+});
+
+const form = useForm({ email: '', password: '' });
+const send = () => form.transform((data) => ({ email: data.email })).post('/auth/magic-link');
+const signIn = () => form.transform((data) => data).post('/login/password', { onFinish: () => form.reset('password') });
 
 // Passkey sign-in: fetch assertion options, hand to the authenticator,
 // post the result as a plain form (the passkeys package expects a
@@ -44,8 +52,12 @@ async function signInWithPasskey() {
 
     <AuthLayout
         title="Sign in"
-        :description="page.props.githubSignIn ? 'Use GitHub, a passkey, or a link sent to your email.' : 'Use a passkey or a link sent to your email.'"
+        :description="methods"
     >
+        <UiCallout v-if="passwordReset" variant="success" heading="Password changed">
+            Sign in with your new password.
+        </UiCallout>
+
         <UiCallout v-if="sent" variant="success" heading="Check your email">
             If an account exists for that address, a sign-in link is on its way.
             It works once and expires in 15 minutes.
@@ -62,7 +74,7 @@ async function signInWithPasskey() {
 
             <p v-if="passkeyError" class="text-sm text-red-600 dark:text-red-400">{{ passkeyError }}</p>
 
-            <UiButton class="w-full" :disabled="passkeyBusy" @click="signInWithPasskey">
+            <UiButton class="w-full" :variant="passwords ? 'outline' : 'primary'" :disabled="passkeyBusy" @click="signInWithPasskey">
                 {{ passkeyBusy ? 'Waiting for your device…' : 'Sign in with a passkey' }}
             </UiButton>
 
@@ -74,7 +86,7 @@ async function signInWithPasskey() {
             <div class="h-px flex-1 bg-neutral-200 dark:bg-neutral-700" />
         </div>
 
-        <form class="flex flex-col gap-4" @submit.prevent="send">
+        <form class="flex flex-col gap-4" @submit.prevent="passwords ? signIn() : send()">
             <UiInput
                 v-model="form.email"
                 label="Email address"
@@ -85,7 +97,25 @@ async function signInWithPasskey() {
                 autofocus
                 :error="form.errors.email"
             />
-            <UiButton type="submit" variant="outline" class="w-full" :disabled="form.processing">
+            <template v-if="passwords">
+                <div class="flex flex-col gap-1.5">
+                    <UiInput
+                        v-model="form.password"
+                        label="Password"
+                        type="password"
+                        autocomplete="current-password"
+                        :error="form.errors.password"
+                    />
+                    <Link href="/forgot-password" class="self-end text-xs text-orange-600 hover:underline dark:text-orange-400">
+                        Forgot your password?
+                    </Link>
+                </div>
+                <UiButton type="submit" class="w-full" :disabled="form.processing">Sign in</UiButton>
+                <UiButton variant="outline" class="w-full" :disabled="form.processing" @click="send">
+                    Email me a sign-in link instead
+                </UiButton>
+            </template>
+            <UiButton v-else type="submit" variant="outline" class="w-full" :disabled="form.processing">
                 Email me a sign-in link
             </UiButton>
         </form>

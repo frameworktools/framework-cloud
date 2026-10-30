@@ -13,6 +13,16 @@ if [ -z "$APP_KEY" ]; then
     exit 1
 fi
 
+# Single-user mode: requests from this computer reach the container from the
+# Docker network's gateway, whose address differs between machines, so it is
+# found here unless FW_SINGLE_USER_NETWORKS is set. HTTP_BIND=127.0.0.1 keeps
+# other machines from reaching the port.
+if [ "${FW_SINGLE_USER:-false}" = "true" ] && [ -z "$FW_SINGLE_USER_NETWORKS" ]; then
+    gateway=$(ip route | awk '/^default/ { print $3; exit }')
+    export FW_SINGLE_USER_NETWORKS="127.0.0.1/32,::1/128${gateway:+,$gateway/32}"
+    echo "Single-user mode: signing in requests from ${gateway:-loopback only}" >&2
+fi
+
 # Cache config, routes, and views for this start (environment included)
 php artisan optimize --quiet
 

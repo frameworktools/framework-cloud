@@ -12,7 +12,7 @@ use Inertia\Response;
 
 /**
  * The notebooks and reports a user has published from their projects with
- * framework::publish_notebook(). Publishing happens from R; here people see,
+ * framework::publish(). Publishing happens from R; here people see,
  * share, and take them down.
  */
 class DocumentsController extends Controller
