@@ -9,8 +9,8 @@ import UiSwitch from '@/Components/UiSwitch.vue';
 import UiTextarea from '@/Components/UiTextarea.vue';
 import UiCallout from '@/Components/UiCallout.vue';
 import BlueprintContents from '@/Components/BlueprintContents.vue';
-import { useServerArg } from '@/cloud.js';
-import { group, groups } from '@/library.js';
+import { useServerArg, useServerFlag } from '@/cloud.js';
+import { group, groups, languageOptions, stataTypes } from '@/library.js';
 
 const props = defineProps({ blueprints: Array, selected: Number, github: Object });
 
@@ -22,6 +22,7 @@ const form = useForm({
     name: '',
     blueprint_id: props.selected ?? bare?.id ?? props.blueprints[0]?.id,
     description: '',
+    language: 'r',
     destination: 'local',
     github: { owner: props.github.owners?.[0]?.login ?? null, name: '', private: true, nameEdited: false },
 });
@@ -40,12 +41,18 @@ const repoName = computed(() => (form.github.nameEdited ? form.github.name : slu
 const editRepoName = (value) => { form.github.name = value; form.github.nameEdited = true; };
 const ownerOptions = computed(() => (props.github.owners ?? []).map((o) => ({ value: o.login, label: o.login })));
 watch(sensitive, (value) => { if (value) form.github.private = true; });
+// A blueprint's language is the default for projects made from it
+watch(blueprint, (value) => { form.language = value?.language ?? 'r'; }, { immediate: true });
+const stata = computed(() => form.language === 'stata');
+const stataAllowed = computed(() => stataTypes.includes(blueprint.value?.type ?? 'bare'));
+const languages = computed(() => languageOptions.filter((o) => o.value !== 'stata' || stataAllowed.value));
 
 const onGitHub = computed(() => form.destination === 'github');
 const create = () => form
     .transform((data) => ({
         name: data.name,
         blueprint_id: data.blueprint_id,
+        language: data.language,
         description: data.description,
         github: onGitHub.value
             ? { enabled: true, owner: data.github.owner, name: repoName.value, private: data.github.private }
@@ -56,6 +63,7 @@ const create = () => form
 const githubError = computed(() => page.props.errors.github ?? form.errors['github.enabled']);
 
 const serverArg = useServerArg();
+const serverFlag = useServerFlag();
 </script>
 
 <template>
@@ -140,6 +148,15 @@ const serverArg = useServerArg();
                                 <p v-if="slug" class="mt-1.5 text-xs text-slate-500">Folder name: <span class="font-mono">{{ slug }}</span></p>
                             </div>
                             <UiTextarea v-model="form.description" label="Description (optional)" :rows="3" :error="form.errors.description" />
+                            <div>
+                                <UiSelect v-model="form.language" label="Language" :options="languages" :error="form.errors.language" />
+                                <p v-if="!stataAllowed" class="mt-1.5 text-xs text-slate-500">
+                                    Stata projects can use the standard, privacy-sensitive, or bare structure. This blueprint uses another one.
+                                </p>
+                                <p v-else-if="stata" class="mt-1.5 text-xs text-slate-500">
+                                    Framework creates the project's folders, files, and Git setup for Stata. It has no Stata commands for the analysis itself.
+                                </p>
+                            </div>
                         </div>
                     </section>
 
@@ -162,7 +179,8 @@ const serverArg = useServerArg();
                             >
                                 <span class="font-medium">On your computer</span>
                                 <span class="text-sm text-slate-600 dark:text-slate-400">
-                                    You get a project token. Run <code class="font-mono text-xs">framework::setup()</code> with it in R.
+                                    <template v-if="stata">In a terminal, run <code class="font-mono text-xs">fw login</code>, then <code class="font-mono text-xs">fw new</code> with the project's name.</template>
+                                    <template v-else>You get a project token. Run <code class="font-mono text-xs">framework::setup()</code> with it in R.</template>
                                 </span>
                             </button>
                             <button
@@ -238,6 +256,10 @@ const serverArg = useServerArg();
                                 <li>Framework Cloud creates <span class="font-mono text-xs">{{ form.github.owner ?? 'owner' }}/{{ repoName || 'repository' }}</span>.</li>
                                 <li>A one-time GitHub Action builds the project files.</li>
                                 <li>You clone it and start working.</li>
+                            </ol>
+                            <ol v-else-if="stata" class="list-decimal space-y-1 pl-4 text-slate-600 dark:text-slate-400">
+                                <li>In a terminal, run <code class="font-mono text-xs">fw login{{ serverFlag }}</code> once.</li>
+                                <li>Run <code class="font-mono text-xs">fw new --from {{ slug || '&lt;project-name&gt;' }}{{ serverFlag }}</code>.</li>
                             </ol>
                             <ol v-else class="list-decimal space-y-1 pl-4 text-slate-600 dark:text-slate-400">
                                 <li>You get a project token. Copy it.</li>

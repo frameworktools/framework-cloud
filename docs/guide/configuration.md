@@ -58,6 +58,18 @@ set wins. See [Server setup](server-setup.md#where-credentials-are-kept).
 | Notebook storage | `FW_BUCKET_NAME`, `FW_BUCKET_ENDPOINT`, `FW_BUCKET_REGION`, `FW_BUCKET_KEY`, `FW_BUCKET_SECRET`, `FW_DOCUMENTS_BASE_URL` |
 | Email | `MAIL_MAILER`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION` |
 
+## GitHub scaffolding
+
+The scaffold workflow installs a pinned version of the tool that builds the
+project, so every repository scaffolded from the same server gets the same
+result.
+
+| Variable | Default | What it does |
+|---|---|---|
+| `GITHUB_FRAMEWORK_SHA` | a tested commit | The framework R package commit that builds R projects. A full 40-character SHA. Empty turns GitHub scaffolding off. |
+| `GITHUB_FW_VERSION` | none | The `fw` release that builds Stata projects, such as `0.1.0`. Without it, Stata projects can be set up on a computer but not on GitHub. |
+| `GITHUB_FW_SHA256` | none | The SHA-256 checksum of the `fw` Linux download. Without it, the workflow checks the download against the release's checksums file. |
+
 ## R
 
 R finds the server in this order:

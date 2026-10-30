@@ -120,6 +120,7 @@ class BlueprintsController extends Controller
                 'key' => Library::uniqueKey(Blueprint::query(), $blueprint->name, $user->id),
                 'name' => $blueprint->name,
                 'description' => $blueprint->description,
+                'language' => $blueprint->language,
                 'visibility' => 'private',
                 'forked_from_id' => $source->id,
                 'is_system' => false,
@@ -175,6 +176,7 @@ class BlueprintsController extends Controller
             'name' => ['required', 'string', 'max:100'],
             'description' => ['nullable', 'string', 'max:1000'],
             'visibility' => ['required', Rule::in(Blueprint::VISIBILITIES)],
+            'language' => ['nullable', Rule::in(Project::LANGUAGES)],
             'base_version_id' => ['required', 'integer'],
             'facet_version_ids' => ['array'],
             'facet_version_ids.*' => ['integer'],
@@ -189,6 +191,10 @@ class BlueprintsController extends Controller
         $base = $versions->get((int) $data['base_version_id']);
         if (! $base || ! $base->facet->isBase() || ! $base->facet->isVisibleTo($user)) {
             throw ValidationException::withMessages(['base_version_id' => 'Choose a project type.']);
+        }
+
+        if ($problem = Project::typeProblem($data['language'] ?? 'r', $base->layer['type'] ?? 'bare')) {
+            throw ValidationException::withMessages(['language' => $problem]);
         }
 
         $facetIds = [];
@@ -208,7 +214,7 @@ class BlueprintsController extends Controller
             throw ValidationException::withMessages(['settings_yaml' => $error ?? implode("\n", $problems)]);
         }
 
-        return [array_map(fn ($v) => is_string($v) ? trim($v) : $v, Arr::only($data, ['name', 'description', 'visibility'])), $base, $ids, $layer, $data['notes'] ?? null];
+        return [array_map(fn ($v) => is_string($v) ? trim($v) : $v, Arr::only($data, ['name', 'description', 'visibility', 'language'])), $base, $ids, $layer, $data['notes'] ?? null];
     }
 
     private function forkedFrom(Blueprint $blueprint, $user): ?array

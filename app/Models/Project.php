@@ -26,6 +26,27 @@ class Project extends Model
         'bare',
     ];
 
+    /**
+     * Languages a project can use. The R package scaffolds r, the Python
+     * package scaffolds python, and fw scaffolds stata (scaffolding only).
+     */
+    public const LANGUAGES = ['r', 'python', 'stata'];
+
+    public const LANGUAGE_NAMES = ['r' => 'R', 'python' => 'Python', 'stata' => 'Stata'];
+
+    /** Project types fw can scaffold for Stata. It refuses course and presentation. */
+    public const STATA_TYPES = ['project', 'project_sensitive', 'bare'];
+
+    /** Why a project type can't be used with a language, or null when it can. */
+    public static function typeProblem(string $language, string $type): ?string
+    {
+        if ($language === 'stata' && ! in_array($type, self::STATA_TYPES, true)) {
+            return 'Stata projects can use the standard, privacy-sensitive, or bare structure. This one uses the '.str_replace('_', ' ', $type).' structure.';
+        }
+
+        return null;
+    }
+
     public const PULL_ABILITY = 'project:pull';
 
     public const SCAFFOLD_STATUSES = ['pending', 'running', 'done', 'failed'];

@@ -20,7 +20,7 @@ class ProjectsController extends Controller
         $user = $this->user($request);
 
         return response()->json([
-            'projects' => $user->projects()->latest()->get(['name', 'slug', 'project_type', 'description', 'created_at']),
+            'projects' => $user->projects()->latest()->get(['name', 'slug', 'project_type', 'language', 'description', 'created_at']),
         ]);
     }
 
@@ -36,8 +36,13 @@ class ProjectsController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'project_type' => ['required', Rule::in(Project::TYPES)],
+            'language' => ['nullable', Rule::in(Project::LANGUAGES)],
             'description' => ['nullable', 'string', 'max:500'],
         ]);
+
+        if ($problem = Project::typeProblem($validated['language'] ?? 'r', $validated['project_type'])) {
+            return response()->json(['message' => $problem], 422);
+        }
 
         $slug = Str::slug($validated['name']);
 
@@ -51,11 +56,12 @@ class ProjectsController extends Controller
             'name' => $validated['name'],
             'slug' => $slug,
             'project_type' => $validated['project_type'],
+            'language' => $validated['language'] ?? 'r',
             'description' => $validated['description'] ?? null,
         ]);
 
         return response()->json([
-            'project' => $project->only(['name', 'slug', 'project_type']),
+            'project' => $project->only(['name', 'slug', 'project_type', 'language']),
             'pull_token' => $project->issuePullToken('created-by-r'),
         ], 201);
     }

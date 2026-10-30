@@ -56,12 +56,12 @@
                     with reusable project setups, instructions for AI assistants, and tools for
                     managing data integrity and sensitive data.
                 </p>
-                <p class="mt-4 max-w-2xl leading-relaxed text-slate-600 dark:text-slate-300">
+                <p class="mt-4 max-w-2xl text-lg leading-relaxed text-slate-700 dark:text-slate-200">
                     It works with the
                     <a href="https://framework.table1.org" class="font-medium text-sky-700 underline-offset-2 hover:underline dark:text-sky-400">Framework R package</a>,
                     which brings those setups and tools into your local analysis workflow.
                 </p>
-                <p class="mt-3 text-sm font-medium text-slate-500 dark:text-slate-400">Use our cloud or host it yourself.</p>
+                <p class="mt-4 max-w-2xl text-lg leading-relaxed text-slate-700 dark:text-slate-200">Use our cloud or host it yourself.</p>
                 <div class="mt-8 flex flex-wrap items-center gap-3">
                     <a href="{{ route('register') }}" class="rounded-md bg-sky-600 px-5 py-2.5 font-medium text-white hover:bg-sky-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500">Create an account</a>
                     <a href="{{ route('self-hosting') }}" class="rounded-md border border-slate-300 bg-white/60 px-5 py-2.5 font-medium text-slate-800 hover:border-slate-400 hover:bg-white dark:border-slate-500 dark:bg-transparent dark:text-slate-50 dark:hover:border-slate-300 dark:hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500">Host it yourself</a>

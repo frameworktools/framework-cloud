@@ -1,0 +1,67 @@
+# Committed by Framework Cloud to scaffold this Stata project once. It runs
+# fw on .framework/layers.json, commits the result, and Framework Cloud
+# removes this file when the run succeeds.
+name: Framework scaffold
+
+on:
+  push:
+    paths:
+      - .github/workflows/framework-scaffold.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: framework-scaffold
+  cancel-in-progress: false
+
+jobs:
+  scaffold:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      FW_VERSION: "{{fw_version}}"
+      FW_SHA256: "{{fw_sha256}}"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for layers
+        id: layers
+        run: |
+          if [ -f .framework/layers.json ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "This project is already scaffolded."
+          fi
+
+      - name: Install fw
+        if: steps.layers.outputs.present == 'true'
+        run: |
+          set -euo pipefail
+          archive="fw_${FW_VERSION}_linux_amd64.tar.gz"
+          base="https://github.com/frameworktools/framework-cli/releases/download/v${FW_VERSION}"
+          cd "$RUNNER_TEMP"
+          curl -fsSLO "$base/$archive"
+          if [ -n "$FW_SHA256" ]; then
+            echo "$FW_SHA256  $archive" | sha256sum -c -
+          else
+            curl -fsSL "$base/fw_${FW_VERSION}_checksums.txt" -o checksums.txt
+            grep " $archive\$" checksums.txt | sha256sum -c -
+          fi
+          tar -xzf "$archive" fw
+          install -m 0755 fw /usr/local/bin/fw
+          fw version
+
+      - name: Scaffold
+        if: steps.layers.outputs.present == 'true'
+        run: fw new --from .framework/layers.json --dir . --headless
+
+      - name: Commit
+        if: steps.layers.outputs.present == 'true'
+        run: |
+          git rm -q --ignore-unmatch .framework/layers.json
+          git add -A
+          git -c user.name="Framework Cloud" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "Scaffold with Framework"
+          git push

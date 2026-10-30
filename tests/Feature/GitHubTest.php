@@ -200,6 +200,58 @@ class GitHubTest extends TestCase
             && $r->hasHeader('Authorization', 'Bearer ghu_access'));
     }
 
+    public function test_stata_projects_scaffold_with_a_pinned_fw_release(): void
+    {
+        config(['services.github.fw_version' => 'v0.1.0', 'services.github.fw_sha256' => str_repeat('ab', 32)]);
+        $user = $this->connected();
+        $this->fakeGitHub();
+        $blueprint = Blueprint::whereNull('user_id')->where('key', 'project')->firstOrFail();
+
+        $this->actingAs($user)->post('/projects', [
+            'name' => 'NHANES Study',
+            'blueprint_id' => $blueprint->id,
+            'language' => 'stata',
+            'github' => ['enabled' => true, 'owner' => 'ada', 'name' => 'nhanes-study', 'private' => true],
+        ])->assertRedirect('/projects')->assertSessionHasNoErrors();
+
+        $this->assertSame('stata', Project::firstOrFail()->language);
+
+        $puts = collect(Http::recorded())->map(fn ($pair) => $pair[0])->filter(fn ($r) => $r->method() === 'PUT')->values();
+        $workflow = base64_decode($puts[1]['content']);
+        $this->assertStringContainsString('FW_VERSION: "0.1.0"', $workflow);
+        $this->assertStringContainsString('FW_SHA256: "'.str_repeat('ab', 32).'"', $workflow);
+        $this->assertStringContainsString('fw new --from .framework/layers.json --dir . --headless', $workflow);
+        $this->assertStringNotContainsString('Rscript', $workflow);
+
+        $layers = json_decode(base64_decode($puts[0]['content']), true);
+        $this->assertSame('stata', end($layers['layers'])['layer']['language']);
+    }
+
+    public function test_stata_projects_need_an_fw_release_to_scaffold_on_github(): void
+    {
+        config(['services.github.fw_version' => null]);
+        $user = $this->connected();
+        $this->fakeGitHub();
+        $blueprint = Blueprint::whereNull('user_id')->where('key', 'project')->firstOrFail();
+
+        $this->actingAs($user)->post('/projects', [
+            'name' => 'NHANES Study',
+            'blueprint_id' => $blueprint->id,
+            'language' => 'stata',
+            'github' => ['enabled' => true, 'owner' => 'ada', 'name' => 'nhanes-study', 'private' => true],
+        ])->assertSessionHasErrors('github.enabled');
+
+        $this->assertSame(0, Project::count());
+        Http::assertNothingSent();
+    }
+
+    public function test_the_r_workflow_is_unchanged_for_r_projects(): void
+    {
+        $this->assertStringContainsString('frameworktools/framework@'.self::SHA, Scaffolder::workflow('r'));
+        $this->assertNull(Scaffolder::unavailableFor('r'));
+        $this->assertNotNull(Scaffolder::unavailableFor('python'));
+    }
+
     public function test_organization_repositories_go_to_the_org_endpoint(): void
     {
         $user = $this->connected();

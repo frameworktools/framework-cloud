@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\CliDeviceController;
 use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\ProjectPullController;
 use App\Http\Controllers\Api\V1\SettingsController;
@@ -12,6 +13,13 @@ Route::get('/metrics', \App\Http\Controllers\MetricsController::class)
 
 // Framework GitHub App events (signed with the webhook secret)
 Route::post('/github/webhook', \App\Http\Controllers\Api\GitHubWebhookController::class)->middleware('throttle:120,1');
+
+// fw login's device flow: the CLI has no token yet, so these sit outside
+// auth:sanctum. The browser half is /device in routes/web.php.
+Route::prefix('v1/cli')->group(function () {
+    Route::post('/device', [CliDeviceController::class, 'store'])->middleware('throttle:10,1');
+    Route::post('/device/token', [CliDeviceController::class, 'token'])->middleware('throttle:30,1');
+});
 
 Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::get('/me', MeController::class);
@@ -28,4 +36,15 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::post('/documents', [\App\Http\Controllers\Api\V1\DocumentsController::class, 'store']);
     Route::post('/ledger', [\App\Http\Controllers\Api\V1\LedgerController::class, 'store']);
     Route::get('/ledger', [\App\Http\Controllers\Api\V1\LedgerController::class, 'index']);
+});
+
+// Pull v2: layers envelopes for the R package and fw
+Route::prefix('v2')->middleware('auth:sanctum')->group(function () {
+    // Project token
+    Route::get('/projects/pull', [\App\Http\Controllers\Api\V2\ProjectsController::class, 'pull']);
+
+    // User token: fw new SLUG
+    Route::get('/projects/{slug}/layers', [\App\Http\Controllers\Api\V2\ProjectsController::class, 'layers']);
+    Route::post('/projects/{slug}/pull-tokens', [\App\Http\Controllers\Api\V2\ProjectsController::class, 'issuePullToken'])
+        ->middleware('throttle:30,1');
 });

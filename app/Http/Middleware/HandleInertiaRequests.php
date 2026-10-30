@@ -33,6 +33,7 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'status' => $request->session()->get('status'),
                 'token' => $request->session()->get('token'),
+                'token_language' => $request->session()->get('token_language'),
                 'url' => $request->session()->get('url'),
             ],
 

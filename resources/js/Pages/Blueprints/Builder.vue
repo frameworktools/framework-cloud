@@ -8,7 +8,7 @@ import UiSelect from '@/Components/UiSelect.vue';
 import UiSwitch from '@/Components/UiSwitch.vue';
 import UiTextarea from '@/Components/UiTextarea.vue';
 import LayerSummary from '@/Components/LayerSummary.vue';
-import { visibilityOptions } from '@/library.js';
+import { languageOptions, visibilityOptions } from '@/library.js';
 
 const props = defineProps({
     blueprint: Object, // null when creating
@@ -82,6 +82,7 @@ const form = useForm({
     name: props.blueprint?.name ?? '',
     description: props.blueprint?.description ?? '',
     visibility: props.blueprint?.visibility ?? 'private',
+    language: props.blueprint?.language ?? 'r',
     settings_yaml: props.start?.layer_yaml ?? '',
     notes: '',
 });
@@ -159,6 +160,10 @@ const save = () => {
                     <UiInput v-model="form.name" label="Name" placeholder="e.g. R01 secondary analysis" required :error="form.errors.name" />
                     <UiTextarea v-model="form.description" label="Description" :rows="2" :error="form.errors.description" />
                     <UiSelect v-model="form.visibility" label="Who can see it" :options="visibilityOptions" :error="form.errors.visibility" />
+                    <UiSelect
+                        v-model="form.language" label="Language" :options="languageOptions" :error="form.errors.language"
+                        description="Projects made from this blueprint use this language unless someone changes it."
+                    />
                     <UiInput v-if="editing" v-model="form.notes" label="What changed (optional)" placeholder="Shown in the version history" :error="form.errors.notes" />
 
                     <div>

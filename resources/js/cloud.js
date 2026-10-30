@@ -10,3 +10,21 @@ export function useServerArg() {
 
     return computed(() => (page.props.appUrl === DEFAULT_SERVER ? '' : `, url = "${page.props.appUrl}"`));
 }
+
+// fw takes the server as a flag: fw new --from <slug> --url <server>
+export function useServerFlag() {
+    const page = usePage();
+
+    return computed(() => (page.props.appUrl === DEFAULT_SERVER ? '' : ` --url ${page.props.appUrl}`));
+}
+
+// The command that sets up a project locally from a project token. fw never
+// takes a token as an argument: it reads it from a hidden prompt.
+export function useSetupCommand() {
+    const arg = useServerArg();
+    const flag = useServerFlag();
+
+    return (language, token) => (language === 'stata'
+        ? `fw new --pull-token${flag.value}`
+        : `framework::setup("${token}"${arg.value})`);
+}

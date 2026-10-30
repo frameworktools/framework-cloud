@@ -22,6 +22,15 @@
         "bare"
       ]
     },
+    "language": {
+      "type": "string",
+      "enum": [
+        "r",
+        "python",
+        "stata"
+      ],
+      "description": "Primary language. The R package builds r, the Python package builds python, and fw builds stata (scaffolding only). A layers file with no language means r."
+    },
     "author": {
       "type": "object",
       "properties": {

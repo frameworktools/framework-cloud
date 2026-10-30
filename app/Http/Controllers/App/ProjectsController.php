@@ -16,6 +16,7 @@ use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -27,8 +28,8 @@ class ProjectsController extends Controller
         $user = $request->user();
 
         return Inertia::render('Projects', [
-            'projects' => $user->projects()->latest()->with('blueprintVersion.blueprint.owner')->get()
-                ->map(fn (Project $p) => $p->only(['id', 'name', 'slug', 'project_type', 'description', 'created_at']) + [
+            'projects' => $user->projects()->latest()->with('blueprintVersion.blueprint.owner', 'tokens')->get()
+                ->map(fn (Project $p) => $p->only(['id', 'name', 'slug', 'project_type', 'language', 'description', 'created_at']) + [
                     'github' => $p->github_repo ? [
                         'repo' => $p->github_repo,
                         'url' => $p->githubUrl(),
@@ -43,6 +44,8 @@ class ProjectsController extends Controller
                         'name' => $p->blueprintVersion->blueprint->name,
                         'version' => $p->blueprintVersion->version,
                     ] : null,
+                    'tokens' => $p->tokens->sortByDesc('id')->values()
+                        ->map(fn ($t) => $t->only(['id', 'name', 'created_at', 'last_used_at'])),
                 ]),
         ]);
     }
@@ -79,6 +82,7 @@ class ProjectsController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'blueprint_id' => ['required', 'integer'],
+            'language' => ['nullable', Rule::in(Project::LANGUAGES)],
             'description' => ['nullable', 'string', 'max:500'],
             'github' => ['nullable', 'array'],
             'github.enabled' => ['boolean'],
@@ -101,12 +105,24 @@ class ProjectsController extends Controller
             return back()->withErrors(['name' => 'You already have a project with this name.']);
         }
 
+        $language = $validated['language'] ?? $blueprint->language;
+        $type = $blueprint->latestVersion->base->layer['type'] ?? 'bare';
+
+        if ($problem = Project::typeProblem($language, $type)) {
+            return back()->withErrors(['language' => $problem]);
+        }
+
+        if (($validated['github']['enabled'] ?? false) && ($reason = Scaffolder::unavailableFor($language))) {
+            return back()->withErrors(['github.enabled' => $reason]);
+        }
+
         $github = ($validated['github']['enabled'] ?? false) ? $this->githubTarget($request, $validated['github'], $blueprint->latestVersion) : null;
 
         $project = $request->user()->projects()->create([
             'name' => $validated['name'],
             'slug' => $slug,
-            'project_type' => $blueprint->latestVersion->base->layer['type'] ?? 'bare',
+            'project_type' => $type,
+            'language' => $language,
             'blueprint_version_id' => $blueprint->latestVersion->id,
             'description' => $validated['description'] ?? null,
             'scaffold_status' => $github ? 'pending' : null,
@@ -121,6 +137,7 @@ class ProjectsController extends Controller
         // Set up locally: hand over the token now, since that is the next step
         return to_route('projects')->with([
             'token' => $project->issuePullToken(),
+            'token_language' => $project->language,
             'status' => 'project-token',
         ]);
     }
@@ -204,8 +221,18 @@ class ProjectsController extends Controller
 
         return back()->with([
             'token' => $project->issuePullToken(),
+            'token_language' => $project->language,
             'status' => 'project-token',
         ]);
+    }
+
+    /** Revoke one of a project's tokens, such as one a computer no longer needs. */
+    public function revokeToken(Request $request, int $project, int $token): RedirectResponse
+    {
+        $project = $request->user()->projects()->findOrFail($project);
+        $project->tokens()->whereKey($token)->delete();
+
+        return back(303);
     }
 
     public function destroy(Request $request, int $project): RedirectResponse

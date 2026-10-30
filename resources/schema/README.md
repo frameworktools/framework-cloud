@@ -9,4 +9,6 @@ copy it from a newer package commit or tag and change its pin below.
 | `layer.v1.json` | One stored layer (base, facet, blueprint) | `7eb0879` (full SHA below) |
 | `layers.v1.json` | The layers envelope: `.framework/layers.json` and the pull v2 body | `7eb0879` (full SHA below) |
 
-Both files are pinned at `7eb0879a6b8581b14ab46e9821db43161d7905bd`.
+Both files are pinned at `7eb0879a6b8581b14ab46e9821db43161d7905bd`, plus the
+`language` field from the `v2` working tree. That change is not committed in
+the package yet. Replace this note with its commit SHA once it is.

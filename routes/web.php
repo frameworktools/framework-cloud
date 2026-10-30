@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\SetupController;
 use App\Http\Controllers\App\BlueprintsController;
+use App\Http\Controllers\App\DeviceController;
 use App\Http\Controllers\App\DocumentsController;
 use App\Http\Controllers\App\FacetsController;
 use App\Http\Controllers\App\GitHubLibraryController;
@@ -115,6 +116,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('projects/create', [ProjectsController::class, 'create'])->name('projects.create');
     Route::post('projects', [ProjectsController::class, 'store']);
     Route::post('projects/{project}/token', [ProjectsController::class, 'issueToken']);
+    Route::delete('projects/{project}/tokens/{token}', [ProjectsController::class, 'revokeToken']);
     Route::delete('projects/{project}', [ProjectsController::class, 'destroy']);
     Route::post('projects/{project}/scaffold/refresh', [ProjectsController::class, 'refreshScaffold']);
     Route::post('projects/{project}/scaffold/retry', [ProjectsController::class, 'retryScaffold']);
@@ -138,6 +140,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('tokens', [TokensController::class, 'index'])->name('tokens');
     Route::post('tokens', [TokensController::class, 'store']);
     Route::delete('tokens/{tokenId}', [TokensController::class, 'destroy']);
+
+    // fw login approves here; see routes/api.php for the CLI half
+    Route::get('device', [DeviceController::class, 'show'])->middleware('throttle:30,1')->name('device');
+    Route::post('device/approve', [DeviceController::class, 'approve'])->middleware('throttle:30,1');
+    Route::post('device/deny', [DeviceController::class, 'deny'])->middleware('throttle:30,1');
 
     Route::redirect('settings', 'settings/profile');
     Route::get('settings/profile', [AuthorController::class, 'edit'])->name('settings.profile');

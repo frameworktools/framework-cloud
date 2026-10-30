@@ -23,7 +23,8 @@ it up first (see [Server setup](server-setup.md#github)).
 4. Click **Create on GitHub**.
 
 Framework Cloud creates the repository, and a one-time GitHub Action builds
-the project files in it. The project page shows when it is done. Then clone
+the project files in it. The action runs the framework R package for R
+projects and `fw` for Stata projects. The project page shows when it is done. Then clone
 the repository and start working:
 
 ```sh

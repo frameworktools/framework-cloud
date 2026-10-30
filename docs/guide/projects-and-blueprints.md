@@ -39,15 +39,35 @@ unless you turn it on.
 
 1. Choose a blueprint.
 2. Give the project a name and, if you like, a description.
-3. Choose where to set it up:
+3. Choose the language. It starts as the blueprint's language.
+4. Choose where to set it up:
    - **On your computer.** Framework Cloud gives you a project token. In R,
      run `framework::setup("<project token>")`. Framework builds the project
-     in a folder you choose.
+     in a folder you choose. For a Stata project, run `fw login` once and
+     then `fw new --from <project name>` in a terminal. `fw` asks the server
+     for the project token itself. With a token you already have, run
+     `fw new --pull-token` and paste the token when it asks.
    - **On GitHub.** Framework Cloud creates the repository and builds the
      project there. See [GitHub integration](github.md).
 
 On your own server, the page shows the command with the server's address,
 such as `framework::setup("<project token>", url = "https://framework.example.edu")`.
+
+### Languages
+
+Each project has one language: R or Stata. The R package builds R projects.
+The `fw` command-line tool builds Stata projects. Stata support covers
+scaffolding only: Framework creates the folders, files, and Git setup, and it
+has no Stata commands for the analysis itself. A blueprint has a language too,
+which new projects start with.
+
+Stata projects can use the standard, privacy-sensitive, or bare structure.
+The course and presentation structures are for R only. A Stata project leaves
+out the folders that only R uses, such as `notebooks` and `functions`, and
+`fw` adds Stata's own folders, such as `do` and `logs`.
+
+The **Projects** page lists each project's tokens with when they were last
+used. Revoke a token there when a computer no longer needs it.
 
 The project token also lets that project publish notebooks. It is saved in
 the project's `.env` file, which Git ignores, together with the server's

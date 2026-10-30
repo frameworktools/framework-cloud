@@ -95,12 +95,14 @@ class Library
             'handle' => $blueprint->handle,
             'name' => $blueprint->name,
             'description' => $blueprint->description,
+            'language' => $blueprint->language ?? 'r',
             'visibility' => $blueprint->visibility,
             'is_system' => $blueprint->isSystem(),
             'owner' => self::owner($blueprint),
             'editable' => $blueprint->isEditableBy($user),
             'version' => $latest?->version,
             'base' => $latest?->base?->facet?->name,
+            'type' => $latest?->base?->layer['type'] ?? 'bare',
             'facets' => $latest ? $latest->facetVersions->map(fn ($v) => $v->facet->name)->all() : [],
         ];
     }

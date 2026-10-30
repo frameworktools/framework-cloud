@@ -12,8 +12,9 @@ use RuntimeException;
 /**
  * Scaffolds a project on GitHub without the cloud writing any project files:
  * it creates the repository, commits the project's layers and a one-time
- * workflow, and the workflow runs the framework R package to generate the
- * project. The webhook (or a status check) records how the run went.
+ * workflow, and the workflow generates the project: the framework R package
+ * for R projects, and fw for Stata projects. The webhook (or a status check)
+ * records how the run went.
  */
 class Scaffolder
 {
@@ -28,9 +29,23 @@ class Scaffolder
         return filled(config('services.github.client_id')) && filled(config('services.github.framework_sha'));
     }
 
-    /** The workflow file for this deployment's pinned framework commit. */
-    public static function workflow(): string
+    /** Why a project in this language can't be scaffolded here, or null when it can. */
+    public static function unavailableFor(string $language): ?string
     {
+        return match ($language) {
+            'r' => null,
+            'stata' => filled(config('services.github.fw_version')) ? null : 'This server is not set up to scaffold Stata projects on GitHub yet.',
+            default => 'Projects in this language cannot be scaffolded on GitHub yet.',
+        };
+    }
+
+    /** The workflow file for a project's language, pinned to this deployment's tool version. */
+    public static function workflow(string $language = 'r'): string
+    {
+        if ($language === 'stata') {
+            return self::fwWorkflow();
+        }
+
         $sha = config('services.github.framework_sha');
 
         if (! preg_match('/^[0-9a-f]{40}$/', (string) $sha)) {
@@ -40,6 +55,25 @@ class Scaffolder
         return str_replace('{{framework_ref}}', "frameworktools/framework@{$sha}", File::get(resource_path('github/'.self::WORKFLOW)));
     }
 
+    private static function fwWorkflow(): string
+    {
+        $version = ltrim((string) config('services.github.fw_version'), 'v');
+        $sha256 = strtolower((string) config('services.github.fw_sha256'));
+
+        if (! preg_match('/^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/', $version)) {
+            throw new RuntimeException('GITHUB_FW_VERSION must be a release version such as 0.1.0.');
+        }
+
+        if ($sha256 !== '' && ! preg_match('/^[0-9a-f]{64}$/', $sha256)) {
+            throw new RuntimeException('GITHUB_FW_SHA256 must be a 64-character SHA-256 checksum.');
+        }
+
+        return strtr(File::get(resource_path('github/framework-scaffold-stata.yml')), [
+            '{{fw_version}}' => $version,
+            '{{fw_sha256}}' => $sha256,
+        ]);
+    }
+
     /**
      * @param  string|null  $org  an organization login, or null for the user's own account
      */
@@ -47,6 +81,12 @@ class Scaffolder
     {
         $account = $project->user->githubAccount ?? throw new GitHubNotConnected('Connect GitHub first.');
         $github = GitHub::for($account);
+
+        if ($reason = self::unavailableFor($project->language ?? 'r')) {
+            $this->fail($project, $reason);
+
+            return;
+        }
 
         $envelope = ProjectLayers::for($project);
 
@@ -69,7 +109,7 @@ class Scaffolder
 
             // Layers first: the workflow commit is what starts the run
             $github->putFile($repo['full_name'], self::LAYERS_PATH, ProjectLayers::toJson($envelope), 'Add Framework project layers');
-            $github->putFile($repo['full_name'], self::WORKFLOW_PATH, self::workflow(), 'Add Framework scaffold workflow');
+            $github->putFile($repo['full_name'], self::WORKFLOW_PATH, self::workflow($project->language ?? 'r'), 'Add Framework scaffold workflow');
         } catch (RequestException $e) {
             $this->fail($project, self::explain($e));
         }

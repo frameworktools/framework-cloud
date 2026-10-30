@@ -14,6 +14,9 @@ use Illuminate\Support\Arr;
  */
 class ProjectLayers
 {
+    /** Folders that only R projects use */
+    private const R_FOLDERS = ['notebooks', 'scripts', 'functions', 'outputs_notebooks', 'outputs_models', 'outputs_private_models', 'outputs_public_models'];
+
     public static function for(Project $project): array
     {
         $project->loadMissing('user', 'blueprintVersion.blueprint.owner', 'blueprintVersion.base.facet.owner', 'blueprintVersion.facetVersions.facet.owner');
@@ -38,8 +41,10 @@ class ProjectLayers
             ];
         }
 
-        // Per-project overrides are not editable in the cloud yet
-        $layers[] = ['kind' => 'project', 'key' => $project->slug, 'layer' => []];
+        // Per-project overrides are not editable in the cloud yet. The language
+        // always goes in, so every tool can tell which one builds the project.
+        $language = $project->language ?? 'r';
+        $layers[] = ['kind' => 'project', 'key' => $project->slug, 'layer' => ['language' => $language] + ($language === 'stata' ? self::withoutRFolders($layers) : [])];
 
         // The Profile tab's byline, falling back to the account
         $author = Arr::get($user->globalSettings()->document, 'author', []) ?? [];
@@ -74,6 +79,27 @@ class ProjectLayers
         }
 
         return $envelope;
+    }
+
+    /**
+     * Removes the R-only folders the layers beneath set, so a Stata project
+     * doesn't get empty notebooks or functions folders. fw adds its own.
+     */
+    private static function withoutRFolders(array $layers): array
+    {
+        $removed = [];
+
+        foreach ($layers as $entry) {
+            foreach (['directories', 'render_dirs'] as $section) {
+                foreach (array_keys(is_array($entry['layer'][$section] ?? null) ? $entry['layer'][$section] : []) as $key) {
+                    if (in_array($key, self::R_FOLDERS, true)) {
+                        $removed[$section][$key] = null;
+                    }
+                }
+            }
+        }
+
+        return $removed;
     }
 
     /** Whether the merged spec will be sensitive: the topmost layer that sets the flag decides. */
