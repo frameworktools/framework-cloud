@@ -60,7 +60,7 @@ version it came from.
 Quarto stops being assumed. Framework's R blueprints include it by default, so
 R users see no change, and Python projects can choose Jupyter or neither.
 Stata projects have no features: fw scaffolds Stata with a project structure,
-package-free settings, and skills only.
+settings, and skills only.
 
 Rules that keep features from becoming facets again:
 
