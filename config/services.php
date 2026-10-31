@@ -55,9 +55,9 @@ return [
         // fw_sha256 when it is set, and otherwise against the release's
         // checksums file. The default checksum applies only to the default
         // release.
-        'fw_version' => env('GITHUB_FW_VERSION', '0.1.0'),
-        'fw_sha256' => env('GITHUB_FW_SHA256', env('GITHUB_FW_VERSION', '0.1.0') === '0.1.0'
-            ? '6a7e2bff88021a7f896cf726b42dbe15ad0feb08309de9203b55f1186c3637cc'
+        'fw_version' => env('GITHUB_FW_VERSION', '0.2.0'),
+        'fw_sha256' => env('GITHUB_FW_SHA256', env('GITHUB_FW_VERSION', '0.2.0') === '0.2.0'
+            ? '43a30b0658d025a6ff2ebfdd2b69da1bd5a6a0aa38328cce3cd4697c9dd806d4'
             : null),
     ],
 

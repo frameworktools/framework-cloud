@@ -61,7 +61,7 @@ class Scaffolder
         $sha256 = strtolower((string) config('services.github.fw_sha256'));
 
         if (! preg_match('/^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/', $version)) {
-            throw new RuntimeException('GITHUB_FW_VERSION must be a release version such as 0.1.0.');
+            throw new RuntimeException('GITHUB_FW_VERSION must be a release version such as 0.2.0.');
         }
 
         if ($sha256 !== '' && ! preg_match('/^[0-9a-f]{64}$/', $sha256)) {
