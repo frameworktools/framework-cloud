@@ -26,7 +26,7 @@ class PasskeyPromptController extends Controller
     public static function afterSignIn(Request $request, User $user): RedirectResponse
     {
         if ($request->cookie(self::SKIP_COOKIE) || $user->passkeys()->exists()) {
-            return redirect()->intended(route('dashboard'));
+            return redirect()->intended(route('projects'));
         }
 
         return redirect()->route('passkey.prompt');
@@ -35,7 +35,7 @@ class PasskeyPromptController extends Controller
     public function show(Request $request): Response|RedirectResponse
     {
         if ($request->user()->passkeys()->exists()) {
-            return redirect()->intended(route('dashboard'));
+            return redirect()->intended(route('projects'));
         }
 
         return Inertia::render('Auth/AddPasskey', [
@@ -47,6 +47,6 @@ class PasskeyPromptController extends Controller
     {
         Cookie::queue(Cookie::forever(self::SKIP_COOKIE, 'skipped'));
 
-        return redirect()->intended(route('dashboard'));
+        return redirect()->intended(route('projects'));
     }
 }

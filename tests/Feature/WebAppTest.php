@@ -36,14 +36,54 @@ class WebAppTest extends TestCase
         $this->get('/dashboard')->assertRedirect('/login');
     }
 
-    public function test_dashboard_renders_with_counts(): void
+    public function test_projects_are_the_home_page(): void
+    {
+        $user = $this->user();
+        $user->projects()->create(['name' => 'Survey', 'slug' => 'survey']);
+
+        $this->actingAs($user)->get('/dashboard')->assertRedirect('/projects');
+
+        $this->actingAs($user)->get('/projects')
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Projects')
+                ->has('projects', 1)
+                ->has('steps')
+                ->where('recentProjects.total', 1)
+                ->where('recentProjects.items.0.slug', 'survey'));
+    }
+
+    public function test_a_project_has_its_own_page(): void
+    {
+        $user = $this->user();
+        $project = $user->projects()->create(['name' => 'Survey', 'slug' => 'survey', 'spec' => '{"spec_version":1}', 'spec_received_at' => now()]);
+        $project->issuePullToken();
+
+        $this->actingAs($user)->get('/projects/survey')
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Projects/Show')
+                ->where('project.name', 'Survey')
+                ->has('project.tokens', 1)
+                ->has('project.documents', 0)
+                ->where('project.spec.json', "{\n    \"spec_version\": 1\n}"));
+
+        $this->actingAs($this->user())->get('/projects/survey')->assertNotFound();
+    }
+
+    public function test_a_deleted_projects_name_gives_a_clear_error(): void
+    {
+        $user = $this->user();
+        $user->projects()->create(['name' => 'Survey', 'slug' => 'survey'])->delete();
+
+        $this->actingAs($user)
+            ->post('/projects', ['name' => 'Survey', 'blueprint_id' => $this->systemBlueprint('bare')->id])
+            ->assertSessionHasErrors(['name' => 'You used this name for a project you deleted. Choose a different name.']);
+    }
+
+    public function test_a_project_cannot_take_a_name_the_app_uses(): void
     {
         $this->actingAs($this->user())
-            ->get('/dashboard')
-            ->assertInertia(fn (Assert $page) => $page
-                ->component('Dashboard')
-                ->has('counts.projects')
-                ->has('counts.settings_revision'));
+            ->post('/projects', ['name' => 'Create', 'blueprint_id' => $this->systemBlueprint('bare')->id])
+            ->assertSessionHasErrors('name');
     }
 
     public function test_user_can_create_a_project_and_issue_its_token(): void
@@ -125,7 +165,7 @@ class WebAppTest extends TestCase
 
         $this->actingAs($user)
             ->post('/projects', ['name' => 'Local Study', 'blueprint_id' => $this->systemBlueprint('bare')->id])
-            ->assertRedirect('/projects')
+            ->assertRedirect('/projects/local-study')
             ->assertSessionHas('status', 'project-token')
             ->assertSessionHas('token');
 

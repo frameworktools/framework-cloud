@@ -6,6 +6,7 @@ use Database\Factories\ProjectFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Sanctum\HasApiTokens;
 
@@ -72,6 +73,11 @@ class Project extends Model
     public function githubUrl(): ?string
     {
         return $this->github_repo ? "https://github.com/{$this->github_repo}" : null;
+    }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(Document::class);
     }
 
     public function user(): BelongsTo

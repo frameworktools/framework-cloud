@@ -12,7 +12,7 @@
             <a href="{{ route('self-hosting') }}" class="text-slate-600 hover:text-slate-900 max-md:hidden dark:text-slate-300 dark:hover:text-white">Self-hosting</a>
             <a href="{{ route('guide') }}" class="text-slate-600 hover:text-slate-900 max-sm:hidden dark:text-slate-300 dark:hover:text-white">Docs</a>
             @auth
-                <a href="{{ route('dashboard') }}" class="rounded-md bg-sky-600 px-4 py-2 font-medium text-white hover:bg-sky-700">Dashboard</a>
+                <a href="{{ route('projects') }}" class="rounded-md bg-sky-600 px-4 py-2 font-medium text-white hover:bg-sky-700">Your projects</a>
             @else
                 <a href="{{ route('login') }}" class="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">Sign in</a>
                 <a href="{{ route('register') }}" class="rounded-md bg-sky-600 px-4 py-2 font-medium text-white hover:bg-sky-700">Sign up</a>

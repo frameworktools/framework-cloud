@@ -19,7 +19,7 @@
             <nav class="flex items-center gap-4 text-sm">
                 <x-theme-toggle class="max-sm:hidden" />
                 @auth
-                    <a href="{{ route('dashboard') }}" class="rounded-md bg-sky-600 px-4 py-2 font-medium text-white hover:bg-sky-700">Dashboard</a>
+                    <a href="{{ route('projects') }}" class="rounded-md bg-sky-600 px-4 py-2 font-medium text-white hover:bg-sky-700">Your projects</a>
                 @else
                     <a href="{{ route('login') }}" class="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">Sign in</a>
                 @endauth

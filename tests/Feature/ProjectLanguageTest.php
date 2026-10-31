@@ -35,7 +35,7 @@ class ProjectLanguageTest extends TestCase
         $blueprint->update(['language' => 'stata']);
 
         $this->actingAs($user)->post('/projects', ['name' => 'Survey', 'blueprint_id' => $blueprint->id])
-            ->assertRedirect('/projects')
+            ->assertRedirect('/projects/survey')
             ->assertSessionHas('token_language', 'stata');
 
         $this->assertSame('stata', Project::sole()->language);
@@ -86,9 +86,9 @@ class ProjectLanguageTest extends TestCase
         $project->issuePullToken('laptop');
         $project->issuePullToken('server');
 
-        $this->actingAs($user)->get('/projects')->assertInertia(fn ($page) => $page
-            ->has('projects.0.tokens', 2)
-            ->where('projects.0.tokens.0.name', 'server'));
+        $this->actingAs($user)->get('/projects/survey')->assertInertia(fn ($page) => $page
+            ->has('project.tokens', 2)
+            ->where('project.tokens.0.name', 'server'));
 
         $id = PersonalAccessToken::where('name', 'laptop')->value('id');
         $this->actingAs($user)->delete("/projects/{$project->id}/tokens/{$id}")->assertRedirect();

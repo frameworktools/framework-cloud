@@ -9,6 +9,7 @@ use App\Http\Controllers\App\GitHubLibraryController;
 use App\Http\Controllers\App\ProjectsController;
 use App\Http\Controllers\App\SkillsController;
 use App\Http\Controllers\App\TokensController;
+use App\Http\Controllers\Auth\PasskeyPromptController;
 use App\Http\Controllers\DocsController;
 use App\Http\Controllers\DocumentViewController;
 use App\Http\Controllers\GuideController;
@@ -18,7 +19,6 @@ use App\Http\Controllers\Settings\DefaultsController;
 use App\Http\Controllers\Settings\GitHubController;
 use App\Http\Controllers\Settings\PasskeysController;
 use App\Models\User;
-use App\Services\GitHub\Scaffolder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -86,32 +86,8 @@ Route::get('/@{handle}/{project}/{slug}/versions/{number}', [DocumentViewControl
 
 // The app (Inertia + Vue)
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', function () {
-        $user = request()->user();
-
-        $github = Scaffolder::enabled();
-
-        return Inertia::render('Dashboard', [
-            'counts' => [
-                'projects' => $user->projects()->count(),
-                'tokens' => $user->tokens()->count(),
-                'settings_revision' => $user->globalSettings()->revision,
-            ],
-            // Getting started; the dashboard hides it once everything is done
-            'steps' => array_values(array_filter([
-                ['key' => 'profile', 'done' => filled(Arr::get($user->globalSettings()->document, 'author.affiliations'))
-                    || filled(Arr::get($user->globalSettings()->document, 'author.affiliation'))],
-                ['key' => 'machine', 'done' => $user->tokens()->exists()],
-                $github ? ['key' => 'github', 'done' => $user->githubAccount()->exists()] : null,
-                ['key' => 'project', 'done' => $user->projects()->exists()],
-            ])),
-            // What this server still needs, for its admins
-            'setup' => $user->is_admin ? array_values(array_filter([
-                in_array(config('mail.default'), ['log', 'array'], true) ? 'mail' : null,
-                $github ? null : 'github',
-            ])) : [],
-        ]);
-    })->name('dashboard');
+    // Projects are the home page; /dashboard stays for old links
+    Route::redirect('dashboard', 'projects')->name('dashboard');
 
     Route::get('projects', [ProjectsController::class, 'index'])->name('projects');
     Route::get('published', [DocumentsController::class, 'index'])->name('published');
@@ -120,6 +96,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('published/{document}/versions/{number}', [DocumentsController::class, 'destroyVersion'])->whereNumber('number');
     Route::get('projects/create', [ProjectsController::class, 'create'])->name('projects.create');
     Route::post('projects', [ProjectsController::class, 'store']);
+    Route::get('projects/{slug}', [ProjectsController::class, 'show'])->where('slug', '[A-Za-z0-9_-]+')->name('projects.show');
     Route::post('projects/{project}/token', [ProjectsController::class, 'issueToken']);
     Route::delete('projects/{project}/tokens/{token}', [ProjectsController::class, 'revokeToken']);
     Route::delete('projects/{project}', [ProjectsController::class, 'destroy']);
@@ -167,8 +144,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('settings/github', [App\Http\Controllers\Auth\GitHubController::class, 'destroy']);
 
     // Offered once after an email link or password sign-in
-    Route::get('welcome/passkey', [App\Http\Controllers\Auth\PasskeyPromptController::class, 'show'])->name('passkey.prompt');
-    Route::post('welcome/passkey/skip', [App\Http\Controllers\Auth\PasskeyPromptController::class, 'skip']);
+    Route::get('welcome/passkey', [PasskeyPromptController::class, 'show'])->name('passkey.prompt');
+    Route::post('welcome/passkey/skip', [PasskeyPromptController::class, 'skip']);
 
     Route::get('settings/passkeys', [PasskeysController::class, 'index'])->name('settings.passkeys');
     Route::post('settings/passkeys/options', [PasskeysController::class, 'options']);

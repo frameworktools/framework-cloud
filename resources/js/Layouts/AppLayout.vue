@@ -1,54 +1,29 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
 import ThemeToggle from '@/Components/ThemeToggle.vue';
+import SidebarNav from '@/Components/SidebarNav.vue';
+import { Bars3Icon, XMarkIcon } from '@heroicons/vue/24/outline';
 
 defineProps({ bleed: Boolean });
 
 const page = usePage();
 const user = computed(() => page.props.auth.user);
-const nav = computed(() => page.props.nav ?? []);
-const mainNav = computed(() => nav.value.filter((i) => !i.section));
-const adminNav = computed(() => nav.value.filter((i) => i.section === 'Admin'));
-
-const current = (href) => page.url === href || page.url.startsWith(href + '/');
 const logout = () => router.post('/logout');
+
+// The phone-width menu closes on every visit
+const menuOpen = ref(false);
+watch(() => page.url, () => { menuOpen.value = false; });
 </script>
 
 <template>
     <div class="flex min-h-screen">
         <aside class="hidden w-60 shrink-0 flex-col overflow-y-auto border-r border-slate-200 bg-slate-50 p-4 md:sticky md:top-0 md:flex md:h-screen dark:border-slate-800 dark:bg-slate-900">
-            <Link href="/dashboard" class="px-2 py-1 font-semibold tracking-tight">
+            <Link href="/projects" class="px-2 py-1 font-semibold tracking-tight">
                 <span class="inline-flex items-center gap-2"><img :src="'/images/logo.png'" alt="" class="h-8 w-auto" /><span>Framework <span class="text-sky-600 dark:text-sky-500">Cloud</span></span></span>
             </Link>
 
-            <nav class="mt-6 flex flex-1 flex-col gap-6">
-                <div class="flex flex-col gap-0.5">
-                    <div class="mb-1 px-2 text-xs font-medium uppercase tracking-wide text-slate-500">Platform</div>
-                    <Link
-                        v-for="item in mainNav" :key="item.href" :href="item.href"
-                        class="rounded-md px-2 py-1.5 text-sm"
-                        :class="current(item.href)
-                            ? 'bg-sky-100 font-medium text-sky-700 dark:bg-sky-950/50 dark:text-sky-300'
-                            : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'"
-                    >
-                        {{ item.label }}
-                    </Link>
-                </div>
-
-                <div v-if="adminNav.length" class="flex flex-col gap-0.5">
-                    <div class="mb-1 px-2 text-xs font-medium uppercase tracking-wide text-slate-500">Admin</div>
-                    <Link
-                        v-for="item in adminNav" :key="item.href" :href="item.href"
-                        class="rounded-md px-2 py-1.5 text-sm"
-                        :class="current(item.href)
-                            ? 'bg-sky-100 font-medium text-sky-700 dark:bg-sky-950/50 dark:text-sky-300'
-                            : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'"
-                    >
-                        {{ item.label }}
-                    </Link>
-                </div>
-            </nav>
+            <SidebarNav class="mt-6 flex-1" />
 
             <div class="mb-3 flex items-center justify-between px-2">
                 <span class="text-xs text-slate-500">Theme</span>
@@ -70,12 +45,25 @@ const logout = () => router.post('/logout');
 
         <div class="flex min-w-0 flex-1 flex-col">
             <header class="flex items-center justify-between border-b border-slate-200 px-4 py-3 md:hidden dark:border-slate-800">
-                <Link href="/dashboard" class="font-semibold"><span class="inline-flex items-center gap-2"><img :src="'/images/logo.png'" alt="" class="h-8 w-auto" /><span>Framework <span class="text-sky-600 dark:text-sky-500">Cloud</span></span></span></Link>
+                <Link href="/projects" class="font-semibold"><span class="inline-flex items-center gap-2"><img :src="'/images/logo.png'" alt="" class="h-8 w-auto" /><span>Framework <span class="text-sky-600 dark:text-sky-500">Cloud</span></span></span></Link>
                 <div class="flex items-center gap-3">
                     <ThemeToggle />
-                    <button v-if="!page.props.singleUser" class="text-sm text-slate-500" @click="logout">Sign out</button>
+                    <button
+                        type="button" class="rounded-md p-1 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                        :aria-expanded="menuOpen" aria-label="Menu" @click="menuOpen = !menuOpen"
+                    >
+                        <XMarkIcon v-if="menuOpen" class="size-6" />
+                        <Bars3Icon v-else class="size-6" />
+                    </button>
                 </div>
             </header>
+            <div v-if="menuOpen" class="flex flex-col gap-4 border-b border-slate-200 bg-slate-50 px-4 py-4 md:hidden dark:border-slate-800 dark:bg-slate-900">
+                <SidebarNav />
+                <div class="flex items-center justify-between border-t border-slate-200 pt-3 dark:border-slate-800">
+                    <span class="truncate text-sm text-slate-700 dark:text-slate-300">{{ user?.name }}</span>
+                    <button v-if="!page.props.singleUser" class="text-sm text-slate-500" @click="logout">Sign out</button>
+                </div>
+            </div>
 
             <!-- bleed: the page lays out its own columns (SectionLayout) -->
             <main v-if="bleed" class="flex-1">

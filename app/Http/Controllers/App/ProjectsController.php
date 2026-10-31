@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Jobs\ScaffoldOnGitHub;
 use App\Models\Blueprint;
 use App\Models\BlueprintVersion;
+use App\Models\Document;
 use App\Models\Project;
 use App\Services\GitHub\GitHubNotConnected;
 use App\Services\GitHub\Installations;
@@ -17,6 +18,7 @@ use App\Support\ProjectLayers;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -25,32 +27,77 @@ use Inertia\Response;
 
 class ProjectsController extends Controller
 {
+    /** The home page: every project, and the steps a new account has left. */
     public function index(Request $request): Response
     {
         $user = $request->user();
+        $github = Scaffolder::enabled();
 
         return Inertia::render('Projects', [
-            'projects' => $user->projects()->latest()->with('blueprintVersion.blueprint.owner', 'tokens')->get()
-                ->map(fn (Project $p) => $p->only(['id', 'name', 'slug', 'project_type', 'language', 'description', 'created_at']) + [
-                    'github' => $p->github_repo ? [
-                        'repo' => $p->github_repo,
-                        'url' => $p->githubUrl(),
-                        'private' => $p->github_private,
-                        'status' => $p->scaffold_status,
-                        'run_url' => $p->scaffold_run_url,
-                        'error' => $p->scaffold_error,
-                        'pages_url' => $p->pages_url,
-                    ] : ($p->scaffold_status === 'failed' ? ['status' => 'failed', 'error' => $p->scaffold_error] : null),
-                    'blueprint' => $p->blueprintVersion ? [
-                        'id' => $p->blueprintVersion->blueprint_id,
-                        'handle' => $p->blueprintVersion->blueprint->handle,
-                        'name' => $p->blueprintVersion->blueprint->name,
-                        'version' => $p->blueprintVersion->version,
-                    ] : null,
-                    'tokens' => $p->tokens->sortByDesc('id')->values()
-                        ->map(fn ($t) => $t->only(['id', 'name', 'created_at', 'last_used_at'])),
-                ]),
+            'projects' => $user->projects()->latest()->with('blueprintVersion.blueprint')->get()
+                ->map(fn (Project $p) => self::summary($p)),
+            // Getting started; the page hides it once everything is done
+            'steps' => array_values(array_filter([
+                ['key' => 'profile', 'done' => filled(Arr::get($user->globalSettings()->document, 'author.affiliations'))
+                    || filled(Arr::get($user->globalSettings()->document, 'author.affiliation'))],
+                ['key' => 'machine', 'done' => $user->tokens()->exists()],
+                $github ? ['key' => 'github', 'done' => $user->githubAccount()->exists()] : null,
+                ['key' => 'project', 'done' => $user->projects()->exists()],
+            ])),
+            // What this server still needs, for its admins
+            'setup' => $user->is_admin ? array_values(array_filter([
+                in_array(config('mail.default'), ['log', 'array'], true) ? 'mail' : null,
+                $github ? null : 'github',
+            ])) : [],
         ]);
+    }
+
+    public function show(Request $request, string $slug): Response
+    {
+        $project = $request->user()->projects()->where('slug', $slug)
+            ->with('blueprintVersion.blueprint', 'tokens', 'documents.versions')->firstOrFail();
+
+        return Inertia::render('Projects/Show', [
+            'project' => self::summary($project) + [
+                'tokens' => $project->tokens->sortByDesc('id')->values()
+                    ->map(fn ($t) => $t->only(['id', 'name', 'created_at', 'last_used_at'])),
+                'spec' => $project->spec ? [
+                    'received_at' => $project->spec_received_at,
+                    'json' => json_encode(json_decode($project->spec), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+                ] : null,
+                'documents' => $project->documents->sortByDesc('updated_at')->values()
+                    ->map(fn (Document $d) => [
+                        'id' => $d->id,
+                        'title' => $d->title ?? $d->slug,
+                        'url' => $d->readableUrl() ?? $d->shareUrl(),
+                        'readable' => $d->isReadable(),
+                        'versions' => $d->versions->count(),
+                        'updated_at' => $d->updated_at,
+                    ]),
+            ],
+        ]);
+    }
+
+    /** What the project list and the sidebar show for one project. */
+    private static function summary(Project $p): array
+    {
+        return $p->only(['id', 'name', 'slug', 'project_type', 'language', 'description', 'created_at']) + [
+            'github' => $p->github_repo ? [
+                'repo' => $p->github_repo,
+                'url' => $p->githubUrl(),
+                'private' => $p->github_private,
+                'status' => $p->scaffold_status,
+                'run_url' => $p->scaffold_run_url,
+                'error' => $p->scaffold_error,
+                'pages_url' => $p->pages_url,
+            ] : ($p->scaffold_status === 'failed' ? ['status' => 'failed', 'error' => $p->scaffold_error] : null),
+            'blueprint' => $p->blueprintVersion ? [
+                'id' => $p->blueprintVersion->blueprint_id,
+                'handle' => $p->blueprintVersion->blueprint->handle,
+                'name' => $p->blueprintVersion->blueprint->name,
+                'version' => $p->blueprintVersion->version,
+            ] : null,
+        ];
     }
 
     public function create(Request $request): Response
@@ -104,8 +151,17 @@ class ProjectsController extends Controller
 
         $slug = Str::slug($validated['name']);
 
+        if ($slug === '' || $slug === 'create') {
+            return back()->withErrors(['name' => 'Choose a different name.']);
+        }
+
         if ($request->user()->projects()->where('slug', $slug)->exists()) {
             return back()->withErrors(['name' => 'You already have a project with this name.']);
+        }
+
+        // A deleted project keeps its name, so its old published links never point at a new project
+        if ($request->user()->projects()->onlyTrashed()->where('slug', $slug)->exists()) {
+            return back()->withErrors(['name' => 'You used this name for a project you deleted. Choose a different name.']);
         }
 
         $language = $validated['language'] ?? $blueprint->language;
@@ -134,11 +190,11 @@ class ProjectsController extends Controller
         if ($github) {
             ScaffoldOnGitHub::dispatch($project, $github['org'], $github['name'], $github['private']);
 
-            return to_route('projects');
+            return to_route('projects.show', $project->slug);
         }
 
         // Set up locally: hand over the token now, since that is the next step
-        return to_route('projects')->with([
+        return to_route('projects.show', $project->slug)->with([
             'token' => $project->issuePullToken(),
             'token_language' => $project->language,
             'status' => 'project-token',
@@ -258,6 +314,6 @@ class ProjectsController extends Controller
         $project->tokens()->delete();
         $project->delete();
 
-        return back();
+        return to_route('projects');
     }
 }

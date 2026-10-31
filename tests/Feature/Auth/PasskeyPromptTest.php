@@ -31,8 +31,8 @@ class PasskeyPromptTest extends TestCase
         $user = User::factory()->create();
         PasskeyFactory::new()->create(['authenticatable_id' => $user->id]);
 
-        $this->post('/auth/magic/'.LoginToken::issue($user))->assertRedirect(route('dashboard'));
-        $this->get('/welcome/passkey')->assertRedirect(route('dashboard'));
+        $this->post('/auth/magic/'.LoginToken::issue($user))->assertRedirect(route('projects'));
+        $this->get('/welcome/passkey')->assertRedirect(route('projects'));
     }
 
     public function test_not_now_continues_to_the_page_the_person_wanted_and_is_remembered(): void
@@ -50,6 +50,6 @@ class PasskeyPromptTest extends TestCase
         $this->post('/logout');
         $this->withCookie(PasskeyPromptController::SKIP_COOKIE, 'skipped')
             ->post('/auth/magic/'.LoginToken::issue($user))
-            ->assertRedirect(route('dashboard'));
+            ->assertRedirect(route('projects'));
     }
 }

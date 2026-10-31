@@ -68,7 +68,7 @@ class PasskeysController extends Controller
 
         // From the prompt after signing in: go on to where the person was heading
         if ($request->boolean('continue')) {
-            return redirect()->intended(route('dashboard'));
+            return redirect()->intended(route('projects'));
         }
 
         return back()->with('status', 'passkey-added');

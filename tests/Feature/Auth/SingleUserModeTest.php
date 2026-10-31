@@ -35,7 +35,7 @@ class SingleUserModeTest extends TestCase
 
     public function test_a_local_request_is_signed_in_as_the_admin(): void
     {
-        $this->local()->get('http://localhost:8080/dashboard')->assertOk()
+        $this->local()->get('http://localhost:8080/projects')->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page->where('singleUser', true));
 
         $this->assertAuthenticatedAs($this->admin);
@@ -52,7 +52,7 @@ class SingleUserModeTest extends TestCase
         $other = User::factory()->create(['email' => 'chosen@example.test']);
         config(['framework.admin_email' => 'Chosen@example.test']);
 
-        $this->local()->get('http://localhost:8080/dashboard')->assertOk();
+        $this->local()->get('http://localhost:8080/projects')->assertOk();
         $this->assertAuthenticatedAs($other);
     }
 
@@ -101,7 +101,7 @@ class SingleUserModeTest extends TestCase
         config(['framework.single_user_networks' => ['127.0.0.1/32', '172.16.0.0/12']]);
 
         $this->withServerVariables(['REMOTE_ADDR' => '172.18.0.1', 'HTTP_HOST' => 'localhost:8080'])
-            ->get('http://localhost:8080/dashboard')->assertOk();
+            ->get('http://localhost:8080/projects')->assertOk();
 
         $this->assertAuthenticatedAs($this->admin);
     }

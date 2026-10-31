@@ -10,6 +10,8 @@ class HandleInertiaRequests extends Middleware
 {
     protected $rootView = 'app';
 
+    private const RECENT_PROJECTS = 6;
+
     public function share(Request $request): array
     {
         // The resolved "user" can be a Project (Sanctum tokenable) when a
@@ -37,17 +39,23 @@ class HandleInertiaRequests extends Middleware
                 'url' => $request->session()->get('url'),
             ],
 
-            // Packages may append their own items via this shared prop.
+            // Sidebar groups: main (no section), Framework, and Settings at
+            // the bottom. Packages may append their own items here.
             'nav' => array_values(array_filter([
-                ['label' => 'Dashboard', 'href' => '/dashboard'],
-                ['label' => 'Projects', 'href' => '/projects'],
                 ['label' => 'Published', 'href' => '/published'],
-                ['label' => 'Blueprints', 'href' => '/blueprints'],
-                ['label' => 'Facets', 'href' => '/facets'],
-                ['label' => 'Skills', 'href' => '/skills'],
-                ['label' => 'API tokens', 'href' => '/tokens'],
-                $user?->is_admin ? ['label' => 'Server setup', 'href' => '/admin/setup', 'section' => 'Admin'] : null,
+                ['label' => 'Blueprints', 'href' => '/blueprints', 'section' => 'Framework'],
+                ['label' => 'Facets', 'href' => '/facets', 'section' => 'Framework'],
+                ['label' => 'Skills', 'href' => '/skills', 'section' => 'Framework'],
+                ['label' => 'Your settings', 'href' => '/settings/profile', 'section' => 'Settings', 'match' => '/settings'],
+                ['label' => 'API tokens', 'href' => '/tokens', 'section' => 'Settings'],
+                $user?->is_admin ? ['label' => 'Server setup', 'href' => '/admin/setup', 'section' => 'Settings'] : null,
             ])),
+
+            // The newest projects, for switching between them from the sidebar
+            'recentProjects' => fn () => $user ? [
+                'items' => $user->projects()->latest()->limit(self::RECENT_PROJECTS)->get(['id', 'name', 'slug']),
+                'total' => $user->projects()->count(),
+            ] : null,
 
             'githubSignIn' => filled(config('services.github.client_id')),
             'passwords' => (bool) config('framework.passwords'),

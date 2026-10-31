@@ -200,10 +200,10 @@ class ServerSetupTest extends TestCase
     {
         config(['mail.default' => 'log', 'services.github.client_id' => null]);
 
-        $this->actingAs($this->admin())->get('/dashboard')
+        $this->actingAs($this->admin())->get('/projects')
             ->assertInertia(fn (Assert $page) => $page->where('setup', ['mail', 'github'])->has('steps', 3));
 
-        $this->actingAs(User::factory()->create(['email_verified_at' => now()]))->get('/dashboard')
+        $this->actingAs(User::factory()->create(['email_verified_at' => now()]))->get('/projects')
             ->assertInertia(fn (Assert $page) => $page->where('setup', []));
     }
 }

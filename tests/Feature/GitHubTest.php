@@ -82,7 +82,7 @@ class GitHubTest extends TestCase
     {
         $this->fakeSocialite(42, 'ada', 'Ada@Example.org');
 
-        $this->get('/auth/github/callback?code=x&state=y')->assertRedirect('/dashboard');
+        $this->get('/auth/github/callback?code=x&state=y')->assertRedirect('/projects');
 
         $user = User::where('email', 'ada@example.org')->firstOrFail();
         $this->assertAuthenticatedAs($user);
@@ -97,7 +97,7 @@ class GitHubTest extends TestCase
         $user = User::factory()->create(['email' => 'ada@example.org']);
         $this->fakeSocialite(42, 'ada', 'ada@example.org');
 
-        $this->get('/auth/github/callback?code=x&state=y')->assertRedirect('/dashboard');
+        $this->get('/auth/github/callback?code=x&state=y')->assertRedirect('/projects');
 
         $this->assertAuthenticatedAs($user);
         $this->assertSame(1, User::count());
@@ -177,7 +177,7 @@ class GitHubTest extends TestCase
             'name' => 'NHANES Study',
             'blueprint_id' => $blueprint->id,
             'github' => ['enabled' => true, 'owner' => 'ada', 'name' => 'nhanes-study', 'private' => true],
-        ])->assertRedirect('/projects')->assertSessionHasNoErrors();
+        ])->assertRedirect('/projects/nhanes-study')->assertSessionHasNoErrors();
 
         $project = Project::firstOrFail();
         $this->assertSame('ada/nhanes-study', $project->github_repo);
@@ -212,7 +212,7 @@ class GitHubTest extends TestCase
             'blueprint_id' => $blueprint->id,
             'language' => 'stata',
             'github' => ['enabled' => true, 'owner' => 'ada', 'name' => 'nhanes-study', 'private' => true],
-        ])->assertRedirect('/projects')->assertSessionHasNoErrors();
+        ])->assertRedirect('/projects/nhanes-study')->assertSessionHasNoErrors();
 
         $this->assertSame('stata', Project::firstOrFail()->language);
 

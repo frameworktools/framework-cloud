@@ -72,7 +72,7 @@ const date = (value) => new Date(value).toLocaleDateString(undefined, { year: 'n
                             <div class="min-w-0 flex-1">
                                 <a :href="doc.url" target="_blank" class="text-base font-semibold text-slate-900 hover:underline dark:text-white">{{ doc.title }}</a>
                                 <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500 dark:text-slate-400">
-                                    <UiBadge>{{ doc.project.name }}</UiBadge>
+                                    <Link :href="`/projects/${doc.project.slug}`"><UiBadge>{{ doc.project.name }}</UiBadge></Link>
                                     <span>{{ doc.updated_at !== doc.published_at ? `Updated ${date(doc.updated_at)}` : `Published ${date(doc.published_at)}` }}</span>
                                     <span aria-hidden="true">·</span>
                                     <span>{{ doc.views }} {{ doc.views === 1 ? 'view' : 'views' }}</span>
