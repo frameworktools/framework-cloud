@@ -50,13 +50,19 @@ class LibraryTest extends TestCase
         ];
     }
 
-    private function blueprintPayload(array $facetVersionIds, array $overrides = []): array
+    /** Choices, as the blueprint builder sends them */
+    private function blueprintPayload(array $tools = [], array $overrides = []): array
     {
         return $overrides + [
             'name' => 'R01 analysis',
             'visibility' => 'private',
-            'base_version_id' => $this->system(Facet::class, 'project')->latestVersion->id,
-            'facet_version_ids' => $facetVersionIds,
+            'language' => 'r',
+            'structure' => 'framework/project',
+            'tools' => $tools,
+            'package_sets' => [],
+            'skill_sets' => [],
+            'skills' => [],
+            'settings' => ['sensitive' => false, 'ai' => true, 'git' => true],
         ];
     }
 
@@ -202,59 +208,75 @@ class LibraryTest extends TestCase
         $this->assertSame(1, Facet::where('user_id', $user->id)->count());
     }
 
-    public function test_a_blueprint_pins_facet_versions_until_its_owner_updates(): void
+    public function test_a_blueprint_pins_piece_versions_until_its_owner_saves_again(): void
     {
         $user = $this->user();
         $renv = $this->system(Facet::class, 'renv');
-        $manuscript = $this->system(Facet::class, 'quarto_manuscript');
 
-        $this->actingAs($user)->post('/blueprints', $this->blueprintPayload([
-            $renv->latestVersion->id, $manuscript->latestVersion->id,
-        ]))->assertRedirect();
+        $this->actingAs($user)->post('/blueprints', $this->blueprintPayload(['quarto' => true, 'quarto_manuscript' => true, 'renv' => true]))
+            ->assertSessionHasNoErrors();
 
         $blueprint = Blueprint::where('user_id', $user->id)->firstOrFail();
         $version = $blueprint->latestVersion;
         $this->assertSame(1, $version->version);
-        $this->assertSame(['renv', 'quarto_manuscript'], $version->facetVersions->map(fn ($v) => $v->facet->key)->all());
+        $this->assertSame(['quarto', 'quarto_manuscript', 'renv'], $version->facetVersions->map(fn ($v) => $v->facet->key)->all());
 
-        // A new facet version does not move the blueprint
-        $pinned = $renv->latestVersion->id;
-        $renv->publishVersion(['layer' => ['packages' => ['use_renv' => true, 'default_packages' => ['targets' => null]]]]);
-        $this->assertSame($pinned, $blueprint->fresh()->latestVersion->facetVersions->first()->id);
-
-        // Resubmitting the same pins keeps v1; reordering is a change
-        $this->actingAs($user)->put("/blueprints/{$blueprint->id}", $this->blueprintPayload([$pinned, $manuscript->latestVersion->id]));
+        // Saving the same choices keeps v1
+        $this->actingAs($user)->put("/blueprints/{$blueprint->id}", $this->blueprintPayload(['quarto' => true, 'quarto_manuscript' => true, 'renv' => true]));
         $this->assertSame(1, $blueprint->fresh()->latestVersion->version);
 
-        $this->actingAs($user)->put("/blueprints/{$blueprint->id}", $this->blueprintPayload([
-            $manuscript->latestVersion->id, $renv->fresh()->latestVersion->id,
-        ]));
+        // A new piece version does not move the blueprint until its owner saves it
+        $pinned = $renv->latestVersion->id;
+        $renv->publishVersion(['layer' => ['packages' => ['use_renv' => true, 'default_packages' => ['targets' => null]]]]);
+        $this->assertContains($pinned, $blueprint->fresh()->latestVersion->facetVersions->pluck('id'));
+
+        $this->actingAs($user)->put("/blueprints/{$blueprint->id}", $this->blueprintPayload(['quarto' => true, 'quarto_manuscript' => true, 'renv' => true]));
         $latest = $blueprint->fresh()->latestVersion;
         $this->assertSame(2, $latest->version);
-        $this->assertSame(['quarto_manuscript', 'renv'], $latest->facetVersions->map(fn ($v) => $v->facet->key)->all());
-        $this->assertSame(2, $latest->facetVersions->last()->version);
+        $this->assertSame(2, $latest->facetVersions->firstWhere('facet_id', $renv->id)->version);
     }
 
-    public function test_blueprints_reject_duplicate_facets_bases_as_facets_and_hidden_facets(): void
+    public function test_blueprints_reject_missing_requirements_and_hidden_pieces(): void
     {
         $user = $this->user();
-        $other = $this->user();
-        $renv = $this->system(Facet::class, 'renv')->latestVersion->id;
+        $other = $this->user(['handle' => 'other']);
 
-        $hidden = Facet::create(['user_id' => $other->id, 'key' => 'secret', 'name' => 'Secret', 'visibility' => 'private']);
-        $hiddenVersion = $hidden->publishVersion(['layer' => []])->id;
+        $hidden = Facet::create(['user_id' => $other->id, 'kind' => 'package_set', 'key' => 'secret', 'name' => 'Secret', 'visibility' => 'private']);
+        $hidden->publishVersion(['layer' => []]);
 
-        foreach ([[$renv, $renv], [$this->system(Facet::class, 'bare')->latestVersion->id], [$hiddenVersion]] as $ids) {
-            $this->actingAs($user)->from('/blueprints/create')
-                ->post('/blueprints', $this->blueprintPayload($ids))
-                ->assertSessionHasErrors('facet_version_ids');
-        }
-
-        $this->actingAs($user)->from('/blueprints/create')
-            ->post('/blueprints', $this->blueprintPayload([], ['base_version_id' => $renv]))
-            ->assertSessionHasErrors('base_version_id');
+        $this->actingAs($user)->from('/blueprints/create')->post('/blueprints', $this->blueprintPayload(['quarto_slides' => true]))
+            ->assertSessionHasErrors(['tools' => 'Quarto slides needs the quarto tool.']);
+        $this->actingAs($user)->from('/blueprints/create')->post('/blueprints', $this->blueprintPayload([], ['package_sets' => ['other/secret']]))
+            ->assertSessionHasErrors('package_sets');
+        $this->actingAs($user)->from('/blueprints/create')->post('/blueprints', $this->blueprintPayload([], ['structure' => 'framework/renv']))
+            ->assertSessionHasErrors('structure');
 
         $this->assertSame(0, Blueprint::where('user_id', $user->id)->count());
+    }
+
+    public function test_a_blueprint_records_settings_and_extra_yaml(): void
+    {
+        $user = $this->user();
+
+        $this->actingAs($user)->post('/blueprints', $this->blueprintPayload([], [
+            'skill_sets' => ['framework/ggplot2'],
+            'package_sets' => ['framework/tidyverse-analysis'],
+            'settings' => ['sensitive' => true, 'ai' => true, 'git' => false],
+            'extra_yaml' => "scaffold:\n  ggplot_theme: theme_minimal\n",
+        ]))->assertSessionHasNoErrors();
+
+        $version = Blueprint::where('user_id', $user->id)->firstOrFail()->latestVersion;
+        $this->assertTrue($version->layer['security']['sensitive']);
+        $this->assertFalse($version->layer['git']['use_git']);
+        $this->assertSame('theme_minimal', $version->layer['scaffold']['ggplot_theme']);
+        $this->assertContains('sensitive_data', $version->facetVersions->map(fn ($v) => $v->facet->key)->all());
+
+        // The edit page gives the same choices back
+        $this->actingAs($user)->get("/blueprints/{$version->blueprint_id}/edit")->assertInertia(fn (Assert $page) => $page
+            ->where('start.skill_sets', ['framework/ggplot2'])
+            ->where('start.package_sets', ['framework/tidyverse-analysis'])
+            ->where('start.settings', ['sensitive' => true, 'ai' => true, 'git' => false])
+            ->where('start.extra_yaml', "scaffold:\n  ggplot_theme: theme_minimal\n"));
     }
 
     public function test_visibility_controls_who_sees_and_who_edits(): void
@@ -276,7 +298,7 @@ class LibraryTest extends TestCase
         $this->actingAs($viewer)->get("/blueprints/{$private->id}")->assertNotFound();
         $this->actingAs($viewer)->get("/blueprints/{$unlisted->id}")->assertOk();
         $this->actingAs($viewer)->get("/blueprints/{$public->id}/edit")->assertForbidden();
-        $this->actingAs($viewer)->put("/blueprints/{$public->id}", $this->blueprintPayload([]))->assertForbidden();
+        $this->actingAs($viewer)->put("/blueprints/{$public->id}", $this->blueprintPayload())->assertForbidden();
 
         $this->actingAs($viewer)->get('/blueprints')->assertInertia(fn (Assert $page) => $page
             ->component('Blueprints/Index')
@@ -409,7 +431,7 @@ class LibraryTest extends TestCase
         $user = $this->user();
 
         $this->actingAs($user)->get('/blueprints/create')->assertInertia(fn (Assert $page) => $page
-            ->component('Blueprints/Builder')->has('bases', 5)->has('facets', 8));
+            ->component('Blueprints/Builder')->has('catalog.structures', 5)->has('catalog.tools', 5)->has('catalog.skill_sets', 2));
         $this->actingAs($user)->get('/structures')->assertInertia(fn (Assert $page) => $page->component('Pieces/Index')->has('pieces', 5));
         $this->actingAs($user)->get('/package-sets')->assertInertia(fn (Assert $page) => $page->component('Pieces/Index')->has('pieces', 1));
         $this->actingAs($user)->get('/skill-sets')->assertInertia(fn (Assert $page) => $page->component('Pieces/Index')->has('pieces', 2));

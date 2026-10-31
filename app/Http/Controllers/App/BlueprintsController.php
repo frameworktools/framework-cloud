@@ -5,17 +5,17 @@ namespace App\Http\Controllers\App;
 use App\Http\Controllers\Controller;
 use App\Models\Blueprint;
 use App\Models\BlueprintVersion;
-use App\Models\Facet;
 use App\Models\FacetVersion;
 use App\Models\Project;
+use App\Support\Catalog;
 use App\Support\Layer;
 use App\Support\Library;
+use App\Support\Resolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -40,7 +40,7 @@ class BlueprintsController extends Controller
 
         if ($from = $request->integer('from')) {
             $source = Blueprint::with(Library::BLUEPRINT_WITH)->find($from);
-            $start = $source?->isVisibleTo($request->user()) ? Library::blueprintVersion($source->latestVersion) : null;
+            $start = $source?->isVisibleTo($request->user()) ? Catalog::choices($source->latestVersion, $request->user()) : null;
         }
 
         return $this->builder($request, null, $start);
@@ -90,7 +90,7 @@ class BlueprintsController extends Controller
 
         $blueprint->load(Library::BLUEPRINT_WITH);
 
-        return $this->builder($request, $blueprint, Library::blueprintVersion($blueprint->latestVersion));
+        return $this->builder($request, $blueprint, Catalog::choices($blueprint->latestVersion, $request->user()));
     }
 
     public function update(Request $request, Blueprint $blueprint): RedirectResponse
@@ -151,23 +151,22 @@ class BlueprintsController extends Controller
         return to_route('blueprints.index');
     }
 
-    /** @param array<string, mixed>|null $start a version to begin from */
+    /** @param array<string, mixed>|null $start choices to begin from: the version being edited, or ?from= */
     private function builder(Request $request, ?Blueprint $blueprint, ?array $start): Response
     {
         $user = $request->user();
-        $facets = Facet::listedFor($user)->with(['owner', 'latestVersion'])
-            ->orderByRaw('user_id is not null')->orderBy('position')->orderBy('name')->get();
 
         return Inertia::render('Blueprints/Builder', [
             'blueprint' => $blueprint ? Library::blueprint($blueprint, $user) : null,
             'start' => $start,
-            'bases' => $facets->where('kind', 'structure')->values()->map(fn ($f) => Library::facet($f, $user)),
-            'facets' => $facets->whereIn('kind', Facet::PIECES)->values()->map(fn ($f) => Library::facet($f, $user)),
-            'categories' => Facet::CATEGORIES,
+            'catalog' => Catalog::for($user),
         ]);
     }
 
     /**
+     * The builder sends choices; the resolver turns them into the structure,
+     * pieces, and settings layer a version pins. Nobody's defaults apply.
+     *
      * @return array{0: array<string, mixed>, 1: FacetVersion, 2: list<int>, 3: array<string, mixed>, 4: ?string}
      */
     private function validated(Request $request): array
@@ -176,45 +175,35 @@ class BlueprintsController extends Controller
             'name' => ['required', 'string', 'max:100'],
             'description' => ['nullable', 'string', 'max:1000'],
             'visibility' => ['required', Rule::in(Blueprint::VISIBILITIES)],
-            'language' => ['nullable', Rule::in(Project::LANGUAGES)],
-            'base_version_id' => ['required', 'integer'],
-            'facet_version_ids' => ['array'],
-            'facet_version_ids.*' => ['integer'],
-            'settings_yaml' => ['nullable', 'string'],
+            'language' => ['required', Rule::in(Project::LANGUAGES)],
+            'structure' => ['required', 'string', 'max:200'],
+            'tools' => ['nullable', 'array'],
+            'tools.*' => ['boolean'],
+            'package_sets' => ['nullable', 'array'],
+            'package_sets.*' => ['string', 'max:200'],
+            'skill_sets' => ['nullable', 'array'],
+            'skill_sets.*' => ['string', 'max:200'],
+            'skills' => ['nullable', 'array'],
+            'skills.*' => ['string', 'max:200'],
+            'settings' => ['nullable', 'array'],
+            'settings.sensitive' => ['boolean'],
+            'settings.git' => ['boolean'],
+            'settings.ai' => ['boolean'],
+            'extra_yaml' => ['nullable', 'string', 'max:20000'],
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
 
-        $user = $request->user();
-        $ids = array_map('intval', $data['facet_version_ids'] ?? []);
-        $versions = FacetVersion::with('facet')->whereIn('id', [$data['base_version_id'], ...$ids])->get()->keyBy('id');
+        $resolved = (new Resolver($request->user(), withDefaults: false))->resolve(Arr::only($data, [
+            'name', 'language', 'structure', 'tools', 'package_sets', 'skill_sets', 'skills', 'settings', 'extra_yaml',
+        ]));
 
-        $base = $versions->get((int) $data['base_version_id']);
-        if (! $base || ! $base->facet->isStructure() || ! $base->facet->isVisibleTo($user)) {
-            throw ValidationException::withMessages(['base_version_id' => 'Choose a project type.']);
-        }
-
-        if ($problem = Project::typeProblem($data['language'] ?? 'r', $base->layer['type'] ?? 'bare')) {
-            throw ValidationException::withMessages(['language' => $problem]);
-        }
-
-        $facetIds = [];
-        foreach ($ids as $id) {
-            $version = $versions->get($id);
-            if (! $version || ! in_array($version->facet->kind, [...Facet::PIECES, 'legacy'], true) || ! $version->facet->isVisibleTo($user)) {
-                throw ValidationException::withMessages(['facet_version_ids' => 'One of the chosen facets is not available.']);
-            }
-            if (in_array($version->facet_id, $facetIds, true)) {
-                throw ValidationException::withMessages(['facet_version_ids' => "{$version->facet->name} is in this blueprint twice."]);
-            }
-            $facetIds[] = $version->facet_id;
-        }
-
-        [$layer, $error] = Layer::fromYaml($data['settings_yaml'] ?? '');
-        if ($error || ($problems = Layer::problems($layer, 'blueprint'))) {
-            throw ValidationException::withMessages(['settings_yaml' => $error ?? implode("\n", $problems)]);
-        }
-
-        return [array_map(fn ($v) => is_string($v) ? trim($v) : $v, Arr::only($data, ['name', 'description', 'visibility', 'language'])), $base, $ids, $layer, $data['notes'] ?? null];
+        return [
+            array_map(fn ($v) => is_string($v) ? trim($v) : $v, Arr::only($data, ['name', 'description', 'visibility', 'language'])),
+            $resolved['structure'],
+            array_map(fn (FacetVersion $v) => $v->id, $resolved['pieces']),
+            $resolved['layer'],
+            $data['notes'] ?? null,
+        ];
     }
 
     private function forkedFrom(Blueprint $blueprint, $user): ?array

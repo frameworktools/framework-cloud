@@ -1,109 +1,50 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
-import { CubeIcon, ListBulletIcon, PencilSquareIcon, PuzzlePieceIcon } from '@heroicons/vue/24/outline';
+import { AdjustmentsHorizontalIcon, CubeIcon, FolderIcon, PencilSquareIcon, SparklesIcon, WrenchScrewdriverIcon } from '@heroicons/vue/24/outline';
 import SectionLayout from '@/Layouts/SectionLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import UiPanel from '@/Components/UiPanel.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiInput from '@/Components/UiInput.vue';
 import UiSelect from '@/Components/UiSelect.vue';
-import UiSwitch from '@/Components/UiSwitch.vue';
 import UiTextarea from '@/Components/UiTextarea.vue';
-import LayerSummary from '@/Components/LayerSummary.vue';
-import { languageOptions, visibilityOptions } from '@/library.js';
+import ChoicesEditor from '@/Components/ChoicesEditor.vue';
+import { visibilityOptions } from '@/library.js';
 
 const props = defineProps({
     blueprint: Object, // null when creating
-    start: Object, // a version to begin from: the one being edited, or ?from=
-    bases: Array,
-    facets: Array,
-    categories: Object,
+    start: Object, // choices to begin from: the version being edited, or ?from=
+    catalog: Object,
 });
 
 const editing = computed(() => !!props.blueprint);
-
-// Pinned versions from the starting point keep their own summaries, which
-// can differ from the facet's latest version.
-const pinned = Object.fromEntries(
-    [props.start?.base, ...(props.start?.facets ?? [])].filter(Boolean).map((v) => [v.id, v]),
-);
-
-const baseVersionId = ref(props.start?.base.id ?? null);
-const selected = ref((props.start?.facets ?? []).map((v) => ({ facet_id: v.facet_id, version_id: v.id })));
-
-const facetById = computed(() => Object.fromEntries([...props.bases, ...props.facets].map((f) => [f.id, f])));
-const baseFacet = computed(() => {
-    const version = pinned[baseVersionId.value];
-    return props.bases.find((b) => b.version_id === baseVersionId.value || b.id === version?.facet_id) ?? null;
-});
-
-const grouped = computed(() => {
-    const sections = Object.entries(props.categories).map(([key, label]) => ({
-        key,
-        label,
-        facets: props.facets.filter((f) => f.category === key),
-    }));
-    sections.push({ key: 'other', label: 'Other', facets: props.facets.filter((f) => !props.categories[f.category]) });
-    return sections.filter((s) => s.facets.length);
-});
-
-const isOn = (facet) => selected.value.some((s) => s.facet_id === facet.id);
-const toggle = (facet, on) => {
-    if (on && !isOn(facet)) selected.value.push({ facet_id: facet.id, version_id: facet.version_id });
-    if (!on) selected.value = selected.value.filter((s) => s.facet_id !== facet.id);
-};
-const move = (index, by) => {
-    const list = [...selected.value];
-    const [item] = list.splice(index, 1);
-    list.splice(index + by, 0, item);
-    selected.value = list;
-};
-
-// One fragment for the side panel: the facet, the pinned version, and whether a newer one exists
-const fragment = (facetId, versionId) => {
-    const facet = facetById.value[facetId];
-    const pin = pinned[versionId];
-    return {
-        facet,
-        name: facet?.name ?? pin?.name,
-        handle: facet?.handle ?? pin?.handle,
-        version: pin && versionId !== facet?.version_id ? pin.version : facet?.version,
-        summary: pin && versionId !== facet?.version_id ? pin.summary : facet?.summary ?? [],
-        outdated: !!facet && versionId !== facet.version_id,
-    };
-};
-
-const baseFragment = computed(() => (baseVersionId.value ? fragment(baseFacet.value?.id ?? pinned[baseVersionId.value]?.facet_id, baseVersionId.value) : null));
-const updateBase = () => (baseVersionId.value = baseFacet.value.version_id);
-const updateFacet = (index) => {
-    const item = selected.value[index];
-    selected.value[index] = { ...item, version_id: facetById.value[item.facet_id].version_id };
-};
+const quarto = props.catalog.tools.some((t) => t.key === 'quarto');
 
 const form = useForm({
     name: props.blueprint?.name ?? '',
     description: props.blueprint?.description ?? '',
     visibility: props.blueprint?.visibility ?? 'private',
-    language: props.blueprint?.language ?? 'r',
-    settings_yaml: props.start?.layer_yaml ?? '',
+    language: props.start?.language ?? props.blueprint?.language ?? 'r',
+    structure: props.start?.structure ?? 'framework/project',
+    tools: { ...(props.start?.tools ?? (quarto ? { quarto: true } : {})) },
+    package_sets: [...(props.start?.package_sets ?? [])],
+    skill_sets: [...(props.start?.skill_sets ?? ['framework/framework'])],
+    skills: [...(props.start?.skills ?? [])],
+    settings: { sensitive: false, ai: true, git: true, ...(props.start?.settings ?? {}) },
+    extra_yaml: props.start?.extra_yaml ?? '',
     notes: '',
 });
-const showAdvanced = ref(!!props.start?.layer_yaml);
+const showAdvanced = ref(!!props.start?.extra_yaml);
 
-const save = () => {
-    const data = (d) => ({ ...d, base_version_id: baseVersionId.value, facet_version_ids: selected.value.map((s) => s.version_id) });
-    if (editing.value) {
-        form.transform(data).put(`/blueprints/${props.blueprint.id}`);
-    } else {
-        form.transform(data).post('/blueprints');
-    }
-};
+const save = () => (editing.value ? form.put(`/blueprints/${props.blueprint.id}`) : form.post('/blueprints'));
 
 const items = [
-    { label: 'Project type', anchor: 'type', icon: CubeIcon },
-    { label: 'What it needs', anchor: 'needs', icon: PuzzlePieceIcon },
-    { label: "What you'll get", anchor: 'result', icon: ListBulletIcon },
+    { label: 'Project structure', anchor: 'structure', icon: FolderIcon },
+    { label: 'Tools', anchor: 'tools', icon: WrenchScrewdriverIcon },
+    { label: 'Packages', anchor: 'packages', icon: CubeIcon },
+    { label: 'AI assistants', anchor: 'ai', icon: SparklesIcon },
+    { label: 'Settings', anchor: 'settings', icon: AdjustmentsHorizontalIcon },
     { label: 'Name and share', anchor: 'name', icon: PencilSquareIcon },
 ];
 </script>
@@ -114,101 +55,18 @@ const items = [
     <SectionLayout heading="Blueprint" :items="items">
         <PageHeader :title="editing ? `Edit ${blueprint.name}` : 'New blueprint'">
             <template #description>
-                Pick a project type, then switch on what this kind of project needs.
+                A blueprint is a saved set of choices for new projects: a project structure, tools, packages, skills, and settings.
                 Saving makes a new version; projects keep the version they were made from.
             </template>
         </PageHeader>
 
         <form id="blueprint-form" class="mt-8 flex flex-col gap-8" @submit.prevent="save">
-            <UiPanel id="type" title="What kind of project is it?" class="scroll-mt-6">
-                <div class="grid gap-2 sm:grid-cols-2">
-                    <button
-                        v-for="base in bases" :key="base.id" type="button"
-                        class="rounded-lg border p-3 text-left transition-colors"
-                        :class="baseFacet?.id === base.id
-                            ? 'border-sky-500 bg-sky-50 ring-1 ring-sky-500 dark:bg-sky-950/40'
-                            : 'border-slate-200 bg-white hover:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-500'"
-                        @click="baseVersionId = baseFacet?.id === base.id ? baseVersionId : base.version_id"
-                    >
-                        <div class="text-sm font-medium">{{ base.name }}</div>
-                        <div class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{{ base.description }}</div>
-                        <div v-if="!base.is_system" class="mt-1 font-mono text-xs text-slate-400">{{ base.handle }}</div>
-                    </button>
-                </div>
-                <p v-if="form.errors.base_version_id" class="text-xs text-red-600 dark:text-red-400">{{ form.errors.base_version_id }}</p>
-            </UiPanel>
-
-            <UiPanel id="needs" title="What does it need?" class="scroll-mt-6">
-                <div v-for="section in grouped" :key="section.key" class="flex flex-col gap-2">
-                    <h3 class="text-xs font-medium uppercase tracking-wide text-slate-500">{{ section.label }}</h3>
-                    <div class="flex flex-col divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white dark:divide-slate-700 dark:border-slate-700 dark:bg-slate-900">
-                        <div v-for="facet in section.facets" :key="facet.id" class="p-3">
-                            <UiSwitch
-                                :model-value="isOn(facet)"
-                                :label="facet.question || facet.name"
-                                :description="facet.question ? `${facet.name}: ${facet.description ?? ''}` : facet.description"
-                                @update:model-value="(on) => toggle(facet, on)"
-                            />
-                            <div v-if="!facet.is_system" class="mt-1 font-mono text-xs text-slate-400">{{ facet.handle }}</div>
-                        </div>
-                    </div>
-                </div>
-                <p class="text-sm text-slate-500">
-                    Don't see what you need?
-                    <Link href="/facets/create" class="text-sky-600 hover:underline dark:text-sky-400">Make a facet</Link>,
-                    then come back and switch it on.
-                </p>
-                <p v-if="form.errors.facet_version_ids" class="text-xs text-red-600 dark:text-red-400">{{ form.errors.facet_version_ids }}</p>
-            </UiPanel>
-
-            <UiPanel
-                id="result" title="What you'll get" class="scroll-mt-6"
-                description="Each piece applies in this order, and a later one wins when two set the same thing. Framework combines them when it creates the project."
-            >
-                <p v-if="!baseFragment" class="rounded-lg border border-dashed border-slate-300 p-3 text-sm text-slate-500 dark:border-slate-600">
-                    Choose a project type to start.
-                </p>
-
-                <div v-if="baseFragment" class="flex flex-col gap-2">
-                    <div class="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
-                        <div class="flex items-baseline justify-between gap-2">
-                            <span class="text-sm font-medium">{{ baseFragment.name }}</span>
-                            <span class="font-mono text-xs text-slate-500">v{{ baseFragment.version }}</span>
-                        </div>
-                        <button v-if="baseFragment.outdated" type="button" class="mt-1 text-xs text-sky-600 hover:underline dark:text-sky-400" @click="updateBase">
-                            Update to v{{ baseFacet.version }}
-                        </button>
-                        <div class="mt-2"><LayerSummary :sections="baseFragment.summary" /></div>
-                    </div>
-
-                    <div v-for="(item, index) in selected" :key="item.facet_id" class="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
-                        <div class="flex items-baseline justify-between gap-2">
-                            <span class="text-sm font-medium">+ {{ fragment(item.facet_id, item.version_id).name }}</span>
-                            <span class="flex items-center gap-1 font-mono text-xs text-slate-500">
-                                v{{ fragment(item.facet_id, item.version_id).version }}
-                                <button type="button" class="px-1 hover:text-slate-900 disabled:opacity-30 dark:hover:text-slate-100" :disabled="index === 0" title="Apply earlier" @click="move(index, -1)">↑</button>
-                                <button type="button" class="px-1 hover:text-slate-900 disabled:opacity-30 dark:hover:text-slate-100" :disabled="index === selected.length - 1" title="Apply later" @click="move(index, 1)">↓</button>
-                            </span>
-                        </div>
-                        <button
-                            v-if="fragment(item.facet_id, item.version_id).outdated" type="button"
-                            class="mt-1 text-xs text-sky-600 hover:underline dark:text-sky-400" @click="updateFacet(index)"
-                        >
-                            Update to v{{ facetById[item.facet_id].version }}
-                        </button>
-                        <div class="mt-2"><LayerSummary :sections="fragment(item.facet_id, item.version_id).summary" /></div>
-                    </div>
-                </div>
-            </UiPanel>
+            <ChoicesEditor :form="form" :catalog="catalog" />
 
             <UiPanel id="name" title="Name and share it" class="scroll-mt-6">
                 <UiInput v-model="form.name" label="Name" placeholder="e.g. R01 secondary analysis" required :error="form.errors.name" />
                 <UiTextarea v-model="form.description" label="Description" :rows="2" :error="form.errors.description" />
                 <UiSelect v-model="form.visibility" label="Who can see it" :options="visibilityOptions" :error="form.errors.visibility" />
-                <UiSelect
-                    v-model="form.language" label="Language" :options="languageOptions" :error="form.errors.language"
-                    description="Projects made from this blueprint use this language unless someone changes it."
-                />
                 <UiInput v-if="editing" v-model="form.notes" label="What changed (optional)" placeholder="Shown in the version history" :error="form.errors.notes" />
 
                 <div>
@@ -217,16 +75,16 @@ const items = [
                     </button>
                 </div>
                 <UiTextarea
-                    v-if="showAdvanced" v-model="form.settings_yaml" code :rows="8"
+                    v-if="showAdvanced" v-model="form.extra_yaml" code :rows="8"
                     label="Extra settings (YAML)"
-                    description="Applied after every facet, so they win. Same keys as settings.yml, for example packages or quarto."
-                    :error="form.errors.settings_yaml"
+                    description="Anything else for settings.yml, such as scaffold options or connections. Applied on top of the pieces above."
+                    :error="form.errors.extra_yaml"
                 />
             </UiPanel>
         </form>
 
         <template #actions>
-            <UiButton save-shortcut type="submit" form="blueprint-form" class="w-full" :disabled="form.processing || !baseVersionId">
+            <UiButton save-shortcut type="submit" form="blueprint-form" class="w-full" :disabled="form.processing || !form.structure">
                 {{ editing ? 'Save new version' : 'Create blueprint' }}
             </UiButton>
             <Link :href="editing ? `/blueprints/${blueprint.id}` : '/blueprints'" class="block"><UiButton variant="ghost" class="w-full">Cancel</UiButton></Link>

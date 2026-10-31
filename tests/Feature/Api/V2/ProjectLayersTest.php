@@ -155,7 +155,7 @@ class ProjectLayersTest extends TestCase
         foreach ([[$user, 'Mine', 'private'], [$other, 'Theirs', 'private']] as [$owner, $name, $visibility]) {
             $this->actingAs($owner)->post('/blueprints', [
                 'name' => $name, 'visibility' => $visibility, 'language' => 'r',
-                'base_version_id' => $base->id, 'facet_version_ids' => [],
+                'structure' => $base->facet->handle,
             ])->assertSessionHasNoErrors();
         }
 

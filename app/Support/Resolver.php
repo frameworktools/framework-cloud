@@ -32,7 +32,8 @@ class Resolver
 
     private ?BlueprintVersion $blueprint = null;
 
-    public function __construct(private User $user) {}
+    /** @param bool $withDefaults false when building a blueprint, which shouldn't carry anyone's defaults */
+    public function __construct(private User $user, private bool $withDefaults = true) {}
 
     /**
      * @param  array{name?: string, language?: string, blueprint?: string, structure?: string, tools?: array<string, bool>, package_sets?: list<string>, skill_sets?: list<string>, skills?: list<string>, settings?: array<string, mixed>}  $choices
@@ -40,14 +41,32 @@ class Resolver
      */
     public function resolve(array $choices): array
     {
-        $choices = ProjectDefaults::apply($this->user, $choices);
+        if ($this->withDefaults) {
+            $choices = ProjectDefaults::apply($this->user, $choices);
+        }
         $this->pieces = collect();
+
+        // Extra settings from YAML sit under the switches below
+        if (filled($choices['extra_yaml'] ?? null)) {
+            [$extra, $error] = Layer::fromYaml($choices['extra_yaml']);
+            if ($error || ($problems = Layer::problems($extra, 'blueprint'))) {
+                throw ValidationException::withMessages(['extra_yaml' => $error ?? implode("\n", $problems)]);
+            }
+        }
 
         if (filled($choices['blueprint'] ?? null)) {
             $this->blueprint = $this->findBlueprint($choices['blueprint']);
             $this->structure = $this->blueprint->base;
             $this->pieces = $this->blueprint->facetVersions->keyBy('facet_id');
             $this->settings = $this->blueprint->layer ?? [];
+        } elseif (filled($choices['from'] ?? null)) {
+            // Chosen piece by piece, starting from a blueprint: kept for
+            // provenance, so an unchanged result still pins it
+            $this->blueprint = $this->findBlueprint($choices['from']);
+        }
+
+        if (isset($extra)) {
+            $this->settings = array_replace_recursive($this->settings, $extra);
         }
 
         if (filled($choices['structure'] ?? null)) {
@@ -63,7 +82,7 @@ class Resolver
             throw ValidationException::withMessages(['language' => 'Choose r, python, or stata.']);
         }
         if ($problem = Project::typeProblem($language, $this->structure->layer['type'] ?? 'bare')) {
-            throw ValidationException::withMessages(['structure' => $problem]);
+            throw ValidationException::withMessages(['language' => $problem]);
         }
 
         foreach ($choices['tools'] ?? [] as $key => $on) {

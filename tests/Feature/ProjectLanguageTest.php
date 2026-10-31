@@ -73,7 +73,7 @@ class ProjectLanguageTest extends TestCase
 
         $this->actingAs($user)->post('/blueprints', [
             'name' => 'Stata survey', 'visibility' => 'private', 'language' => 'stata',
-            'base_version_id' => $base->id, 'facet_version_ids' => [],
+            'structure' => $base->facet->handle,
         ])->assertSessionHasNoErrors();
 
         $this->assertSame('stata', Blueprint::where('user_id', $user->id)->sole()->language);
@@ -108,7 +108,7 @@ class ProjectLanguageTest extends TestCase
             ->assertSessionHasErrors('language');
         $this->actingAs($user)->post('/blueprints', [
             'name' => 'Stata course', 'visibility' => 'private', 'language' => 'stata',
-            'base_version_id' => $this->blueprint('presentation')->latestVersion->base->id, 'facet_version_ids' => [],
+            'structure' => 'framework/presentation',
         ])->assertSessionHasErrors('language');
         $this->withToken($token)->postJson('/api/v1/projects', ['name' => 'Talk', 'project_type' => 'presentation', 'language' => 'stata'])
             ->assertUnprocessable();
