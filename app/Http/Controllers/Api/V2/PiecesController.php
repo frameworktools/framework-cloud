@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Facet;
 use App\Models\Skill;
 use App\Models\User;
+use App\Support\Layer;
 use App\Support\ProjectDefaults;
 use App\Support\Resolver;
 use Illuminate\Http\JsonResponse;
@@ -64,7 +65,7 @@ class PiecesController extends Controller
     {
         $user = $this->user($request);
 
-        return response()->json((new Resolver($user))->resolve($this->choices($request))['envelope']);
+        return response()->json(Layer::toJsonValue((new Resolver($user))->resolve($this->choices($request))['envelope']));
     }
 
     /**

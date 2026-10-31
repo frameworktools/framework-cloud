@@ -240,6 +240,22 @@ class PiecesTest extends TestCase
         $this->assertNotContains('framework/tidyverse-analysis', $keys);
     }
 
+    public function test_empty_maps_in_resolved_layers_are_objects(): void
+    {
+        $json = $this->withToken($this->token())->postJson('/api/v2/resolve', ['name' => 'S', 'structure' => 'framework/bare'])
+            ->assertOk()->getContent();
+
+        $layers = json_decode($json)->layers;
+        $this->assertIsObject($layers[1]->layer);
+        foreach ($layers as $entry) {
+            foreach (['directories', 'render_dirs'] as $section) {
+                if (isset($entry->layer->{$section})) {
+                    $this->assertIsObject($entry->layer->{$section}, "{$entry->key} {$section}");
+                }
+            }
+        }
+    }
+
     public function test_jupyter_brings_the_kernel_for_the_projects_language(): void
     {
         $token = $this->token();
