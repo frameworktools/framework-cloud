@@ -5,7 +5,6 @@ namespace App\Http\Controllers\App;
 use App\Http\Controllers\Controller;
 use App\Jobs\ScaffoldOnGitHub;
 use App\Models\Blueprint;
-use App\Models\BlueprintVersion;
 use App\Models\Document;
 use App\Models\Project;
 use App\Services\GitHub\GitHubNotConnected;
@@ -13,13 +12,14 @@ use App\Services\GitHub\Installations;
 use App\Services\GitHub\Pages;
 use App\Services\GitHub\PagesFailed;
 use App\Services\GitHub\Scaffolder;
-use App\Support\Library;
+use App\Support\Catalog;
+use App\Support\ProjectDefaults;
 use App\Support\ProjectLayers;
+use App\Support\Resolver;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -104,15 +104,14 @@ class ProjectsController extends Controller
     {
         $user = $request->user();
         $account = $user->githubAccount;
+        $defaults = ProjectDefaults::for($user);
 
         return Inertia::render('Projects/Create', [
-            'blueprints' => Blueprint::listedFor($user)->with(Library::BLUEPRINT_WITH)
-                ->orderByRaw('user_id is not null')->orderBy('position')->orderBy('name')
-                ->get()->filter(fn (Blueprint $b) => $b->latestVersion)
-                ->map(fn (Blueprint $b) => Library::blueprint($b, $user) + [
-                    'sensitive' => self::sensitive($b->latestVersion),
-                    'fragments' => Library::blueprintVersion($b->latestVersion),
-                ])->values(),
+            'blueprints' => collect(Catalog::blueprints($user))->map(fn (array $b) => $b + [
+                'sensitive' => $b['choices']['settings']['sensitive'],
+            ])->all(),
+            'catalog' => fn () => Catalog::for($user),
+            'defaults' => $defaults,
             'selected' => $request->integer('blueprint') ?: null,
             'github' => [
                 'enabled' => Scaffolder::enabled(),
@@ -124,8 +123,10 @@ class ProjectsController extends Controller
     }
 
     /**
-     * Projects pin the blueprint's current version, so later edits to the
-     * blueprint never change what an existing project was made from.
+     * A project starts from a blueprint, optionally with pieces changed. An
+     * unchanged blueprint is pinned by version, so later edits to it never
+     * change what an existing project was made from; a changed one records
+     * its exact pieces.
      */
     public function store(Request $request): RedirectResponse
     {
@@ -134,6 +135,20 @@ class ProjectsController extends Controller
             'blueprint_id' => ['required', 'integer'],
             'language' => ['nullable', Rule::in(Project::LANGUAGES)],
             'description' => ['nullable', 'string', 'max:500'],
+            'customized' => ['boolean'],
+            'structure' => ['required_if_accepted:customized', 'nullable', 'string', 'max:200'],
+            'tools' => ['nullable', 'array'],
+            'tools.*' => ['boolean'],
+            'package_sets' => ['nullable', 'array'],
+            'package_sets.*' => ['string', 'max:200'],
+            'skill_sets' => ['nullable', 'array'],
+            'skill_sets.*' => ['string', 'max:200'],
+            'skills' => ['nullable', 'array'],
+            'skills.*' => ['string', 'max:200'],
+            'settings' => ['nullable', 'array'],
+            'settings.sensitive' => ['boolean'],
+            'settings.git' => ['boolean'],
+            'settings.ai' => ['boolean'],
             'github' => ['nullable', 'array'],
             'github.enabled' => ['boolean'],
             'github.owner' => ['required_if_accepted:github.enabled', 'nullable', 'string', 'max:100'],
@@ -143,47 +158,27 @@ class ProjectsController extends Controller
             'github.name.regex' => 'Use letters, numbers, hyphens, underscores, and periods.',
         ]);
 
-        $blueprint = Blueprint::with('latestVersion.base')->find($validated['blueprint_id']);
+        $blueprint = Blueprint::with('owner')->find($validated['blueprint_id']);
 
         if (! $blueprint?->isVisibleTo($request->user()) || ! $blueprint->latestVersion) {
             return back()->withErrors(['blueprint_id' => 'Choose a blueprint.']);
         }
 
-        $slug = Str::slug($validated['name']);
+        $choices = ($validated['customized'] ?? false)
+            ? ['from' => $blueprint->handle] + Arr::only($validated, ['name', 'language', 'structure', 'tools', 'package_sets', 'skill_sets', 'skills', 'settings'])
+            : ['blueprint' => $blueprint->handle] + Arr::only($validated, ['name', 'language']);
 
-        if ($slug === '' || $slug === 'create') {
-            return back()->withErrors(['name' => 'Choose a different name.']);
-        }
+        $resolver = new Resolver($request->user());
+        $resolved = $resolver->resolve($choices);
 
-        if ($request->user()->projects()->where('slug', $slug)->exists()) {
-            return back()->withErrors(['name' => 'You already have a project with this name.']);
-        }
-
-        // A deleted project keeps its name, so its old published links never point at a new project
-        if ($request->user()->projects()->onlyTrashed()->where('slug', $slug)->exists()) {
-            return back()->withErrors(['name' => 'You used this name for a project you deleted. Choose a different name.']);
-        }
-
-        $language = $validated['language'] ?? $blueprint->language;
-        $type = $blueprint->latestVersion->base->layer['type'] ?? 'bare';
-
-        if ($problem = Project::typeProblem($language, $type)) {
-            return back()->withErrors(['language' => $problem]);
-        }
-
-        if (($validated['github']['enabled'] ?? false) && ($reason = Scaffolder::unavailableFor($language))) {
+        if (($validated['github']['enabled'] ?? false) && ($reason = Scaffolder::unavailableFor($resolved['language']))) {
             return back()->withErrors(['github.enabled' => $reason]);
         }
 
-        $github = ($validated['github']['enabled'] ?? false) ? $this->githubTarget($request, $validated['github'], $blueprint->latestVersion) : null;
+        $sensitive = ProjectLayers::isSensitive($resolved['envelope']['layers']);
+        $github = ($validated['github']['enabled'] ?? false) ? $this->githubTarget($request, $validated['github'], $sensitive) : null;
 
-        $project = $request->user()->projects()->create([
-            'name' => $validated['name'],
-            'slug' => $slug,
-            'project_type' => $type,
-            'language' => $language,
-            'blueprint_version_id' => $blueprint->latestVersion->id,
-            'description' => $validated['description'] ?? null,
+        $project = $resolver->createProject($validated['name'], $resolved, $validated['description'] ?? null, [
             'scaffold_status' => $github ? 'pending' : null,
         ]);
 
@@ -250,7 +245,7 @@ class ProjectsController extends Controller
      *
      * @return array{org: ?string, name: string, private: bool}
      */
-    private function githubTarget(Request $request, array $input, BlueprintVersion $version): array
+    private function githubTarget(Request $request, array $input, bool $sensitive): array
     {
         $account = $request->user()->githubAccount;
 
@@ -269,7 +264,7 @@ class ProjectsController extends Controller
 
         $private = (bool) ($input['private'] ?? true);
 
-        if (! $private && self::sensitive($version)) {
+        if (! $private && $sensitive) {
             throw ValidationException::withMessages(['github.private' => 'This blueprint handles restricted data, so its repository must be private.']);
         }
 
@@ -278,14 +273,6 @@ class ProjectsController extends Controller
             'name' => $input['name'],
             'private' => $private,
         ];
-    }
-
-    private static function sensitive(BlueprintVersion $version): bool
-    {
-        return ProjectLayers::isSensitive([
-            ...$version->fragments()->map(fn ($f) => ['layer' => $f->layer])->all(),
-            ['layer' => $version->layer ?? []],
-        ]);
     }
 
     public function issueToken(Request $request, int $project): RedirectResponse

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Blueprint;
 use App\Models\User;
+use App\Support\ProjectLayers;
 use Database\Seeders\BlueprintSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -147,6 +148,35 @@ class WebAppTest extends TestCase
         $this->assertSame(0, $user->tokens()->count());
     }
 
+    public function test_a_project_can_change_its_blueprints_pieces(): void
+    {
+        $user = $this->user();
+        $blueprint = $this->systemBlueprint('project');
+
+        $this->actingAs($user)->post('/projects', [
+            'name' => 'Clinic Visits', 'blueprint_id' => $blueprint->id, 'customized' => true,
+            'structure' => 'framework/project', 'tools' => ['quarto' => true, 'renv' => true],
+            'package_sets' => ['framework/tidyverse-analysis'], 'skill_sets' => ['framework/framework'], 'skills' => [],
+            'settings' => ['sensitive' => false, 'ai' => true, 'git' => true],
+        ])->assertRedirect('/projects/clinic-visits');
+
+        $project = $user->projects()->firstOrFail();
+        $this->assertSame($blueprint->latestVersion->id, $project->blueprint_version_id);
+        $keys = array_column(ProjectLayers::for($project)['layers'], 'key');
+        $this->assertContains('framework/renv', $keys);
+        $this->assertContains('framework/tidyverse-analysis', $keys);
+        $this->assertNotContains('framework/ggplot2', $keys);
+
+        // The same pieces as the blueprint pin it instead of recording them
+        $this->actingAs($user)->post('/projects', [
+            'name' => 'Plain', 'blueprint_id' => $blueprint->id, 'customized' => true,
+            'structure' => 'framework/project', 'tools' => ['quarto' => true],
+            'package_sets' => [], 'skill_sets' => ['framework/framework', 'framework/ggplot2'], 'skills' => [],
+            'settings' => ['sensitive' => false, 'ai' => true, 'git' => true],
+        ])->assertSessionHasNoErrors();
+        $this->assertNull($user->projects()->where('slug', 'plain')->first()->composition);
+    }
+
     public function test_new_project_page_lists_blueprints_with_what_they_set_up(): void
     {
         $this->actingAs($this->user())
@@ -155,7 +185,9 @@ class WebAppTest extends TestCase
                 ->component('Projects/Create')
                 ->has('blueprints', 5)
                 ->where('blueprints.0.handle', 'framework/bare')
-                ->has('blueprints.0.fragments.base.summary')
+                ->where('blueprints.1.choices.structure', 'framework/project')
+                ->where('blueprints.1.choices.tools', ['quarto' => true])
+                ->has('catalog.structures', 5)
                 ->where('selected', $this->systemBlueprint('project')->id));
     }
 

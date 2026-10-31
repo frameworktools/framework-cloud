@@ -1,7 +1,7 @@
 <script setup>
 import { computed, watch } from 'vue';
 import { useForm, usePage } from '@inertiajs/vue3';
-import { ComputerDesktopIcon, PencilSquareIcon, Squares2X2Icon } from '@heroicons/vue/24/outline';
+import { AdjustmentsHorizontalIcon, ComputerDesktopIcon, PencilSquareIcon, Squares2X2Icon } from '@heroicons/vue/24/outline';
 import SectionLayout from '@/Layouts/SectionLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import UiPanel from '@/Components/UiPanel.vue';
@@ -11,14 +11,14 @@ import UiSelect from '@/Components/UiSelect.vue';
 import UiSwitch from '@/Components/UiSwitch.vue';
 import UiTextarea from '@/Components/UiTextarea.vue';
 import UiCallout from '@/Components/UiCallout.vue';
-import BlueprintContents from '@/Components/BlueprintContents.vue';
+import ChoicesEditor from '@/Components/ChoicesEditor.vue';
 import { useServerArg, useServerFlag } from '@/cloud.js';
 import { group, groups, languageOptions, stataTypes } from '@/library.js';
 
-const props = defineProps({ blueprints: Array, selected: Number, github: Object });
+const props = defineProps({ blueprints: Array, catalog: Object, defaults: Object, selected: Number, github: Object });
 
 const page = usePage();
-const bare = props.blueprints.find((b) => b.handle === 'framework/bare');
+const bare = props.blueprints.find((b) => b.handle === props.defaults.blueprint) ?? props.blueprints.find((b) => b.handle === 'framework/bare');
 const githubReady = computed(() => props.github.enabled && props.github.login && props.github.owners?.length);
 
 const form = useForm({
@@ -28,6 +28,14 @@ const form = useForm({
     language: 'r',
     destination: 'local',
     github: { owner: props.github.owners?.[0]?.login ?? null, name: '', private: true, nameEdited: false },
+    // Changing pieces starts from the chosen blueprint's choices
+    customized: false,
+    structure: null,
+    tools: {},
+    package_sets: [],
+    skill_sets: [],
+    skills: [],
+    settings: { sensitive: false, ai: true, git: true },
 });
 
 const sections = computed(() =>
@@ -36,7 +44,20 @@ const sections = computed(() =>
         .filter((g) => g.rows.length),
 );
 const blueprint = computed(() => props.blueprints.find((b) => b.id === form.blueprint_id));
-const sensitive = computed(() => blueprint.value?.sensitive ?? false);
+const startFrom = (b) => {
+    if (!b) return;
+    const choices = b.choices;
+    form.structure = choices.structure;
+    form.tools = { ...choices.tools };
+    form.package_sets = [...choices.package_sets];
+    form.skill_sets = [...choices.skill_sets];
+    form.skills = [...choices.skills];
+    form.settings = { ...choices.settings };
+};
+watch(blueprint, (b) => { form.customized = false; startFrom(b); }, { immediate: true });
+const structurePiece = computed(() => props.catalog.structures.find((s) => s.key === form.structure));
+const sensitive = computed(() => (form.customized ? form.settings.sensitive || !!structurePiece.value?.sensitive : blueprint.value?.sensitive ?? false));
+const pieceName = (list, key) => props.catalog[list].find((p) => p.key === key)?.name ?? key;
 
 const slugify = (value) => value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 const slug = computed(() => slugify(form.name));
@@ -57,6 +78,15 @@ const create = () => form
         blueprint_id: data.blueprint_id,
         language: data.language,
         description: data.description,
+        ...(data.customized ? {
+            customized: true,
+            structure: data.structure,
+            tools: data.tools,
+            package_sets: data.package_sets,
+            skill_sets: data.skill_sets,
+            skills: data.skills,
+            settings: data.settings,
+        } : {}),
         github: onGitHub.value
             ? { enabled: true, owner: data.github.owner, name: repoName.value, private: data.github.private }
             : { enabled: false },
@@ -68,11 +98,12 @@ const githubError = computed(() => page.props.errors.github ?? form.errors['gith
 const serverArg = useServerArg();
 const serverFlag = useServerFlag();
 
-const items = [
+const items = computed(() => [
     { label: 'Blueprint', anchor: 'blueprint', icon: Squares2X2Icon },
+    ...(form.customized ? [{ label: 'Pieces', anchor: 'structure', icon: AdjustmentsHorizontalIcon }] : []),
     { label: 'Name', anchor: 'name', icon: PencilSquareIcon },
     { label: 'Where to set it up', anchor: 'where', icon: ComputerDesktopIcon },
-];
+]);
 </script>
 
 <template>
@@ -111,7 +142,7 @@ const items = [
                                         <span
                                             v-if="b.sensitive"
                                             class="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800 dark:bg-amber-900/40 dark:text-amber-200"
-                                        >Restricted data</span>
+                                        >Sensitive data</span>
                                         <span
                                             v-for="facet in b.facets" :key="facet"
                                             class="rounded bg-sky-50 px-1.5 py-0.5 text-xs text-sky-800 dark:bg-sky-950/50 dark:text-sky-300"
@@ -124,14 +155,25 @@ const items = [
                                     viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"
                                 ><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.17l3.71-3.94a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z" clip-rule="evenodd" /></svg>
                             </button>
-                            <div v-if="b.id === form.blueprint_id" class="px-4 pb-4 pl-11">
-                                <BlueprintContents :version="b.fragments" />
-                                <Link :href="`/blueprints/${b.id}`" class="mt-3 inline-block font-mono text-xs text-slate-500 hover:underline">{{ b.handle }} v{{ b.version }}</Link>
+                            <div v-if="b.id === form.blueprint_id" class="flex flex-col gap-2 px-4 pb-4 pl-11 text-sm">
+                                <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1 text-slate-600 dark:text-slate-400">
+                                    <dt class="text-xs text-slate-500">Structure</dt><dd>{{ pieceName('structures', b.choices.structure) }}</dd>
+                                    <template v-if="Object.keys(b.choices.tools).length"><dt class="text-xs text-slate-500">Tools</dt><dd>{{ Object.keys(b.choices.tools).map((k) => pieceName('tools', k)).join(', ') }}</dd></template>
+                                    <template v-if="b.choices.package_sets.length"><dt class="text-xs text-slate-500">Packages</dt><dd>{{ b.choices.package_sets.map((k) => pieceName('package_sets', k)).join(', ') }}</dd></template>
+                                    <template v-if="b.choices.skill_sets.length"><dt class="text-xs text-slate-500">Skills</dt><dd>{{ b.choices.skill_sets.map((k) => pieceName('skill_sets', k)).join(', ') }}</dd></template>
+                                </dl>
+                                <div class="flex items-center gap-3">
+                                    <UiButton v-if="!form.customized" size="sm" variant="outline" @click="form.customized = true">Change pieces</UiButton>
+                                    <UiButton v-else size="sm" variant="ghost" @click="form.customized = false; startFrom(b)">Use the blueprint as is</UiButton>
+                                    <Link :href="`/blueprints/${b.id}`" class="font-mono text-xs text-slate-500 hover:underline">{{ b.handle }} v{{ b.version }}</Link>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </UiPanel>
+
+            <ChoicesEditor v-if="form.customized" :form="form" :catalog="catalog" :languages="[form.language]" />
 
             <UiPanel id="name" title="Name" class="scroll-mt-6">
                 <div>

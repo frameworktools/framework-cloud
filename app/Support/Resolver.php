@@ -85,6 +85,15 @@ class Resolver
             throw ValidationException::withMessages(['language' => $problem]);
         }
 
+        // A blueprint's pieces that don't fit the project's language are left
+        // out quietly, such as an R blueprint's Quarto in a Stata project
+        $this->pieces = $this->pieces->filter(fn (FacetVersion $v) => match (true) {
+            $v->facet->kind === 'setting' => true,
+            $v->facet->kind === 'tool' && $language === 'stata' => false,
+            (bool) $v->facet->language => in_array($language, $v->facet->language, true),
+            default => true,
+        });
+
         foreach ($choices['tools'] ?? [] as $key => $on) {
             $tool = $this->findPiece(str_contains($key, '/') ? $key : "framework/{$key}", ['tool'], 'tools');
             if ($on && ! $this->pieces->has($tool->id)) {
@@ -108,7 +117,7 @@ class Resolver
         }
 
         $this->applySettings(($choices['settings'] ?? []) + $this->changedDefaults($choices['default_settings'] ?? []));
-        $this->checkTools($language);
+        $this->checkTools($language, array_keys(array_filter($choices['tools'] ?? [])));
 
         $pieces = $this->pieces->values()->all();
         $layers = [
@@ -146,15 +155,20 @@ class Resolver
      *
      * @param  array<string, mixed>  $resolved  from resolve()
      */
-    public function createProject(string $name, array $resolved, ?string $description = null): Project
+    public function createProject(string $name, array $resolved, ?string $description = null, array $attributes = []): Project
     {
         $slug = str($name)->slug()->value();
 
         if ($slug === '' || $slug === 'create') {
             throw ValidationException::withMessages(['name' => 'Choose a different name.']);
         }
-        if ($this->user->projects()->withTrashed()->where('slug', $slug)->exists()) {
-            throw ValidationException::withMessages(['name' => 'You already have a project with this name, or had one you deleted.']);
+        if ($this->user->projects()->where('slug', $slug)->exists()) {
+            throw ValidationException::withMessages(['name' => 'You already have a project with this name.']);
+        }
+
+        // A deleted project keeps its name, so its old published links never point at a new project
+        if ($this->user->projects()->onlyTrashed()->where('slug', $slug)->exists()) {
+            throw ValidationException::withMessages(['name' => 'You used this name for a project you deleted. Choose a different name.']);
         }
 
         return $this->user->projects()->create([
@@ -169,7 +183,7 @@ class Resolver
                 'piece_version_ids' => array_map(fn (FacetVersion $v) => $v->id, $resolved['pieces']),
                 'layer' => $resolved['layer'],
             ],
-        ]);
+        ] + $attributes);
     }
 
     /**
@@ -178,11 +192,14 @@ class Resolver
      */
     private function applySettings(array $settings): void
     {
-        if (array_key_exists('sensitive', $settings)) {
+        // A setting goes in only when it changes what the project would get
+        $currentlySensitive = ProjectLayers::isSensitive([['layer' => $this->structure->layer], ['layer' => $this->settings]]);
+        if (array_key_exists('sensitive', $settings) && (bool) $settings['sensitive'] !== $currentlySensitive) {
             $this->settings['security']['sensitive'] = (bool) $settings['sensitive'];
         }
 
-        if (array_key_exists('ai', $settings)) {
+        $aiUnchanged = ! is_array($settings['ai'] ?? null) && (bool) ($settings['ai'] ?? true) === ($this->settings['ai']['enabled'] ?? true);
+        if (array_key_exists('ai', $settings) && ! $aiUnchanged) {
             $ai = is_array($settings['ai']) ? $settings['ai'] : ['enabled' => (bool) $settings['ai']];
             $this->settings['ai'] = array_filter([
                 'enabled' => (bool) ($ai['enabled'] ?? true),
@@ -195,7 +212,7 @@ class Resolver
             }
         }
 
-        if (array_key_exists('git', $settings)) {
+        if (array_key_exists('git', $settings) && (bool) $settings['git'] !== ($this->settings['git']['use_git'] ?? true)) {
             $this->settings['git']['use_git'] = (bool) $settings['git'];
         }
 
@@ -212,11 +229,19 @@ class Resolver
         }
     }
 
-    /** Tools must match the language, bring what they need, and Stata has none. */
-    private function checkTools(string $language): void
+    /**
+     * Tools chosen here must match the language and bring what they need,
+     * and Stata has none. A blueprint's own tools were checked when it was
+     * saved, or predate the rules.
+     *
+     * @param  list<string>  $chosen  tool keys or handles switched on in this request
+     */
+    private function checkTools(string $language, array $chosen): void
     {
+        $chosen = array_map(fn (string $key) => str_contains($key, '/') ? $key : "framework/{$key}", $chosen);
         $tools = $this->pieces->filter(fn (FacetVersion $v) => $v->facet->kind === 'tool');
         $keys = $tools->map(fn (FacetVersion $v) => $v->facet->key)->all();
+        $tools = $tools->filter(fn (FacetVersion $v) => in_array($v->facet->handle, $chosen, true) || $this->withDefaults === false);
 
         foreach ($tools as $tool) {
             $facet = $tool->facet;
