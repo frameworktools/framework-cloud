@@ -74,6 +74,8 @@ class Library
             'description' => $facet->description,
             'category' => $facet->category,
             'question' => $facet->question,
+            'language' => $facet->language,
+            'requires' => $facet->requires,
             'visibility' => $facet->visibility,
             'is_system' => $facet->isSystem(),
             'owner' => self::owner($facet),

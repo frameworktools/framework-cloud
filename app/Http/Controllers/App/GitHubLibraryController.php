@@ -84,7 +84,7 @@ class GitHubLibraryController extends Controller
             ]);
             $facet->publishVersion(['layer' => $read['layer'], 'notes' => 'Imported from GitHub']);
 
-            return to_route('facets.edit', $facet)->with('status', 'facet-imported');
+            return to_route(FacetsController::PATHS[$facet->kind].'.edit', $facet)->with('status', 'facet-imported');
         });
     }
 

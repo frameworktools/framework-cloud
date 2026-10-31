@@ -12,10 +12,8 @@ const frameworkNav = computed(() => section('Framework'));
 const settingsNav = computed(() => section('Settings'));
 
 const path = computed(() => page.url.split('?')[0]);
-const current = (item) => {
-    const base = item.match ?? item.href;
-    return path.value === base || path.value.startsWith(base + '/');
-};
+const current = (item) => [item.match ?? item.href].flat()
+    .some((base) => path.value === base || path.value.startsWith(base + '/'));
 // The Projects heading is current on the list and on the new-project page; a project's own page highlights its entry
 const projectsCurrent = computed(() => path.value === '/projects' || path.value === '/projects/create');
 const projectCurrent = (project) => path.value === `/projects/${project.slug}` || path.value.startsWith(`/projects/${project.slug}/`);

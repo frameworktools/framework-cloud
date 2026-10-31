@@ -105,10 +105,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('projects/{project}/pages', [ProjectsController::class, 'enablePages'])->middleware('throttle:10,1');
     Route::delete('projects/{project}/pages', [ProjectsController::class, 'disablePages'])->middleware('throttle:10,1');
 
-    // The shared library: blueprints compose facets, facets carry skills
+    // Blueprints stack a project structure with tools, package sets, and skill sets
+    foreach (FacetsController::PATHS as $kind => $path) {
+        Route::get($path, [FacetsController::class, 'index'])->defaults('kind', $kind)->name("{$path}.index");
+        Route::get("{$path}/create", [FacetsController::class, 'create'])->defaults('kind', $kind)->name("{$path}.create");
+        Route::post($path, [FacetsController::class, 'store'])->defaults('kind', $kind)->name("{$path}.store");
+        Route::get("{$path}/{facet}/edit", [FacetsController::class, 'edit'])->defaults('kind', $kind)->name("{$path}.edit");
+        Route::put("{$path}/{facet}", [FacetsController::class, 'update'])->defaults('kind', $kind)->name("{$path}.update");
+        Route::delete("{$path}/{facet}", [FacetsController::class, 'destroy'])->defaults('kind', $kind)->name("{$path}.destroy");
+        Route::post("{$path}/{facet}/fork", [FacetsController::class, 'fork'])->defaults('kind', $kind)->name("{$path}.fork");
+    }
+    Route::redirect('facets', 'structures');
+
     foreach ([
         'blueprints' => BlueprintsController::class,
-        'facets' => FacetsController::class,
         'skills' => SkillsController::class,
     ] as $name => $controller) {
         Route::post("{$name}/{".str($name)->singular().'}/fork', [$controller, 'fork'])->name("{$name}.fork");
@@ -118,7 +128,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('skills/{skill}/publish', [GitHubLibraryController::class, 'publishSkill'])->middleware('throttle:20,1');
     Route::post('facets/{facet}/publish', [GitHubLibraryController::class, 'publishFacet'])->middleware('throttle:20,1');
     Route::resource('blueprints', BlueprintsController::class);
-    Route::resource('facets', FacetsController::class)->except('show');
     Route::resource('skills', SkillsController::class)->except('show');
 
     Route::get('tokens', [TokensController::class, 'index'])->name('tokens');

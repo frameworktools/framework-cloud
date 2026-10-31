@@ -34,9 +34,11 @@ const fork = (id) => router.post(`/skills/${id}/fork`);
             <PageHeader title="Skills">
                 <template #description>
                     A skill is a SKILL.md file of instructions that an AI assistant loads when its
-                    description matches the task. Add skills to facets to ship them with projects.
+                    description matches the task. Group skills that belong together into a
+                    <Link href="/skill-sets" class="text-sky-600 hover:underline dark:text-sky-400">skill set</Link>, or add them to a blueprint one at a time.
                 </template>
                 <template #actions>
+                    <Link href="/skill-sets"><UiButton variant="outline">Skill sets</UiButton></Link>
                     <Link href="/skills/create"><UiButton><PlusIcon class="size-4" />New skill</UiButton></Link>
                 </template>
             </PageHeader>

@@ -44,8 +44,9 @@ class HandleInertiaRequests extends Middleware
             'nav' => array_values(array_filter([
                 ['label' => 'Published', 'href' => '/published'],
                 ['label' => 'Blueprints', 'href' => '/blueprints', 'section' => 'Framework'],
-                ['label' => 'Facets', 'href' => '/facets', 'section' => 'Framework'],
-                ['label' => 'Skills', 'href' => '/skills', 'section' => 'Framework'],
+                ['label' => 'Structures', 'href' => '/structures', 'section' => 'Framework'],
+                ['label' => 'Package sets', 'href' => '/package-sets', 'section' => 'Framework'],
+                ['label' => 'Skills', 'href' => '/skills', 'section' => 'Framework', 'match' => ['/skills', '/skill-sets']],
                 ['label' => 'Your settings', 'href' => '/settings/profile', 'section' => 'Settings', 'match' => '/settings'],
                 ['label' => 'API tokens', 'href' => '/tokens', 'section' => 'Settings'],
                 $user?->is_admin ? ['label' => 'Server setup', 'href' => '/admin/setup', 'section' => 'Settings'] : null,

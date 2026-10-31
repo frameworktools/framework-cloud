@@ -38,15 +38,13 @@ class LibraryTest extends TestCase
         return $class::whereNull('user_id')->where('key', $key)->firstOrFail();
     }
 
+    /** A project structure, as the Structures editor sends it */
     private function facetPayload(array $overrides = []): array
     {
         return $overrides + [
-            'kind' => 'facet',
             'name' => 'IRB data',
-            'category' => null,
-            'question' => 'Is this under an IRB protocol?',
             'visibility' => 'private',
-            'settings_yaml' => "extra_directories:\n  irb:\n    label: IRB\n    path: irb\n",
+            'settings_yaml' => "type: project\nextra_directories:\n  irb:\n    label: IRB\n    path: irb\n",
             'files' => [],
             'skills' => [],
         ];
@@ -94,37 +92,67 @@ class LibraryTest extends TestCase
         $this->assertArrayHasKey('framework-data', $sensitive['skills']);
     }
 
-    public function test_user_builds_a_facet_and_saving_unchanged_content_keeps_the_version(): void
+    public function test_user_builds_a_structure_and_saving_unchanged_content_keeps_the_version(): void
     {
         $user = $this->user();
-        $skill = $this->system(Skill::class, 'framework-data');
 
-        $this->actingAs($user)->post('/facets', $this->facetPayload([
+        $this->actingAs($user)->post('/structures', $this->facetPayload([
             'files' => [['path' => 'irb/protocol.md', 'content' => '# Protocol {{author}}', 'template' => true]],
-            'skills' => [['name' => 'anything', 'skill_id' => $skill->id]],
         ]))->assertRedirect();
 
         $facet = Facet::where('user_id', $user->id)->firstOrFail();
         $layer = $facet->latestVersion->layer;
+        $this->assertSame('structure', $facet->kind);
         $this->assertSame('irb-data', $facet->key);
-        $this->assertSame(1, $facet->latestVersion->version);
-        $this->assertSame(['package' => true], $layer['skills']['framework-data']);
         $this->assertSame(['content' => '# Protocol {{author}}', 'template' => true], $layer['files']['irb/protocol.md']);
 
         // The edit page round-trips the layer, so resaving it changes nothing
-        $this->actingAs($user)->get("/facets/{$facet->id}/edit")->assertInertia(function (Assert $page) use (&$values) {
+        $this->actingAs($user)->get("/structures/{$facet->id}/edit")->assertInertia(function (Assert $page) use (&$values) {
             $values = $page->toArray()['props']['values'];
         });
-        $this->actingAs($user)->put("/facets/{$facet->id}", $this->facetPayload([
+        $this->actingAs($user)->put("/structures/{$facet->id}", $this->facetPayload([
             'settings_yaml' => $values['settings_yaml'],
             'files' => $values['files'],
-            'skills' => $values['skills'],
         ]))->assertRedirect();
         $this->assertSame(1, $facet->fresh()->latestVersion->version);
 
-        $this->actingAs($user)->put("/facets/{$facet->id}", $this->facetPayload(['settings_yaml' => "packages:\n  use_renv: true\n"]))
-            ->assertRedirect();
+        $this->actingAs($user)->put("/structures/{$facet->id}", $this->facetPayload(['settings_yaml' => "type: course\n"]))->assertRedirect();
         $this->assertSame(2, $facet->fresh()->latestVersion->version);
+
+        // Packages and skills belong to sets, not structures
+        $this->actingAs($user)->put("/structures/{$facet->id}", $this->facetPayload(['settings_yaml' => "type: project\npackages:\n  use_renv: true\n"]))
+            ->assertSessionHasErrors('settings_yaml');
+    }
+
+    public function test_package_and_skill_sets_hold_only_their_part(): void
+    {
+        $user = $this->user();
+        $skill = $this->system(Skill::class, 'framework-data');
+
+        $this->actingAs($user)->post('/package-sets', ['name' => 'Survey stats', 'visibility' => 'private', 'language' => 'r', 'packages' => "survey\nsrvyr\ntidyverse/dbplyr"])
+            ->assertSessionHasNoErrors();
+        $set = Facet::where('user_id', $user->id)->where('kind', 'package_set')->firstOrFail();
+        $this->assertSame(['r'], $set->language);
+        $this->assertSame(['source' => 'cran', 'auto_attach' => true], $set->latestVersion->layer['packages']['default_packages']['survey']);
+        $this->assertSame(['source' => 'github', 'repo' => 'tidyverse/dbplyr', 'auto_attach' => true], $set->latestVersion->layer['packages']['default_packages']['dbplyr']);
+        $this->actingAs($user)->get("/package-sets/{$set->id}/edit")->assertInertia(fn (Assert $page) => $page->where('values.packages', "srvyr\nsurvey\ntidyverse/dbplyr"));
+
+        $this->actingAs($user)->post('/package-sets', ['name' => 'Python', 'visibility' => 'private', 'language' => 'python', 'packages' => 'pandas'])->assertSessionHasNoErrors();
+        $this->assertSame('pypi', Facet::where('key', 'python')->firstOrFail()->latestVersion->layer['packages']['default_packages']['pandas']['source']);
+
+        $this->actingAs($user)->post('/package-sets', ['name' => 'Empty', 'visibility' => 'private', 'packages' => ''])->assertSessionHasErrors('packages');
+        $this->actingAs($user)->post('/package-sets', ['name' => 'Bad', 'visibility' => 'private', 'packages' => 'not a package'])->assertSessionHasErrors('packages');
+
+        $this->actingAs($user)->post('/skill-sets', [
+            'name' => 'Data', 'visibility' => 'private', 'language' => 'r', 'packages' => 'readr',
+            'skills' => [['name' => 'anything', 'skill_id' => $skill->id]],
+        ])->assertSessionHasNoErrors();
+        $layer = Facet::where('user_id', $user->id)->where('kind', 'skill_set')->firstOrFail()->latestVersion->layer;
+        $this->assertSame(['package' => true], $layer['skills']['framework-data']);
+        $this->assertArrayHasKey('readr', $layer['packages']['default_packages']);
+
+        // Each page takes only its own kind
+        $this->actingAs($user)->get("/structures/{$set->id}/edit")->assertForbidden();
     }
 
     public function test_every_seeded_layer_passes_the_pinned_schema(): void
@@ -146,20 +174,19 @@ class LibraryTest extends TestCase
 
         $cases = [
             "connections:\n  databases:\n    main:\n      password: hunter2\n" => 'credential',
-            "type: project\n" => 'Only a project structure',
             "directories:\n  raw: ../outside\n" => 'relative path',
             "author:\n  name: Someone\n" => 'not a setting',
             "env:\n  DB_PASSWORD: hunter2\n" => 'secret',
             "env:\n  OPENAI_API_KEY: sk-123\n" => 'secret',
             "env:\n  GCP_CREDENTIALS: /keys/gcp.json\n" => 'secret',
-            "packages:\n  default_packages:\n    targets:\n      source: cran\n" => 'needs auto_attach',
+            "packages:\n  use_renv: true\n" => 'package set',
             "ai:\n  assistants:\n    gemini: true\n" => 'claude, codex, copilot',
             "directories: [\n" => '',
         ];
 
         foreach ($cases as $yaml => $message) {
-            $this->actingAs($user)->from('/facets/create')
-                ->post('/facets', $this->facetPayload(['settings_yaml' => $yaml]))
+            $this->actingAs($user)->from('/structures/create')
+                ->post('/structures', $this->facetPayload(['settings_yaml' => "type: project\n".$yaml]))
                 ->assertSessionHasErrors('settings_yaml');
 
             if ($message !== '') {
@@ -168,8 +195,8 @@ class LibraryTest extends TestCase
         }
 
         // An env() reference is how a credential belongs in a layer
-        $this->actingAs($user)->post('/facets', $this->facetPayload([
-            'settings_yaml' => "connections:\n  databases:\n    main:\n      driver: postgres\n      password: env(\"DB_PASSWORD\")\nenv:\n  DB_PASSWORD: ''\n  DB_HOST: localhost\n",
+        $this->actingAs($user)->post('/structures', $this->facetPayload([
+            'settings_yaml' => "type: project\nconnections:\n  databases:\n    main:\n      driver: postgres\n      password: env(\"DB_PASSWORD\")\nenv:\n  DB_PASSWORD: ''\n  DB_HOST: localhost\n",
         ]))->assertSessionHasNoErrors();
 
         $this->assertSame(1, Facet::where('user_id', $user->id)->count());
@@ -313,22 +340,22 @@ class LibraryTest extends TestCase
         $blueprint = Blueprint::create(['user_id' => $user->id, 'key' => 'uses-it', 'name' => 'Uses it', 'visibility' => 'private']);
         $blueprint->publish($this->system(Facet::class, 'bare')->latestVersion, [$facetVersion->id]);
 
-        $this->actingAs($user)->delete("/facets/{$facet->id}")->assertSessionHasErrors('facet');
+        $this->actingAs($user)->delete("/structures/{$facet->id}")->assertSessionHasErrors('facet');
         $this->assertNotNull($facet->fresh());
     }
 
     public function test_only_admins_edit_system_rows(): void
     {
-        $facet = $this->system(Facet::class, 'renv');
-        $payload = $this->facetPayload(['name' => 'Locked package versions', 'visibility' => 'public', 'settings_yaml' => "packages:\n  use_renv: false\n"]);
+        $facet = $this->system(Facet::class, 'bare');
+        $payload = $this->facetPayload(['name' => 'Bare', 'visibility' => 'public', 'settings_yaml' => "type: bare\n"]);
 
-        $this->actingAs($this->user())->get("/facets/{$facet->id}/edit")->assertForbidden();
-        $this->actingAs($this->user())->put("/facets/{$facet->id}", $payload)->assertForbidden();
+        $this->actingAs($this->user())->get("/structures/{$facet->id}/edit")->assertForbidden();
+        $this->actingAs($this->user())->put("/structures/{$facet->id}", $payload)->assertForbidden();
 
         $admin = $this->user();
         $admin->forceFill(['is_admin' => true])->save();
 
-        $this->actingAs($admin)->put("/facets/{$facet->id}", $payload)->assertRedirect();
+        $this->actingAs($admin)->put("/structures/{$facet->id}", $payload)->assertRedirect();
         $this->assertSame(2, $facet->fresh()->latestVersion->version);
         $this->assertNull($facet->fresh()->user_id);
     }
@@ -353,8 +380,8 @@ class LibraryTest extends TestCase
             ->put("/skills/{$skill->id}", ['content' => str_replace('irb-checklist', 'renamed', $content), 'visibility' => 'public'])
             ->assertSessionHasErrors('content');
 
-        // A user skill travels into a facet as a copy
-        $this->actingAs($user)->post('/facets', $this->facetPayload(['skills' => [['name' => 'x', 'skill_id' => $skill->id]]]));
+        // A user skill travels into a skill set as a copy
+        $this->actingAs($user)->post('/skill-sets', ['name' => 'IRB', 'visibility' => 'private', 'skills' => [['name' => 'x', 'skill_id' => $skill->id]]]);
         $layer = Facet::where('user_id', $user->id)->firstOrFail()->latestVersion->layer;
         $this->assertSame(['content' => $content], $layer['skills']['irb-checklist']);
     }
@@ -383,9 +410,12 @@ class LibraryTest extends TestCase
 
         $this->actingAs($user)->get('/blueprints/create')->assertInertia(fn (Assert $page) => $page
             ->component('Blueprints/Builder')->has('bases', 5)->has('facets', 8));
-        $this->actingAs($user)->get('/facets')->assertInertia(fn (Assert $page) => $page->component('Facets/Index')->has('facets', 14));
-        $this->actingAs($user)->get('/facets/create?kind=structure')->assertInertia(fn (Assert $page) => $page
-            ->component('Facets/Edit')->where('kind', 'structure')->where('values.settings_yaml', "type: project\n"));
+        $this->actingAs($user)->get('/structures')->assertInertia(fn (Assert $page) => $page->component('Pieces/Index')->has('pieces', 5));
+        $this->actingAs($user)->get('/package-sets')->assertInertia(fn (Assert $page) => $page->component('Pieces/Index')->has('pieces', 1));
+        $this->actingAs($user)->get('/skill-sets')->assertInertia(fn (Assert $page) => $page->component('Pieces/Index')->has('pieces', 2));
+        $this->actingAs($user)->get('/structures/create')->assertInertia(fn (Assert $page) => $page
+            ->component('Pieces/Edit')->where('kind', 'structure')->where('values.settings_yaml', "type: project\n"));
+        $this->actingAs($user)->get('/facets')->assertRedirect('/structures');
         $this->actingAs($user)->get('/skills')->assertInertia(fn (Assert $page) => $page->component('Skills/Index')->has('skills', 7));
 
         $system = $this->system(Blueprint::class, 'project_sensitive');
