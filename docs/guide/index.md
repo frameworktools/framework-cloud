@@ -1,9 +1,9 @@
 # Framework Cloud documentation
 
 Framework Cloud is the web companion to the
-[Framework](https://framework.table1.org) R package. It holds your blueprints,
-your author details, and your project definitions. It can create projects on
-GitHub and host the notebooks you publish from R.
+[Framework](https://framework.table1.org) packages for R and Python. It holds
+your blueprints, your author details, and your project definitions. It can
+create projects on GitHub and host the notebooks you publish.
 
 Framework Cloud is open source. You can use it in two ways:
 

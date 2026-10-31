@@ -11,7 +11,7 @@ const props = defineProps({ counts: Object, steps: Array, setup: Array });
 
 const copy = {
     profile: { title: 'Fill in your profile', text: 'Your name and affiliation go on the notebooks and reports you create.', href: '/settings/profile' },
-    machine: { title: 'Connect your computer', text: 'Make a token, then run framework::cloud_login() in R once.', href: '/tokens' },
+    machine: { title: 'Connect your computer', text: 'Make a token, then run cloud_login() once in R or Python.', href: '/tokens' },
     github: { title: 'Connect GitHub', text: 'Create projects as GitHub repositories, ready to clone.', href: '/settings/github' },
     project: { title: 'Create a project', text: 'Pick a blueprint and set it up on GitHub or your computer.', href: '/projects/create' },
 };

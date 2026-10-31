@@ -49,11 +49,17 @@ and start it. You don't need to clone the repository or build anything.
 
 1. Sign in as the admin. The install page explains how.
 2. Open **Server setup** and set up [email, GitHub, and storage](server-setup.md).
-3. Connect R. Each user creates a token on the **API tokens** page and runs
-   the command shown there, which includes the server's address:
+3. Connect R or Python. Each user creates a token on the **API tokens** page
+   and runs the command shown there, which includes the server's address:
 
    ```r
    framework::cloud_login("<your token>", url = "https://framework.example.edu")
+   ```
+
+   ```python
+   import framework
+
+   framework.cloud_login("<your token>", url="https://framework.example.edu")
    ```
 
 4. Follow [Getting started](getting-started.md).

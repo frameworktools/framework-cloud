@@ -20,15 +20,23 @@ your work, your ORCID iD, your website, and up to five affiliations. Framework
 writes these into the author block of every new notebook, report, and slide
 deck.
 
-## 3. Connect R
+## 3. Connect R or Python
 
-Framework Cloud talks to R with a token.
+Framework Cloud talks to the Framework package in R or Python with a token.
 
 1. Open **API tokens** and create a token. Copy it. It is shown only once.
-2. Install Framework in R, then connect:
+2. Install the Framework package, then connect. In Python the package is
+   `framework-py` (`pip install --pre framework-py` while it is a
+   pre-release).
 
    ```r
    framework::cloud_login("<your token>")
+   ```
+
+   ```python
+   import framework
+
+   framework.cloud_login("<your token>")
    ```
 
 `cloud_login()` shows what connecting shares and asks you to confirm. The
@@ -42,8 +50,14 @@ the full command:
 framework::cloud_login("<your token>", url = "https://framework.example.edu")
 ```
 
-R remembers the server, so later commands such as `framework::new()` use it.
-Run `framework::cloud_status()` to see which server R is using.
+```python
+import framework
+
+framework.cloud_login("<your token>", url="https://framework.example.edu")
+```
+
+Framework remembers the server, so later commands use it. Run
+`cloud_status()` to see which server is in use.
 
 ## 4. Start a project
 
@@ -53,18 +67,26 @@ Open **Projects > New project**.
    sets up.
 2. Name the project.
 3. Choose where to set it up:
-   - **On your computer.** You get a project token. In R, run
-     `framework::setup("<project token>")` and Framework builds the project.
+   - **On your computer.** You get a project token and the command to run
+     with it. In R it is `framework::setup("<project token>")`, and in
+     Python it is `framework.new(key="<project token>")`. Framework builds the
+     project.
    - **On GitHub.** Framework Cloud creates the repository and builds the
      project there. Clone it and start working. See
      [GitHub integration](github.md).
 
 ## 5. Publish a notebook
 
-From inside the project in R:
+From inside the project:
 
 ```r
 framework::publish("notebooks/analysis.qmd")
+```
+
+```python
+import framework
+
+framework.publish("notebooks/analysis.qmd")
 ```
 
 Framework renders the notebook and uploads it. The result is a link you can

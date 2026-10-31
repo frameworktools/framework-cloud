@@ -19,6 +19,7 @@ export const groups = [
 // scaffolding only. Python waits for the Python package.
 export const languageOptions = [
     { value: 'r', label: 'R' },
+    { value: 'python', label: 'Python' },
     { value: 'stata', label: 'Stata (scaffolding only)' },
 ];
 

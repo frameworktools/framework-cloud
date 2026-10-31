@@ -57,5 +57,26 @@
         </main>
     </div>
 
+<script>
+    // R or Python: every tab group on the page follows the last choice, and
+    // this browser remembers it
+    (() => {
+        const groups = document.querySelectorAll('[data-code-tabs]');
+        if (!groups.length) return;
+        const show = (lang) => groups.forEach((group) => {
+            group.querySelectorAll('[data-lang]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.lang === lang)));
+            group.querySelectorAll('[data-lang-panel]').forEach((p) => { p.hidden = p.dataset.langPanel !== lang; });
+        });
+        let saved = null;
+        try { saved = localStorage.getItem('docs-language'); } catch {}
+        if (saved === 'python') show('python');
+        groups.forEach((group) => group.addEventListener('click', (event) => {
+            const lang = event.target.closest('[data-lang]')?.dataset.lang;
+            if (!lang) return;
+            show(lang);
+            try { localStorage.setItem('docs-language', lang); } catch {}
+        }));
+    })();
+</script>
 </body>
 </html>

@@ -180,6 +180,7 @@ const serverFlag = useServerFlag();
                                 <span class="font-medium">On your computer</span>
                                 <span class="text-sm text-slate-600 dark:text-slate-400">
                                     <template v-if="stata">In a terminal, run <code class="font-mono text-xs">fw login</code>, then <code class="font-mono text-xs">fw new</code> with the project's name.</template>
+                                    <template v-else-if="form.language === 'python'">You get a project token. Run <code class="font-mono text-xs">framework.new(key=...)</code> with it in Python.</template>
                                     <template v-else>You get a project token. Run <code class="font-mono text-xs">framework::setup()</code> with it in R.</template>
                                 </span>
                             </button>
@@ -263,7 +264,8 @@ const serverFlag = useServerFlag();
                             </ol>
                             <ol v-else class="list-decimal space-y-1 pl-4 text-slate-600 dark:text-slate-400">
                                 <li>You get a project token. Copy it.</li>
-                                <li>In R, run <code class="font-mono text-xs">framework::setup("&lt;token&gt;"{{ serverArg }})</code>.</li>
+                                <li v-if="form.language === 'python'">In Python, run <code class="font-mono text-xs">framework.new(key="&lt;token&gt;")</code>.</li>
+                                <li v-else>In R, run <code class="font-mono text-xs">framework::setup("&lt;token&gt;"{{ serverArg }})</code>.</li>
                             </ol>
                         </div>
                     </div>

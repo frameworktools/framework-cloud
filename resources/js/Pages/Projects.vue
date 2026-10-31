@@ -60,7 +60,8 @@ const headline = (key) => key.split('_').map((w) => w[0].toUpperCase() + w.slice
                     <h1 class="text-2xl font-semibold tracking-tight">Projects</h1>
                     <p class="mt-1 max-w-2xl text-slate-600 dark:text-slate-400">
                         Set a project up on GitHub, or on any machine with
-                        <code class="font-mono text-sm">framework::setup("&lt;project-token&gt;"{{ serverArg }})</code> in R.
+                        <code class="font-mono text-sm">framework::setup("&lt;project-token&gt;"{{ serverArg }})</code> in R
+                        or <code class="font-mono text-sm">framework.new(key="&lt;project-token&gt;")</code> in Python.
                         For Stata projects, run <code class="font-mono text-sm">fw login{{ serverFlag }}</code> and then
                         <code class="font-mono text-sm">fw new --from &lt;project-name&gt;{{ serverFlag }}</code> in a terminal.
                     </p>

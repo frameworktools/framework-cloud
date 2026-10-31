@@ -5,12 +5,13 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiInput from '@/Components/UiInput.vue';
 import UiCallout from '@/Components/UiCallout.vue';
-import { useServerArg } from '@/cloud.js';
+import { usePythonServerArg, useServerArg } from '@/cloud.js';
 
 defineProps({ tokens: Array });
 
 const page = usePage();
 const serverArg = useServerArg();
+const pythonServerArg = usePythonServerArg();
 const plainToken = computed(() =>
     page.props.flash.status === 'user-token' ? page.props.flash.token : null,
 );
@@ -46,8 +47,12 @@ const revoke = (id) => {
             <UiCallout v-if="plainToken" variant="success" heading="Copy your token now — it won't be shown again">
                 <code class="break-all font-mono text-sm">{{ plainToken }}</code>
                 <div>
-                    <div class="text-slate-500">Connect this machine — in R:</div>
+                    <div class="text-slate-500">Connect this machine. In R:</div>
                     <code class="break-all font-mono text-xs">framework::cloud_login("{{ plainToken }}"{{ serverArg }})</code>
+                </div>
+                <div>
+                    <div class="text-slate-500">In Python:</div>
+                    <code class="break-all font-mono text-xs">framework.cloud_login("{{ plainToken }}"{{ pythonServerArg }})</code>
                 </div>
                 <p class="text-xs text-slate-500">
                     Stored in your system keychain (macOS Keychain, Windows Credential Manager, Linux Secret Service).

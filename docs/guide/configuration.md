@@ -72,12 +72,12 @@ result.
 
 ## R
 
-R finds the server in this order:
+The R and Python packages find the server in this order:
 
 1. The `url` argument, as in `cloud_login("<token>", url = "https://framework.example.edu")`.
 2. For commands that work on a project, such as `publish()`: the
-   `FW_CLOUD_URL` line in the project's `.env` file. `setup()` and `new()`
-   write it, so a project always goes back to the server that created it.
+   `FW_CLOUD_URL` line in the project's `.env` file. Setting up a project
+   writes it, so a project always goes back to the server that created it.
 3. The `FW_CLOUD_URL` environment variable.
 4. For your own commands, such as `cloud_status()` and `new()`: the server
    you last connected with `cloud_login()`.

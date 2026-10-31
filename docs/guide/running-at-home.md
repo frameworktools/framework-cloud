@@ -39,13 +39,19 @@ Start it and open http://localhost:8080:
 docker compose up -d
 ```
 
-Create a token on the **API tokens** page and connect R:
+Create a token on the **API tokens** page and connect R or Python:
 
 ```r
 framework::cloud_login("<your token>", url = "http://localhost:8080")
 ```
 
-R allows plain `http` only for localhost addresses.
+```python
+import framework
+
+framework.cloud_login("<your token>", url="http://localhost:8080")
+```
+
+Both packages allow plain `http` only for localhost addresses.
 
 ### Why HTTP_BIND matters
 

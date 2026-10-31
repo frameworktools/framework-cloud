@@ -42,8 +42,9 @@ unless you turn it on.
 3. Choose the language. It starts as the blueprint's language.
 4. Choose where to set it up:
    - **On your computer.** Framework Cloud gives you a project token. In R,
-     run `framework::setup("<project token>")`. Framework builds the project
-     in a folder you choose. For a Stata project, run `fw login` once and
+     run `framework::setup("<project token>")`. In Python, run
+     `framework.new(key="<project token>")`. Framework builds the project in
+     a folder you choose. For a Stata project, run `fw login` once and
      then `fw new --from <project name>` in a terminal. `fw` asks the server
      for the project token itself. With a token you already have, run
      `fw new --pull-token` and paste the token when it asks.
@@ -52,11 +53,13 @@ unless you turn it on.
 
 On your own server, the page shows the command with the server's address,
 such as `framework::setup("<project token>", url = "https://framework.example.edu")`.
+Python uses the server you connected to with `cloud_login()`.
 
 ### Languages
 
-Each project has one language: R or Stata. The R package builds R projects.
-The `fw` command-line tool builds Stata projects. Stata support covers
+Each project has one language: R, Python, or Stata. The R package builds R
+projects, and the Python package builds Python projects. The `fw`
+command-line tool builds Stata projects. Stata support covers
 scaffolding only: Framework creates the folders, files, and Git setup, and it
 has no Stata commands for the analysis itself. A blueprint has a language too,
 which new projects start with.

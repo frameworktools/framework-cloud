@@ -59,11 +59,33 @@ class GuideController extends Controller
             $html,
         );
 
+        $html = self::languageTabs($html);
+
         return view('guide', [
             'title' => $title,
             'page' => $page,
             'pages' => self::PAGES,
             'html' => $html,
         ]);
+    }
+
+    /**
+     * An R code block followed directly by a Python one becomes a pair of
+     * tabs. On GitHub the Markdown shows both blocks, R first.
+     */
+    public static function languageTabs(string $html): string
+    {
+        return preg_replace_callback(
+            '#(<pre><code class="language-r">.*?</code></pre>)\s*(<pre><code class="language-python">.*?</code></pre>)#s',
+            fn ($m) => '<div class="code-tabs" data-code-tabs>'
+                .'<div class="code-tabs-bar" role="tablist">'
+                .'<button type="button" role="tab" data-lang="r" aria-selected="true">R</button>'
+                .'<button type="button" role="tab" data-lang="python" aria-selected="false">Python</button>'
+                .'</div>'
+                .'<div data-lang-panel="r">'.$m[1].'</div>'
+                .'<div data-lang-panel="python" hidden>'.$m[2].'</div>'
+                .'</div>',
+            $html,
+        );
     }
 }

@@ -4,12 +4,18 @@ Publishing renders a Quarto notebook and posts it as a web page. Every
 notebook gets a private link that only people you share it with can find. You
 can also give it a readable link.
 
-## Publish from R
+## Publish from R or Python
 
 Run this from inside a project that was set up from Framework Cloud:
 
 ```r
 framework::publish("notebooks/analysis.qmd")
+```
+
+```python
+import framework
+
+framework.publish("notebooks/analysis.qmd")
 ```
 
 Framework renders the notebook, uploads it, and prints the version number and link. `publish()`
@@ -20,7 +26,7 @@ Notebooks go to the server the project was set up from, which is recorded in
 the project's `.env` file. If the project has its own storage bucket
 configured in Framework, `publish()` uploads there instead.
 
-`framework::publish_notebook()` works the same way. If the project has
+`publish_notebook()` works the same way. If the project has
 neither a bucket nor a Framework Cloud project token, it stops with an error
 that explains how to add one.
 
@@ -45,8 +51,17 @@ framework::publish("notebooks/analysis.qmd", slug = "main-results")
 framework::publish("notebooks/analysis.qmd", slug = TRUE)
 ```
 
+```python
+import framework
+
+framework.publish("notebooks/analysis.qmd", slug="main-results")
+
+# Or use the file name as the slug
+framework.publish("notebooks/analysis.qmd", slug=True)
+```
+
 Publishing without `slug` keeps a notebook's current setting. To turn its
-readable link off from R, use `slug = FALSE`.
+readable link off, use `slug = FALSE` in R or `slug=False` in Python.
 
 On a storage bucket, `slug` is ignored, and `dest` sets the file's path.
 
