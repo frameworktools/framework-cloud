@@ -6,6 +6,7 @@ use App\Models\FacetVersion;
 use App\Models\Project;
 use App\Models\User;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 
 /**
  * The layers envelope for one project (schema: resources/schema/layers.v1.json):
@@ -24,7 +25,12 @@ class ProjectLayers
 
         $user = $project->user;
         $version = $project->blueprintVersion;
-        $fragments = $version ? $version->fragments() : collect();
+        $composition = $project->composition;
+        $fragments = match (true) {
+            (bool) $composition => self::compositionFragments($composition),
+            (bool) $version => $version->fragments(),
+            default => collect(),
+        };
 
         $layers = $fragments->map(fn (FacetVersion $fragment) => [
             'kind' => $fragment->facet->layerKind(),
@@ -33,7 +39,9 @@ class ProjectLayers
             'layer' => $fragment->layer,
         ])->all();
 
-        if ($version) {
+        if ($composition) {
+            $layers[] = ['kind' => 'blueprint', 'key' => $version?->blueprint->handle ?? 'choices', 'layer' => $composition['layer'] ?? []];
+        } elseif ($version) {
             $layers[] = [
                 'kind' => 'blueprint',
                 'key' => $version->blueprint->handle,
@@ -46,7 +54,16 @@ class ProjectLayers
         // always goes in, so every tool can tell which one builds the project.
         $layers[] = self::projectLayer($project->slug, $project->language ?? 'r', $layers);
 
-        return self::envelope($user, $project->name, $layers, $version ? ['key' => $version->blueprint->handle, 'version' => $version->version] : null);
+        return self::envelope($user, $project->name, $layers, $version && ! $composition ? ['key' => $version->blueprint->handle, 'version' => $version->version] : null);
+    }
+
+    /** The structure, then the pieces, in the order the project recorded them. */
+    private static function compositionFragments(array $composition): Collection
+    {
+        $ids = [$composition['structure_version_id'], ...($composition['piece_version_ids'] ?? [])];
+        $versions = FacetVersion::with('facet.owner')->whereIn('id', $ids)->get()->keyBy('id');
+
+        return collect($ids)->map(fn (int $id) => $versions->get($id))->filter()->values();
     }
 
     /** The topmost layer: the language, and for Stata the R-only folders removed. */

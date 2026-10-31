@@ -56,8 +56,35 @@ class PiecesController extends Controller
     public function resolve(Request $request): JsonResponse
     {
         $user = $this->user($request);
-        $choices = $request->validate([
-            'name' => ['nullable', 'string', 'max:100'],
+
+        return response()->json((new Resolver($user))->resolve($this->choices($request))['envelope']);
+    }
+
+    /**
+     * POST /api/v2/projects: make a cloud project from the same choices, and
+     * hand back a project token so fw can link the local copy.
+     */
+    public function store(Request $request): JsonResponse
+    {
+        $user = $this->user($request);
+        $choices = $this->choices($request, nameRequired: true);
+        $resolver = new Resolver($user);
+        $project = $resolver->createProject($choices['name'], $resolver->resolve($choices), $choices['description'] ?? null);
+
+        return response()->json([
+            'slug' => $project->slug,
+            'name' => $project->name,
+            'language' => $project->language,
+            'url' => route('projects.show', $project->slug),
+            'token' => $project->issuePullToken('fw'),
+        ], 201);
+    }
+
+    private function choices(Request $request, bool $nameRequired = false): array
+    {
+        return $request->validate([
+            'name' => [$nameRequired ? 'required' : 'nullable', 'string', 'max:100'],
+            'description' => ['nullable', 'string', 'max:500'],
             'language' => ['nullable', 'string'],
             'blueprint' => ['nullable', 'string', 'max:200'],
             'structure' => ['nullable', 'string', 'max:200'],
@@ -74,8 +101,6 @@ class PiecesController extends Controller
             'settings.git' => ['boolean'],
             'settings.ai' => ['nullable'],
         ]);
-
-        return response()->json((new Resolver($user))->resolve($choices)['envelope']);
     }
 
     private function piece(Facet $facet): array

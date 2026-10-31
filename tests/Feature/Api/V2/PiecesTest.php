@@ -124,6 +124,32 @@ class PiecesTest extends TestCase
             ->assertUnprocessable()->assertJsonValidationErrors(['structure' => 'There is no project structure someone/else.']);
     }
 
+    public function test_creating_a_project_from_choices_records_its_pieces(): void
+    {
+        $user = User::factory()->create();
+        $token = $this->token($user);
+
+        $response = $this->withToken($token)->postJson('/api/v2/projects', [
+            'name' => 'Clinic Visits', 'blueprint' => 'framework/project', 'tools' => ['renv' => true],
+        ])->assertCreated()->assertJsonPath('slug', 'clinic-visits');
+        $this->assertNotEmpty($response->json('token'));
+
+        $project = $user->projects()->firstOrFail();
+        $this->assertSame('project', $project->project_type);
+        $this->assertNotNull($project->composition);
+
+        // The project's layers are the resolved choices
+        $layers = $this->withToken($token)->getJson('/api/v2/projects/clinic-visits/layers')->assertOk()->json('layers');
+        $this->assertContains('framework/renv', array_column($layers, 'key'));
+
+        // An unchanged blueprint is pinned by version instead
+        $this->withToken($token)->postJson('/api/v2/projects', ['name' => 'Plain', 'blueprint' => 'framework/project'])->assertCreated();
+        $this->assertNull($user->projects()->where('slug', 'plain')->first()->composition);
+
+        $this->withToken($token)->postJson('/api/v2/projects', ['name' => 'Clinic Visits', 'blueprint' => 'framework/project'])
+            ->assertUnprocessable()->assertJsonValidationErrors('name');
+    }
+
     public function test_a_project_token_cannot_list_or_resolve(): void
     {
         $project = User::factory()->create()->projects()->create(['name' => 'S', 'slug' => 's']);

@@ -36,7 +36,7 @@ class Resolver
 
     /**
      * @param  array{name?: string, language?: string, blueprint?: string, structure?: string, tools?: array<string, bool>, package_sets?: list<string>, skill_sets?: list<string>, skills?: list<string>, settings?: array<string, mixed>}  $choices
-     * @return array{envelope: array<string, mixed>, blueprint: ?BlueprintVersion, structure: FacetVersion, pieces: list<FacetVersion>, layer: array<string, mixed>, language: string}
+     * @return array{envelope: array<string, mixed>, blueprint: ?BlueprintVersion, structure: FacetVersion, pieces: list<FacetVersion>, layer: array<string, mixed>, language: string, unchanged: bool}
      */
     public function resolve(array $choices): array
     {
@@ -112,7 +112,40 @@ class Resolver
             'pieces' => $pieces,
             'layer' => $this->settings,
             'language' => $language,
+            'unchanged' => $unchanged,
         ];
+    }
+
+    /**
+     * Make a project from resolved choices. An unchanged blueprint is pinned
+     * by version; anything else records its exact pieces.
+     *
+     * @param  array<string, mixed>  $resolved  from resolve()
+     */
+    public function createProject(string $name, array $resolved, ?string $description = null): Project
+    {
+        $slug = str($name)->slug()->value();
+
+        if ($slug === '' || $slug === 'create') {
+            throw ValidationException::withMessages(['name' => 'Choose a different name.']);
+        }
+        if ($this->user->projects()->withTrashed()->where('slug', $slug)->exists()) {
+            throw ValidationException::withMessages(['name' => 'You already have a project with this name, or had one you deleted.']);
+        }
+
+        return $this->user->projects()->create([
+            'name' => $name,
+            'slug' => $slug,
+            'description' => $description,
+            'language' => $resolved['language'],
+            'project_type' => $resolved['structure']->layer['type'] ?? 'bare',
+            'blueprint_version_id' => $resolved['blueprint']?->id,
+            'composition' => $resolved['unchanged'] ? null : [
+                'structure_version_id' => $resolved['structure']->id,
+                'piece_version_ids' => array_map(fn (FacetVersion $v) => $v->id, $resolved['pieces']),
+                'layer' => $resolved['layer'],
+            ],
+        ]);
     }
 
     /**
