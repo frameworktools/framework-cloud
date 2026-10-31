@@ -1,39 +1,26 @@
 <script setup>
 import { computed } from 'vue';
 import { usePage } from '@inertiajs/vue3';
+import { PlusIcon } from '@heroicons/vue/20/solid';
 import SectionLayout from '@/Layouts/SectionLayout.vue';
+import UiButton from '@/Components/UiButton.vue';
 
-// The project pages' second column: all projects, a new one, and each of
-// yours. The project you're in opens to show its pages.
+// The project index's second column: a new project, all projects, and each
+// of yours. Inside a project, ProjectLayout takes over.
 const page = usePage();
 const list = computed(() => page.props.projectList ?? { items: [], total: 0 });
-const open = computed(() => page.url.match(/^\/projects\/([A-Za-z0-9_-]+)/)?.[1]);
-
-const sections = [
-    ['', 'Overview'],
-    ['/setup', 'Project setup'],
-    ['/github', 'GitHub & Pages'],
-    ['/published', 'Published documents'],
-    ['/computers', 'Computers & tokens'],
-];
-
 const items = computed(() => [
     { label: 'All projects', href: '/projects', exact: true },
-    { label: 'New project', href: '/projects/create' },
     ...(list.value.items.length ? [{ heading: 'Your projects' }] : []),
-    ...list.value.items.flatMap((p) => {
-        const base = `/projects/${p.slug}`;
-        if (p.slug !== open.value) return [{ label: p.name, href: base, expanded: false }];
-        return [
-            { label: p.name, href: base, expanded: true, quiet: true },
-            ...sections.map(([path, label]) => ({ label, href: base + path, exact: true, indent: true })),
-        ];
-    }),
+    ...list.value.items.map((p) => ({ label: p.name, href: `/projects/${p.slug}` })),
 ]);
 </script>
 
 <template>
     <SectionLayout heading="Projects" :items="items">
+        <template #lead>
+            <Link href="/projects/create" class="block"><UiButton class="w-full"><PlusIcon class="size-4" />New project</UiButton></Link>
+        </template>
         <slot />
         <template v-if="list.total > list.items.length" #aside>
             <Link href="/projects" class="px-3 text-xs text-slate-500 hover:text-slate-900 dark:hover:text-slate-100">All {{ list.total }} projects</Link>

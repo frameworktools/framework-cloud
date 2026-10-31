@@ -112,8 +112,7 @@ const items = computed(() => [
 <template>
     <Head title="New project" />
 
-    <SectionLayout heading="New project" :items="items">
-        <Link href="/projects" class="text-sm text-slate-500 hover:underline">Projects</Link>
+    <SectionLayout heading="New project" :back="{ label: 'Back to all projects', href: '/projects' }" :items="items">
         <PageHeader title="New project" description="Pick what kind of project it is, name it, and choose where it gets set up." />
 
         <form id="create-form" class="mt-8 flex flex-col gap-8" @submit.prevent="create">
@@ -259,6 +258,13 @@ const items = computed(() => [
             </UiPanel>
 
             <UiCallout v-if="githubError" variant="danger" heading="GitHub">{{ githubError }}</UiCallout>
+            <div class="flex items-center justify-end gap-3 border-t border-slate-200 pt-6 dark:border-slate-800">
+                <Link href="/projects"><UiButton variant="ghost">Cancel</UiButton></Link>
+                <UiButton
+                    type="submit"
+                    :disabled="form.processing || (onGitHub && (!githubReady || (sensitive && !form.github.private)))"
+                >{{ onGitHub ? 'Create on GitHub' : 'Create project' }}</UiButton>
+            </div>
         </form>
 
         <!-- What you'll get -->
@@ -292,12 +298,5 @@ const items = computed(() => [
             </div>
         </template>
 
-        <template #actions>
-            <UiButton
-                type="submit" form="create-form" class="w-full"
-                :disabled="form.processing || (onGitHub && (!githubReady || (sensitive && !form.github.private)))"
-            >{{ onGitHub ? 'Create on GitHub' : 'Create project' }}</UiButton>
-            <Link href="/projects" class="block"><UiButton variant="ghost" class="w-full">Cancel</UiButton></Link>
-        </template>
     </SectionLayout>
 </template>

@@ -18,6 +18,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
  */
 const props = defineProps({
     heading: String,
+    back: Object, // { label, href }: a way out of this context, shown above the heading
     group: String,
     items: { type: Array, default: () => [] },
 });
@@ -71,7 +72,10 @@ const itemClass = (item) => [
         <div class="flex min-h-screen max-lg:flex-col">
             <aside class="shrink-0 border-slate-200 lg:w-64 lg:border-r dark:border-slate-800 max-lg:border-b">
                 <div class="flex flex-col gap-4 p-6 lg:sticky lg:top-0 lg:max-h-screen lg:overflow-y-auto">
-                    <h2 v-if="heading" class="text-sm font-semibold text-slate-900 dark:text-white">{{ heading }}</h2>
+                    <Link v-if="back" :href="back.href" class="-mb-2 text-sm text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white">← {{ back.label }}</Link>
+                    <h2 v-if="heading" class="truncate text-sm font-semibold text-slate-900 dark:text-white">{{ heading }}</h2>
+
+                    <slot name="lead" />
 
                     <nav class="flex gap-1 max-lg:-mx-1 max-lg:overflow-x-auto lg:flex-col lg:gap-0.5">
                         <div v-if="group" class="mb-1 mt-2 px-3 text-xs font-medium uppercase tracking-wider text-slate-500 max-lg:hidden">{{ group }}</div>

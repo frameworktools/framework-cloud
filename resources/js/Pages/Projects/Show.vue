@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref, watch, onBeforeUnmount } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
-import ProjectsLayout from '@/Layouts/ProjectsLayout.vue';
+import ProjectLayout from '@/Layouts/ProjectLayout.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiCallout from '@/Components/UiCallout.vue';
 import UiBadge from '@/Components/UiBadge.vue';
@@ -77,24 +77,16 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
 <template>
     <Head :title="project.name" />
 
-    <ProjectsLayout>
+    <ProjectLayout :project="project">
         <div class="flex flex-col gap-8">
-            <div class="flex flex-col gap-3">
-                <nav class="flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400">
-                    <Link href="/projects" class="hover:text-slate-900 hover:underline dark:hover:text-slate-100">Projects</Link>
-                    <ChevronRightIcon class="size-3" />
-                    <Link :href="`/projects/${project.slug}`" class="truncate hover:text-slate-900 hover:underline dark:hover:text-slate-100">{{ project.name }}</Link>
-                    <template v-if="section !== 'overview'">
-                        <ChevronRightIcon class="size-3" />
-                        <span class="truncate">{{ sectionTitles[section] }}</span>
-                    </template>
-                </nav>
-                <PageHeader :title="project.name">
-                    <template #description>
+            <PageHeader :title="section === 'overview' ? project.name : sectionTitles[section]">
+                <template #description>
+                    <template v-if="section === 'overview'">
                         <span class="font-mono text-xs">{{ project.slug }}</span><span v-if="project.description"> · {{ project.description }}</span>
                     </template>
-                </PageHeader>
-            </div>
+                    <template v-else>{{ project.name }}</template>
+                </template>
+            </PageHeader>
 
             <UiCallout v-if="githubError && section === 'github'" variant="danger" heading="GitHub">{{ githubError }}</UiCallout>
 
@@ -107,7 +99,10 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                 </p>
             </UiCallout>
 
-            <UiPanel v-if="section === 'overview'" title="Overview">
+            <UiPanel v-if="section === 'overview'" title="Configuration">
+                <template #header>
+                    <Link :href="`/projects/${project.slug}/setup`" class="text-sm text-sky-600 hover:underline dark:text-sky-400">Project setup</Link>
+                </template>
                 <dl class="flex flex-col divide-y divide-slate-200 dark:divide-slate-700/70">
                     <div :class="rowClass">
                         <dt :class="termClass">Blueprint</dt>
@@ -131,11 +126,41 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                         <dt :class="termClass">Created</dt>
                         <dd class="text-sm text-slate-700 dark:text-slate-300">{{ date(project.created_at) }}</dd>
                     </div>
+                </dl>
+            </UiPanel>
+
+            <UiPanel v-if="section === 'overview'" title="Connections">
+                <dl class="flex flex-col divide-y divide-slate-200 dark:divide-slate-700/70">
+                    <div :class="rowClass">
+                        <dt :class="termClass">GitHub</dt>
+                        <dd class="flex flex-wrap items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                            <UiBadge v-if="github?.status && github.status !== 'done'" :variant="statusVariant[github.status]">{{ statusLabel[github.status] }}</UiBadge>
+                            <a v-if="github?.repo" :href="github.url" class="font-mono text-xs hover:underline">{{ github.repo }}</a>
+                            <UiBadge v-if="github?.pages_url" variant="green">Pages</UiBadge>
+                            <Link v-if="!github" :href="`/projects/${project.slug}/github`" class="text-slate-500 hover:underline">Not on GitHub</Link>
+                        </dd>
+                    </div>
+                    <div :class="rowClass">
+                        <dt :class="termClass">Computers</dt>
+                        <dd class="text-sm text-slate-700 dark:text-slate-300">
+                            <Link :href="`/projects/${project.slug}/computers`" class="hover:underline">
+                                {{ project.tokens.length ? `${project.tokens.length} ${project.tokens.length === 1 ? 'token' : 'tokens'}` : 'None connected' }}
+                            </Link>
+                        </dd>
+                    </div>
                     <div :class="rowClass">
                         <dt :class="termClass">Last sync</dt>
                         <dd class="text-sm text-slate-700 dark:text-slate-300">
                             <template v-if="project.spec">{{ date(project.spec.received_at) }}</template>
                             <span v-else class="text-slate-500">No computer has sent this project's settings yet.</span>
+                        </dd>
+                    </div>
+                    <div :class="rowClass">
+                        <dt :class="termClass">Published</dt>
+                        <dd class="text-sm text-slate-700 dark:text-slate-300">
+                            <Link :href="`/projects/${project.slug}/published`" class="hover:underline">
+                                {{ project.documents.length ? `${project.documents.length} ${project.documents.length === 1 ? 'document' : 'documents'}` : 'Nothing yet' }}
+                            </Link>
                         </dd>
                     </div>
                 </dl>
@@ -270,9 +295,9 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                 </ul>
             </UiPanel>
 
-            <UiPanel v-if="section === 'overview'" title="Delete this project" description="Copies on computers and on GitHub are not affected, but the project's tokens stop working.">
+            <UiPanel v-if="section === 'setup'" title="Delete this project" description="Copies on computers and on GitHub are not affected, but the project's tokens stop working.">
                 <div><UiButton variant="danger" @click="destroy">Delete project</UiButton></div>
             </UiPanel>
         </div>
-    </ProjectsLayout>
+    </ProjectLayout>
 </template>
