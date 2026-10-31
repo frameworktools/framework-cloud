@@ -8,7 +8,7 @@ import UiSelect from '@/Components/UiSelect.vue';
 import UiSwitch from '@/Components/UiSwitch.vue';
 import UiPanel from '@/Components/UiPanel.vue';
 
-const props = defineProps({ revision: Number, blueprints: Array, values: Object });
+const props = defineProps({ revision: Number, blueprints: Array, catalog: Object, values: Object });
 
 const page = usePage();
 const saved = computed(() => page.props.flash.status === 'defaults-updated');
@@ -26,7 +26,12 @@ const ideOptions = [
     { value: 'none', label: 'None' },
 ];
 
-const form = useForm({ ...props.values });
+const form = useForm({ ...props.values, tools: { ...props.values.tools } });
+const rTools = computed(() => props.catalog.tools.filter((t) => t.key !== 'renv' && (!t.language || t.language.includes('r'))));
+const toggle = (list, key, on) => {
+    const next = form[list].filter((k) => k !== key);
+    form[list] = on ? [...next, key] : next;
+};
 const save = () => form.patch('/settings/defaults');
 </script>
 
@@ -39,12 +44,28 @@ const save = () => form.patch('/settings/defaults');
     >
         <form id="settings-form" class="flex flex-col gap-8" @submit.prevent="save">
             <UiPanel title="New projects" description="What a new project starts with when you don't choose otherwise.">
-                <UiSelect v-model="form.project_type" label="Default project type" :options="blueprintOptions" :error="form.errors.project_type" />
+                <UiSelect v-model="form.project_type" label="Default blueprint" :options="blueprintOptions" :error="form.errors.project_type" />
                 <UiSelect v-model="form.notebook_format" label="Notebook format" :options="formatOptions" />
                 <UiSelect v-model="form.ide" label="IDE" :options="ideOptions" />
                 <UiSwitch v-model="form.use_git" label="Initialize git" />
                 <UiSwitch v-model="form.use_renv" label="Use renv" />
                 <UiSwitch v-model="form.seed_on_scaffold" label="Set random seed on scaffold()" />
+            </UiPanel>
+
+            <UiPanel title="Preferred pieces" description="Added to new projects that don't start from a chosen blueprint. A chosen blueprint brings its own.">
+                <div class="flex flex-col gap-2">
+                    <div class="text-sm font-medium text-slate-900 dark:text-white">Tools</div>
+                    <UiSwitch v-for="tool in rTools" :key="tool.key" :model-value="!!form.tools[tool.key]" :label="tool.name" :description="tool.description" @update:model-value="(on) => (form.tools = { ...form.tools, [tool.key]: on })" />
+                </div>
+                <div v-if="catalog.package_sets.length" class="flex flex-col gap-2">
+                    <div class="text-sm font-medium text-slate-900 dark:text-white">Package sets</div>
+                    <UiSwitch v-for="set in catalog.package_sets" :key="set.key" :model-value="form.package_sets.includes(set.key)" :label="set.name" :description="set.description" @update:model-value="(on) => toggle('package_sets', set.key, on)" />
+                </div>
+                <div v-if="catalog.skill_sets.length" class="flex flex-col gap-2">
+                    <div class="text-sm font-medium text-slate-900 dark:text-white">Skill sets</div>
+                    <UiSwitch v-for="set in catalog.skill_sets" :key="set.key" :model-value="form.skill_sets.includes(set.key)" :label="set.name" :description="set.description" @update:model-value="(on) => toggle('skill_sets', set.key, on)" />
+                </div>
+                <UiSwitch v-model="form.sensitive" label="Sensitive data" description="Start every new project with private and public folders, even under a blueprint that doesn't set it." />
             </UiPanel>
 
             <UiPanel title="AI assistants" description="Context files and skills that new projects get for AI coding assistants.">

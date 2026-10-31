@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
 use App\Models\Blueprint;
+use App\Support\Catalog;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -20,6 +21,7 @@ class DefaultsController extends Controller
         return Inertia::render('Settings/Defaults', [
             'revision' => $setting->revision,
             'blueprints' => Blueprint::systemTypes()->get(['key', 'name']),
+            'catalog' => Catalog::for($request->user()),
             'values' => [
                 'project_type' => Arr::get($doc, 'defaults.project_type', 'bare'),
                 'notebook_format' => Arr::get($doc, 'defaults.notebook_format', 'quarto'),
@@ -30,6 +32,10 @@ class DefaultsController extends Controller
                 'ai_enabled' => (bool) Arr::get($doc, 'ai.enabled', true),
                 'ai_canonical_file' => Arr::get($doc, 'ai.canonical_file', 'AGENTS.md'),
                 'ai_skills' => (bool) Arr::get($doc, 'ai.skills', true),
+                'package_sets' => $request->user()->project_defaults['package_sets'] ?? [],
+                'skill_sets' => $request->user()->project_defaults['skill_sets'] ?? [],
+                'tools' => (object) ($request->user()->project_defaults['tools'] ?? []),
+                'sensitive' => (bool) ($request->user()->project_defaults['sensitive'] ?? false),
             ],
         ]);
     }
@@ -46,6 +52,13 @@ class DefaultsController extends Controller
             'ai_enabled' => ['boolean'],
             'ai_canonical_file' => ['required', 'string', 'max:60'],
             'ai_skills' => ['boolean'],
+            'package_sets' => ['array'],
+            'package_sets.*' => ['string', 'max:200'],
+            'skill_sets' => ['array'],
+            'skill_sets.*' => ['string', 'max:200'],
+            'tools' => ['array'],
+            'tools.*' => ['boolean'],
+            'sensitive' => ['boolean'],
         ]);
 
         $setting = $request->user()->globalSettings();
@@ -62,6 +75,14 @@ class DefaultsController extends Controller
         Arr::set($doc, 'ai.skills', (bool) ($validated['ai_skills'] ?? true));
 
         $setting->replaceDocument($doc, client: ['device' => 'web', 'app' => 'framework.pub']);
+
+        // Preferred pieces stay in the cloud; renv already lives in the synced settings
+        $request->user()->update(['project_defaults' => [
+            'package_sets' => array_values($validated['package_sets'] ?? []),
+            'skill_sets' => array_values($validated['skill_sets'] ?? []),
+            'tools' => array_map('boolval', Arr::except($validated['tools'] ?? [], ['renv'])),
+            'sensitive' => (bool) ($validated['sensitive'] ?? false),
+        ]]);
 
         return back()->with('status', 'defaults-updated');
     }

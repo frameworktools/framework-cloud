@@ -42,8 +42,21 @@ class SettingsAndAdminTest extends TestCase
                 'ai_enabled' => true,
                 'ai_canonical_file' => 'AGENTS.md',
                 'ai_skills' => true,
+                'package_sets' => ['framework/tidyverse-analysis'],
+                'skill_sets' => ['framework/ggplot2'],
+                'tools' => ['targets' => true, 'renv' => true],
+                'sensitive' => true,
             ])
             ->assertRedirect();
+
+        // Preferred pieces stay in the cloud, out of the synced document; renv stays synced
+        $this->assertSame([
+            'package_sets' => ['framework/tidyverse-analysis'],
+            'skill_sets' => ['framework/ggplot2'],
+            'tools' => ['targets' => true],
+            'sensitive' => true,
+        ], $user->fresh()->project_defaults);
+        $this->assertArrayNotHasKey('package_sets', $user->globalSettings()->document['defaults']);
 
         $setting = $user->globalSettings();
         $this->assertSame(1, $setting->revision);
