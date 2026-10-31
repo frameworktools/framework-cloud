@@ -32,6 +32,8 @@ class Resolver
 
     private ?BlueprintVersion $blueprint = null;
 
+    private string $language = 'r';
+
     /** @param bool $withDefaults false when building a blueprint, which shouldn't carry anyone's defaults */
     public function __construct(private User $user, private bool $withDefaults = true) {}
 
@@ -87,12 +89,8 @@ class Resolver
 
         // A blueprint's pieces that don't fit the project's language are left
         // out quietly, such as an R blueprint's Quarto in a Stata project
-        $this->pieces = $this->pieces->filter(fn (FacetVersion $v) => match (true) {
-            $v->facet->kind === 'setting' => true,
-            $v->facet->kind === 'tool' && $language === 'stata' => false,
-            (bool) $v->facet->language => in_array($language, $v->facet->language, true),
-            default => true,
-        });
+        $this->language = $language;
+        $this->pieces = $this->pieces->filter(fn (FacetVersion $v) => $this->fits($v));
 
         foreach ($choices['tools'] ?? [] as $key => $on) {
             $tool = $this->findPiece(str_contains($key, '/') ? $key : "framework/{$key}", ['tool'], 'tools');
@@ -246,10 +244,11 @@ class Resolver
         foreach ($tools as $tool) {
             $facet = $tool->facet;
 
-            if ($language === 'stata') {
+            if ($this->withDefaults && $language === 'stata') {
                 throw ValidationException::withMessages(['tools' => 'Stata projects have no tools.']);
             }
-            if ($facet->language && ! in_array($language, $facet->language, true)) {
+            // A blueprint can carry tools for several languages; a project can't
+            if ($this->withDefaults && $facet->language && ! in_array($language, $facet->language, true)) {
                 throw ValidationException::withMessages(['tools' => "{$facet->name} is not available for ".Project::LANGUAGE_NAMES[$language].' projects.']);
             }
             if ($clash = array_values(array_intersect($facet->conflicts ?? [], $keys))) {
@@ -263,11 +262,20 @@ class Resolver
         }
     }
 
-    /** Whether the choices came out the same as the blueprint, so the project can pin it. */
+    private function fits(FacetVersion $version): bool
+    {
+        return ProjectLayers::fits($version, $this->language);
+    }
+
+    /**
+     * Whether the choices came out the same as the blueprint, so the project
+     * can pin it. Pieces the blueprint has for other languages don't count,
+     * such as uv in an R project.
+     */
     private function unchangedFromBlueprint(): bool
     {
         return $this->structure->id === $this->blueprint->base_version_id
-            && $this->pieces->pluck('id')->values()->all() === $this->blueprint->facetVersions->pluck('id')->values()->all()
+            && $this->pieces->pluck('id')->values()->all() === $this->blueprint->facetVersions->filter(fn (FacetVersion $v) => $this->fits($v))->pluck('id')->values()->all()
             && $this->settings == ($this->blueprint->layer ?? []);
     }
 

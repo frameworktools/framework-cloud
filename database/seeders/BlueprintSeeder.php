@@ -157,7 +157,9 @@ class BlueprintSeeder extends Seeder
                 $sets->push('ggplot2');
             }
 
-            $pieces = collect(isset($layer['quarto']) ? ['quarto'] : [])->concat($sets)->map($latest);
+            // Quarto where the structure renders with it, and uv for Python
+            // projects (left out of R and Stata ones), as the R package does
+            $pieces = collect(isset($layer['quarto']) ? ['quarto'] : [])->push('uv')->concat($sets)->map($latest);
 
             $blueprint = Blueprint::updateOrCreate(['user_id' => null, 'key' => $key], $attributes + ['is_system' => true]);
             $blueprint->publish(

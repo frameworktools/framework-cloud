@@ -186,7 +186,7 @@ class WebAppTest extends TestCase
                 ->has('blueprints', 5)
                 ->where('blueprints.0.handle', 'framework/bare')
                 ->where('blueprints.1.choices.structure', 'framework/project')
-                ->where('blueprints.1.choices.tools', ['quarto' => true])
+                ->where('blueprints.1.choices.tools', ['quarto' => true, 'uv' => true])
                 ->has('catalog.structures', 5)
                 ->where('selected', $this->systemBlueprint('project')->id));
     }

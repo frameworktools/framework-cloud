@@ -81,7 +81,11 @@ const create = () => form
         ...(data.customized ? {
             customized: true,
             structure: data.structure,
-            tools: data.tools,
+            // Only tools for the project's language; a blueprint may carry others, such as uv
+            tools: Object.fromEntries(Object.entries(data.tools).filter(([key]) => {
+                const tool = props.catalog.tools.find((t) => t.key === key);
+                return data.language !== 'stata' && (!tool?.language || tool.language.includes(data.language));
+            })),
             package_sets: data.package_sets,
             skill_sets: data.skill_sets,
             skills: data.skills,

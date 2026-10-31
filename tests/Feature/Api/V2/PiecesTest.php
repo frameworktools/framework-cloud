@@ -50,7 +50,7 @@ class PiecesTest extends TestCase
 
         $this->withToken($token)->getJson('/api/v2/blueprints')->assertOk()
             ->assertJsonPath('blueprints.1.structure', 'framework/project')
-            ->assertJsonPath('blueprints.1.tools', ['quarto'])
+            ->assertJsonPath('blueprints.1.tools', ['quarto', 'uv'])
             ->assertJsonPath('blueprints.1.skill_sets', ['framework/framework', 'framework/ggplot2']);
     }
 
@@ -207,6 +207,25 @@ class PiecesTest extends TestCase
         config(['framework.spec_tools' => false]);
         $plain = $this->withToken($this->token())->postJson('/api/v2/resolve', ['name' => 'Survey', 'blueprint' => 'framework/project'])->json('layers');
         $this->assertArrayNotHasKey('settings_layout', $plain[0]['layer']);
+    }
+
+    public function test_framework_blueprints_give_python_projects_uv_and_r_projects_none(): void
+    {
+        $token = $this->token();
+
+        $r = $this->withToken($token)->postJson('/api/v2/resolve', ['name' => 'S', 'blueprint' => 'framework/project'])->json();
+        $this->assertNotContains('framework/uv', array_column($r['layers'], 'key'));
+        $this->assertArrayHasKey('source', $r, 'An R project from an unchanged blueprint still pins it');
+
+        $python = $this->withToken($token)->postJson('/api/v2/resolve', ['name' => 'S', 'blueprint' => 'framework/project', 'language' => 'python'])->json('layers');
+        $keys = array_column($python, 'key');
+        $this->assertContains('framework/uv', $keys);
+        $this->assertContains('framework/quarto', $keys);
+        $this->assertContains('framework/framework', $keys, 'Each package ships its own Framework skills');
+        $this->assertNotContains('framework/ggplot2', $keys, 'ggplot2 is for R');
+
+        $bare = array_column($this->withToken($token)->postJson('/api/v2/resolve', ['name' => 'S', 'blueprint' => 'framework/bare', 'language' => 'python'])->json('layers'), 'key');
+        $this->assertSame(['framework/bare', 'framework/uv', 'framework/bare', 's'], $bare);
     }
 
     public function test_jupyter_brings_the_kernel_for_the_projects_language(): void

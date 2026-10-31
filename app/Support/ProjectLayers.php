@@ -33,7 +33,8 @@ class ProjectLayers
             default => collect(),
         };
 
-        $layers = $fragments->flatMap(fn (FacetVersion $fragment) => self::entries($fragment, $project->language ?? 'r'))->all();
+        $layers = $fragments->filter(fn (FacetVersion $fragment) => $fragment->facet->isStructure() || self::fits($fragment, $project->language ?? 'r'))
+            ->flatMap(fn (FacetVersion $fragment) => self::entries($fragment, $project->language ?? 'r'))->all();
 
         if ($composition) {
             $layers[] = ['kind' => 'blueprint', 'key' => $version?->blueprint->handle ?? 'choices', 'layer' => $composition['layer'] ?? []];
@@ -80,6 +81,17 @@ class ProjectLayers
         }
 
         return ['kind' => 'project', 'key' => $key, 'layer' => $layer];
+    }
+
+    /** Whether a piece applies to a project's language, such as uv only in Python. Stata has no tools. */
+    public static function fits(FacetVersion $version, string $language): bool
+    {
+        return match (true) {
+            $version->facet->kind === 'setting' => true,
+            $version->facet->kind === 'tool' && $language === 'stata' => false,
+            (bool) $version->facet->language => in_array($language, $version->facet->language, true),
+            default => true,
+        };
     }
 
     /**
