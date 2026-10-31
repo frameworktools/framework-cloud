@@ -14,7 +14,7 @@ const items = computed(() => list.value.items.map((p) => ({ label: p.name, href:
 
 <template>
     <SectionLayout heading="Projects" :items="items">
-        <template #top>
+        <template #actions>
             <Link href="/projects/create" class="block"><UiButton class="w-full"><PlusIcon class="size-4" />New project</UiButton></Link>
         </template>
         <slot />

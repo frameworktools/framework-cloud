@@ -73,37 +73,40 @@ const itemClass = (item) => [
     <AppLayout bleed>
         <div class="flex min-h-screen max-lg:flex-col">
             <aside class="shrink-0 border-slate-200 lg:w-64 lg:border-r dark:border-slate-800 max-lg:border-b">
-                <div class="flex flex-col gap-4 p-6 lg:sticky lg:top-0 lg:max-h-screen lg:overflow-y-auto">
-                    <slot name="top" />
-                    <Link v-if="back" :href="back.href" class="-mb-2 text-sm text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white">← {{ back.label }}</Link>
-                    <h2 v-if="heading" class="-mb-2 truncate text-sm font-semibold text-slate-900 dark:text-white">{{ heading }}</h2>
+                <!-- On wide screens the column fills the window: its contents scroll, and the actions stay in a footer at the bottom -->
+                <div class="flex flex-col lg:sticky lg:top-0 lg:h-screen">
+                    <div class="flex min-h-0 flex-1 flex-col gap-4 p-6 lg:overflow-y-auto [&>*]:shrink-0">
+                        <slot name="top" />
+                        <Link v-if="back" :href="back.href" class="-mb-2 text-sm text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white">← {{ back.label }}</Link>
+                        <h2 v-if="heading" class="-mb-2 truncate text-sm font-semibold text-slate-900 dark:text-white">{{ heading }}</h2>
 
-                    <slot name="lead" />
+                        <slot name="lead" />
 
-                    <nav class="flex gap-1 max-lg:-mx-1 max-lg:overflow-x-auto lg:flex-col lg:gap-0.5">
-                        <div v-if="group" class="mb-1 mt-2 text-xs font-medium uppercase tracking-wider text-slate-500 max-lg:hidden">{{ group }}</div>
-                        <template v-for="item in items" :key="item.href ?? item.anchor ?? item.heading">
-                            <div v-if="item.heading" class="mb-1 mt-5 text-xs font-semibold uppercase tracking-wider text-slate-500 first:mt-0 max-lg:hidden dark:text-slate-400">{{ item.heading }}</div>
-                            <Link
-                                v-else-if="item.href" :href="item.href" :preserve-state="!!item.preserveState" :preserve-scroll="!!item.preserveState"
-                                class="flex shrink-0 items-center justify-between gap-2 rounded-md px-3 py-1.5 text-sm transition lg:-mx-3" :class="itemClass(item)"
-                            >
-                                <span class="truncate">{{ item.label }}</span>
-                                <component :is="item.expanded ? ChevronDownIcon : ChevronRightIcon" v-if="item.expanded !== undefined" class="size-4 shrink-0 text-slate-400" />
-                            </Link>
-                            <a
-                                v-else :href="`#${item.anchor}`"
-                                class="flex shrink-0 items-center rounded-md px-3 py-1.5 text-sm transition lg:-mx-3" :class="itemClass(item)"
-                                @click.prevent="go(item)"
-                            >{{ item.label }}</a>
-                        </template>
-                    </nav>
+                        <nav class="flex gap-1 max-lg:-mx-1 max-lg:overflow-x-auto lg:flex-col lg:gap-0.5">
+                            <div v-if="group" class="mb-1 mt-2 text-xs font-medium uppercase tracking-wider text-slate-500 max-lg:hidden">{{ group }}</div>
+                            <template v-for="item in items" :key="item.href ?? item.anchor ?? item.heading">
+                                <div v-if="item.heading" class="mb-1 mt-5 text-xs font-semibold uppercase tracking-wider text-slate-500 first:mt-0 max-lg:hidden dark:text-slate-400">{{ item.heading }}</div>
+                                <Link
+                                    v-else-if="item.href" :href="item.href" :preserve-state="!!item.preserveState" :preserve-scroll="!!item.preserveState"
+                                    class="flex shrink-0 items-center justify-between gap-2 rounded-md px-3 py-1.5 text-sm transition lg:-mx-3" :class="itemClass(item)"
+                                >
+                                    <span class="truncate">{{ item.label }}</span>
+                                    <component :is="item.expanded ? ChevronDownIcon : ChevronRightIcon" v-if="item.expanded !== undefined" class="size-4 shrink-0 text-slate-400" />
+                                </Link>
+                                <a
+                                    v-else :href="`#${item.anchor}`"
+                                    class="flex shrink-0 items-center rounded-md px-3 py-1.5 text-sm transition lg:-mx-3" :class="itemClass(item)"
+                                    @click.prevent="go(item)"
+                                >{{ item.label }}</a>
+                            </template>
+                        </nav>
 
-                    <div v-if="$slots.aside" class="max-lg:hidden">
-                        <slot name="aside" />
+                        <div v-if="$slots.aside" class="max-lg:hidden">
+                            <slot name="aside" />
+                        </div>
+
                     </div>
-
-                    <div v-if="$slots.actions" class="flex flex-col gap-2 border-t border-slate-200 pt-4 dark:border-slate-800 max-lg:hidden">
+                    <div v-if="$slots.actions" class="flex shrink-0 flex-col gap-2 border-t border-slate-200 px-6 py-4 dark:border-slate-800 max-lg:hidden">
                         <slot name="actions" />
                     </div>
                 </div>
