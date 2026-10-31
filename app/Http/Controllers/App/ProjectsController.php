@@ -30,28 +30,12 @@ use Inertia\Response;
 
 class ProjectsController extends Controller
 {
-    /** The home page: every project, and the steps a new account has left. */
+    /** The home page: every project. */
     public function index(Request $request): Response
     {
-        $user = $request->user();
-        $github = Scaffolder::enabled();
-
         return Inertia::render('Projects', [
-            'projects' => $user->projects()->latest()->with('blueprintVersion.blueprint')->get()
+            'projects' => $request->user()->projects()->latest()->with('blueprintVersion.blueprint')->get()
                 ->map(fn (Project $p) => self::summary($p)),
-            // Getting started; the page hides it once everything is done
-            'steps' => array_values(array_filter([
-                ['key' => 'profile', 'done' => filled(Arr::get($user->globalSettings()->document, 'author.affiliations'))
-                    || filled(Arr::get($user->globalSettings()->document, 'author.affiliation'))],
-                ['key' => 'machine', 'done' => $user->tokens()->exists()],
-                $github ? ['key' => 'github', 'done' => $user->githubAccount()->exists()] : null,
-                ['key' => 'project', 'done' => $user->projects()->exists()],
-            ])),
-            // What this server still needs, for its admins
-            'setup' => $user->is_admin ? array_values(array_filter([
-                in_array(config('mail.default'), ['log', 'array'], true) ? 'mail' : null,
-                $github ? null : 'github',
-            ])) : [],
         ]);
     }
 

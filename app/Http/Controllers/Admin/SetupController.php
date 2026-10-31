@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Services\GitHub\Scaffolder;
 use App\Support\Credentials;
+use App\Support\GettingStarted;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -70,6 +71,8 @@ class SetupController extends Controller
         }
 
         return Inertia::render('Admin/Setup', [
+            'steps' => GettingStarted::steps($request->user()),
+            'needs' => GettingStarted::serverNeeds(),
             'mode' => config('framework.mode'),
             'fields' => $fields,
             'status' => [

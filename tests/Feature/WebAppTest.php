@@ -49,7 +49,6 @@ class WebAppTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Projects')
                 ->has('projects', 1)
-                ->has('steps')
                 ->where('projectList.total', 1)
                 ->where('projectList.items.0.slug', 'survey'));
     }

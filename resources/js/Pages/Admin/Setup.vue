@@ -11,6 +11,8 @@ import UiCallout from '@/Components/UiCallout.vue';
 import CredentialField from '@/Components/CredentialField.vue';
 
 const props = defineProps({
+    steps: Array,
+    needs: Array,
     mode: String,
     fields: Object,
     status: Object,
@@ -70,7 +72,18 @@ const mailer = computed(() => (field('mail.mailer').source === 'env' ? field('ma
 const mailReady = computed(() => !['log', 'array'].includes(props.status.mail));
 const testMail = () => router.post('/admin/setup/mail/test', {}, { preserveScroll: true });
 
+// Getting started for the admin's own account, while anything is left
+const stepCopy = {
+    profile: { title: 'Fill in your profile', text: 'Your name and affiliation go on the notebooks and reports you create.', href: '/account/profile' },
+    machine: { title: 'Connect your computer', text: 'Make a token, then run cloud_login() once in R or Python, or fw login in a terminal.', href: '/tokens' },
+    github: { title: 'Connect GitHub', text: 'Create projects as GitHub repositories, ready to clone.', href: '/account/github' },
+    project: { title: 'Create a project', text: 'Pick a blueprint and set it up on GitHub or your computer.', href: '/projects/create' },
+};
+const remaining = computed(() => props.steps.filter((s) => !s.done).length);
+const needCopy = { mail: { label: 'email', anchor: 'mail' }, github: { label: 'GitHub', anchor: 'github' } };
+
 const items = [
+    ...(props.steps.some((s) => !s.done) ? [{ label: 'Get started', anchor: 'start' }] : []),
     { label: 'GitHub App', anchor: 'github' },
     { label: 'Storage', anchor: 'storage' },
     { label: 'Email', anchor: 'mail' },
@@ -92,6 +105,26 @@ const pill = (ready) => (ready
         />
 
         <div class="mt-8 flex flex-col gap-8">
+            <p v-if="needs.length" class="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-200">
+                This server still needs
+                <template v-for="(need, i) in needs" :key="need"><template v-if="i"> and </template><a :href="`#${needCopy[need].anchor}`" class="font-medium underline">{{ needCopy[need].label }}</a></template>
+                set up.
+            </p>
+
+            <UiPanel v-if="remaining" id="start" title="Get started" :description="`${steps.length - remaining} of ${steps.length} done`" class="scroll-mt-6">
+                <ol class="-mx-1 flex flex-col divide-y divide-slate-200 dark:divide-slate-800">
+                    <li v-for="(step, index) in steps" :key="step.key">
+                        <Link :href="stepCopy[step.key].href" class="flex items-start gap-3 rounded-md px-1 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                            <span class="w-5 shrink-0 text-sm text-slate-500">{{ step.done ? '✓' : index + 1 }}</span>
+                            <span class="flex min-w-0 flex-col">
+                                <span class="text-sm font-medium" :class="step.done ? 'text-slate-500 line-through' : 'text-slate-900 dark:text-white'">{{ stepCopy[step.key].title }}</span>
+                                <span v-if="!step.done" class="text-sm text-slate-600 dark:text-slate-400">{{ stepCopy[step.key].text }}</span>
+                            </span>
+                        </Link>
+                    </li>
+                </ol>
+            </UiPanel>
+
             <UiCallout v-if="broken.length" variant="danger" heading="Some saved values can't be read">
                 <p>
                     APP_KEY has changed since they were saved: {{ broken.join(', ') }}. Enter them again, or put the old key in
