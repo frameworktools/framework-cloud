@@ -73,7 +73,7 @@ const yaml = computed(() => {
                             <UiButton variant="ghost" size="sm" @click="remove(index)">Remove</UiButton>
                         </div>
                     </div>
-                    <UiInput v-model="affiliation.name" label="Institution" placeholder="e.g. Johns Hopkins University" :error="form.errors[`affiliations.${index}.name`]" />
+                    <UiInput v-model="affiliation.name" label="Institution" placeholder="e.g. Example University" :error="form.errors[`affiliations.${index}.name`]" />
                     <UiInput v-model="affiliation.department" label="Department (optional)" />
                     <div class="grid gap-4 sm:grid-cols-2">
                         <UiInput v-model="affiliation.city" label="City (optional)" />
