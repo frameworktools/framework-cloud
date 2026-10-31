@@ -101,10 +101,14 @@ class Resolver
             }
         }
 
+        // Sets for another language are left out quietly, such as an R
+        // package set among a user's defaults in a Python project
         foreach (['package_sets' => 'package_set', 'skill_sets' => 'skill_set'] as $field => $kind) {
             foreach ($choices[$field] ?? [] as $handle) {
                 $piece = $this->findPiece($handle, [$kind], $field);
-                $this->pieces->put($piece->id, $piece->latestVersion);
+                if ($this->fits($piece->latestVersion)) {
+                    $this->pieces->put($piece->id, $piece->latestVersion);
+                }
             }
         }
 

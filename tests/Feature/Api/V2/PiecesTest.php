@@ -228,6 +228,18 @@ class PiecesTest extends TestCase
         $this->assertSame(['framework/bare', 'framework/uv', 'framework/bare', 's'], $bare);
     }
 
+    public function test_sets_for_another_language_are_left_out(): void
+    {
+        $keys = array_column($this->withToken($this->token())->postJson('/api/v2/resolve', [
+            'name' => 'S', 'structure' => 'framework/project', 'language' => 'python',
+            'skill_sets' => ['framework/framework', 'framework/ggplot2'], 'package_sets' => ['framework/tidyverse-analysis'],
+        ])->assertOk()->json('layers'), 'key');
+
+        $this->assertContains('framework/framework', $keys);
+        $this->assertNotContains('framework/ggplot2', $keys);
+        $this->assertNotContains('framework/tidyverse-analysis', $keys);
+    }
+
     public function test_jupyter_brings_the_kernel_for_the_projects_language(): void
     {
         $token = $this->token();
