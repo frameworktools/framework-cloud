@@ -1,5 +1,5 @@
 {
-    "commit": "c74051f2f75a5b20f41a2281bb548ff57310cf58",
+    "commit": "552bb004ca000c93a1cc00646cbc4a574312ed19",
     "files": {
         "layer.v1.json": {
             "source": "inst/schema/layer.v1.json",
@@ -12,6 +12,10 @@
         "spec.v1.json": {
             "source": "inst/schema/spec.v1.json",
             "sha256": "d6e35829aa628ae6ed86234cfa1e727000286e2775f1db4874ed5c9589971387"
+        },
+        "docs-reference.v1.json": {
+            "source": "inst/schema/docs-reference.v1.json",
+            "sha256": "e115abd1d68a5f15d46c5794f05f880623e9286197ffda6a4c1fe8dcb9309f5f"
         }
     }
 }

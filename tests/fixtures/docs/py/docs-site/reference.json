@@ -1,0 +1,42 @@
+{
+  "schema": "docs-reference.v1",
+  "product": "py",
+  "version": "0.1.0.dev1",
+  "categories": [
+    {"id": "data", "title": "Data", "description": "Reading, writing, and managing data files", "position": 1, "common": ["data_read"]},
+    {"id": "results", "title": "Results", "description": "Checking and saving results", "position": 2}
+  ],
+  "entries": [
+    {
+      "id": "data_read", "name": "data_read", "kind": "function", "category": "data",
+      "summary": "Read a data file from the catalog",
+      "usage": "data_read(name, *, delimiter='auto')",
+      "description": "Reads the file a catalog entry points at. See [Data Management](guide:data-management).",
+      "parameters": [
+        {"name": "name", "type": "str", "required": true, "description": "A catalog name in dot notation."},
+        {"name": "delimiter", "type": "str", "default": "'auto'", "description": "The column separator for text files."}
+      ],
+      "returns": "A polars DataFrame.",
+      "sections": [{"title": "Formats", "content": "CSV, Parquet, and Stata files.", "subsections": [{"title": "CSV", "content": "Delimiters are detected."}]}],
+      "examples": [{"title": "Read a raw file", "code": "df = data_read(\"inputs.raw.survey\")", "runnable": false}],
+      "see_also": ["data_save", "r:ref:data_read", {"title": "polars", "url": "https://pola.rs"}],
+      "since": "0.1.0"
+    },
+    {
+      "id": "data_save", "name": "data_save", "kind": "function", "category": "data",
+      "summary": "Save a data frame and record it in the catalog",
+      "parameters": [{"name": "df", "description": "The data frame."}]
+    },
+    {
+      "id": "data_load", "name": "data_load", "kind": "function", "category": "data",
+      "summary": "Read a data file (old name)",
+      "lifecycle": "deprecated", "replaced_by": "data_read"
+    },
+    {
+      "id": "AuditResult", "name": "AuditResult", "kind": "class", "category": "results",
+      "summary": "The result of a data audit",
+      "parameters": [{"name": "summary", "type": "dict[str, Any]", "description": "Counts by check."}],
+      "aliases": ["Audit"]
+    }
+  ]
+}

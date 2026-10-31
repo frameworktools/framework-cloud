@@ -192,7 +192,7 @@ connections:
     password: env("DB_PASS")
 ```
 
-See [Database Connections](/docs/database-connections) for full documentation.
+See [Database Connections](/docs/connections) for full documentation.
 
 ### Random Seeds
 

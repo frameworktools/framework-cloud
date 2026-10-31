@@ -1,0 +1,11 @@
+product: cli
+title: fw
+tagline: The Framework command line tool
+repository: https://github.com/frameworktools/framework-cli
+install: brew install frameworktools/tap/fw
+sections:
+  - id: getting_started
+    title: Getting Started
+  - id: commands
+    title: Commands
+    reference: true

@@ -1,74 +1,105 @@
+@php
+    use App\Support\Docs\Products;
+
+    $siteTitle = $site['title'] ?? Products::NAMES[$product];
+    $repository = $site['repository'] ?? null;
+@endphp
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full antialiased">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('title', 'Framework docs')</title>
-    <meta name="description" content="Documentation for the Framework R package.">
+    <title>@hasSection('title')@yield('title') · {{ $siteTitle }}@else{{ $siteTitle }}@endif</title>
+    <meta name="description" content="@yield('description', $site['tagline'] ?? 'Documentation for '.$siteTitle.'.')">
     <link rel="icon" type="image/png" href="/images/favicon.png">
     <x-theme-script />
-    @vite(['resources/css/app.css'])
+    @vite(['resources/css/docs.css'])
 </head>
-<body class="bg-white text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100">
+<body class="flex min-h-full flex-col bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100">
 
-    <header class="border-b border-slate-200 dark:border-slate-800">
-        <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
-            <a href="{{ route('docs.home') }}" class="font-semibold tracking-tight">framework <span class="text-sm font-normal text-slate-500">docs</span></a>
-            <form action="{{ route('docs.search') }}" method="get" class="max-w-xs flex-1">
-                <input
-                    type="search" name="q" value="{{ request('q') }}" placeholder="Search functions and guides…"
-                    class="w-full rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 dark:border-slate-700 dark:bg-slate-900"
-                >
-            </form>
-            <nav class="flex items-center gap-4 text-sm">
-                <a href="{{ route('docs.reference') }}" class="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">Reference</a>
-                <a href="https://framework.pub" class="text-sky-600 hover:underline dark:text-sky-400">Framework Cloud</a>
-                <a href="https://github.com/frameworktools/framework" class="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">GitHub</a>
-                <x-theme-toggle />
-            </nav>
+    @include('docs.partials.header')
+
+    @hasSection('full')
+        <main class="flex-1">@yield('full')</main>
+    @else
+        <div class="mx-auto flex w-full max-w-8xl flex-1 justify-center px-6 sm:px-8 lg:px-12">
+            @if ($site)
+                <aside class="hidden w-64 shrink-0 lg:block">
+                    <nav class="sticky top-[4.5rem] -ml-2 max-h-[calc(100vh-4.5rem)] overflow-y-auto py-10 pr-6 pl-2 text-sm" aria-label="Sidebar">
+                        @include('docs.partials.sidebar')
+                    </nav>
+                </aside>
+            @endif
+
+            <main class="min-w-0 max-w-3xl flex-auto py-10 lg:pl-8 xl:px-12">
+                @yield('content')
+            </main>
+
+            <aside class="hidden w-56 shrink-0 xl:block">
+                @hasSection('toc')
+                    <nav class="sticky top-[4.5rem] max-h-[calc(100vh-4.5rem)] overflow-y-auto py-10 text-sm" aria-label="On this page">
+                        @yield('toc')
+                    </nav>
+                @endif
+            </aside>
         </div>
-    </header>
-
-    <div class="mx-auto flex max-w-6xl gap-10 px-6 py-10">
-        <aside class="hidden w-56 shrink-0 md:block">
-            <nav class="flex flex-col gap-6 text-sm">
-                @foreach (\App\Support\Docs::SECTIONS as $key => $label)
-                    <div>
-                        <div class="mb-2 font-medium uppercase tracking-wide text-slate-500 text-xs">{{ $label }}</div>
-                        <ul class="flex flex-col gap-1 border-l border-slate-200 dark:border-slate-800">
-                            @foreach ($guides->where('section', $key) as $g)
-                                <li>
-                                    <a href="{{ route('docs.guide', $g['slug']) }}"
-                                       class="-ml-px block border-l py-0.5 pl-3 {{ request()->route('slug') === $g['slug'] ? 'border-sky-500 text-sky-600 dark:text-sky-400' : 'border-transparent text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100' }}">
-                                        {{ $g['title'] }}
-                                    </a>
-                                </li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endforeach
-                <div>
-                    <div class="mb-2 font-medium uppercase tracking-wide text-slate-500 text-xs">Reference</div>
-                    <ul class="flex flex-col gap-1 border-l border-slate-200 dark:border-slate-800">
-                        @foreach ($categories as $c)
-                            <li><a href="{{ route('docs.reference') }}#{{ Str::slug($c->name) }}" class="-ml-px block border-l border-transparent py-0.5 pl-3 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">{{ $c->name }}</a></li>
-                        @endforeach
-                    </ul>
-                </div>
-            </nav>
-        </aside>
-
-        <main class="min-w-0 flex-1">
-            @yield('content')
-        </main>
-    </div>
+    @endif
 
     <footer class="border-t border-slate-200 dark:border-slate-800">
-        <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-6 text-sm text-slate-500 dark:text-slate-400">
-            <div>Framework — structured data science in R</div>
-            <div>Docs generated from the package's roxygen source</div>
+        <div class="mx-auto flex max-w-8xl flex-wrap items-center justify-between gap-4 px-6 py-6 text-sm text-slate-500 sm:px-8 lg:px-12 dark:text-slate-400">
+            <div>
+                {{ $siteTitle }}@if (! empty($site['version']) && $site['version'] !== 'docs.db') · version {{ $site['version'] }}@endif
+            </div>
+            <div class="flex flex-wrap items-center gap-x-5 gap-y-2">
+                @foreach (Products::LABELS as $other => $label)
+                    @if ($other !== $product)
+                        <a href="{{ Products::url($other) }}" class="hover:text-slate-900 dark:hover:text-white">{{ $label }} documentation</a>
+                    @endif
+                @endforeach
+                <a href="https://framework.pub" class="hover:text-slate-900 dark:hover:text-white">Framework Public Cloud</a>
+                @if ($repository)
+                    <a href="{{ $repository }}" class="hover:text-slate-900 dark:hover:text-white">Source on GitHub</a>
+                @endif
+            </div>
         </div>
     </footer>
 
+    @if ($site)
+        @include('docs.partials.search')
+    @endif
+
+    <script>
+        // One button for light and dark, as on the old site; the theme script remembers the choice
+        document.querySelectorAll('[data-docs-theme]').forEach((button) => {
+            button.addEventListener('click', () => {
+                window.fwTheme.set(document.documentElement.classList.contains('dark') ? 'light' : 'dark');
+            });
+        });
+
+        // Copy buttons on code blocks
+        document.querySelectorAll('[data-copy]').forEach((button) => {
+            button.addEventListener('click', async () => {
+                const target = document.getElementById(button.dataset.copy);
+                try { await navigator.clipboard.writeText(target.innerText.trim()); } catch { return; }
+                const label = button.querySelector('[data-copy-label]');
+                label.textContent = 'Copied';
+                setTimeout(() => { label.textContent = 'Copy'; }, 2000);
+            });
+        });
+
+        // "On this page": mark the heading being read
+        (() => {
+            const links = [...document.querySelectorAll('[data-toc-link]')];
+            if (!links.length) return;
+            const headings = links.map((a) => document.getElementById(a.getAttribute('href').slice(1))).filter(Boolean);
+            const mark = () => {
+                let current = headings[0];
+                for (const h of headings) if (h.getBoundingClientRect().top < 120) current = h;
+                links.forEach((a) => a.toggleAttribute('data-current', a.getAttribute('href') === '#' + current?.id));
+            };
+            document.addEventListener('scroll', mark, { passive: true });
+            mark();
+        })();
+    </script>
 </body>
 </html>

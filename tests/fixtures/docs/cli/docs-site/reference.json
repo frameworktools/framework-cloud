@@ -1,0 +1,15 @@
+{
+  "schema": "docs-reference.v1",
+  "product": "cli",
+  "version": "0.1.0",
+  "categories": [{"id": "projects", "title": "Projects", "description": "Creating and checking projects", "position": 1, "common": ["project bootstrap"]}],
+  "entries": [
+    {
+      "id": "project-bootstrap", "name": "project bootstrap", "kind": "command", "category": "projects",
+      "summary": "Set up a project folder",
+      "usage": "fw project bootstrap [--path DIR]",
+      "parameters": [{"name": "--path", "type": "string", "default": ".", "env": "FW_PATH", "description": "The project folder."}],
+      "examples": [{"title": "Here", "code": "fw project bootstrap"}]
+    }
+  ]
+}

@@ -30,12 +30,45 @@ return [
     'documents_base_url' => env('FW_DOCUMENTS_BASE_URL'),
 
     /*
-    | Hostname the R package docs site answers on (Route::domain group).
-    | Herd resolves any subdomain of a linked site, so r.framework.test
-    | works locally with zero setup; production is r.framework.pub
-    | (CNAME r -> framework.pub + cert coverage).
+    | Hostnames of the three docs sites (Route::domain groups), by product:
+    | the R package, framework-py, and the fw command line tool. Herd
+    | resolves any subdomain of a linked site, so *.framework.test works
+    | locally; production is r., py., and cli.framework.pub. FW_DOCS_HOST
+    | is the older name for the R host and still works.
     */
-    'docs_host' => env('FW_DOCS_HOST', 'r.framework.test'),
+    'docs_hosts' => [
+        'r' => env('FW_DOCS_HOST_R', env('FW_DOCS_HOST', 'r.framework.test')),
+        'py' => env('FW_DOCS_HOST_PY', 'py.framework.test'),
+        'cli' => env('FW_DOCS_HOST_CLI', 'cli.framework.test'),
+    ],
+
+    /*
+    | GitHub repositories whose releases carry each product's docs-site.tar.gz
+    | (`php artisan fw:docs-import {product} --release`). prerelease picks
+    | which release: "fallback" (the newest stable release with the asset,
+    | or the newest pre-release with it when there is no such stable
+    | release), "always" (the newest release of either kind), or "never".
+    */
+    'docs_repositories' => [
+        'r' => [
+            'repository' => env('FW_DOCS_REPO_R', 'frameworktools/framework'),
+            'prerelease' => env('FW_DOCS_PRERELEASE_R', 'fallback'),
+        ],
+        'py' => [
+            'repository' => env('FW_DOCS_REPO_PY', 'frameworktools/framework-py'),
+            'prerelease' => env('FW_DOCS_PRERELEASE_PY', 'fallback'),
+        ],
+        'cli' => [
+            'repository' => env('FW_DOCS_REPO_CLI', 'frameworktools/framework-cli'),
+            'prerelease' => env('FW_DOCS_PRERELEASE_CLI', 'fallback'),
+        ],
+    ],
+
+    /*
+    | Where imported docs sites live: {docs_path}/{product}/releases/{name}
+    | with a "current" pointer file. See App\Support\Docs\Store.
+    */
+    'docs_path' => env('FW_DOCS_PATH', storage_path('app/docs')),
 
     /*
     | Handles that can never be claimed: route words, brand words, and

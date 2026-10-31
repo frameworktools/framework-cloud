@@ -23,15 +23,20 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-// r.framework.pub — the R package docs site, domain-routed on the same app.
+// r., py., and cli.framework.pub: the docs sites, domain-routed on the same app.
 // Domain groups must precede host-less routes: a host-less route matches any host.
-Route::domain(config('framework.docs_host'))->name('docs.')->group(function () {
-    Route::get('/', [DocsController::class, 'home'])->name('home');
-    Route::get('/guides/{slug}', [DocsController::class, 'guide'])->name('guide');
-    Route::get('/reference', [DocsController::class, 'reference'])->name('reference');
-    Route::get('/reference/{name}', [DocsController::class, 'fn'])->name('function');
-    Route::get('/search', [DocsController::class, 'search'])->name('search');
-});
+foreach (array_unique(array_filter(config('framework.docs_hosts', []))) as $docsProduct => $docsHost) {
+    Route::domain($docsHost)->name("docs.{$docsProduct}.")->group(function () use ($docsProduct) {
+        Route::get('/', [DocsController::class, 'home'])->defaults('product', $docsProduct)->name('home');
+        Route::get('/guides/{id}', [DocsController::class, 'guide'])->defaults('product', $docsProduct)->name('guide');
+        Route::get('/reference', [DocsController::class, 'reference'])->defaults('product', $docsProduct)->name('reference');
+        Route::get('/reference/{id}', [DocsController::class, 'entry'])->defaults('product', $docsProduct)->name('entry');
+        Route::get('/search', [DocsController::class, 'search'])->defaults('product', $docsProduct)->name('search');
+        Route::get('/search.json', [DocsController::class, 'searchIndex'])->defaults('product', $docsProduct)->name('search-index');
+        Route::get('/images/{path}', [DocsController::class, 'image'])->defaults('product', $docsProduct)
+            ->where('path', '[A-Za-z0-9_./-]+')->name('image');
+    });
+}
 
 Route::get('/', function () {
     return view('welcome');

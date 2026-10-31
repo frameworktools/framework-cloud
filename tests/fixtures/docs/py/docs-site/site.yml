@@ -1,0 +1,13 @@
+product: py
+title: Framework for Python
+tagline: Structured data science projects in Python
+repository: https://github.com/frameworktools/framework-py
+install: uv add framework-py
+sections:
+  - id: getting_started
+    title: Getting Started
+  - id: features
+    title: Features
+  - id: reference
+    title: Reference
+    reference: true

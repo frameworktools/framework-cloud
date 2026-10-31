@@ -70,6 +70,30 @@ result.
 | `GITHUB_FW_VERSION` | a tested release | The `fw` release that builds Stata projects, such as `0.1.0`. Empty turns off Stata projects on GitHub. They can still be set up on a computer. |
 | `GITHUB_FW_SHA256` | the tested release's checksum | The SHA-256 checksum of the `fw` Linux download. It applies only to the default release. For another release, set it or leave it empty. Empty makes the workflow check the download against the release's checksums file. |
 
+## Documentation sites
+
+The server can also serve the documentation sites for the R package, the
+Python package, and the `fw` command line tool, each on its own host name.
+Requests to any other host name get Framework Cloud as usual. A site has
+content once it is imported with `php artisan fw:docs-import`, which reads
+`docs-site.tar.gz` from a file, a folder, or a GitHub release
+(`--release`). Until then, the R site shows the guides and reference that
+come with Framework Cloud, and the other two show a page saying the
+documentation is not published yet.
+
+| Variable | Default | What it does |
+|---|---|---|
+| `FW_DOCS_HOST_R` | `r.framework.test` | The host name of the R package documentation, such as `r.framework.pub`. |
+| `FW_DOCS_HOST` | none | The older name for `FW_DOCS_HOST_R`. It is used when `FW_DOCS_HOST_R` is not set. |
+| `FW_DOCS_HOST_PY` | `py.framework.test` | The host name of the Python package documentation. |
+| `FW_DOCS_HOST_CLI` | `cli.framework.test` | The host name of the `fw` documentation. |
+| `FW_DOCS_REPO_R`, `FW_DOCS_REPO_PY`, `FW_DOCS_REPO_CLI` | `frameworktools/framework`, `frameworktools/framework-py`, `frameworktools/framework-cli` | The GitHub repository whose releases `fw:docs-import --release` reads. |
+| `FW_DOCS_PRERELEASE_R`, `FW_DOCS_PRERELEASE_PY`, `FW_DOCS_PRERELEASE_CLI` | `fallback` | Which release `--release` takes. `fallback` takes the newest release with `docs-site.tar.gz`, and a pre-release only when no other release has the file. `always` takes the newest release of either kind. `never` skips pre-releases. |
+| `FW_DOCS_PATH` | `storage/app/docs` | Where imported documentation is kept. |
+
+Each host name needs a DNS record that points at the server and a
+certificate that covers it.
+
 ## R
 
 The R and Python packages find the server in this order:
