@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Process;
  * Copying is a manual step. SchemaLockTest fails when a copy drifts from
  * its lock entry.
  *
- *   php artisan fw:sync-schemas ../framework c74051f2f75a5b20f41a2281bb548ff57310cf58
+ *   php artisan fw:sync-schemas ../framework e08db380b7906f2d65f3f0c6b27039b0f0150667
  */
 class SyncSchemasCommand extends Command
 {
