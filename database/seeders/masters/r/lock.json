@@ -1,5 +1,5 @@
 {
-    "commit": "8bb43cd5e5c2dd04c21f4a7cd33686871386cb21",
+    "commit": "abf9173c5959f17f833b5506d26f670ae2fe0fc1",
     "files": {
         "features/jupyter.json": {
             "source": "inst/features/jupyter.json",
@@ -31,15 +31,15 @@
         },
         "sets/packages/tidyverse-analysis.json": {
             "source": "inst/sets/packages/tidyverse-analysis.json",
-            "sha256": "a20224197cc9c5af559cf7a2bbe8b79023e57a72fb1686f7c885a4bd5d49d0bb"
+            "sha256": "f5b157a35097ab007d2a5b7837faf78fdce2bd523c5d6fa6e5f0c433f4fdd738"
         },
         "sets/skills/framework.json": {
             "source": "inst/sets/skills/framework.json",
-            "sha256": "8b74ed492f27bd1e3294d2ae95ae1666d9eb1b43e3e2872ee80dd2cfc1d82aca"
+            "sha256": "fb9963be10a404f684d1b158d93372865b12e9dc2edf9761a44b5a57c0eb57b9"
         },
         "sets/skills/ggplot2.json": {
             "source": "inst/sets/skills/ggplot2.json",
-            "sha256": "498c49a8af991c8a4588014a302895456466feab2a44605173e5cd91108f57ee"
+            "sha256": "524bb5822139694f01e46e3c94e1f960b722ac2ae0438a97bee7b8e097f0c2be"
         }
     }
 }

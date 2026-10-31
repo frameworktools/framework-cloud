@@ -132,10 +132,8 @@ class BlueprintSeeder extends Seeder
                 $layer['security'] = ['sensitive' => true];
             }
 
-            $agentsPath = "$mastersDir/agents/$key.md";
-            if (File::exists($agentsPath)) {
-                $layer['files'] = ['AGENTS.md' => ['content' => File::get($agentsPath), 'template' => true]];
-            }
+            // No AGENTS.md: the packages generate it from the project's
+            // settings and skills. A structure's own AGENTS.md would replace it.
 
             $attributes = [
                 'name' => $definition['name'],

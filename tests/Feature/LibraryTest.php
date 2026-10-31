@@ -91,7 +91,8 @@ class LibraryTest extends TestCase
             File::get(database_path('seeders/masters/skills/framework-sensitive-data.md')),
             $sensitive['skills']['framework-sensitive-data'],
         );
-        $this->assertSame(File::get(database_path('seeders/masters/agents/project_sensitive.md')), $sensitive['agents_md']);
+        // The packages generate AGENTS.md from settings, so no structure carries one
+        $this->assertNull($sensitive['agents_md']);
 
         // Skills in skill sets reach v1 too, since it reads only the flattened shape
         $this->assertSame(File::get(database_path('seeders/masters/skills/ggplot2-exploring.md')), $sensitive['skills']['ggplot2-exploring']);

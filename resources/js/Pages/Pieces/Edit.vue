@@ -118,13 +118,13 @@ const errorFor = (prefix) => Object.entries(form.errors).filter(([k]) => k.start
                     <template #header>
                         <UiButton size="sm" variant="outline" @click="addFile">Add file</UiButton>
                     </template>
-                    <p class="-mt-4 text-sm text-slate-600 dark:text-slate-400">Core files Framework writes into the project, such as AGENTS.md. Templates fill in placeholders like <code class="font-mono">&#123;&#123;author&#125;&#125;</code>.</p>
+                    <p class="-mt-4 text-sm text-slate-600 dark:text-slate-400">Files Framework writes into the project, such as a README. Templates fill in placeholders like <code class="font-mono">&#123;&#123;author&#125;&#125;</code>. Framework writes AGENTS.md from the project's settings and skills, and an AGENTS.md here replaces it.</p>
                     <div
                         v-for="(file, index) in form.files" :key="index"
                         class="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
                     >
                         <div class="flex items-end gap-3">
-                            <div class="flex-1"><UiInput v-model="file.path" label="Path" placeholder="AGENTS.md" /></div>
+                            <div class="flex-1"><UiInput v-model="file.path" label="Path" placeholder="README.md" /></div>
                             <UiButton size="sm" variant="ghost" @click="removeFile(index)">Remove</UiButton>
                         </div>
                         <UiSwitch v-model="file.template" label="Fill in placeholders" />

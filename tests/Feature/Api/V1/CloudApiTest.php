@@ -4,6 +4,7 @@ namespace Tests\Feature\Api\V1;
 
 use App\Models\Project;
 use App\Models\User;
+use Database\Seeders\BlueprintSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -102,7 +103,7 @@ class CloudApiTest extends TestCase
 
     public function test_project_token_pulls_project_spec_and_owner_settings(): void
     {
-        $this->seed(\Database\Seeders\BlueprintSeeder::class);
+        $this->seed(BlueprintSeeder::class);
         $project = Project::factory()->bare()->create(['payload' => ['note' => 'hi']]);
 
         $this->withToken($project->issuePullToken())
@@ -137,7 +138,7 @@ class CloudApiTest extends TestCase
 
     public function test_blueprints_are_listed_with_masters(): void
     {
-        $this->seed(\Database\Seeders\BlueprintSeeder::class);
+        $this->seed(BlueprintSeeder::class);
         $user = User::factory()->create();
 
         $response = $this->withToken($this->userToken($user))
@@ -150,7 +151,8 @@ class CloudApiTest extends TestCase
 
         $sensitive = collect($response->json('blueprints'))->firstWhere('key', 'project_sensitive');
         $this->assertArrayHasKey('framework-sensitive-data', $sensitive['skills']);
-        $this->assertNotEmpty($sensitive['agents_md']);
+        // No AGENTS.md master: R 1.x then writes its own template
+        $this->assertNull($sensitive['agents_md']);
         $this->assertNotEmpty($sensitive['structure']['directories']);
 
         // Narrowing by key
@@ -171,7 +173,7 @@ class CloudApiTest extends TestCase
 
     public function test_r_can_register_a_project_and_receive_its_key(): void
     {
-        $this->seed(\Database\Seeders\BlueprintSeeder::class);
+        $this->seed(BlueprintSeeder::class);
         $user = User::factory()->create();
         $token = $this->userToken($user);
 
@@ -204,7 +206,7 @@ class CloudApiTest extends TestCase
 
     public function test_project_tokens_cannot_register_projects(): void
     {
-        $this->seed(\Database\Seeders\BlueprintSeeder::class);
+        $this->seed(BlueprintSeeder::class);
         $project = Project::factory()->create();
 
         $this->withToken($project->issuePullToken())
