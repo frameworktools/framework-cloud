@@ -81,6 +81,8 @@ class ProjectsController extends Controller
                 'url' => "https://github.com/{$project->github_repo}",
                 'private' => (bool) $project->github_private,
                 'scaffold_status' => $project->scaffold_status,
+                // Set while GitHub Pages publishes the repository's published/ folder
+                'pages_url' => $project->pages_url,
             ] : null,
             'spec_received_at' => $project->spec_received_at?->toIso8601String(),
             'created_at' => $project->created_at?->toIso8601String(),

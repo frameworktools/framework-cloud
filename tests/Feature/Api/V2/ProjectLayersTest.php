@@ -116,6 +116,17 @@ class ProjectLayersTest extends TestCase
         $this->getJson('/api/v2/projects/nhanes-study/layers')->assertUnauthorized();
     }
 
+    public function test_show_gives_the_github_pages_site(): void
+    {
+        $user = User::factory()->create();
+        $this->project($user, 'r')->update(['github_repo' => 'ada/nhanes-study', 'scaffold_status' => 'done', 'pages_url' => 'https://ada.github.io/nhanes-study/']);
+
+        $this->withToken($user->createToken('fw')->plainTextToken)->getJson('/api/v2/projects/nhanes-study')
+            ->assertOk()
+            ->assertJsonPath('github.repository', 'ada/nhanes-study')
+            ->assertJsonPath('github.pages_url', 'https://ada.github.io/nhanes-study/');
+    }
+
     public function test_show_describes_one_project_for_its_owner(): void
     {
         $user = User::factory()->create();
