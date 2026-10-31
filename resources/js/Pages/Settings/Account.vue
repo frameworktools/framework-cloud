@@ -42,7 +42,7 @@ const destroy = () => deleteForm.delete('/settings/account');
         <UiPanel title="Details">
         <form id="account-form" class="flex flex-col gap-4" @submit.prevent="save">
             <UiInput v-model="form.name" label="Name" required :error="form.errors.name" />
-            <UiInput v-model="form.email" label="Email" type="email" required :error="form.errors.email" />
+            <UiInput v-model="form.email" label="Sign-in email" type="email" required description="Private. Used to sign in and for messages about your account. It is never shown on your work." :error="form.errors.email" />
             <UiInput
                 v-model="form.handle"
                 label="Handle"
