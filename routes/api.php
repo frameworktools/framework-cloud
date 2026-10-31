@@ -58,6 +58,7 @@ Route::prefix('v2')->middleware('auth:sanctum')->group(function () {
         Route::get("/{$path}", [PiecesController::class, 'index'])->defaults('kind', $kind);
     }
     Route::get('/skills', [PiecesController::class, 'skills']);
+    Route::get('/defaults', [PiecesController::class, 'defaults']);
     Route::post('/resolve', [PiecesController::class, 'resolve'])->middleware('throttle:60,1');
     Route::post('/projects', [PiecesController::class, 'store'])->middleware('throttle:20,1');
     Route::get('/projects/{slug}', [App\Http\Controllers\Api\V2\ProjectsController::class, 'show']);

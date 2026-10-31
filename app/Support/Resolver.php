@@ -40,6 +40,7 @@ class Resolver
      */
     public function resolve(array $choices): array
     {
+        $choices = ProjectDefaults::apply($this->user, $choices);
         $this->pieces = collect();
 
         if (filled($choices['blueprint'] ?? null)) {
@@ -67,7 +68,11 @@ class Resolver
 
         foreach ($choices['tools'] ?? [] as $key => $on) {
             $tool = $this->findPiece(str_contains($key, '/') ? $key : "framework/{$key}", ['tool'], 'tools');
-            $on ? $this->pieces->put($tool->id, $tool->latestVersion) : $this->pieces->forget($tool->id);
+            if ($on && ! $this->pieces->has($tool->id)) {
+                $this->pieces->put($tool->id, $tool->latestVersion);
+            } elseif (! $on) {
+                $this->pieces->forget($tool->id);
+            }
         }
 
         foreach (['package_sets' => 'package_set', 'skill_sets' => 'skill_set'] as $field => $kind) {
@@ -83,7 +88,7 @@ class Resolver
             $this->settings['skills'][$skill->key] = $skill->layerEntry();
         }
 
-        $this->applySettings($choices['settings'] ?? []);
+        $this->applySettings(($choices['settings'] ?? []) + $this->changedDefaults($choices['default_settings'] ?? []));
         $this->checkTools($language);
 
         $pieces = $this->pieces->values()->all();
@@ -98,7 +103,7 @@ class Resolver
             throw ValidationException::withMessages(['settings' => implode("\n", $problems)]);
         }
 
-        $unchanged = $this->blueprint && $this->unchangedFromBlueprint($choices);
+        $unchanged = $this->blueprint && $this->unchangedFromBlueprint();
 
         return [
             'envelope' => ProjectLayers::envelope(
@@ -211,10 +216,25 @@ class Resolver
         }
     }
 
-    private function unchangedFromBlueprint(array $choices): bool
+    /** Whether the choices came out the same as the blueprint, so the project can pin it. */
+    private function unchangedFromBlueprint(): bool
     {
-        return blank($choices['structure'] ?? null) && empty($choices['tools']) && empty($choices['package_sets'])
-            && empty($choices['skill_sets']) && empty($choices['skills']) && empty($choices['settings']);
+        return $this->structure->id === $this->blueprint->base_version_id
+            && $this->pieces->pluck('id')->values()->all() === $this->blueprint->facetVersions->pluck('id')->values()->all()
+            && $this->settings == ($this->blueprint->layer ?? []);
+    }
+
+    /**
+     * Default settings that differ from Framework's own (git on, AI on,
+     * sensitive off) and that the blueprint doesn't set. The rest would
+     * change nothing.
+     */
+    private function changedDefaults(array $defaults): array
+    {
+        $builtIn = ['sensitive' => false, 'git' => true, 'ai' => true];
+        $set = ['sensitive' => isset($this->settings['security']['sensitive']), 'git' => isset($this->settings['git']['use_git']), 'ai' => isset($this->settings['ai'])];
+
+        return array_filter($defaults, fn ($value, $key) => isset($builtIn[$key]) && $value !== $builtIn[$key] && ! $set[$key], ARRAY_FILTER_USE_BOTH);
     }
 
     private function findBlueprint(string $handle): BlueprintVersion

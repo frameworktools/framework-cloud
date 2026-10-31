@@ -117,9 +117,6 @@ class PiecesTest extends TestCase
         $this->withToken($token)->postJson('/api/v2/resolve', ['structure' => 'framework/project', 'language' => 'stata', 'tools' => ['quarto' => true]])
             ->assertUnprocessable()->assertJsonValidationErrors(['tools' => 'Stata projects have no tools.']);
 
-        $this->withToken($token)->postJson('/api/v2/resolve', [])
-            ->assertUnprocessable()->assertJsonValidationErrors(['structure']);
-
         $this->withToken($token)->postJson('/api/v2/resolve', ['structure' => 'someone/else'])
             ->assertUnprocessable()->assertJsonValidationErrors(['structure' => 'There is no project structure someone/else.']);
     }
@@ -148,6 +145,38 @@ class PiecesTest extends TestCase
 
         $this->withToken($token)->postJson('/api/v2/projects', ['name' => 'Clinic Visits', 'blueprint' => 'framework/project'])
             ->assertUnprocessable()->assertJsonValidationErrors('name');
+    }
+
+    public function test_without_a_blueprint_the_users_defaults_apply(): void
+    {
+        $user = User::factory()->create(['project_defaults' => [
+            'package_sets' => ['framework/tidyverse-analysis'],
+            'tools' => ['targets' => true],
+            'sensitive' => true,
+        ]]);
+        $token = $this->token($user);
+
+        $this->withToken($token)->getJson('/api/v2/defaults')->assertOk()
+            ->assertJsonPath('blueprint', 'framework/bare')
+            ->assertJsonPath('package_sets', ['framework/tidyverse-analysis'])
+            ->assertJsonPath('settings.sensitive', true);
+
+        $envelope = $this->withToken($token)->postJson('/api/v2/resolve', ['name' => 'Survey'])->assertOk()->json();
+        $keys = array_column($envelope['layers'], 'key');
+        $this->assertSame('framework/bare', $keys[0]);
+        $this->assertContains('framework/tidyverse-analysis', $keys);
+        $this->assertContains('framework/targets', $keys);
+        $this->assertTrue($envelope['layers'][count($keys) - 2]['layer']['security']['sensitive']);
+
+        // A chosen blueprint replaces the preferred pieces, but default settings still apply
+        $keys = array_column($this->withToken($token)->postJson('/api/v2/resolve', ['blueprint' => 'framework/course'])->json('layers'), 'key');
+        $this->assertNotContains('framework/tidyverse-analysis', $keys);
+        $this->assertContains('framework/sensitive_data', $keys);
+
+        // Defaults equal to Framework's own leave a blueprint unchanged
+        $plain = User::factory()->create();
+        $this->app['auth']->forgetGuards();
+        $this->assertArrayHasKey('source', $this->withToken($this->token($plain))->postJson('/api/v2/resolve', ['name' => 'X'])->json());
     }
 
     public function test_a_project_token_cannot_list_or_resolve(): void

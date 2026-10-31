@@ -53,6 +53,7 @@ class User extends Authenticatable implements HasPasskeys, MustVerifyEmail
             'is_admin' => 'boolean',
             'profile_public' => 'boolean',
             'can_publish' => 'boolean',
+            'project_defaults' => 'array',
         ];
     }
 

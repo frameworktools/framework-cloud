@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Facet;
 use App\Models\Skill;
 use App\Models\User;
+use App\Support\ProjectDefaults;
 use App\Support\Resolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -30,6 +31,12 @@ class PiecesController extends Controller
             ->values();
 
         return response()->json([str($kind)->plural()->value() => $pieces]);
+    }
+
+    /** GET /api/v2/defaults: what the user's new projects start with. */
+    public function defaults(Request $request): JsonResponse
+    {
+        return response()->json(ProjectDefaults::for($this->user($request)));
     }
 
     /** GET /api/v2/skills: single skills, for --skill. */
