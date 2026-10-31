@@ -13,7 +13,15 @@ import { useServerArg, useServerFlag, useSetupCommand } from '@/cloud.js';
 import { languageNames } from '@/library.js';
 import { statusLabel, statusVariant, typeName } from '@/projects.js';
 
-const props = defineProps({ project: Object });
+const props = defineProps({ project: Object, section: String, setup: Object });
+
+const sectionTitles = { overview: 'Overview', setup: 'Project setup', github: 'GitHub & Pages', published: 'Published documents', computers: 'Computers & tokens' };
+const kindTitles = { structure: 'Project structure', tool: 'Tools', package_set: 'Package sets', skill_set: 'Skill sets', setting: 'Settings' };
+const piecePaths = { structure: 'structures', package_set: 'package-sets', skill_set: 'skill-sets' };
+const pieceGroups = computed(() => Object.keys(kindTitles)
+    .map((kind) => ({ kind, title: kindTitles[kind], pieces: (props.setup?.pieces ?? []).filter((p) => p.kind === kind) }))
+    .filter((g) => g.pieces.length));
+const hookNames = { data_security: 'Check for secrets', check_sensitive_dirs: 'Warn about private folders git would commit' };
 
 const page = usePage();
 const serverArg = useServerArg();
@@ -75,22 +83,22 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                 <nav class="flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400">
                     <Link href="/projects" class="hover:text-slate-900 hover:underline dark:hover:text-slate-100">Projects</Link>
                     <ChevronRightIcon class="size-3" />
-                    <span class="truncate">{{ project.name }}</span>
+                    <Link :href="`/projects/${project.slug}`" class="truncate hover:text-slate-900 hover:underline dark:hover:text-slate-100">{{ project.name }}</Link>
+                    <template v-if="section !== 'overview'">
+                        <ChevronRightIcon class="size-3" />
+                        <span class="truncate">{{ sectionTitles[section] }}</span>
+                    </template>
                 </nav>
                 <PageHeader :title="project.name">
                     <template #description>
                         <span class="font-mono text-xs">{{ project.slug }}</span><span v-if="project.description"> · {{ project.description }}</span>
                     </template>
-                    <template #actions>
-                        <UiButton variant="outline" @click="issueToken">Get token</UiButton>
-                        <UiButton variant="danger" @click="destroy">Delete</UiButton>
-                    </template>
                 </PageHeader>
             </div>
 
-            <UiCallout v-if="githubError" variant="danger" heading="GitHub">{{ githubError }}</UiCallout>
+            <UiCallout v-if="githubError && section === 'github'" variant="danger" heading="GitHub">{{ githubError }}</UiCallout>
 
-            <UiCallout v-if="pullToken" variant="success" heading="Project token. Copy it now; it won't be shown again.">
+            <UiCallout v-if="pullToken && section === 'computers'" variant="success" heading="Project token. Copy it now; it won't be shown again.">
                 <code class="break-all font-mono text-sm">{{ pullToken }}</code>
                 <code class="break-all font-mono text-xs">{{ setupCommand(page.props.flash.token_language, pullToken) }}</code>
                 <p v-if="page.props.flash.token_language === 'stata'" class="text-sm">
@@ -99,7 +107,7 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                 </p>
             </UiCallout>
 
-            <UiPanel title="Overview">
+            <UiPanel v-if="section === 'overview'" title="Overview">
                 <dl class="flex flex-col divide-y divide-slate-200 dark:divide-slate-700/70">
                     <div :class="rowClass">
                         <dt :class="termClass">Blueprint</dt>
@@ -140,7 +148,59 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                 </details>
             </UiPanel>
 
-            <UiPanel title="GitHub">
+            <UiPanel v-if="section === 'setup'" title="What the project is made of">
+                <template #header>
+                    <UiBadge v-if="setup.customized">Customized</UiBadge>
+                </template>
+                <p class="text-sm text-slate-600 dark:text-slate-400">
+                    <template v-if="project.blueprint">
+                        From the blueprint
+                        <Link :href="`/blueprints/${project.blueprint.id}?version=${project.blueprint.version}`" class="text-sky-600 hover:underline dark:text-sky-400">{{ project.blueprint.name }}</Link>
+                        v{{ project.blueprint.version }}<template v-if="setup.customized">, with pieces changed when the project was made</template>.
+                    </template>
+                    <template v-else>Made from pieces chosen one by one.</template>
+                    This is what computers receive when they set the project up.
+                </p>
+                <dl class="flex flex-col divide-y divide-slate-200 dark:divide-slate-700/70">
+                    <div v-for="group in pieceGroups" :key="group.kind" :class="rowClass">
+                        <dt :class="termClass">{{ group.title }}</dt>
+                        <dd class="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-700 dark:text-slate-300">
+                            <span v-for="piece in group.pieces" :key="piece.handle">
+                                <Link v-if="piecePaths[piece.kind]" :href="`/${piecePaths[piece.kind]}/${piece.id}/edit`" class="hover:text-sky-600 hover:underline dark:hover:text-sky-400">{{ piece.name }}</Link>
+                                <template v-else>{{ piece.name }}</template>
+                                <span v-if="piece.version" class="ml-1 font-mono text-xs text-slate-500">v{{ piece.version }}</span>
+                            </span>
+                        </dd>
+                    </div>
+                    <div :class="rowClass">
+                        <dt :class="termClass">Skills</dt>
+                        <dd class="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-700 dark:text-slate-300">
+                            <span v-for="skill in setup.skills" :key="skill.key">{{ skill.name }}</span>
+                            <span v-if="!setup.skills.length" class="text-slate-500">None</span>
+                        </dd>
+                    </div>
+                    <div :class="rowClass">
+                        <dt :class="termClass">Language</dt>
+                        <dd class="text-sm text-slate-700 dark:text-slate-300">{{ languageNames[project.language] }}</dd>
+                    </div>
+                    <div :class="rowClass">
+                        <dt :class="termClass">Sensitive data</dt>
+                        <dd class="text-sm text-slate-700 dark:text-slate-300">{{ setup.settings.sensitive ? 'Yes' : 'No' }}</dd>
+                    </div>
+                    <div :class="rowClass">
+                        <dt :class="termClass">Agents</dt>
+                        <dd class="text-sm text-slate-700 dark:text-slate-300">{{ setup.settings.agents ? 'Set up' : 'Off' }}</dd>
+                    </div>
+                    <div :class="rowClass">
+                        <dt :class="termClass">Git</dt>
+                        <dd class="text-sm text-slate-700 dark:text-slate-300">
+                            {{ setup.settings.git ? 'Yes' : 'No' }}<template v-if="setup.settings.git && setup.settings.hooks.length">, with hooks: {{ setup.settings.hooks.map((h) => hookNames[h] ?? h).join(', ') }}</template>
+                        </dd>
+                    </div>
+                </dl>
+            </UiPanel>
+
+            <UiPanel v-if="section === 'github'" title="GitHub & Pages">
                 <template v-if="github?.repo || github?.status">
                     <div class="flex flex-col gap-3 text-sm">
                         <div class="flex flex-wrap items-center gap-2">
@@ -174,7 +234,7 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                 <p v-else class="text-sm text-slate-600 dark:text-slate-400">This project was set up for a computer, so it has no repository here.</p>
             </UiPanel>
 
-            <UiPanel title="Published">
+            <UiPanel v-if="section === 'published'" title="Published documents">
                 <template #header>
                     <Link v-if="project.documents.length" href="/published" class="text-sm text-slate-600 hover:text-slate-900 hover:underline dark:text-slate-400 dark:hover:text-slate-100">Manage</Link>
                 </template>
@@ -188,7 +248,7 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                 <p v-else class="text-sm text-slate-600 dark:text-slate-400">Documents you publish from this project appear here.</p>
             </UiPanel>
 
-            <UiPanel title="Computers" description="A project token lets a computer set this project up and pull its settings.">
+            <UiPanel v-if="section === 'computers'" title="Computers & tokens" description="A project token lets a computer set this project up and pull its settings.">
                 <template #header>
                     <UiButton variant="outline" size="sm" @click="issueToken">Get token</UiButton>
                 </template>
@@ -208,6 +268,10 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                         <button type="button" class="text-red-600 hover:underline dark:text-red-400" @click="revokeToken(token.id)">Revoke</button>
                     </li>
                 </ul>
+            </UiPanel>
+
+            <UiPanel v-if="section === 'overview'" title="Delete this project" description="Copies on computers and on GitHub are not affected, but the project's tokens stop working.">
+                <div><UiButton variant="danger" @click="destroy">Delete project</UiButton></div>
             </UiPanel>
         </div>
     </ProjectsLayout>

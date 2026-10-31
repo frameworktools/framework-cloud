@@ -10,7 +10,9 @@ import AppLayout from '@/Layouts/AppLayout.vue';
  * Items either link to other pages ({ label, href, icon }) or to sections
  * of this page ({ label, anchor, icon }). Anchored sections are highlighted
  * as they scroll into view. A { heading } item starts a group, and a link
- * with preserveState keeps the page's unsaved form when it moves.
+ * with preserveState keeps the page's unsaved form when it moves. Items can
+ * be indented under a quiet item that heads them, and an exact link is
+ * current only on its own page.
  */
 const props = defineProps({
     heading: String,
@@ -51,9 +53,15 @@ onMounted(() => {
 });
 onBeforeUnmount(() => window.removeEventListener('scroll', spy));
 
-const itemClass = (item) => (isActive(item)
-    ? 'bg-sky-50 font-medium text-sky-700 dark:bg-sky-900/20 dark:text-sky-400'
-    : 'text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800/60');
+// A quiet item heads the items indented under it: bold while open, never highlighted itself
+const itemClass = (item) => [
+    item.indent ? 'pl-9!' : '',
+    item.quiet
+        ? 'font-medium text-slate-900 hover:bg-slate-50 dark:text-white dark:hover:bg-slate-800/60'
+        : isActive(item)
+            ? 'bg-sky-50 font-medium text-sky-700 dark:bg-sky-900/20 dark:text-sky-400'
+            : 'text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800/60',
+];
 </script>
 
 <template>

@@ -73,8 +73,8 @@ const mailReady = computed(() => !['log', 'array'].includes(props.status.mail));
 const testMail = () => router.post('/admin/setup/mail/test', {}, { preserveScroll: true });
 
 const items = [
-    { label: 'GitHub', anchor: 'github', icon: GitHubMark },
-    { label: 'Published documents', anchor: 'storage', icon: ArchiveBoxIcon },
+    { label: 'GitHub App', anchor: 'github', icon: GitHubMark },
+    { label: 'Storage', anchor: 'storage', icon: ArchiveBoxIcon },
     { label: 'Email', anchor: 'mail', icon: EnvelopeIcon },
 ];
 

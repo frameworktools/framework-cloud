@@ -1,14 +1,21 @@
 <script setup>
 import { ref, computed } from 'vue';
-import { router, usePage } from '@inertiajs/vue3';
+import { router, useForm, usePage } from '@inertiajs/vue3';
 import AccountLayout from '@/Layouts/AccountLayout.vue';
 import UiPanel from '@/Components/UiPanel.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiInput from '@/Components/UiInput.vue';
 
-defineProps({ passkeys: Array });
+defineProps({ passkeys: Array, hasPassword: Boolean });
 
 const page = usePage();
+const passwordStatus = computed(() => ({
+    'password-updated': 'Password saved.',
+    'password-removed': 'Password removed.',
+})[page.props.flash.status]);
+const passwordForm = useForm({ current_password: '', password: '', password_confirmation: '' });
+const savePassword = () => passwordForm.put('/account/password', { preserveScroll: true, onFinish: () => passwordForm.reset() });
+const removePassword = () => passwordForm.delete('/account/password', { preserveScroll: true, onFinish: () => passwordForm.reset() });
 const added = computed(() => page.props.flash.status === 'passkey-added');
 
 const supported = ref(window.passkeys?.supported() ?? false);
@@ -51,11 +58,11 @@ const remove = (id) => {
 </script>
 
 <template>
-    <Head title="Passkeys" />
+    <Head title="Sign-in & security" />
 
     <AccountLayout
-        heading="Passkeys"
-        subheading="One-touch sign-in with Touch ID, Face ID, or a security key. Add one for each device you use."
+        heading="Sign-in & security"
+        subheading="How you sign in: email links, passkeys, and an optional password."
     >
         <UiPanel title="Add a passkey" description="Give it a name so you can tell your devices apart.">
         <div v-if="supported" class="flex flex-col gap-3">
@@ -85,5 +92,29 @@ const remove = (id) => {
             <p v-if="!passkeys.length" class="py-3 text-sm text-slate-500">No passkeys yet.</p>
         </div>
         </UiPanel>
+        <UiPanel
+            v-if="page.props.passwords" title="Password"
+            :description="hasPassword
+                ? 'You can sign in with your email address and this password.'
+                : 'Add a password to sign in with your email address and a password, as well as passkeys and email links.'"
+        >
+            <form class="flex flex-col gap-4" @submit.prevent="savePassword">
+                <UiInput
+                    v-if="hasPassword" v-model="passwordForm.current_password" label="Current password" type="password"
+                    autocomplete="current-password" :error="passwordForm.errors.current_password"
+                />
+                <UiInput
+                    v-model="passwordForm.password" :label="hasPassword ? 'New password' : 'Password'" type="password"
+                    autocomplete="new-password" description="At least 10 characters." :error="passwordForm.errors.password"
+                />
+                <UiInput v-model="passwordForm.password_confirmation" label="Repeat the password" type="password" autocomplete="new-password" />
+                <div class="flex items-center justify-end gap-3 border-t border-slate-200 pt-4 dark:border-slate-700">
+                    <span v-if="passwordStatus" class="text-sm text-slate-500">{{ passwordStatus }}</span>
+                    <UiButton v-if="hasPassword" variant="ghost" :disabled="passwordForm.processing" @click="removePassword">Remove password</UiButton>
+                    <UiButton type="submit" :disabled="passwordForm.processing">{{ hasPassword ? 'Change password' : 'Add password' }}</UiButton>
+                </div>
+            </form>
+        </UiPanel>
+
     </AccountLayout>
 </template>

@@ -42,15 +42,17 @@ class HandleInertiaRequests extends Middleware
             // Sidebar groups: main (no section), Framework, and Settings at
             // the bottom. Packages may append their own items here.
             'nav' => array_values(array_filter([
-                ['label' => 'Published', 'href' => '/published'],
+                ['label' => 'Published documents', 'href' => '/published'],
                 ['label' => 'Blueprints', 'href' => '/blueprints', 'section' => 'Framework'],
                 ['label' => 'Project structures', 'href' => '/structures', 'section' => 'Framework'],
                 ['label' => 'Package sets', 'href' => '/package-sets', 'section' => 'Framework'],
-                ['label' => 'Skills', 'href' => '/skills', 'section' => 'AI'],
-                ['label' => 'Skill sets', 'href' => '/skill-sets', 'section' => 'AI'],
+                ['label' => 'Skills', 'href' => '/skills', 'section' => 'Agents'],
+                ['label' => 'Skill sets', 'href' => '/skill-sets', 'section' => 'Agents'],
                 ['label' => 'Settings', 'href' => '/settings/basics', 'section' => 'You', 'match' => '/settings'],
                 ['label' => 'Account', 'href' => '/account/profile', 'section' => 'You', 'match' => ['/account', '/tokens']],
                 $user?->is_admin ? ['label' => 'Server setup', 'href' => '/admin/setup', 'section' => 'You'] : null,
+                // The guide is a plain page outside the app, so it opens as a normal link
+                ['label' => 'Help & documentation', 'href' => '/docs', 'section' => 'You', 'external' => true],
             ])),
 
             // The newest projects, for switching between them from the sidebar

@@ -7,7 +7,7 @@ const nav = computed(() => page.props.nav ?? []);
 const section = (name) => nav.value.filter((i) => (i.section ?? null) === name);
 const mainNav = computed(() => section(null));
 // Headed groups in order; "You" (settings, account, server) sits last without a heading
-const groups = computed(() => [['Framework', 'Framework'], ['AI', 'AI'], ['You', null]]
+const groups = computed(() => [['Framework', 'Framework'], ['Agents', 'Agents'], ['You', null]]
     .map(([name, heading]) => ({ heading, items: section(name) }))
     .filter((g) => g.items.length));
 
@@ -37,10 +37,10 @@ const linkClass = (active) => active
             :class="{ 'border-t border-slate-200 pt-4 dark:border-slate-800': !group.heading }"
         >
             <div v-if="group.heading" class="mb-1 px-2 text-xs font-medium uppercase tracking-wide text-slate-500">{{ group.heading }}</div>
-            <Link
-                v-for="item in group.items" :key="item.href" :href="item.href"
-                class="rounded-md px-2 py-1.5 text-sm" :class="linkClass(current(item))"
-            >{{ item.label }}</Link>
+            <template v-for="item in group.items" :key="item.href">
+                <a v-if="item.external" :href="item.href" class="rounded-md px-2 py-1.5 text-sm" :class="linkClass(false)">{{ item.label }}</a>
+                <Link v-else :href="item.href" class="rounded-md px-2 py-1.5 text-sm" :class="linkClass(current(item))">{{ item.label }}</Link>
+            </template>
         </div>
     </nav>
 </template>

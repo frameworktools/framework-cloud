@@ -21,17 +21,17 @@ const page = usePage();
 const saved = computed(() => page.props.flash.status === 'defaults-updated');
 
 const sections = [
-    { heading: 'General' },
-    { key: 'basics', label: 'Basics', icon: AdjustmentsHorizontalIcon, description: "What a new project starts with when you don't choose a blueprint." },
+    { heading: 'New project defaults' },
+    { key: 'basics', label: 'Blueprint & editor', icon: AdjustmentsHorizontalIcon, description: "What a new project starts with when you don't choose a blueprint." },
     { key: 'packages', label: 'Packages', icon: CubeIcon, description: "Packages new projects install when you don't choose a blueprint. A blueprint brings its own." },
-    { key: 'scaffold', label: 'Scaffold', icon: CommandLineIcon, description: 'What scaffold() does when a project starts up.' },
+    { key: 'scaffold', label: 'Scaffold', icon: CommandLineIcon, description: 'What happens when you run scaffold().' },
     { key: 'git', label: 'Git', icon: CodeBracketIcon, description: 'Version control for new projects.' },
-    { heading: 'AI' },
     { key: 'agents', label: 'Agents', icon: SparklesIcon, description: 'What new projects give coding agents such as Claude Code and Codex.' },
-    { heading: 'Data safety' },
-    { key: 'data', label: 'Data', icon: ShieldCheckIcon, description: 'How new projects keep private data apart.' },
+    { heading: 'Data & connections' },
+    { key: 'data', label: 'Sensitive data', icon: ShieldCheckIcon, description: 'How new projects keep private data apart.' },
+    { heading: 'Checks' },
     { key: 'hooks', label: 'Git hooks', icon: LockClosedIcon, description: 'Checks that run before each commit.' },
-    { heading: 'Publishing' },
+    { heading: 'Documents' },
     { key: 'notebooks', label: 'Notebooks', icon: DocumentTextIcon, description: 'The notebooks new projects use.' },
     { key: 'quarto', label: 'Quarto', icon: PresentationChartBarIcon, description: 'Quarto documents, manuscripts, and slides.' },
 ];
@@ -122,8 +122,8 @@ const save = () => form.patch('/settings', { preserveScroll: true });
                         @update:model-value="(on) => toggle('skill_sets', set.key, on)"
                     />
                     <p class="text-sm text-slate-500">
-                        <Link href="/skill-sets" class="text-sky-600 hover:underline dark:text-sky-400">See all skill sets</Link> ·
-                        <Link href="/skills" class="text-sky-600 hover:underline dark:text-sky-400">See all skills</Link>
+                        <Link href="/skill-sets" class="text-sky-600 hover:underline dark:text-sky-400">Manage skill sets</Link> ·
+                        <Link href="/skills" class="text-sky-600 hover:underline dark:text-sky-400">Manage skills</Link>
                     </p>
                 </UiPanel>
             </template>
@@ -135,6 +135,7 @@ const save = () => form.patch('/settings', { preserveScroll: true });
                 />
                 <p class="text-sm text-slate-600 dark:text-slate-400">
                     Every project warns before it uploads or publishes a file whose path contains "private", whether or not it is sensitive.
+                    <Link href="/settings/hooks" preserve-state class="text-sky-600 hover:underline dark:text-sky-400">Git hooks</Link> can also check commits for secrets and for private folders git would commit.
                 </p>
             </UiPanel>
 
@@ -144,6 +145,9 @@ const save = () => form.patch('/settings', { preserveScroll: true });
                     :model-value="!!form.hooks[hook.key]" :label="hook.label" :description="hook.description"
                     @update:model-value="(on) => (form.hooks = { ...form.hooks, [hook.key]: on })"
                 />
+                <p class="text-sm text-slate-600 dark:text-slate-400">
+                    Which folders count as private comes from <Link href="/settings/data" preserve-state class="text-sky-600 hover:underline dark:text-sky-400">Sensitive data</Link>.
+                </p>
             </UiPanel>
 
             <UiPanel v-else-if="section === 'notebooks'" title="Notebooks">
@@ -162,7 +166,7 @@ const save = () => form.patch('/settings', { preserveScroll: true });
             <UiButton save-shortcut type="submit" form="settings-form" class="w-full" :disabled="form.processing">
                 {{ form.processing ? 'Saving…' : 'Save changes' }}
             </UiButton>
-            <p v-if="form.isDirty" class="text-center text-xs text-amber-600">Unsaved changes</p>
+            <p v-if="form.isDirty" class="text-center text-xs text-amber-600">Unsaved changes across Settings</p>
             <p v-else-if="saved" class="text-center text-xs text-slate-500">Saved.</p>
         </template>
     </SectionLayout>

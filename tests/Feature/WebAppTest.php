@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Blueprint;
 use App\Models\User;
 use App\Support\ProjectLayers;
+use App\Support\Resolver;
 use Database\Seeders\BlueprintSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -202,5 +203,26 @@ class WebAppTest extends TestCase
             ->assertSessionHas('token');
 
         $this->assertSame(1, $user->projects()->first()->tokens()->count());
+    }
+
+    public function test_a_project_has_a_page_for_each_section_and_shows_its_setup(): void
+    {
+        $user = $this->user();
+        $resolver = new Resolver($user);
+        $project = $resolver->createProject('Survey', $resolver->resolve(['name' => 'Survey', 'blueprint' => 'framework/project', 'settings' => ['sensitive' => true]]));
+
+        foreach (['github', 'published', 'computers'] as $section) {
+            $this->actingAs($user)->get("/projects/{$project->slug}/{$section}")
+                ->assertInertia(fn (Assert $page) => $page->component('Projects/Show')->where('section', $section)->where('setup', null));
+        }
+        $this->actingAs($user)->get("/projects/{$project->slug}/nonsense")->assertNotFound();
+
+        $this->actingAs($user)->get("/projects/{$project->slug}/setup")
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('section', 'setup')
+                ->where('setup.customized', true)
+                ->where('setup.pieces.0.kind', 'structure')
+                ->where('setup.settings.sensitive', true)
+                ->where('setup.skills', fn ($skills) => collect($skills)->contains('key', 'framework-sensitive-data')));
     }
 }

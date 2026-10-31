@@ -97,6 +97,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('projects/create', [ProjectsController::class, 'create'])->name('projects.create');
     Route::post('projects', [ProjectsController::class, 'store']);
     Route::get('projects/{slug}', [ProjectsController::class, 'show'])->where('slug', '[A-Za-z0-9_-]+')->name('projects.show');
+    Route::get('projects/{slug}/{section}', [ProjectsController::class, 'show'])->where('slug', '[A-Za-z0-9_-]+')
+        ->whereIn('section', array_slice(ProjectsController::SECTIONS, 1))->name('projects.section');
     Route::post('projects/{project}/token', [ProjectsController::class, 'issueToken']);
     Route::delete('projects/{project}/tokens/{token}', [ProjectsController::class, 'revokeToken']);
     Route::delete('projects/{project}', [ProjectsController::class, 'destroy']);
@@ -150,7 +152,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('account/github', [GitHubController::class, 'show'])->name('account.github');
     Route::delete('account/github', [App\Http\Controllers\Auth\GitHubController::class, 'destroy']);
 
-    Route::get('account/passkeys', [PasskeysController::class, 'index'])->name('account.passkeys');
+    Route::get('account/security', [PasskeysController::class, 'index'])->name('account.security');
+    Route::redirect('account/passkeys', '/account/security');
     Route::post('account/passkeys/options', [PasskeysController::class, 'options']);
     Route::post('account/passkeys', [PasskeysController::class, 'store']);
     Route::delete('account/passkeys/{passkeyId}', [PasskeysController::class, 'destroy']);
@@ -164,7 +167,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::redirect('settings', 'settings/basics');
     Route::redirect('settings/defaults', '/settings/basics');
     foreach (['profile', 'account', 'github', 'passkeys'] as $moved) {
-        Route::redirect("settings/{$moved}", "/account/{$moved}");
+        Route::redirect("settings/{$moved}", $moved === 'passkeys' ? '/account/security' : "/account/{$moved}");
     }
     Route::get('settings/{section}', [DefaultsController::class, 'edit'])
         ->whereIn('section', DefaultsController::SECTIONS)->name('settings');

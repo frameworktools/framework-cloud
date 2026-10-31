@@ -19,6 +19,7 @@ class PasskeysController extends Controller
     public function index(Request $request): Response
     {
         return Inertia::render('Account/Passkeys', [
+            'hasPassword' => filled($request->user()->password),
             'passkeys' => $request->user()->passkeys()->latest()->get()->map(fn ($passkey) => [
                 'id' => $passkey->id,
                 'name' => $passkey->name,

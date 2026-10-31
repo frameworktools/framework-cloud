@@ -9,11 +9,11 @@ defineProps({ heading: String, subheading: String });
 
 <script>
 export const accountItems = [
-    { label: 'Profile', href: '/account/profile', icon: UserCircleIcon },
+    { label: 'Author profile', href: '/account/profile', icon: UserCircleIcon },
     { label: 'Account details', href: '/account/account', icon: IdentificationIcon },
-    { label: 'Passkeys', href: '/account/passkeys', icon: FingerPrintIcon },
-    { label: 'API tokens', href: '/tokens', icon: KeyIcon },
-    { label: 'GitHub', href: '/account/github', icon: GitHubMark },
+    { label: 'Sign-in & security', href: '/account/security', icon: FingerPrintIcon },
+    { label: 'Computers & API tokens', href: '/tokens', icon: KeyIcon },
+    { label: 'GitHub connection', href: '/account/github', icon: GitHubMark },
 ];
 </script>
 

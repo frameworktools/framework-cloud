@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Jobs\ScaffoldOnGitHub;
 use App\Models\Blueprint;
 use App\Models\Document;
+use App\Models\Facet;
 use App\Models\Project;
+use App\Models\Skill;
 use App\Services\GitHub\GitHubNotConnected;
 use App\Services\GitHub\Installations;
 use App\Services\GitHub\Pages;
@@ -20,6 +22,7 @@ use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -52,12 +55,17 @@ class ProjectsController extends Controller
         ]);
     }
 
-    public function show(Request $request, string $slug): Response
+    /** A project's pages, in the order the sidebar lists them. */
+    public const SECTIONS = ['overview', 'setup', 'github', 'published', 'computers'];
+
+    public function show(Request $request, string $slug, string $section = 'overview'): Response
     {
         $project = $request->user()->projects()->where('slug', $slug)
             ->with('blueprintVersion.blueprint', 'tokens', 'documents.versions')->firstOrFail();
 
         return Inertia::render('Projects/Show', [
+            'section' => $section,
+            'setup' => fn () => $section === 'setup' ? self::setup($project) : null,
             'project' => self::summary($project) + [
                 'tokens' => $project->tokens->sortByDesc('id')->values()
                     ->map(fn ($t) => $t->only(['id', 'name', 'created_at', 'last_used_at'])),
@@ -76,6 +84,43 @@ class ProjectsController extends Controller
                     ]),
             ],
         ]);
+    }
+
+    /**
+     * What the project is made of, read from the layers its computers
+     * receive: the structure, tools, and sets with their versions, the
+     * skills, and the settings that result.
+     */
+    private static function setup(Project $project): array
+    {
+        $layers = collect(ProjectLayers::for($project)['layers']);
+        $handles = $layers->whereIn('kind', ['base', 'facet'])->pluck('key');
+        $facets = Facet::with('owner')->whereIn('key', $handles->map(fn ($h) => Str::afterLast($h, '/')))->get()
+            ->keyBy(fn (Facet $f) => $f->handle);
+
+        $skills = $layers->flatMap(fn (array $l) => array_keys(array_filter($l['layer']['skills'] ?? [], fn ($v) => $v !== null && $v !== false)))->unique()->values();
+        $titles = Skill::whereIn('key', $skills)->pluck('name', 'key');
+        $last = fn (string $path, mixed $default) => $layers->reverse()->map(fn (array $l) => Arr::get($l['layer'], $path))->first(fn ($v) => $v !== null) ?? $default;
+
+        return [
+            'customized' => (bool) $project->composition,
+            // Language layers such as framework/jupyter-r belong to their tool and aren't listed
+            'pieces' => $layers->whereIn('kind', ['base', 'facet'])->filter(fn (array $l) => $facets->has($l['key']))
+                ->map(fn (array $l) => [
+                    'kind' => $facets[$l['key']]->kind,
+                    'id' => $facets[$l['key']]->id,
+                    'name' => $facets[$l['key']]->name,
+                    'handle' => $l['key'],
+                    'version' => $l['version'] ?? null,
+                ])->values(),
+            'skills' => $skills->map(fn (string $key) => ['key' => $key, 'name' => $titles[$key] ?? $key]),
+            'settings' => [
+                'sensitive' => ProjectLayers::isSensitive($layers->all()),
+                'git' => (bool) $last('git.use_git', true),
+                'agents' => (bool) $last('ai.enabled', true),
+                'hooks' => array_keys(array_filter($layers->reduce(fn (array $carry, array $l) => array_merge($carry, $l['layer']['git']['hooks'] ?? []), []))),
+            ],
+        ];
     }
 
     /** What the project list and the sidebar show for one project. */

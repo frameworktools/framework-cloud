@@ -188,6 +188,6 @@ class MagicLinkAuthTest extends TestCase
     {
         $user = User::factory()->create(['email_verified_at' => now()]);
 
-        $this->actingAs($user)->get('/account/passkeys')->assertOk();
+        $this->actingAs($user)->get('/account/security')->assertOk();
     }
 }
