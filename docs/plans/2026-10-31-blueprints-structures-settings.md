@@ -1,6 +1,6 @@
 # Blueprints, project structures, features, package sets, skills, and settings
 
-Status: draft for review, 2026-10-31.
+Status: agreed in discussion, awaiting go-ahead, 2026-10-31.
 
 ## Problem
 
@@ -55,10 +55,12 @@ version it came from.
 | targets | `_targets.R`, the targets package | R | |
 | renv | renv setup and `renv.lock` | R | |
 | uv | `pyproject.toml` and a lock file | Python | |
-| Jupyter | Notebook folder and kernel setup | Python | |
+| Jupyter | Notebook folder and kernel setup (IRkernel for R) | R, Python | |
 
 Quarto stops being assumed. Framework's R blueprints include it by default, so
 R users see no change, and Python projects can choose Jupyter or neither.
+Stata projects have no features: fw scaffolds Stata with a project structure,
+package-free settings, and skills only.
 
 Rules that keep features from becoming facets again:
 
@@ -148,8 +150,10 @@ settings, features, and the project structure instead:
    `new()`. Python and fw follow the same change.
 4. Remove facets from the cloud once nothing reads them.
 
-## Open questions
+## Decisions
 
-1. Should Stata get features, such as a do-file runner, or only structures and
-   settings? fw scaffolds Stata, so it would be limited to files.
-2. Does Jupyter belong to R too, through IRkernel, or stay Python only at first?
+- Stata projects have no features.
+- Jupyter is offered for both R (through IRkernel) and Python.
+- Blueprints pin the versions of their pieces.
+- Each package set belongs to one language.
+- Features are written by Framework until the rules have held up.
