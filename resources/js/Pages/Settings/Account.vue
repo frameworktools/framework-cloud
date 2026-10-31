@@ -58,7 +58,7 @@ const destroy = () => deleteForm.delete('/settings/account');
         </form>
             <template #actions>
                 <span v-if="saved" class="self-center text-sm text-slate-500">Saved.</span>
-                <UiButton type="submit" form="account-form" :disabled="form.processing">Save changes</UiButton>
+                <UiButton save-shortcut type="submit" form="account-form" :disabled="form.processing">Save changes</UiButton>
             </template>
         </UiPanel>
 

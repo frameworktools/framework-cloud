@@ -183,7 +183,7 @@ const errorFor = (prefix) => Object.entries(form.errors).filter(([k]) => k.start
         </form>
 
         <template #actions>
-            <UiButton type="submit" form="facet-form" class="w-full" :disabled="form.processing">{{ facet ? 'Save new version' : `Create ${noun}` }}</UiButton>
+            <UiButton save-shortcut type="submit" form="facet-form" class="w-full" :disabled="form.processing">{{ facet ? 'Save new version' : `Create ${noun}` }}</UiButton>
             <UiButton v-if="facet && !facet.is_system" variant="ghost" class="w-full" @click="destroy">Delete</UiButton>
             <p v-if="page.props.errors.facet" class="text-xs text-red-600 dark:text-red-400">{{ page.props.errors.facet }}</p>
         </template>

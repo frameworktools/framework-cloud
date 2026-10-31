@@ -226,7 +226,7 @@ const items = [
         </form>
 
         <template #actions>
-            <UiButton type="submit" form="blueprint-form" class="w-full" :disabled="form.processing || !baseVersionId">
+            <UiButton save-shortcut type="submit" form="blueprint-form" class="w-full" :disabled="form.processing || !baseVersionId">
                 {{ editing ? 'Save new version' : 'Create blueprint' }}
             </UiButton>
             <Link :href="editing ? `/blueprints/${blueprint.id}` : '/blueprints'" class="block"><UiButton variant="ghost" class="w-full">Cancel</UiButton></Link>

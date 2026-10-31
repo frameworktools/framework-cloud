@@ -80,7 +80,7 @@ const destroy = () => {
 
         <template #actions>
             <template v-if="!readOnly">
-                <UiButton type="submit" form="skill-form" class="w-full" :disabled="form.processing">{{ skill ? 'Save new version' : 'Create skill' }}</UiButton>
+                <UiButton save-shortcut type="submit" form="skill-form" class="w-full" :disabled="form.processing">{{ skill ? 'Save new version' : 'Create skill' }}</UiButton>
                 <UiButton v-if="skill && !skill.is_system" variant="ghost" class="w-full" @click="destroy">Delete</UiButton>
             </template>
             <UiButton v-else class="w-full" @click="fork">Copy and edit</UiButton>

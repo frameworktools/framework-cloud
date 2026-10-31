@@ -94,7 +94,7 @@ const yaml = computed(() => {
         </form>
 
         <template #actions>
-            <UiButton type="submit" form="settings-form" class="w-full" :disabled="form.processing">
+            <UiButton save-shortcut type="submit" form="settings-form" class="w-full" :disabled="form.processing">
                 {{ form.processing ? 'Saving…' : 'Save changes' }}
             </UiButton>
             <p v-if="saved" class="text-center text-xs text-slate-500">Saved.</p>
