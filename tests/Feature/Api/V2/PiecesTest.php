@@ -33,7 +33,7 @@ class PiecesTest extends TestCase
             ->assertJsonPath('structures.0.type', 'bare');
 
         $tools = collect($this->withToken($token)->getJson('/api/v2/tools')->assertOk()->json('tools'));
-        $this->assertSame(['framework/quarto', 'framework/quarto_manuscript', 'framework/quarto_slides', 'framework/targets', 'framework/renv'], $tools->pluck('key')->all());
+        $this->assertSame(['framework/quarto', 'framework/quarto_manuscript', 'framework/quarto_slides', 'framework/jupyter', 'framework/targets', 'framework/renv', 'framework/uv'], $tools->pluck('key')->all());
         $this->assertSame(['quarto'], $tools->firstWhere('key', 'framework/quarto_slides')['requires']);
 
         // Python sees the Quarto tools, not targets or renv
@@ -194,7 +194,7 @@ class PiecesTest extends TestCase
 
         // The project layer names every R tool, on or off
         $this->assertSame(
-            ['quarto' => true, 'quarto_manuscript' => false, 'quarto_slides' => false, 'targets' => false, 'renv' => true],
+            ['quarto' => true, 'quarto_manuscript' => false, 'quarto_slides' => false, 'jupyter' => false, 'targets' => false, 'renv' => true],
             $layers['survey']['layer']['tools'],
         );
 
@@ -207,6 +207,18 @@ class PiecesTest extends TestCase
         config(['framework.spec_tools' => false]);
         $plain = $this->withToken($this->token())->postJson('/api/v2/resolve', ['name' => 'Survey', 'blueprint' => 'framework/project'])->json('layers');
         $this->assertArrayNotHasKey('settings_layout', $plain[0]['layer']);
+    }
+
+    public function test_jupyter_brings_the_kernel_for_the_projects_language(): void
+    {
+        $token = $this->token();
+
+        $r = collect($this->withToken($token)->postJson('/api/v2/resolve', ['structure' => 'framework/project', 'tools' => ['jupyter' => true]])->json('layers'))->keyBy('key');
+        $this->assertArrayHasKey('IRkernel', $r['framework/jupyter-r']['layer']['packages']['default_packages']);
+
+        $python = collect($this->withToken($token)->postJson('/api/v2/resolve', ['structure' => 'framework/project', 'language' => 'python', 'tools' => ['jupyter' => true, 'uv' => true]])->json('layers'))->keyBy('key');
+        $this->assertSame('pypi', $python['framework/jupyter-python']['layer']['packages']['default_packages']['ipykernel']['source']);
+        $this->assertArrayHasKey('framework/uv', $python);
     }
 
     public function test_a_project_token_cannot_list_or_resolve(): void

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Console\Commands\SyncPiecesCommand;
 use App\Models\Blueprint;
 use App\Models\Facet;
 use App\Models\Skill;
@@ -23,11 +24,39 @@ class BlueprintSeeder extends Seeder
         $mastersDir = database_path('seeders/masters');
 
         $this->seedSkills("$mastersDir/skills");
-        $this->seedPieces('tool', $this->json("$mastersDir/tools.json"));
+        $this->seedPieces('tool', $this->fromR('features', self::TOOL_ORDER));
         $this->seedPieces('setting', $this->json("$mastersDir/settings.json"));
-        $this->seedPieces('skill_set', array_map(fn (array $set) => $set + ['layer' => self::skillSetLayer($set)], $this->json("$mastersDir/skill_sets.json")));
-        $this->seedPieces('package_set', array_map(fn (array $set) => $set + ['layer' => ['packages' => ['default_packages' => $set['packages']]]], $this->json("$mastersDir/package_sets.json")));
+        $this->seedPieces('skill_set', $this->fromR('sets/skills'));
+        $this->seedPieces('package_set', $this->fromR('sets/packages'));
         $this->seedBlueprints($mastersDir);
+    }
+
+    /** How the builder lists Framework's tools; any others follow */
+    private const TOOL_ORDER = ['quarto', 'quarto_manuscript', 'quarto_slides', 'jupyter', 'targets', 'renv', 'uv'];
+
+    /**
+     * Definitions copied from the framework R package (fw:sync-pieces), keyed
+     * by id. A tool's own tools.<id> key is left out of the stored layer: the
+     * cloud adds it when the spec's tools key is on (FW_SPEC_TOOLS), since
+     * older clients reject it.
+     *
+     * @param  list<string>  $order
+     * @return array<string, array<string, mixed>>
+     */
+    private function fromR(string $folder, array $order = []): array
+    {
+        $definitions = collect(File::files(SyncPiecesCommand::dir()."/{$folder}"))
+            ->map(fn ($file) => $this->json($file->getPathname()))
+            ->map(function (array $d) {
+                if (isset($d['layer']['tools'])) {
+                    unset($d['layer']['tools']);
+                }
+
+                return $d;
+            })
+            ->keyBy('id');
+
+        return $definitions->sortBy(fn ($d, $id) => [array_search($id, $order, true) === false ? count($order) : array_search($id, $order, true), $id])->all();
     }
 
     private function json(string $path): array
@@ -55,15 +84,6 @@ class BlueprintSeeder extends Seeder
         }
     }
 
-    /** System skills travel by reference: R installs its own copy. */
-    private static function skillSetLayer(array $set): array
-    {
-        return array_filter([
-            'skills' => array_fill_keys($set['skills'], ['package' => true]),
-            'packages' => $set['packages'] ? ['default_packages' => $set['packages']] : null,
-        ]);
-    }
-
     private function seedPieces(string $kind, array $definitions): void
     {
         $position = 0;
@@ -76,11 +96,12 @@ class BlueprintSeeder extends Seeder
                 'category' => $definition['category'] ?? null,
                 'language' => $definition['language'] ?? null,
                 'requires' => $definition['requires'] ?? null,
+                'conflicts' => ($definition['conflicts'] ?? []) ?: null,
                 'visibility' => 'public',
                 'position' => $position++,
             ]);
 
-            $facet->publishVersion(['layer' => $definition['layer']]);
+            $facet->publishVersion(['layer' => $definition['layer'], 'language_layers' => ($definition['language_layers'] ?? []) ?: null]);
         }
     }
 
@@ -99,7 +120,7 @@ class BlueprintSeeder extends Seeder
         }
 
         $latest = fn (string $key) => Facet::whereNull('user_id')->where('key', $key)->firstOrFail()->latestVersion;
-        $setSkills = collect($this->json("$mastersDir/skill_sets.json"))->map(fn (array $set) => $set['skills']);
+        $setSkills = collect($this->fromR('sets/skills'))->map(fn (array $set) => array_keys($set['layer']['skills'] ?? []));
         $position = 0;
 
         foreach ($definitions as $key => $definition) {

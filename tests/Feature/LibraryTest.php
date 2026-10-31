@@ -69,7 +69,7 @@ class LibraryTest extends TestCase
     public function test_seeder_builds_the_system_library_and_is_idempotent(): void
     {
         $counts = Facet::whereNull('user_id')->get()->countBy('kind')->all();
-        $this->assertEquals(['structure' => 5, 'tool' => 5, 'setting' => 1, 'skill_set' => 2, 'package_set' => 1], $counts);
+        $this->assertEquals(['structure' => 5, 'tool' => 7, 'setting' => 1, 'skill_set' => 2, 'package_set' => 1], $counts);
         $this->assertSame(7, Skill::whereNull('user_id')->count());
         $this->assertSame(5, Blueprint::systemTypes()->count());
 
@@ -431,7 +431,7 @@ class LibraryTest extends TestCase
         $user = $this->user();
 
         $this->actingAs($user)->get('/blueprints/create')->assertInertia(fn (Assert $page) => $page
-            ->component('Blueprints/Builder')->has('catalog.structures', 5)->has('catalog.tools', 5)->has('catalog.skill_sets', 2));
+            ->component('Blueprints/Builder')->has('catalog.structures', 5)->has('catalog.tools', 7)->has('catalog.skill_sets', 2));
         $this->actingAs($user)->get('/structures')->assertInertia(fn (Assert $page) => $page->component('Pieces/Index')->has('pieces', 5));
         $this->actingAs($user)->get('/package-sets')->assertInertia(fn (Assert $page) => $page->component('Pieces/Index')->has('pieces', 1));
         $this->actingAs($user)->get('/skill-sets')->assertInertia(fn (Assert $page) => $page->component('Pieces/Index')->has('pieces', 2));

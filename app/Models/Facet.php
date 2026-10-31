@@ -52,12 +52,12 @@ class Facet extends Model
 
     protected function versionContent(): array
     {
-        return ['layer'];
+        return ['layer', 'language_layers'];
     }
 
     protected function casts(): array
     {
-        return ['language' => 'array', 'requires' => 'array'];
+        return ['language' => 'array', 'requires' => 'array', 'conflicts' => 'array'];
     }
 
     public function isStructure(): bool

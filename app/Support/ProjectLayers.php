@@ -33,12 +33,7 @@ class ProjectLayers
             default => collect(),
         };
 
-        $layers = $fragments->map(fn (FacetVersion $fragment) => [
-            'kind' => $fragment->facet->layerKind(),
-            'key' => $fragment->facet->handle,
-            'version' => $fragment->version,
-            'layer' => self::pieceLayer($fragment->facet, $fragment->layer),
-        ])->all();
+        $layers = $fragments->flatMap(fn (FacetVersion $fragment) => self::entries($fragment, $project->language ?? 'r'))->all();
 
         if ($composition) {
             $layers[] = ['kind' => 'blueprint', 'key' => $version?->blueprint->handle ?? 'choices', 'layer' => $composition['layer'] ?? []];
@@ -85,6 +80,29 @@ class ProjectLayers
         }
 
         return ['kind' => 'project', 'key' => $key, 'layer' => $layer];
+    }
+
+    /**
+     * A piece's layers in the envelope: its own, then the one it adds for the
+     * project's language, such as IRkernel for Jupyter in an R project.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function entries(FacetVersion $version, string $language): array
+    {
+        $facet = $version->facet;
+        $entries = [[
+            'kind' => $facet->layerKind(),
+            'key' => $facet->handle,
+            'version' => $version->version,
+            'layer' => self::pieceLayer($facet, $version->layer),
+        ]];
+
+        if ($extra = $version->language_layers[$language] ?? null) {
+            $entries[] = ['kind' => 'facet', 'key' => "{$facet->handle}-{$language}", 'version' => $version->version, 'layer' => $extra];
+        }
+
+        return $entries;
     }
 
     /**

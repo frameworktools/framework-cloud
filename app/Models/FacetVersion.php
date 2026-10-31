@@ -11,7 +11,7 @@ class FacetVersion extends Model
 
     protected function casts(): array
     {
-        return ['layer' => 'array'];
+        return ['layer' => 'array', 'language_layers' => 'array'];
     }
 
     public function facet(): BelongsTo

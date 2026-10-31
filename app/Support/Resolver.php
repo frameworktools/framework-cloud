@@ -122,7 +122,7 @@ class Resolver
         $pieces = $this->pieces->values()->all();
         $layers = [
             ['kind' => 'base', 'key' => $this->structure->facet->handle, 'version' => $this->structure->version, 'layer' => ProjectLayers::pieceLayer($this->structure->facet, $this->structure->layer)],
-            ...array_map(fn (FacetVersion $v) => ['kind' => $v->facet->layerKind(), 'key' => $v->facet->handle, 'version' => $v->version, 'layer' => ProjectLayers::pieceLayer($v->facet, $v->layer)], $pieces),
+            ...collect($pieces)->flatMap(fn (FacetVersion $v) => ProjectLayers::entries($v, $language))->all(),
             ['kind' => 'blueprint', 'key' => $this->blueprint?->blueprint->handle ?? 'choices', 'layer' => $this->settings],
         ];
         $layers[] = ProjectLayers::projectLayer(str((string) ($choices['name'] ?? 'project'))->slug()->value() ?: 'project', $language, $layers);
@@ -251,6 +251,9 @@ class Resolver
             }
             if ($facet->language && ! in_array($language, $facet->language, true)) {
                 throw ValidationException::withMessages(['tools' => "{$facet->name} is not available for ".Project::LANGUAGE_NAMES[$language].' projects.']);
+            }
+            if ($clash = array_values(array_intersect($facet->conflicts ?? [], $keys))) {
+                throw ValidationException::withMessages(['tools' => "{$facet->name} can't be combined with the {$clash[0]} tool."]);
             }
             foreach ($facet->requires ?? [] as $required) {
                 if (! in_array($required, $keys, true)) {

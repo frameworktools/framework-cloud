@@ -1,0 +1,45 @@
+{
+    "commit": "8bb43cd5e5c2dd04c21f4a7cd33686871386cb21",
+    "files": {
+        "features/jupyter.json": {
+            "source": "inst/features/jupyter.json",
+            "sha256": "0653e047d3887e694c553b2dc2959b62b000e0c371eb542f2bd9726eb36d1a00"
+        },
+        "features/quarto.json": {
+            "source": "inst/features/quarto.json",
+            "sha256": "01e9e3ca0cd079e2c10131d14539177b46f72d4b3e025c143e3dafa8e7123b6f"
+        },
+        "features/quarto_manuscript.json": {
+            "source": "inst/features/quarto_manuscript.json",
+            "sha256": "0acd44fc856931cc7230ac5d1b29c32a143f04ac9bb05a5ad73a7267a0821c6b"
+        },
+        "features/quarto_slides.json": {
+            "source": "inst/features/quarto_slides.json",
+            "sha256": "a9b2f92245a41ab0e073456c7f27201a5b0cf10c3f26229d2419fcd2f2f216f1"
+        },
+        "features/renv.json": {
+            "source": "inst/features/renv.json",
+            "sha256": "7f7ca54d3472dde665c4b7831ec3f31ddae0ccbef272a8f5d4108c27cd426015"
+        },
+        "features/targets.json": {
+            "source": "inst/features/targets.json",
+            "sha256": "cef009f74f591727572d42b9c58df4ca36e7fae2b107b359f4ba12209991ef2c"
+        },
+        "features/uv.json": {
+            "source": "inst/features/uv.json",
+            "sha256": "4db22e5a58c66d974f7ab994e82dce19b4735cbe7588da2896a436ec580ca51b"
+        },
+        "sets/packages/tidyverse-analysis.json": {
+            "source": "inst/sets/packages/tidyverse-analysis.json",
+            "sha256": "a20224197cc9c5af559cf7a2bbe8b79023e57a72fb1686f7c885a4bd5d49d0bb"
+        },
+        "sets/skills/framework.json": {
+            "source": "inst/sets/skills/framework.json",
+            "sha256": "8b74ed492f27bd1e3294d2ae95ae1666d9eb1b43e3e2872ee80dd2cfc1d82aca"
+        },
+        "sets/skills/ggplot2.json": {
+            "source": "inst/sets/skills/ggplot2.json",
+            "sha256": "498c49a8af991c8a4588014a302895456466feab2a44605173e5cd91108f57ee"
+        }
+    }
+}
