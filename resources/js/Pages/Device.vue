@@ -3,7 +3,8 @@ import { computed, ref } from 'vue';
 import { useForm, usePage, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import UiButton from '@/Components/UiButton.vue';
-import UiInput from '@/Components/UiInput.vue';
+import UiPanel from '@/Components/UiPanel.vue';
+import PageHeader from '@/Components/PageHeader.vue';
 import UiCallout from '@/Components/UiCallout.vue';
 
 const props = defineProps({ code: String, request: Object, error: String });
@@ -25,56 +26,56 @@ const error = computed(() => form.errors.code ?? props.error);
     <Head title="Sign in fw" />
 
     <AppLayout>
-        <div class="flex max-w-xl flex-col gap-6">
-            <div>
-                <h1 class="text-2xl font-semibold tracking-tight">Sign in fw</h1>
-                <p class="mt-1 text-slate-600 dark:text-slate-400">
-                    fw login shows a code in your terminal. Enter it here to sign
-                    fw in to your account.
-                </p>
-            </div>
+        <div class="flex max-w-2xl flex-col gap-8">
+            <PageHeader
+                title="Sign in fw"
+                description="fw login shows a code in your terminal. Check that it matches the code here, then approve it to sign fw in to your account."
+            />
 
             <UiCallout v-if="result === 'device-approved'" variant="success" heading="fw is signed in">
-                <p>fw is signed in. You can close this tab and return to the terminal.</p>
+                <p>You can close this tab and return to the terminal.</p>
             </UiCallout>
 
             <UiCallout v-else-if="result === 'device-denied'" heading="Request denied">
                 <p>fw was not signed in. You can close this tab.</p>
             </UiCallout>
 
-            <template v-else-if="request">
-                <UiCallout heading="Approve this sign-in?">
-                    <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
-                        <dt class="text-slate-500">Code</dt>
-                        <dd class="font-mono">{{ code }}</dd>
-                        <dt class="text-slate-500">Device</dt>
-                        <dd>{{ request.client_name ?? 'fw (no name given)' }}</dd>
-                        <dt class="text-slate-500">Requested</dt>
-                        <dd><time :datetime="request.created_at_iso">{{ request.created_at }}</time></dd>
-                    </dl>
-                    <p>
-                        Approving creates an API token for this device. You can revoke
-                        it on the API tokens page.
-                    </p>
-                </UiCallout>
+            <UiPanel
+                v-else-if="request"
+                title="Approve this sign-in?"
+                description="Approving creates an API token for this device. You can revoke it on the API tokens page."
+            >
+                <dl class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
+                    <dt class="text-slate-500 dark:text-slate-400">Code</dt>
+                    <dd class="font-mono font-medium">{{ code }}</dd>
+                    <dt class="text-slate-500 dark:text-slate-400">Device</dt>
+                    <dd>{{ request.client_name ?? 'fw (no name given)' }}</dd>
+                    <dt class="text-slate-500 dark:text-slate-400">Requested</dt>
+                    <dd><time :datetime="request.created_at_iso">{{ request.created_at }}</time></dd>
+                </dl>
 
                 <p v-if="error" class="text-sm text-red-600 dark:text-red-400">{{ error }}</p>
 
-                <div class="flex gap-3">
-                    <UiButton :disabled="form.processing" @click="approve">Approve</UiButton>
+                <template #actions>
                     <UiButton variant="outline" :disabled="form.processing" @click="deny">Deny</UiButton>
-                </div>
-            </template>
+                    <UiButton :disabled="form.processing" @click="approve">Approve</UiButton>
+                </template>
+            </UiPanel>
 
-            <form v-else class="flex items-end gap-3" @submit.prevent="lookup">
-                <div class="w-64">
-                    <UiInput
-                        v-model="typed" label="Code" placeholder="ABCD-EFGH"
-                        autocomplete="off" autofocus :error="error"
-                    />
-                </div>
-                <UiButton type="submit" :disabled="!typed">Continue</UiButton>
-            </form>
+            <UiPanel v-else title="Enter the code from your terminal">
+                <form class="flex flex-col gap-2" @submit.prevent="lookup">
+                    <label for="device-code" class="text-sm font-medium text-slate-800 dark:text-slate-200">Code</label>
+                    <div class="flex gap-3">
+                        <input
+                            id="device-code" v-model="typed" placeholder="ABCD-EFGH" autocomplete="off" autofocus
+                            class="w-56 rounded-md border bg-white px-3 py-2 font-mono text-sm uppercase tracking-wider text-slate-900 placeholder-slate-400 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 dark:bg-slate-900 dark:text-slate-100"
+                            :class="error ? 'border-red-500' : 'border-slate-300 dark:border-slate-600'"
+                        >
+                        <UiButton type="submit" :disabled="!typed">Continue</UiButton>
+                    </div>
+                    <p v-if="error" class="text-sm text-red-600 dark:text-red-400">{{ error }}</p>
+                </form>
+            </UiPanel>
         </div>
     </AppLayout>
 </template>
