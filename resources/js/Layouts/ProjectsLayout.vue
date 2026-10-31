@@ -19,7 +19,7 @@ const items = computed(() => list.value.items.map((p) => ({ label: p.name, href:
         </template>
         <slot />
         <template v-if="list.total > list.items.length" #aside>
-            <span class="px-3 text-xs text-slate-500">Showing the newest {{ list.items.length }} of {{ list.total }}</span>
+            <span class="text-xs text-slate-500">Showing the newest {{ list.items.length }} of {{ list.total }}</span>
         </template>
     </SectionLayout>
 </template>

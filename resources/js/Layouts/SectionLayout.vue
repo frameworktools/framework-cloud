@@ -56,6 +56,8 @@ onMounted(() => {
 });
 onBeforeUnmount(() => window.removeEventListener('scroll', spy));
 
+// Links reach 12px into the column's padding (lg:-mx-3), so their text lines
+// up with the headings and their backgrounds sit around it.
 // A quiet item heads the items indented under it: bold while open, never highlighted itself
 const itemClass = (item) => [
     item.indent ? 'pl-6!' : '',
@@ -79,19 +81,19 @@ const itemClass = (item) => [
                     <slot name="lead" />
 
                     <nav class="flex gap-1 max-lg:-mx-1 max-lg:overflow-x-auto lg:flex-col lg:gap-0.5">
-                        <div v-if="group" class="mb-1 mt-2 px-3 text-xs font-medium uppercase tracking-wider text-slate-500 max-lg:hidden">{{ group }}</div>
+                        <div v-if="group" class="mb-1 mt-2 text-xs font-medium uppercase tracking-wider text-slate-500 max-lg:hidden">{{ group }}</div>
                         <template v-for="item in items" :key="item.href ?? item.anchor ?? item.heading">
-                            <div v-if="item.heading" class="mb-1 mt-5 px-3 text-xs font-semibold uppercase tracking-wider text-slate-500 first:mt-0 max-lg:hidden dark:text-slate-400">{{ item.heading }}</div>
+                            <div v-if="item.heading" class="mb-1 mt-5 text-xs font-semibold uppercase tracking-wider text-slate-500 first:mt-0 max-lg:hidden dark:text-slate-400">{{ item.heading }}</div>
                             <Link
                                 v-else-if="item.href" :href="item.href" :preserve-state="!!item.preserveState" :preserve-scroll="!!item.preserveState"
-                                class="flex shrink-0 items-center justify-between gap-2 rounded-md px-3 py-1.5 text-sm transition" :class="itemClass(item)"
+                                class="flex shrink-0 items-center justify-between gap-2 rounded-md px-3 py-1.5 text-sm transition lg:-mx-3" :class="itemClass(item)"
                             >
                                 <span class="truncate">{{ item.label }}</span>
                                 <component :is="item.expanded ? ChevronDownIcon : ChevronRightIcon" v-if="item.expanded !== undefined" class="size-4 shrink-0 text-slate-400" />
                             </Link>
                             <a
                                 v-else :href="`#${item.anchor}`"
-                                class="flex shrink-0 items-center rounded-md px-3 py-1.5 text-sm transition" :class="itemClass(item)"
+                                class="flex shrink-0 items-center rounded-md px-3 py-1.5 text-sm transition lg:-mx-3" :class="itemClass(item)"
                                 @click.prevent="go(item)"
                             >{{ item.label }}</a>
                         </template>
