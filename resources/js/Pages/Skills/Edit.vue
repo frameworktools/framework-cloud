@@ -55,7 +55,7 @@ const destroy = () => {
         </PageHeader>
         <div v-if="skill" class="mt-2 font-mono text-xs text-slate-500">{{ skill.handle }} · v{{ skill.version }}</div>
 
-        <UiCallout v-if="saved" variant="success" heading="Saved" class="mt-8">Version {{ skill?.version }} is in the library.</UiCallout>
+        <UiCallout v-if="saved" variant="success" heading="Saved" class="mt-8">Version {{ skill?.version }} is saved.</UiCallout>
 
         <form id="skill-form" class="mt-8 flex flex-col gap-8" @submit.prevent="save">
             <UiPanel id="content" class="scroll-mt-6">

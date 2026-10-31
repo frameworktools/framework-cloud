@@ -48,7 +48,7 @@ const removeFile = (index) => form.files.splice(index, 1);
 
 const pick = ref('');
 const libraryOptions = computed(() => [
-    { value: '', label: 'Add a skill from the library…' },
+    { value: '', label: 'Add a skill…' },
     ...props.library
         .filter((s) => !form.skills.some((chosen) => chosen.name === s.key))
         .map((s) => ({ value: s.id, label: `${s.key}${s.is_system ? '' : ` (${s.handle})`}` })),
@@ -60,7 +60,7 @@ const addSkill = () => {
 };
 const removeSkill = (index) => form.skills.splice(index, 1);
 const skillSource = (skill) => {
-    if (skill.skill_id) return 'from the library';
+    if (skill.skill_id) return 'from Skills';
     if (skill.entry?.package) return 'the copy installed with Framework';
     if (skill.entry === null) return 'removes this skill';
     return 'custom copy';

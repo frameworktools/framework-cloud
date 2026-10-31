@@ -45,8 +45,8 @@ starts from the defaults unless a blueprint replaces them.
 sets, and blueprints) and keep it private or share it.
 
 Tools are settings in the interface and features underneath. People do not
-write features: Framework does, so features are not library items. If users
-can write their own tools later, they return to the library then.
+write features: Framework does, so features do not get their own page in the
+Framework section. If users can write their own tools later, they get one then.
 
 A **blueprint** is a saved, shareable set of choices: one project structure, any
 number of package sets, skills and skill sets, and settings. Settings
@@ -152,7 +152,7 @@ settings, features, and the project structure instead:
 1. Cloud data model: project structures, tools, package sets, skill sets,
    defaults that reference them, and blueprint versions that reference them. Migrate facets and types. The
    spec output is unchanged.
-2. Cloud pages: the library pages and the new launch flow.
+2. Cloud pages: the Framework section's pages and the new launch flow.
 3. R package: key behavior on settings and features rather than type names,
    make Quarto a tool, and add tools, skill sets, and package sets to
    `new()`. Python and fw follow the same change.
@@ -162,7 +162,7 @@ settings, features, and the project structure instead:
 
 - Stata projects have no tools.
 - Jupyter is offered for both R (through IRkernel) and Python.
-- Tools are settings in the interface and features underneath. Features are not library items.
+- Tools are settings in the interface and features underneath. Features do not get their own page.
 - Defaults include a preferred project structure, package sets, and skills.
 - Blueprints pin the versions of their pieces.
 - Each package set belongs to one language.
