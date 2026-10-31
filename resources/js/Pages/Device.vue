@@ -27,17 +27,20 @@ const error = computed(() => form.errors.code ?? props.error);
 
     <AppLayout>
         <div class="flex max-w-2xl flex-col gap-8">
-            <PageHeader
-                title="Sign in fw"
-                description="fw login shows a code in your terminal. Check that it matches the code here, then approve it to sign fw in to your account."
-            />
+            <PageHeader>
+                <template #title>Sign in <code class="font-mono">fw</code></template>
+                <template #description>
+                    <code class="font-mono">fw login</code> shows a code in your terminal. Check that it matches the
+                    code here, then approve it to sign <code class="font-mono">fw</code> in to your account.
+                </template>
+            </PageHeader>
 
             <UiCallout v-if="result === 'device-approved'" variant="success" heading="fw is signed in">
                 <p>You can close this tab and return to the terminal.</p>
             </UiCallout>
 
             <UiCallout v-else-if="result === 'device-denied'" heading="Request denied">
-                <p>fw was not signed in. You can close this tab.</p>
+                <p><code class="font-mono">fw</code> was not signed in. You can close this tab.</p>
             </UiCallout>
 
             <UiPanel

@@ -18,7 +18,7 @@
             ['anchor' => 'data', 'icon' => 'heroicon-o-shield-check', 'heading' => 'Help protect sensitive data', 'body' => 'Set up private folders, assistant restrictions, and Git checks that help reduce accidental data exposure.'],
             ['anchor' => 'integrity', 'icon' => 'heroicon-o-finger-print', 'heading' => 'Check data integrity', 'body' => 'Record file fingerprints and check whether a cataloged dataset has changed since it was recorded.'],
             ['anchor' => 'environments', 'icon' => 'heroicon-o-cube', 'heading' => 'Manage reproducible environments', 'body' => 'List project packages, install them automatically, and use optional version snapshots to restore them.'],
-            ['anchor' => 'cli', 'icon' => 'heroicon-o-command-line', 'heading' => 'Work from the command line', 'body' => 'The fw command-line tool gives you and your AI agents the platform from a terminal, with JSON output for scripts.'],
+            ['anchor' => 'cli', 'icon' => 'heroicon-o-command-line', 'heading' => 'Work from the command line', 'body' => 'The `fw` command-line tool gives you and your AI agents the platform from a terminal, with JSON output for scripts.'],
             ['anchor' => 'copy', 'icon' => 'heroicon-o-document-duplicate', 'heading' => 'Copy and share project setups', 'body' => 'Adapt a colleague\'s blueprint, or share a reusable setup with your lab or team.'],
             ['anchor' => 'github', 'icon' => 'icon-github', 'heading' => 'Create projects on GitHub', 'body' => 'Create a GitHub repository with your project files committed and ready to clone.'],
             ['anchor' => 'publishing', 'icon' => 'heroicon-o-paper-airplane', 'heading' => 'Publish and share notebooks', 'body' => 'Publish Quarto notebooks as web pages that collaborators can open from a link.'],
@@ -85,7 +85,8 @@
                         <h3 class="mt-4 leading-snug font-semibold">
                             <a href="#{{ $feature['anchor'] }}" class="after:absolute after:inset-0 after:rounded-xl focus:outline-none">{{ $feature['heading'] }}</a>
                         </h3>
-                        <p class="mt-2 flex-1 text-sm leading-normal text-slate-600 dark:text-slate-400">{{ $feature['body'] }}</p>
+                        {{-- Bodies are fixed strings here; backticks mark code such as `fw` --}}
+                        <p class="mt-2 flex-1 text-sm leading-normal text-slate-600 dark:text-slate-400 [&_code]:font-mono [&_code]:text-[0.9em] [&_code]:text-slate-800 dark:[&_code]:text-slate-200">{!! Str::inlineMarkdown($feature['body']) !!}</p>
                         <span aria-hidden="true" class="mt-4 text-sm font-medium text-sky-600 dark:text-sky-400">
                             How it works <span class="inline-block transition-transform group-hover:translate-x-0.5">&rarr;</span>
                         </span>
@@ -393,7 +394,7 @@ framework::packages_restore()   <span class="{{ $c }}"># reinstall them</span></
                         <p>
                             <code class="{{ $code }}">fw</code> can also publish a rendered notebook and
                             send the project's settings to Framework Cloud. It sends only the files you
-                            name and refuses files in a project's private folders.
+                            name, and asks before it sends anything from a folder named private.
                         </p>
                     </div>
                 </div>

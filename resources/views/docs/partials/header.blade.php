@@ -3,12 +3,18 @@
 
     $chevron = '<svg class="size-4 text-slate-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd"/></svg>';
 @endphp
-<header class="sticky top-0 z-40 flex-none bg-white py-4 shadow-md shadow-slate-900/5 transition duration-500 dark:bg-slate-900/95 dark:shadow-none dark:backdrop-blur dark:[@supports(backdrop-filter:blur(0))]:bg-slate-900/80">
+{{-- On a home page the bar joins the hero: one dark blue band in either theme --}}
+<header @class([
+    'sticky top-0 z-40 flex-none py-4 transition duration-500',
+    'dark bg-blue-950' => View::hasSection('hero'),
+    'bg-white shadow-md shadow-slate-900/5 dark:bg-slate-900/95 dark:shadow-none dark:backdrop-blur dark:[@supports(backdrop-filter:blur(0))]:bg-slate-900/80' => ! View::hasSection('hero'),
+])>
     <div class="mx-auto flex max-w-8xl items-center justify-between gap-6 px-6 sm:px-8 lg:px-12">
         <div class="flex min-w-0 items-center gap-8">
             <a href="/" aria-label="{{ $siteTitle }} home" class="flex shrink-0 items-center gap-3">
                 <img src="/images/logo.png" alt="" class="h-8 w-auto">
-                <span class="text-lg font-bold whitespace-nowrap text-slate-900 dark:text-white">{{ $siteTitle }}</span>
+                {{-- The command-line tool's name is set in monospace, as in running text --}}
+                <span @class(["text-lg font-bold whitespace-nowrap text-slate-900 dark:text-white", "font-mono" => $siteTitle === 'fw'])>{{ $siteTitle }}</span>
             </a>
 
             @if ($site)
