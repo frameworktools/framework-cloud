@@ -157,3 +157,7 @@ settings, features, and the project structure instead:
 - Blueprints pin the versions of their pieces.
 - Each package set belongs to one language.
 - Features are written by Framework until the rules have held up.
+- Skills come singly or in skill sets. A skill set may list the packages its skills need.
+- There are no settings bundles. Personal defaults and blueprints cover them.
+  Later, Server setup gets server-wide defaults that an admin can lock, for
+  institutions that require settings such as sensitive data on.
