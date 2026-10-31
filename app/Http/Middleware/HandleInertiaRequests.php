@@ -39,18 +39,18 @@ class HandleInertiaRequests extends Middleware
                 'url' => $request->session()->get('url'),
             ],
 
-            // Sidebar groups: main (no section), Framework, and Settings at
-            // the bottom. Packages may append their own items here.
+            // Sidebar groups: main (no section), Framework, Agents, and the
+            // utility items (You) at the bottom. Packages may append items here.
             'nav' => array_values(array_filter([
+                ['label' => 'Project defaults', 'href' => '/settings/basics', 'match' => '/settings'],
                 ['label' => 'Published documents', 'href' => '/published'],
                 ['label' => 'Blueprints', 'href' => '/blueprints', 'section' => 'Framework'],
                 ['label' => 'Project structures', 'href' => '/structures', 'section' => 'Framework'],
                 ['label' => 'Package sets', 'href' => '/package-sets', 'section' => 'Framework'],
                 ['label' => 'Skills', 'href' => '/skills', 'section' => 'Agents'],
                 ['label' => 'Skill sets', 'href' => '/skill-sets', 'section' => 'Agents'],
-                ['label' => 'Settings', 'href' => '/settings/basics', 'section' => 'You', 'match' => '/settings'],
                 ['label' => 'Account', 'href' => '/account/profile', 'section' => 'You', 'match' => ['/account', '/tokens']],
-                $user?->is_admin ? ['label' => 'Server setup', 'href' => '/admin/setup', 'section' => 'You'] : null,
+                $user?->is_admin ? ['label' => 'Server administration', 'href' => '/admin/setup', 'section' => 'You'] : null,
                 // The guide is a plain page outside the app, so it opens as a normal link
                 ['label' => 'Help & documentation', 'href' => '/docs', 'section' => 'You', 'external' => true],
             ])),

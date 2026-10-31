@@ -1,7 +1,6 @@
 <script setup>
 import { computed, watch } from 'vue';
 import { useForm, usePage } from '@inertiajs/vue3';
-import { AdjustmentsHorizontalIcon, ComputerDesktopIcon, PencilSquareIcon, Squares2X2Icon } from '@heroicons/vue/24/outline';
 import SectionLayout from '@/Layouts/SectionLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import UiPanel from '@/Components/UiPanel.vue';
@@ -103,10 +102,10 @@ const serverArg = useServerArg();
 const serverFlag = useServerFlag();
 
 const items = computed(() => [
-    { label: 'Blueprint', anchor: 'blueprint', icon: Squares2X2Icon },
-    ...(form.customized ? [{ label: 'Pieces', anchor: 'structure', icon: AdjustmentsHorizontalIcon }] : []),
-    { label: 'Name', anchor: 'name', icon: PencilSquareIcon },
-    { label: 'Where to set it up', anchor: 'where', icon: ComputerDesktopIcon },
+    { label: 'Blueprint', anchor: 'blueprint' },
+    ...(form.customized ? [{ label: 'Pieces', anchor: 'structure' }] : []),
+    { label: 'Name', anchor: 'name' },
+    { label: 'Where to set it up', anchor: 'where' },
 ]);
 </script>
 

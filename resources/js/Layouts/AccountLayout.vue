@@ -1,19 +1,17 @@
 <script setup>
-import { FingerPrintIcon, KeyIcon, UserCircleIcon, IdentificationIcon } from '@heroicons/vue/24/outline';
 import SectionLayout from '@/Layouts/SectionLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
-import GitHubMark from '@/Components/GitHubMark.vue';
 
 defineProps({ heading: String, subheading: String });
 </script>
 
 <script>
 export const accountItems = [
-    { label: 'Author profile', href: '/account/profile', icon: UserCircleIcon },
-    { label: 'Account details', href: '/account/account', icon: IdentificationIcon },
-    { label: 'Sign-in & security', href: '/account/security', icon: FingerPrintIcon },
-    { label: 'Computers & API tokens', href: '/tokens', icon: KeyIcon },
-    { label: 'GitHub connection', href: '/account/github', icon: GitHubMark },
+    { label: 'Author profile', href: '/account/profile' },
+    { label: 'Account details', href: '/account/account' },
+    { label: 'Sign-in & security', href: '/account/security' },
+    { label: 'Computers & API tokens', href: '/tokens' },
+    { label: 'GitHub connection', href: '/account/github' },
 ];
 </script>
 

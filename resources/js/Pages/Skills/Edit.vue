@@ -1,7 +1,6 @@
 <script setup>
 import { computed } from 'vue';
 import { router, useForm, usePage } from '@inertiajs/vue3';
-import { DocumentTextIcon, InformationCircleIcon } from '@heroicons/vue/24/outline';
 import SectionLayout from '@/Layouts/SectionLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import UiPanel from '@/Components/UiPanel.vue';
@@ -28,9 +27,9 @@ const form = useForm({
 
 const canPublish = computed(() => !!props.skill && !!page.props.githubSignIn);
 const items = computed(() => [
-    { label: 'SKILL.md', anchor: 'content', icon: DocumentTextIcon },
-    ...(!readOnly.value ? [{ label: 'Details', anchor: 'details', icon: InformationCircleIcon }] : []),
-    ...(canPublish.value ? [{ label: 'Publish to GitHub', anchor: 'publish', icon: GitHubMark }] : []),
+    { label: 'SKILL.md', anchor: 'content' },
+    ...(!readOnly.value ? [{ label: 'Details', anchor: 'details' }] : []),
+    ...(canPublish.value ? [{ label: 'Publish to GitHub', anchor: 'publish' }] : []),
 ]);
 
 const save = () => (props.skill ? form.put(`/skills/${props.skill.id}`, { preserveScroll: true }) : form.post('/skills'));

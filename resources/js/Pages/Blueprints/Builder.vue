@@ -1,7 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
-import { AdjustmentsHorizontalIcon, CubeIcon, FolderIcon, PencilSquareIcon, SparklesIcon, WrenchScrewdriverIcon } from '@heroicons/vue/24/outline';
 import SectionLayout from '@/Layouts/SectionLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import UiPanel from '@/Components/UiPanel.vue';
@@ -40,12 +39,12 @@ const showAdvanced = ref(!!props.start?.extra_yaml);
 const save = () => (editing.value ? form.put(`/blueprints/${props.blueprint.id}`) : form.post('/blueprints'));
 
 const items = [
-    { label: 'Project structure', anchor: 'structure', icon: FolderIcon },
-    { label: 'Tools', anchor: 'tools', icon: WrenchScrewdriverIcon },
-    { label: 'Packages', anchor: 'packages', icon: CubeIcon },
-    { label: 'AI assistants', anchor: 'ai', icon: SparklesIcon },
-    { label: 'Settings', anchor: 'settings', icon: AdjustmentsHorizontalIcon },
-    { label: 'Name and share', anchor: 'name', icon: PencilSquareIcon },
+    { label: 'Project structure', anchor: 'structure' },
+    { label: 'Tools', anchor: 'tools' },
+    { label: 'Packages', anchor: 'packages' },
+    { label: 'AI assistants', anchor: 'ai' },
+    { label: 'Settings', anchor: 'settings' },
+    { label: 'Name and share', anchor: 'name' },
 ];
 </script>
 

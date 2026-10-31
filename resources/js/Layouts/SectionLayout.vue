@@ -1,14 +1,16 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { usePage } from '@inertiajs/vue3';
+import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/vue/20/solid';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
 /**
  * The Framework GUI's three-column page: the app sidebar, a section sidebar
  * with the page's main button at its foot, and the main panel.
  *
- * Items either link to other pages ({ label, href, icon }) or to sections
- * of this page ({ label, anchor, icon }). Anchored sections are highlighted
+ * Items either link to other pages ({ label, href }) or to sections of this
+ * page ({ label, anchor }). Items have no icons; an item that opens and
+ * closes others says so with expanded: true or false, shown as an arrow. Anchored sections are highlighted
  * as they scroll into view. A { heading } item starts a group, and a link
  * with preserveState keeps the page's unsaved form when it moves. Items can
  * be indented under a quiet item that heads them, and an exact link is
@@ -55,12 +57,12 @@ onBeforeUnmount(() => window.removeEventListener('scroll', spy));
 
 // A quiet item heads the items indented under it: bold while open, never highlighted itself
 const itemClass = (item) => [
-    item.indent ? 'pl-9!' : '',
+    item.indent ? 'pl-6!' : '',
     item.quiet
-        ? 'font-medium text-slate-900 hover:bg-slate-50 dark:text-white dark:hover:bg-slate-800/60'
+        ? 'font-semibold text-slate-900 hover:bg-slate-100 dark:text-white dark:hover:bg-slate-800'
         : isActive(item)
-            ? 'bg-sky-50 font-medium text-sky-700 dark:bg-sky-900/20 dark:text-sky-400'
-            : 'text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800/60',
+            ? 'bg-sky-100 font-semibold text-sky-800 dark:bg-sky-950/60 dark:text-sky-300'
+            : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white',
 ];
 </script>
 
@@ -71,25 +73,22 @@ const itemClass = (item) => [
                 <div class="flex flex-col gap-4 p-6 lg:sticky lg:top-0 lg:max-h-screen lg:overflow-y-auto">
                     <h2 v-if="heading" class="text-sm font-semibold text-slate-900 dark:text-white">{{ heading }}</h2>
 
-                    <nav class="flex gap-1 max-lg:-mx-1 max-lg:overflow-x-auto lg:flex-col">
+                    <nav class="flex gap-1 max-lg:-mx-1 max-lg:overflow-x-auto lg:flex-col lg:gap-0.5">
                         <div v-if="group" class="mb-1 mt-2 px-3 text-xs font-medium uppercase tracking-wider text-slate-500 max-lg:hidden">{{ group }}</div>
                         <template v-for="item in items" :key="item.href ?? item.anchor ?? item.heading">
-                            <div v-if="item.heading" class="mb-1 mt-3 px-3 text-xs font-medium uppercase tracking-wider text-slate-500 first:mt-0 max-lg:hidden">{{ item.heading }}</div>
+                            <div v-if="item.heading" class="mb-1 mt-5 px-3 text-xs font-semibold uppercase tracking-wider text-slate-500 first:mt-0 max-lg:hidden dark:text-slate-400">{{ item.heading }}</div>
                             <Link
                                 v-else-if="item.href" :href="item.href" :preserve-state="!!item.preserveState" :preserve-scroll="!!item.preserveState"
-                                class="flex shrink-0 items-center gap-2 rounded-md px-3 py-2 text-sm transition" :class="itemClass(item)"
+                                class="flex shrink-0 items-center justify-between gap-2 rounded-md px-3 py-1.5 text-sm transition" :class="itemClass(item)"
                             >
-                                <component :is="item.icon" v-if="item.icon" class="size-4 shrink-0" />
-                                {{ item.label }}
+                                <span class="truncate">{{ item.label }}</span>
+                                <component :is="item.expanded ? ChevronDownIcon : ChevronRightIcon" v-if="item.expanded !== undefined" class="size-4 shrink-0 text-slate-400" />
                             </Link>
                             <a
                                 v-else :href="`#${item.anchor}`"
-                                class="flex shrink-0 items-center gap-2 rounded-md px-3 py-2 text-sm transition" :class="itemClass(item)"
+                                class="flex shrink-0 items-center rounded-md px-3 py-1.5 text-sm transition" :class="itemClass(item)"
                                 @click.prevent="go(item)"
-                            >
-                                <component :is="item.icon" v-if="item.icon" class="size-4 shrink-0" />
-                                {{ item.label }}
-                            </a>
+                            >{{ item.label }}</a>
                         </template>
                     </nav>
 

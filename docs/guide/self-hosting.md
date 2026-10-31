@@ -43,12 +43,12 @@ and start it. You don't need to clone the repository or build anything.
 - For a shared server, a domain name that points at the machine, with ports 80
   and 443 open.
 - Optional: an email service, a GitHub account for the GitHub App, and an
-  S3-compatible bucket. You can add these later on the **Server setup** page.
+  S3-compatible bucket. You can add these later under **Server administration**.
 
 ## After installing
 
 1. Sign in as the admin. The install page explains how.
-2. Open **Server setup** and set up [email, GitHub, and storage](server-setup.md).
+2. Open **Server administration** and set up [email, GitHub, and storage](server-setup.md).
 3. Connect R or Python. Each user creates a token on the **API tokens** page
    and runs the command shown there, which includes the server's address:
 

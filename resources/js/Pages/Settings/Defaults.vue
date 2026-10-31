@@ -1,10 +1,6 @@
 <script setup>
 import { computed } from 'vue';
 import { useForm, usePage } from '@inertiajs/vue3';
-import {
-    AdjustmentsHorizontalIcon, CodeBracketIcon, CommandLineIcon, CubeIcon, DocumentTextIcon,
-    LockClosedIcon, PresentationChartBarIcon, ShieldCheckIcon, SparklesIcon,
-} from '@heroicons/vue/24/outline';
 import SectionLayout from '@/Layouts/SectionLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import UiButton from '@/Components/UiButton.vue';
@@ -21,21 +17,21 @@ const page = usePage();
 const saved = computed(() => page.props.flash.status === 'defaults-updated');
 
 const sections = [
-    { heading: 'New project defaults' },
-    { key: 'basics', label: 'Blueprint & editor', icon: AdjustmentsHorizontalIcon, description: "What a new project starts with when you don't choose a blueprint." },
-    { key: 'packages', label: 'Packages', icon: CubeIcon, description: "Packages new projects install when you don't choose a blueprint. A blueprint brings its own." },
-    { key: 'scaffold', label: 'Scaffold', icon: CommandLineIcon, description: 'What happens when you run scaffold().' },
-    { key: 'git', label: 'Git', icon: CodeBracketIcon, description: 'Version control for new projects.' },
-    { key: 'agents', label: 'Agents', icon: SparklesIcon, description: 'What new projects give coding agents such as Claude Code and Codex.' },
+    { heading: 'New projects' },
+    { key: 'basics', label: 'Blueprint & editor', description: "What a new project starts with when you don't choose a blueprint." },
+    { key: 'packages', label: 'Packages', description: "Packages new projects install when you don't choose a blueprint. A blueprint brings its own." },
+    { key: 'scaffold', label: 'Scaffold', description: 'What happens when you run scaffold().' },
+    { key: 'git', label: 'Git', description: 'Version control for new projects.' },
+    { key: 'agents', label: 'Agents', description: 'What new projects give coding agents such as Claude Code and Codex.' },
     { heading: 'Data & connections' },
-    { key: 'data', label: 'Sensitive data', icon: ShieldCheckIcon, description: 'How new projects keep private data apart.' },
+    { key: 'data', label: 'Sensitive data', description: 'How new projects keep private data apart.' },
     { heading: 'Checks' },
-    { key: 'hooks', label: 'Git hooks', icon: LockClosedIcon, description: 'Checks that run before each commit.' },
+    { key: 'hooks', label: 'Git hooks', description: 'Checks that run before each commit.' },
     { heading: 'Documents' },
-    { key: 'notebooks', label: 'Notebooks', icon: DocumentTextIcon, description: 'The notebooks new projects use.' },
-    { key: 'quarto', label: 'Quarto', icon: PresentationChartBarIcon, description: 'Quarto documents, manuscripts, and slides.' },
+    { key: 'notebooks', label: 'Notebooks', description: 'The notebooks new projects use.' },
+    { key: 'quarto', label: 'Quarto', description: 'Quarto documents, manuscripts, and slides.' },
 ];
-const items = sections.map((s) => (s.heading ? s : { label: s.label, href: `/settings/${s.key}`, icon: s.icon, preserveState: true }));
+const items = sections.map((s) => (s.heading ? s : { label: s.label, href: `/settings/${s.key}`, preserveState: true }));
 const current = computed(() => sections.find((s) => s.key === props.section));
 
 const blueprintOptions = computed(() => props.blueprints.map((b) => ({ value: b.key, label: b.name })));
@@ -73,9 +69,9 @@ const save = () => form.patch('/settings', { preserveScroll: true });
 </script>
 
 <template>
-    <Head :title="current.label" />
+    <Head :title="`${current.label} · Project defaults`" />
 
-    <SectionLayout heading="Settings" :items="items">
+    <SectionLayout heading="Project defaults" :items="items">
         <PageHeader :title="current.label" :description="current.description" />
         <p class="mt-2 text-xs text-slate-500">Your defaults are saved to your account and synced to every computer where you've run cloud_login() in R or Python. Revision {{ revision }}.</p>
 
@@ -166,7 +162,7 @@ const save = () => form.patch('/settings', { preserveScroll: true });
             <UiButton save-shortcut type="submit" form="settings-form" class="w-full" :disabled="form.processing">
                 {{ form.processing ? 'Saving…' : 'Save changes' }}
             </UiButton>
-            <p v-if="form.isDirty" class="text-center text-xs text-amber-600">Unsaved changes across Settings</p>
+            <p v-if="form.isDirty" class="text-center text-xs text-amber-600">Unsaved changes across Project defaults</p>
             <p v-else-if="saved" class="text-center text-xs text-slate-500">Saved.</p>
         </template>
     </SectionLayout>

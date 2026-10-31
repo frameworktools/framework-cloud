@@ -1,6 +1,6 @@
 # Server setup
 
-Admins see **Server setup** in the sidebar. It holds the server's three
+Admins see **Server administration** in the sidebar. It holds the server's three
 credentials: email, GitHub, and storage for published notebooks. Each one is
 optional, but sign-in links need email.
 

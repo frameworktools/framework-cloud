@@ -1,7 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { router, useForm, usePage } from '@inertiajs/vue3';
-import { ClockIcon, Cog6ToothIcon, CubeIcon, DocumentTextIcon, InformationCircleIcon, SparklesIcon } from '@heroicons/vue/24/outline';
 import SectionLayout from '@/Layouts/SectionLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import UiPanel from '@/Components/UiPanel.vue';
@@ -69,14 +68,14 @@ const destroy = () => {
 };
 
 const items = computed(() => [
-    { label: 'Details', anchor: 'details', icon: InformationCircleIcon },
+    { label: 'Details', anchor: 'details' },
     ...(isStructure.value ? [
-        { label: 'Folders and settings', anchor: 'settings', icon: Cog6ToothIcon },
-        { label: 'Files', anchor: 'files', icon: DocumentTextIcon },
+        { label: 'Folders and settings', anchor: 'settings' },
+        { label: 'Files', anchor: 'files' },
     ] : []),
-    ...(isSkillSet.value ? [{ label: 'Skills', anchor: 'skills', icon: SparklesIcon }] : []),
-    ...(!isStructure.value ? [{ label: 'Packages', anchor: 'packages', icon: CubeIcon }] : []),
-    ...(props.facet ? [{ label: 'Versions', anchor: 'versions', icon: ClockIcon }] : []),
+    ...(isSkillSet.value ? [{ label: 'Skills', anchor: 'skills' }] : []),
+    ...(!isStructure.value ? [{ label: 'Packages', anchor: 'packages' }] : []),
+    ...(props.facet ? [{ label: 'Versions', anchor: 'versions' }] : []),
 ]);
 const errorFor = (prefix) => Object.entries(form.errors).filter(([k]) => k.startsWith(prefix)).map(([, v]) => v).join(' ');
 </script>

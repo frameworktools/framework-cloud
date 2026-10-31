@@ -23,18 +23,19 @@ pieces, and you can make your own of each.
 
 ### Defaults
 
-**Settings** sets what a new project starts with. Its pages are grouped by
-subject:
+**Project defaults** sets what a new project starts with. Its pages are
+grouped by subject:
 
-- **General.** The default blueprint and editor, package sets and renv or
-  uv, what `scaffold()` does, and git.
-- **AI.** Agent files and preferred skill sets.
-- **Data safety.** Whether new projects hold sensitive data, and the git
-  hooks that run before each commit.
-- **Publishing.** The notebook format, Jupyter, and Quarto.
+- **New projects.** The default blueprint and editor, package sets and renv
+  or uv, what `scaffold()` does, git, and agent files with preferred skill
+  sets.
+- **Data & connections.** Whether new projects hold sensitive data.
+- **Checks.** Git hooks that run before each commit.
+- **Documents.** The notebook format, Jupyter, and Quarto.
 
-The pages share one form, so changes on several pages are saved together. A blueprint you choose brings its own pieces,
-and your default settings still apply where it doesn't set them.
+The pages share one form, so changes on several pages are saved together.
+A blueprint you choose brings its own pieces, and your defaults still apply
+where it doesn't set them.
 
 ### Borrowing and remixing
 

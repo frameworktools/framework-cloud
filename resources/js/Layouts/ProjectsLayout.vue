@@ -1,7 +1,6 @@
 <script setup>
 import { computed } from 'vue';
 import { usePage } from '@inertiajs/vue3';
-import { ChevronDownIcon, ChevronRightIcon, PlusIcon, Squares2X2Icon } from '@heroicons/vue/24/outline';
 import SectionLayout from '@/Layouts/SectionLayout.vue';
 
 // The project pages' second column: all projects, a new one, and each of
@@ -19,14 +18,14 @@ const sections = [
 ];
 
 const items = computed(() => [
-    { label: 'All projects', href: '/projects', icon: Squares2X2Icon, exact: true },
-    { label: 'New project', href: '/projects/create', icon: PlusIcon },
+    { label: 'All projects', href: '/projects', exact: true },
+    { label: 'New project', href: '/projects/create' },
     ...(list.value.items.length ? [{ heading: 'Your projects' }] : []),
     ...list.value.items.flatMap((p) => {
         const base = `/projects/${p.slug}`;
-        if (p.slug !== open.value) return [{ label: p.name, href: base, icon: ChevronRightIcon }];
+        if (p.slug !== open.value) return [{ label: p.name, href: base, expanded: false }];
         return [
-            { label: p.name, href: base, icon: ChevronDownIcon, quiet: true },
+            { label: p.name, href: base, expanded: true, quiet: true },
             ...sections.map(([path, label]) => ({ label, href: base + path, exact: true, indent: true })),
         ];
     }),

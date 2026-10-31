@@ -1,11 +1,9 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { router, useForm, usePage } from '@inertiajs/vue3';
-import { ArchiveBoxIcon, EnvelopeIcon } from '@heroicons/vue/24/outline';
 import SectionLayout from '@/Layouts/SectionLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import UiPanel from '@/Components/UiPanel.vue';
-import GitHubMark from '@/Components/GitHubMark.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiInput from '@/Components/UiInput.vue';
 import UiSelect from '@/Components/UiSelect.vue';
@@ -73,9 +71,9 @@ const mailReady = computed(() => !['log', 'array'].includes(props.status.mail));
 const testMail = () => router.post('/admin/setup/mail/test', {}, { preserveScroll: true });
 
 const items = [
-    { label: 'GitHub App', anchor: 'github', icon: GitHubMark },
-    { label: 'Storage', anchor: 'storage', icon: ArchiveBoxIcon },
-    { label: 'Email', anchor: 'mail', icon: EnvelopeIcon },
+    { label: 'GitHub App', anchor: 'github' },
+    { label: 'Storage', anchor: 'storage' },
+    { label: 'Email', anchor: 'mail' },
 ];
 
 const pill = (ready) => (ready
@@ -87,7 +85,7 @@ const pill = (ready) => (ready
     <Head title="Server setup" />
 
     <!-- Three independent forms, so each panel keeps its own Save button -->
-    <SectionLayout heading="Server setup" :items="items">
+    <SectionLayout heading="Server administration" :items="items">
         <PageHeader
             title="Server setup"
             description="This server's own credentials: the GitHub App, where published documents are stored, and how email is sent. Fill them in here, or with environment variables. A variable that is set always wins over a value saved here."
