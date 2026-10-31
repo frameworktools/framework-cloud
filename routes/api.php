@@ -42,8 +42,11 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
 Route::prefix('v2')->middleware('auth:sanctum')->group(function () {
     // Project token
     Route::get('/projects/pull', [\App\Http\Controllers\Api\V2\ProjectsController::class, 'pull']);
+    Route::put('/project/spec', [\App\Http\Controllers\Api\V2\ProjectsController::class, 'updateSpec']);
 
-    // User token: fw new SLUG
+    // User token: fw projects, fw project show, fw blueprints, fw new SLUG
+    Route::get('/blueprints', \App\Http\Controllers\Api\V2\BlueprintsController::class);
+    Route::get('/projects/{slug}', [\App\Http\Controllers\Api\V2\ProjectsController::class, 'show']);
     Route::get('/projects/{slug}/layers', [\App\Http\Controllers\Api\V2\ProjectsController::class, 'layers']);
     Route::post('/projects/{slug}/pull-tokens', [\App\Http\Controllers\Api\V2\ProjectsController::class, 'issuePullToken'])
         ->middleware('throttle:30,1');

@@ -20,6 +20,7 @@ class SyncSchemasCommand extends Command
     public const FILES = [
         'layer.v1.json' => 'inst/schema/layer.v1.json',
         'layers.v1.json' => 'inst/schema/layers.v1.json',
+        'spec.v1.json' => 'inst/schema/spec.v1.json',
     ];
 
     public const LOCK = 'schema/schema.lock.json';

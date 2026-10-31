@@ -1,7 +1,10 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import { CubeIcon, ListBulletIcon, PencilSquareIcon, PuzzlePieceIcon } from '@heroicons/vue/24/outline';
+import SectionLayout from '@/Layouts/SectionLayout.vue';
+import PageHeader from '@/Components/PageHeader.vue';
+import UiPanel from '@/Components/UiPanel.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiInput from '@/Components/UiInput.vue';
 import UiSelect from '@/Components/UiSelect.vue';
@@ -96,135 +99,137 @@ const save = () => {
         form.transform(data).post('/blueprints');
     }
 };
+
+const items = [
+    { label: 'Project type', anchor: 'type', icon: CubeIcon },
+    { label: 'What it needs', anchor: 'needs', icon: PuzzlePieceIcon },
+    { label: "What you'll get", anchor: 'result', icon: ListBulletIcon },
+    { label: 'Name and share', anchor: 'name', icon: PencilSquareIcon },
+];
 </script>
 
 <template>
     <Head :title="editing ? `Edit ${blueprint.name}` : 'New blueprint'" />
 
-    <AppLayout>
-        <form class="grid gap-8 lg:grid-cols-[1fr_20rem]" @submit.prevent="save">
-            <div class="flex min-w-0 flex-col gap-8">
-                <div>
-                    <h1 class="text-2xl font-semibold tracking-tight">{{ editing ? `Edit ${blueprint.name}` : 'New blueprint' }}</h1>
-                    <p class="mt-1 text-slate-600 dark:text-slate-400">
-                        Pick a project type, then switch on what this kind of project needs.
-                        Saving makes a new version; projects keep the version they were made from.
-                    </p>
+    <SectionLayout heading="Blueprint" :items="items">
+        <PageHeader :title="editing ? `Edit ${blueprint.name}` : 'New blueprint'">
+            <template #description>
+                Pick a project type, then switch on what this kind of project needs.
+                Saving makes a new version; projects keep the version they were made from.
+            </template>
+        </PageHeader>
+
+        <form id="blueprint-form" class="mt-8 flex flex-col gap-8" @submit.prevent="save">
+            <UiPanel id="type" title="What kind of project is it?" class="scroll-mt-6">
+                <div class="grid gap-2 sm:grid-cols-2">
+                    <button
+                        v-for="base in bases" :key="base.id" type="button"
+                        class="rounded-lg border p-3 text-left transition-colors"
+                        :class="baseFacet?.id === base.id
+                            ? 'border-sky-500 bg-sky-50 ring-1 ring-sky-500 dark:bg-sky-950/40'
+                            : 'border-slate-200 bg-white hover:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-500'"
+                        @click="baseVersionId = baseFacet?.id === base.id ? baseVersionId : base.version_id"
+                    >
+                        <div class="text-sm font-medium">{{ base.name }}</div>
+                        <div class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{{ base.description }}</div>
+                        <div v-if="!base.is_system" class="mt-1 font-mono text-xs text-slate-400">{{ base.handle }}</div>
+                    </button>
                 </div>
+                <p v-if="form.errors.base_version_id" class="text-xs text-red-600 dark:text-red-400">{{ form.errors.base_version_id }}</p>
+            </UiPanel>
 
-                <section class="flex flex-col gap-3">
-                    <h2 class="font-medium">1. What kind of project is it?</h2>
-                    <div class="grid gap-2 sm:grid-cols-2">
-                        <button
-                            v-for="base in bases" :key="base.id" type="button"
-                            class="rounded-lg border p-3 text-left transition-colors"
-                            :class="baseFacet?.id === base.id
-                                ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/40'
-                                : 'border-slate-200 hover:border-slate-400 dark:border-slate-800 dark:hover:border-slate-600'"
-                            @click="baseVersionId = baseFacet?.id === base.id ? baseVersionId : base.version_id"
-                        >
-                            <div class="text-sm font-medium">{{ base.name }}</div>
-                            <div class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{{ base.description }}</div>
-                            <div v-if="!base.is_system" class="mt-1 font-mono text-xs text-slate-400">{{ base.handle }}</div>
-                        </button>
-                    </div>
-                    <p v-if="form.errors.base_version_id" class="text-xs text-red-600 dark:text-red-400">{{ form.errors.base_version_id }}</p>
-                </section>
-
-                <section class="flex flex-col gap-5">
-                    <h2 class="font-medium">2. What does it need?</h2>
-                    <div v-for="section in grouped" :key="section.key" class="flex flex-col gap-2">
-                        <h3 class="text-xs font-medium uppercase tracking-wide text-slate-500">{{ section.label }}</h3>
-                        <div class="flex flex-col divide-y divide-slate-200 rounded-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-800">
-                            <div v-for="facet in section.facets" :key="facet.id" class="p-3">
-                                <UiSwitch
-                                    :model-value="isOn(facet)"
-                                    :label="facet.question || facet.name"
-                                    :description="facet.question ? `${facet.name}: ${facet.description ?? ''}` : facet.description"
-                                    @update:model-value="(on) => toggle(facet, on)"
-                                />
-                                <div v-if="!facet.is_system" class="mt-1 font-mono text-xs text-slate-400">{{ facet.handle }}</div>
-                            </div>
+            <UiPanel id="needs" title="What does it need?" class="scroll-mt-6">
+                <div v-for="section in grouped" :key="section.key" class="flex flex-col gap-2">
+                    <h3 class="text-xs font-medium uppercase tracking-wide text-slate-500">{{ section.label }}</h3>
+                    <div class="flex flex-col divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white dark:divide-slate-700 dark:border-slate-700 dark:bg-slate-900">
+                        <div v-for="facet in section.facets" :key="facet.id" class="p-3">
+                            <UiSwitch
+                                :model-value="isOn(facet)"
+                                :label="facet.question || facet.name"
+                                :description="facet.question ? `${facet.name}: ${facet.description ?? ''}` : facet.description"
+                                @update:model-value="(on) => toggle(facet, on)"
+                            />
+                            <div v-if="!facet.is_system" class="mt-1 font-mono text-xs text-slate-400">{{ facet.handle }}</div>
                         </div>
                     </div>
-                    <p class="text-sm text-slate-500">
-                        Don't see what you need?
-                        <Link href="/facets/create" class="text-sky-600 hover:underline dark:text-sky-400">Make a facet</Link>,
-                        then come back and switch it on.
-                    </p>
-                    <p v-if="form.errors.facet_version_ids" class="text-xs text-red-600 dark:text-red-400">{{ form.errors.facet_version_ids }}</p>
-                </section>
-
-                <section class="flex flex-col gap-4">
-                    <h2 class="font-medium">3. Name and share it</h2>
-                    <UiInput v-model="form.name" label="Name" placeholder="e.g. R01 secondary analysis" required :error="form.errors.name" />
-                    <UiTextarea v-model="form.description" label="Description" :rows="2" :error="form.errors.description" />
-                    <UiSelect v-model="form.visibility" label="Who can see it" :options="visibilityOptions" :error="form.errors.visibility" />
-                    <UiSelect
-                        v-model="form.language" label="Language" :options="languageOptions" :error="form.errors.language"
-                        description="Projects made from this blueprint use this language unless someone changes it."
-                    />
-                    <UiInput v-if="editing" v-model="form.notes" label="What changed (optional)" placeholder="Shown in the version history" :error="form.errors.notes" />
-
-                    <div>
-                        <button type="button" class="text-sm text-slate-600 hover:underline dark:text-slate-400" @click="showAdvanced = !showAdvanced">
-                            {{ showAdvanced ? 'Hide' : 'Show' }} extra settings
-                        </button>
-                    </div>
-                    <UiTextarea
-                        v-if="showAdvanced" v-model="form.settings_yaml" code :rows="8"
-                        label="Extra settings (YAML)"
-                        description="Applied after every facet, so they win. Same keys as settings.yml, for example packages or quarto."
-                        :error="form.errors.settings_yaml"
-                    />
-
-                    <div class="flex gap-2">
-                        <UiButton type="submit" :disabled="form.processing || !baseVersionId">{{ editing ? 'Save new version' : 'Create blueprint' }}</UiButton>
-                        <Link :href="editing ? `/blueprints/${blueprint.id}` : '/blueprints'"><UiButton variant="ghost">Cancel</UiButton></Link>
-                    </div>
-                </section>
-            </div>
-
-            <aside class="flex flex-col gap-3 lg:sticky lg:top-6 lg:self-start">
-                <h2 class="text-sm font-medium">What you'll get</h2>
-                <p class="text-xs text-slate-500 dark:text-slate-400">
-                    Each piece applies in this order, and a later one wins when two set the same thing.
-                    Framework combines them when it creates the project.
+                </div>
+                <p class="text-sm text-slate-500">
+                    Don't see what you need?
+                    <Link href="/facets/create" class="text-sky-600 hover:underline dark:text-sky-400">Make a facet</Link>,
+                    then come back and switch it on.
                 </p>
+                <p v-if="form.errors.facet_version_ids" class="text-xs text-red-600 dark:text-red-400">{{ form.errors.facet_version_ids }}</p>
+            </UiPanel>
 
-                <p v-if="!baseFragment" class="rounded-lg border border-dashed border-slate-300 p-3 text-sm text-slate-500 dark:border-slate-700">
+            <UiPanel
+                id="result" title="What you'll get" class="scroll-mt-6"
+                description="Each piece applies in this order, and a later one wins when two set the same thing. Framework combines them when it creates the project."
+            >
+                <p v-if="!baseFragment" class="rounded-lg border border-dashed border-slate-300 p-3 text-sm text-slate-500 dark:border-slate-600">
                     Choose a project type to start.
                 </p>
 
-                <div v-if="baseFragment" class="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
-                    <div class="flex items-baseline justify-between gap-2">
-                        <span class="text-sm font-medium">{{ baseFragment.name }}</span>
-                        <span class="font-mono text-xs text-slate-500">v{{ baseFragment.version }}</span>
+                <div v-if="baseFragment" class="flex flex-col gap-2">
+                    <div class="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+                        <div class="flex items-baseline justify-between gap-2">
+                            <span class="text-sm font-medium">{{ baseFragment.name }}</span>
+                            <span class="font-mono text-xs text-slate-500">v{{ baseFragment.version }}</span>
+                        </div>
+                        <button v-if="baseFragment.outdated" type="button" class="mt-1 text-xs text-sky-600 hover:underline dark:text-sky-400" @click="updateBase">
+                            Update to v{{ baseFacet.version }}
+                        </button>
+                        <div class="mt-2"><LayerSummary :sections="baseFragment.summary" /></div>
                     </div>
-                    <button v-if="baseFragment.outdated" type="button" class="mt-1 text-xs text-sky-600 hover:underline dark:text-sky-400" @click="updateBase">
-                        Update to v{{ baseFacet.version }}
-                    </button>
-                    <div class="mt-2"><LayerSummary :sections="baseFragment.summary" /></div>
-                </div>
 
-                <div v-for="(item, index) in selected" :key="item.facet_id" class="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
-                    <div class="flex items-baseline justify-between gap-2">
-                        <span class="text-sm font-medium">+ {{ fragment(item.facet_id, item.version_id).name }}</span>
-                        <span class="flex items-center gap-1 font-mono text-xs text-slate-500">
-                            v{{ fragment(item.facet_id, item.version_id).version }}
-                            <button type="button" class="px-1 hover:text-slate-900 disabled:opacity-30 dark:hover:text-slate-100" :disabled="index === 0" title="Apply earlier" @click="move(index, -1)">↑</button>
-                            <button type="button" class="px-1 hover:text-slate-900 disabled:opacity-30 dark:hover:text-slate-100" :disabled="index === selected.length - 1" title="Apply later" @click="move(index, 1)">↓</button>
-                        </span>
+                    <div v-for="(item, index) in selected" :key="item.facet_id" class="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+                        <div class="flex items-baseline justify-between gap-2">
+                            <span class="text-sm font-medium">+ {{ fragment(item.facet_id, item.version_id).name }}</span>
+                            <span class="flex items-center gap-1 font-mono text-xs text-slate-500">
+                                v{{ fragment(item.facet_id, item.version_id).version }}
+                                <button type="button" class="px-1 hover:text-slate-900 disabled:opacity-30 dark:hover:text-slate-100" :disabled="index === 0" title="Apply earlier" @click="move(index, -1)">↑</button>
+                                <button type="button" class="px-1 hover:text-slate-900 disabled:opacity-30 dark:hover:text-slate-100" :disabled="index === selected.length - 1" title="Apply later" @click="move(index, 1)">↓</button>
+                            </span>
+                        </div>
+                        <button
+                            v-if="fragment(item.facet_id, item.version_id).outdated" type="button"
+                            class="mt-1 text-xs text-sky-600 hover:underline dark:text-sky-400" @click="updateFacet(index)"
+                        >
+                            Update to v{{ facetById[item.facet_id].version }}
+                        </button>
+                        <div class="mt-2"><LayerSummary :sections="fragment(item.facet_id, item.version_id).summary" /></div>
                     </div>
-                    <button
-                        v-if="fragment(item.facet_id, item.version_id).outdated" type="button"
-                        class="mt-1 text-xs text-sky-600 hover:underline dark:text-sky-400" @click="updateFacet(index)"
-                    >
-                        Update to v{{ facetById[item.facet_id].version }}
-                    </button>
-                    <div class="mt-2"><LayerSummary :sections="fragment(item.facet_id, item.version_id).summary" /></div>
                 </div>
-            </aside>
+            </UiPanel>
+
+            <UiPanel id="name" title="Name and share it" class="scroll-mt-6">
+                <UiInput v-model="form.name" label="Name" placeholder="e.g. R01 secondary analysis" required :error="form.errors.name" />
+                <UiTextarea v-model="form.description" label="Description" :rows="2" :error="form.errors.description" />
+                <UiSelect v-model="form.visibility" label="Who can see it" :options="visibilityOptions" :error="form.errors.visibility" />
+                <UiSelect
+                    v-model="form.language" label="Language" :options="languageOptions" :error="form.errors.language"
+                    description="Projects made from this blueprint use this language unless someone changes it."
+                />
+                <UiInput v-if="editing" v-model="form.notes" label="What changed (optional)" placeholder="Shown in the version history" :error="form.errors.notes" />
+
+                <div>
+                    <button type="button" class="text-sm text-slate-600 hover:underline dark:text-slate-400" @click="showAdvanced = !showAdvanced">
+                        {{ showAdvanced ? 'Hide' : 'Show' }} extra settings
+                    </button>
+                </div>
+                <UiTextarea
+                    v-if="showAdvanced" v-model="form.settings_yaml" code :rows="8"
+                    label="Extra settings (YAML)"
+                    description="Applied after every facet, so they win. Same keys as settings.yml, for example packages or quarto."
+                    :error="form.errors.settings_yaml"
+                />
+            </UiPanel>
         </form>
-    </AppLayout>
+
+        <template #actions>
+            <UiButton type="submit" form="blueprint-form" class="w-full" :disabled="form.processing || !baseVersionId">
+                {{ editing ? 'Save new version' : 'Create blueprint' }}
+            </UiButton>
+            <Link :href="editing ? `/blueprints/${blueprint.id}` : '/blueprints'" class="block"><UiButton variant="ghost" class="w-full">Cancel</UiButton></Link>
+        </template>
+    </SectionLayout>
 </template>

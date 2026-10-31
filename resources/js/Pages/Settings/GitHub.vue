@@ -1,4 +1,5 @@
 <script setup>
+import UiPanel from '@/Components/UiPanel.vue';
 import { computed } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
 import SettingsLayout from '@/Layouts/SettingsLayout.vue';
@@ -33,15 +34,15 @@ const disconnect = () => {
 
         <p v-if="!available" class="text-sm text-slate-500">GitHub is not set up on this server.</p>
 
-        <template v-else-if="!account">
-            <p class="text-sm text-slate-600 dark:text-slate-400">
-                Framework uses a GitHub App. You choose which accounts and organizations it can reach,
-                and it can only work in repositories it creates or that you give it.
-            </p>
+        <UiPanel
+            v-else-if="!account" title="Connect GitHub"
+            description="Framework uses a GitHub App. You choose which accounts and organizations it can reach, and it can only work in repositories it creates or that you give it."
+        >
             <div class="w-60"><GitHubButton label="Connect GitHub" /></div>
-        </template>
+        </UiPanel>
 
         <template v-else>
+            <UiPanel title="Account">
             <div class="flex items-center justify-between gap-4">
                 <div>
                     <div class="text-sm font-medium">Connected as <a :href="`https://github.com/${account.login}`" class="font-mono hover:underline">@{{ account.login }}</a></div>
@@ -49,9 +50,10 @@ const disconnect = () => {
                 </div>
                 <UiButton variant="outline" size="sm" @click="disconnect">Disconnect</UiButton>
             </div>
+            </UiPanel>
 
+            <UiPanel title="Where Framework can create repositories">
             <div class="flex flex-col gap-2">
-                <h2 class="text-sm font-semibold">Where Framework can create repositories</h2>
                 <p v-if="installations === null" class="text-sm text-slate-500">GitHub could not be reached. Reload to try again.</p>
                 <div v-else class="flex flex-col divide-y divide-slate-200 dark:divide-slate-700">
                     <div v-for="i in installations" :key="i.id" class="flex items-center justify-between py-2 text-sm">
@@ -67,6 +69,7 @@ const disconnect = () => {
                     Install on another account or organization
                 </a>
             </div>
+            </UiPanel>
         </template>
     </SettingsLayout>
 </template>

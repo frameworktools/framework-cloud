@@ -6,6 +6,7 @@ import UiButton from '@/Components/UiButton.vue';
 import UiInput from '@/Components/UiInput.vue';
 import UiSelect from '@/Components/UiSelect.vue';
 import UiSwitch from '@/Components/UiSwitch.vue';
+import UiPanel from '@/Components/UiPanel.vue';
 
 const props = defineProps({ revision: Number, blueprints: Array, values: Object });
 
@@ -34,30 +35,30 @@ const save = () => form.patch('/settings/defaults');
 
     <SettingsLayout
         heading="Framework defaults"
-        :subheading="`Synced to every machine where you've run framework::cloud_login(). Revision ${revision}.`"
+        :subheading="`Synced to every computer where you've run cloud_login() in R or Python. Revision ${revision}.`"
     >
-        <form class="flex flex-col gap-8" @submit.prevent="save">
-            <fieldset class="flex flex-col gap-4">
-                <legend class="mb-2 text-sm font-semibold">New projects</legend>
+        <form id="settings-form" class="flex flex-col gap-8" @submit.prevent="save">
+            <UiPanel title="New projects" description="What a new project starts with when you don't choose otherwise.">
                 <UiSelect v-model="form.project_type" label="Default project type" :options="blueprintOptions" :error="form.errors.project_type" />
                 <UiSelect v-model="form.notebook_format" label="Notebook format" :options="formatOptions" />
                 <UiSelect v-model="form.ide" label="IDE" :options="ideOptions" />
                 <UiSwitch v-model="form.use_git" label="Initialize git" />
                 <UiSwitch v-model="form.use_renv" label="Use renv" />
                 <UiSwitch v-model="form.seed_on_scaffold" label="Set random seed on scaffold()" />
-            </fieldset>
+            </UiPanel>
 
-            <fieldset class="flex flex-col gap-4">
-                <legend class="mb-2 text-sm font-semibold">AI</legend>
+            <UiPanel title="AI assistants" description="Context files and skills that new projects get for AI coding assistants.">
                 <UiSwitch v-model="form.ai_enabled" label="Generate AI context files" />
                 <UiInput v-model="form.ai_canonical_file" label="Canonical context file" :error="form.errors.ai_canonical_file" />
                 <UiSwitch v-model="form.ai_skills" label="Install Framework skills" />
-            </fieldset>
-
-            <div class="flex items-center gap-3">
-                <UiButton type="submit" :disabled="form.processing">Save</UiButton>
-                <span v-if="saved" class="text-sm text-slate-500">Saved.</span>
-            </div>
+            </UiPanel>
         </form>
+
+        <template #actions>
+            <UiButton type="submit" form="settings-form" class="w-full" :disabled="form.processing">
+                {{ form.processing ? 'Saving…' : 'Save changes' }}
+            </UiButton>
+            <p v-if="saved" class="text-center text-xs text-slate-500">Saved.</p>
+        </template>
     </SettingsLayout>
 </template>

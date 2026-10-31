@@ -8,6 +8,10 @@
         "layers.v1.json": {
             "source": "inst/schema/layers.v1.json",
             "sha256": "dc74cac172b3edbfb09bc0731f2db9e09fe2a29c542c6094ef1e29e1970487f6"
+        },
+        "spec.v1.json": {
+            "source": "inst/schema/spec.v1.json",
+            "sha256": "d6e35829aa628ae6ed86234cfa1e727000286e2775f1db4874ed5c9589971387"
         }
     }
 }

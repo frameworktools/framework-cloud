@@ -4,6 +4,7 @@ import { useForm, usePage } from '@inertiajs/vue3';
 import SettingsLayout from '@/Layouts/SettingsLayout.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiInput from '@/Components/UiInput.vue';
+import UiPanel from '@/Components/UiPanel.vue';
 
 const props = defineProps({ author: Object });
 
@@ -50,24 +51,20 @@ const yaml = computed(() => {
         heading="Profile"
         subheading="How you appear as an author. Framework puts this in the front matter of new notebooks, reports, and slides."
     >
-        <form class="flex flex-col gap-8" @submit.prevent="save">
-            <fieldset class="flex flex-col gap-4">
-                <legend class="mb-2 text-sm font-semibold">You</legend>
+        <form id="settings-form" class="flex flex-col gap-8" @submit.prevent="save">
+            <UiPanel title="You">
                 <UiInput v-model="form.name" label="Name" description="As it should appear on a byline." required :error="form.errors.name" />
                 <UiInput v-model="form.email" label="Email" type="email" description="Shown on your work. It can differ from the address you sign in with." :error="form.errors.email" />
                 <div class="grid gap-4 sm:grid-cols-2">
                     <UiInput v-model="form.orcid" label="ORCID iD" placeholder="0000-0002-1825-0097" :error="form.errors.orcid" />
                     <UiInput v-model="form.url" label="Website" type="url" placeholder="https://" :error="form.errors.url" />
                 </div>
-            </fieldset>
+            </UiPanel>
 
-            <fieldset class="flex flex-col gap-4">
-                <legend class="mb-2 text-sm font-semibold">Affiliations</legend>
-                <p class="-mt-2 text-sm text-slate-500 dark:text-slate-400">The first one is your main affiliation.</p>
-
+            <UiPanel title="Affiliations" description="The first one is your main affiliation.">
                 <div
                     v-for="(affiliation, index) in form.affiliations" :key="index"
-                    class="flex flex-col gap-3 rounded-lg border border-slate-200 p-4 dark:border-slate-800"
+                    class="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
                 >
                     <div class="flex items-center justify-between gap-2">
                         <span class="text-xs font-medium uppercase tracking-wide text-slate-500">{{ index === 0 ? 'Main' : `Affiliation ${index + 1}` }}</span>
@@ -87,17 +84,18 @@ const yaml = computed(() => {
                 <div>
                     <UiButton v-if="form.affiliations.length < MAX" variant="outline" size="sm" @click="add">Add affiliation</UiButton>
                 </div>
-            </fieldset>
+            </UiPanel>
 
-            <div class="flex flex-col gap-2">
-                <div class="text-sm font-semibold">In Quarto</div>
-                <pre class="overflow-x-auto rounded-lg border border-slate-200 bg-slate-50 p-4 font-mono text-xs leading-5 text-slate-800 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">{{ yaml }}</pre>
-            </div>
-
-            <div class="flex items-center gap-3">
-                <UiButton type="submit" :disabled="form.processing">Save</UiButton>
-                <span v-if="saved" class="text-sm text-slate-500">Saved.</span>
-            </div>
+            <UiPanel title="In Quarto" description="How new notebooks will list you.">
+                <pre class="overflow-x-auto rounded-lg border border-slate-200 bg-white p-4 font-mono text-xs leading-5 text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">{{ yaml }}</pre>
+            </UiPanel>
         </form>
+
+        <template #actions>
+            <UiButton type="submit" form="settings-form" class="w-full" :disabled="form.processing">
+                {{ form.processing ? 'Saving…' : 'Save changes' }}
+            </UiButton>
+            <p v-if="saved" class="text-center text-xs text-slate-500">Saved.</p>
+        </template>
     </SettingsLayout>
 </template>

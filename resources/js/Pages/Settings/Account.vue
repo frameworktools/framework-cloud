@@ -6,6 +6,7 @@ import UiButton from '@/Components/UiButton.vue';
 import UiInput from '@/Components/UiInput.vue';
 import UiSwitch from '@/Components/UiSwitch.vue';
 import UiModal from '@/Components/UiModal.vue';
+import UiPanel from '@/Components/UiPanel.vue';
 
 const props = defineProps({ profile: Object, hasPassword: Boolean });
 
@@ -38,7 +39,8 @@ const destroy = () => deleteForm.delete('/settings/account');
     <Head title="Account" />
 
     <SettingsLayout heading="Account" subheading="How you sign in, and your public page.">
-        <form class="flex flex-col gap-4" @submit.prevent="save">
+        <UiPanel title="Details">
+        <form id="account-form" class="flex flex-col gap-4" @submit.prevent="save">
             <UiInput v-model="form.name" label="Name" required :error="form.errors.name" />
             <UiInput v-model="form.email" label="Email" type="email" required :error="form.errors.email" />
             <UiInput
@@ -53,20 +55,20 @@ const destroy = () => deleteForm.delete('/settings/account');
                 label="Public profile"
                 description="Shows your name and the date you joined at /@handle. When this is off, nobody can see the page. It needs a handle."
             />
-            <div class="flex items-center gap-3">
-                <UiButton type="submit" :disabled="form.processing">Save</UiButton>
-                <span v-if="saved" class="text-sm text-slate-500">Saved.</span>
-            </div>
         </form>
+            <template #actions>
+                <span v-if="saved" class="self-center text-sm text-slate-500">Saved.</span>
+                <UiButton type="submit" form="account-form" :disabled="form.processing">Save changes</UiButton>
+            </template>
+        </UiPanel>
 
-        <div v-if="page.props.passwords" class="mt-6 border-t border-slate-200 pt-6 dark:border-slate-800">
-            <h2 class="font-semibold">Password</h2>
-            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                {{ hasPassword
-                    ? 'You can sign in with your email address and this password.'
-                    : 'Add a password to sign in with your email address and a password, as well as passkeys and email links.' }}
-            </p>
-            <form class="mt-4 flex flex-col gap-4" @submit.prevent="savePassword">
+        <UiPanel
+            v-if="page.props.passwords" title="Password"
+            :description="hasPassword
+                ? 'You can sign in with your email address and this password.'
+                : 'Add a password to sign in with your email address and a password, as well as passkeys and email links.'"
+        >
+            <form class="flex flex-col gap-4" @submit.prevent="savePassword">
                 <UiInput
                     v-if="hasPassword" v-model="passwordForm.current_password" label="Current password" type="password"
                     autocomplete="current-password" :error="passwordForm.errors.current_password"
@@ -76,21 +78,19 @@ const destroy = () => deleteForm.delete('/settings/account');
                     autocomplete="new-password" description="At least 10 characters." :error="passwordForm.errors.password"
                 />
                 <UiInput v-model="passwordForm.password_confirmation" label="Repeat the password" type="password" autocomplete="new-password" />
-                <div class="flex items-center gap-3">
-                    <UiButton type="submit" :disabled="passwordForm.processing">{{ hasPassword ? 'Change password' : 'Add password' }}</UiButton>
-                    <UiButton v-if="hasPassword" variant="ghost" :disabled="passwordForm.processing" @click="removePassword">Remove password</UiButton>
+                <div class="flex items-center justify-end gap-3 border-t border-slate-200 pt-4 dark:border-slate-700">
                     <span v-if="passwordStatus" class="text-sm text-slate-500">{{ passwordStatus }}</span>
+                    <UiButton v-if="hasPassword" variant="ghost" :disabled="passwordForm.processing" @click="removePassword">Remove password</UiButton>
+                    <UiButton type="submit" :disabled="passwordForm.processing">{{ hasPassword ? 'Change password' : 'Add password' }}</UiButton>
                 </div>
             </form>
-        </div>
+        </UiPanel>
 
-        <div class="mt-6 border-t border-slate-200 pt-6 dark:border-slate-800">
-            <h2 class="font-semibold">Delete account</h2>
-            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                Deletes your settings, projects, tokens, and published documents.
-            </p>
-            <UiButton variant="danger" class="mt-3" @click="showDelete = true">Delete account</UiButton>
-        </div>
+        <UiPanel title="Delete account" description="Deletes your settings, projects, tokens, and published documents.">
+            <template #actions>
+                <UiButton variant="danger" @click="showDelete = true">Delete account</UiButton>
+            </template>
+        </UiPanel>
 
         <UiModal v-model="showDelete" title="Are you sure you want to delete your account?">
             <p class="text-sm text-slate-600 dark:text-slate-400">

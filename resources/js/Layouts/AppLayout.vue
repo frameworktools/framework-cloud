@@ -3,6 +3,8 @@ import { computed } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
 import ThemeToggle from '@/Components/ThemeToggle.vue';
 
+defineProps({ bleed: Boolean });
+
 const page = usePage();
 const user = computed(() => page.props.auth.user);
 const nav = computed(() => page.props.nav ?? []);
@@ -15,7 +17,7 @@ const logout = () => router.post('/logout');
 
 <template>
     <div class="flex min-h-screen">
-        <aside class="hidden w-60 shrink-0 flex-col border-r border-slate-200 bg-slate-50 p-4 md:flex dark:border-slate-800 dark:bg-slate-900">
+        <aside class="hidden w-60 shrink-0 flex-col overflow-y-auto border-r border-slate-200 bg-slate-50 p-4 md:sticky md:top-0 md:flex md:h-screen dark:border-slate-800 dark:bg-slate-900">
             <Link href="/dashboard" class="px-2 py-1 font-semibold tracking-tight">
                 <span class="inline-flex items-center gap-2"><img :src="'/images/logo.png'" alt="" class="h-8 w-auto" /><span>Framework <span class="text-sky-600 dark:text-sky-500">Cloud</span></span></span>
             </Link>
@@ -75,7 +77,11 @@ const logout = () => router.post('/logout');
                 </div>
             </header>
 
-            <main class="mx-auto w-full max-w-4xl flex-1 px-6 py-10">
+            <!-- bleed: the page lays out its own columns (SectionLayout) -->
+            <main v-if="bleed" class="flex-1">
+                <slot />
+            </main>
+            <main v-else class="mx-auto w-full max-w-5xl flex-1 px-6 py-10 lg:px-10">
                 <slot />
             </main>
         </div>

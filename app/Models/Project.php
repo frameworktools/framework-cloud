@@ -58,6 +58,8 @@ class Project extends Model
         return [
             'payload' => 'array',
             'github_private' => 'boolean',
+            // spec stays raw JSON text so empty maps stay {}
+            'spec_received_at' => 'datetime',
         ];
     }
 

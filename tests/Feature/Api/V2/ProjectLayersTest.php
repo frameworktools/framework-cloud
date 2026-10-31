@@ -115,4 +115,100 @@ class ProjectLayersTest extends TestCase
         $this->getJson('/api/v2/projects/pull')->assertUnauthorized();
         $this->getJson('/api/v2/projects/nhanes-study/layers')->assertUnauthorized();
     }
+
+    public function test_show_describes_one_project_for_its_owner(): void
+    {
+        $user = User::factory()->create();
+        $this->project($user, 'python');
+        $token = $user->createToken('fw')->plainTextToken;
+
+        $this->withToken($token)->getJson('/api/v2/projects/nhanes-study')
+            ->assertOk()
+            ->assertJson(['slug' => 'nhanes-study', 'name' => 'NHANES Study', 'language' => 'python', 'type' => 'project', 'github' => null])
+            ->assertJsonPath('blueprint.key', 'framework/project')
+            ->assertJsonMissingPath('token');
+
+        $this->withToken($token)->getJson('/api/v2/projects/other')->assertNotFound();
+        $this->app['auth']->forgetGuards();
+        $this->withToken(User::factory()->create()->createToken('fw')->plainTextToken)
+            ->getJson('/api/v2/projects/nhanes-study')->assertNotFound();
+    }
+
+    public function test_blueprints_lists_what_the_user_can_build_from(): void
+    {
+        $user = User::factory()->create();
+        $other = User::factory()->create();
+        $base = Blueprint::whereNull('user_id')->where('key', 'project')->firstOrFail()->latestVersion->base;
+        foreach ([[$user, 'Mine', 'private'], [$other, 'Theirs', 'private']] as [$owner, $name, $visibility]) {
+            $this->actingAs($owner)->post('/blueprints', [
+                'name' => $name, 'visibility' => $visibility, 'language' => 'r',
+                'base_version_id' => $base->id, 'facet_version_ids' => [],
+            ])->assertSessionHasNoErrors();
+        }
+
+        $this->app['auth']->forgetGuards();
+        $blueprints = collect($this->withToken($user->createToken('fw')->plainTextToken)
+            ->getJson('/api/v2/blueprints')->assertOk()->json('blueprints'));
+
+        $this->assertContains('Mine', $blueprints->pluck('name'));
+        $this->assertNotContains('Theirs', $blueprints->pluck('name'));
+        $this->assertSame('project', $blueprints->firstWhere('name', 'Mine')['type']);
+        $this->assertTrue($blueprints->firstWhere('key', 'framework/project')['system']);
+    }
+
+    /* tests/fixtures/spec.v1.json: a spec the framework R package (c74051f) wrote for a sensitive project */
+
+    /** Sent as raw JSON, as fw does, so empty maps stay {} */
+    private function sendSpec(string $token, mixed $spec)
+    {
+        $body = '{"spec":'.json_encode($spec, JSON_UNESCAPED_SLASHES).'}';
+
+        return $this->call('PUT', '/api/v2/project/spec', [], [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_ACCEPT' => 'application/json', 'HTTP_AUTHORIZATION' => "Bearer {$token}"], $body);
+    }
+
+    private function rawSpec(): object
+    {
+        return json_decode(file_get_contents(base_path('tests/fixtures/spec.v1.json')));
+    }
+
+    public function test_a_project_token_can_send_its_spec(): void
+    {
+        $project = $this->project(User::factory()->create());
+        $token = $project->issuePullToken();
+
+        $this->sendSpec($token, $this->rawSpec())->assertOk()->assertJson(['spec_version' => 1, 'changed' => true]);
+        $this->sendSpec($token, $this->rawSpec())->assertOk()->assertJson(['changed' => false]);
+
+        $project->refresh();
+        $this->assertNotNull($project->spec_received_at);
+        // Empty maps stay maps
+        $this->assertStringContainsString('"storage_buckets":{}', $project->spec);
+    }
+
+    public function test_a_spec_with_secrets_or_the_wrong_shape_is_refused(): void
+    {
+        $project = $this->project(User::factory()->create());
+        $token = $project->issuePullToken();
+
+        $spec = $this->rawSpec();
+        $spec->env->POSTGRES_PASSWORD = 'hunter2';
+        $this->sendSpec($token, $spec)
+            ->assertUnprocessable()->assertJsonFragment(['env.POSTGRES_PASSWORD looks like a secret. Leave it empty here and fill it in the project\'s .env.']);
+
+        $spec = $this->rawSpec();
+        $spec->connections->databases->framework->password = 'hunter2';
+        $this->sendSpec($token, $spec)->assertUnprocessable();
+
+        $spec = $this->rawSpec();
+        unset($spec->language);
+        $this->sendSpec($token, $spec)->assertUnprocessable();
+
+        $this->sendSpec($token, 'nope')->assertUnprocessable();
+        $this->assertNull($project->refresh()->spec);
+
+        // A user token is not a project token
+        $this->app['auth']->forgetGuards();
+        $this->withToken($project->user->createToken('fw')->plainTextToken)
+            ->putJson('/api/v2/project/spec', ['spec' => []])->assertForbidden();
+    }
 }

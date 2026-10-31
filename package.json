@@ -6,6 +6,7 @@
         "dev": "vite"
     },
     "dependencies": {
+        "@heroicons/vue": "^2.2.0",
         "@inertiajs/vue3": "^3.7.0",
         "@simplewebauthn/browser": "^13.3.0",
         "@tailwindcss/vite": "^4.0.7",

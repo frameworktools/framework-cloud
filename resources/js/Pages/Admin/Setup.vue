@@ -1,7 +1,11 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { router, useForm, usePage } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import { ArchiveBoxIcon, EnvelopeIcon } from '@heroicons/vue/24/outline';
+import SectionLayout from '@/Layouts/SectionLayout.vue';
+import PageHeader from '@/Components/PageHeader.vue';
+import UiPanel from '@/Components/UiPanel.vue';
+import GitHubMark from '@/Components/GitHubMark.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiInput from '@/Components/UiInput.vue';
 import UiSelect from '@/Components/UiSelect.vue';
@@ -68,6 +72,12 @@ const mailer = computed(() => (field('mail.mailer').source === 'env' ? field('ma
 const mailReady = computed(() => !['log', 'array'].includes(props.status.mail));
 const testMail = () => router.post('/admin/setup/mail/test', {}, { preserveScroll: true });
 
+const items = [
+    { label: 'GitHub', anchor: 'github', icon: GitHubMark },
+    { label: 'Published documents', anchor: 'storage', icon: ArchiveBoxIcon },
+    { label: 'Email', anchor: 'mail', icon: EnvelopeIcon },
+];
+
 const pill = (ready) => (ready
     ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200'
     : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300');
@@ -76,16 +86,14 @@ const pill = (ready) => (ready
 <template>
     <Head title="Server setup" />
 
-    <AppLayout>
-        <div class="flex max-w-3xl flex-col gap-8">
-            <div>
-                <h1 class="text-2xl font-semibold tracking-tight">Server setup</h1>
-                <p class="mt-1 text-slate-600 dark:text-slate-400">
-                    This server's own credentials: the GitHub App, where published documents are stored, and how email is sent.
-                    Fill them in here, or with environment variables. A variable that is set always wins over a value saved here.
-                </p>
-            </div>
+    <!-- Three independent forms, so each panel keeps its own Save button -->
+    <SectionLayout heading="Server setup" :items="items">
+        <PageHeader
+            title="Server setup"
+            description="This server's own credentials: the GitHub App, where published documents are stored, and how email is sent. Fill them in here, or with environment variables. A variable that is set always wins over a value saved here."
+        />
 
+        <div class="mt-8 flex flex-col gap-8">
             <UiCallout v-if="broken.length" variant="danger" heading="Some saved values can't be read">
                 <p>
                     APP_KEY has changed since they were saved: {{ broken.join(', ') }}. Enter them again, or put the old key in
@@ -100,16 +108,12 @@ const pill = (ready) => (ready
                 </p>
             </UiCallout>
 
-            <!-- 1. GitHub -->
-            <section class="flex flex-col gap-4 rounded-lg border border-slate-200 p-5 dark:border-slate-800">
-                <div class="flex flex-wrap items-center justify-between gap-2">
-                    <h2 class="flex items-center gap-2.5 text-lg font-semibold">
-                        <span class="flex size-6 items-center justify-center rounded-full bg-sky-600 text-xs text-white">1</span>
-                        GitHub
-                    </h2>
+            <!-- GitHub -->
+            <UiPanel id="github" title="GitHub" class="scroll-mt-6">
+                <template #header>
                     <span class="rounded-full px-2 py-0.5 text-xs" :class="pill(status.github)">{{ status.github ? 'Ready' : 'Not set up' }}</span>
-                </div>
-                <p class="text-sm text-slate-600 dark:text-slate-400">
+                </template>
+                <p class="-mt-4 text-sm text-slate-600 dark:text-slate-400">
                     Lets people sign in with GitHub and create projects as GitHub repositories. Each server needs its own GitHub App.
                     Optional: everything else works without it.
                 </p>
@@ -121,7 +125,10 @@ const pill = (ready) => (ready
                 <UiCallout v-if="errors.github" variant="danger" heading="GitHub">{{ errors.github }}</UiCallout>
 
                 <template v-if="!githubFromEnv && !field('github.client_id').set">
-                    <form method="post" :action="githubAction" class="flex flex-col gap-3 rounded-md bg-slate-50 p-4 dark:bg-slate-900/60">
+                    <form
+                        method="post" :action="githubAction"
+                        class="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
+                    >
                         <input type="hidden" name="manifest" :value="manifestJson">
                         <div class="text-sm font-medium">Create the app on GitHub</div>
                         <p class="text-sm text-slate-600 dark:text-slate-400">
@@ -140,7 +147,7 @@ const pill = (ready) => (ready
 
                 <form
                     v-if="githubFromEnv || field('github.client_id').set || showManualGitHub"
-                    class="flex flex-col gap-4" @submit.prevent="save('github')"
+                    id="github-form" class="flex flex-col gap-4" @submit.prevent="save('github')"
                 >
                     <div class="grid gap-4 sm:grid-cols-2">
                         <CredentialField v-model="forms.github.github__app_slug" :field="field('github.app_slug')" placeholder="framework-cloud-example" :error="forms.github.errors.github__app_slug" />
@@ -155,39 +162,39 @@ const pill = (ready) => (ready
                         <dt class="text-slate-500">Sign-in callback</dt><dd class="break-all font-mono">{{ github.callback_url }}</dd>
                         <dt class="text-slate-500">Webhook</dt><dd class="break-all font-mono">{{ github.webhook_url }}</dd>
                     </dl>
-
-                    <div v-if="!allEnv('github')" class="flex flex-wrap items-center gap-3">
-                        <UiButton type="submit" :disabled="forms.github.processing">Save</UiButton>
-                        <a v-if="installUrl" :href="installUrl" target="_blank"><UiButton variant="outline">Install the app</UiButton></a>
-                        <UiButton v-if="savedIn('github')" variant="ghost" @click="clear('github', 'GitHub App')">Remove saved app</UiButton>
-                        <span v-if="flash === 'github-saved'" class="text-sm text-slate-500">Saved.</span>
-                    </div>
                 </form>
-            </section>
 
-            <!-- 2. Storage -->
-            <section class="flex flex-col gap-4 rounded-lg border border-slate-200 p-5 dark:border-slate-800">
-                <div class="flex flex-wrap items-center justify-between gap-2">
-                    <h2 class="flex items-center gap-2.5 text-lg font-semibold">
-                        <span class="flex size-6 items-center justify-center rounded-full bg-sky-600 text-xs text-white">2</span>
-                        Published documents
-                    </h2>
+                <template v-if="(githubFromEnv || field('github.client_id').set || showManualGitHub) && !allEnv('github')" #actions>
+                    <div class="flex flex-wrap items-center justify-end gap-2">
+                        <span v-if="flash === 'github-saved'" class="text-sm text-slate-500">Saved.</span>
+                        <UiButton v-if="savedIn('github')" variant="ghost" @click="clear('github', 'GitHub App')">Remove saved app</UiButton>
+                        <a v-if="installUrl" :href="installUrl" target="_blank"><UiButton variant="outline">Install the app</UiButton></a>
+                        <UiButton type="submit" form="github-form" :disabled="forms.github.processing">Save</UiButton>
+                    </div>
+                </template>
+            </UiPanel>
+
+            <!-- Storage -->
+            <UiPanel id="storage" title="Published documents" class="scroll-mt-6">
+                <template #header>
                     <span class="rounded-full px-2 py-0.5 text-xs" :class="pill(usingBucket)">
                         {{ usingBucket ? `Bucket (${status.storage})` : "This server's disk" }}
                     </span>
+                </template>
+                <div class="-mt-4 flex flex-col gap-2 text-sm text-slate-600 dark:text-slate-400">
+                    <p>
+                        Where notebooks published with <span class="font-mono">framework::publish()</span> are stored. Without a bucket they go on this
+                        server's disk, which is fine for a small group. Any S3-compatible bucket works: Amazon S3, Cloudflare R2, MinIO, or Backblaze B2.
+                    </p>
+                    <p v-if="documentsDiskFromEnv">
+                        <span class="font-mono">FW_DOCUMENTS_DISK</span> is set, so the environment picks the disk. A bucket saved here is used only if it names <span class="font-mono">bucket</span>.
+                    </p>
                 </div>
-                <p class="text-sm text-slate-600 dark:text-slate-400">
-                    Where notebooks published with <span class="font-mono">framework::publish()</span> are stored. Without a bucket they go on this
-                    server's disk, which is fine for a small group. Any S3-compatible bucket works: Amazon S3, Cloudflare R2, MinIO, or Backblaze B2.
-                </p>
-                <p v-if="documentsDiskFromEnv" class="text-sm text-slate-600 dark:text-slate-400">
-                    <span class="font-mono">FW_DOCUMENTS_DISK</span> is set, so the environment picks the disk. A bucket saved here is used only if it names <span class="font-mono">bucket</span>.
-                </p>
 
                 <UiCallout v-if="flash === 'storage-tested'" variant="success" heading="The bucket works">A test file was written, read back, and deleted.</UiCallout>
                 <UiCallout v-if="errors.storage" variant="danger" heading="Storage">{{ errors.storage }}</UiCallout>
 
-                <form class="flex flex-col gap-4" @submit.prevent="save('storage')">
+                <form id="storage-form" class="flex flex-col gap-4" @submit.prevent="save('storage')">
                     <div class="grid gap-4 sm:grid-cols-2">
                         <CredentialField v-model="forms.storage.storage__bucket" :field="field('storage.bucket')" placeholder="framework-documents" :error="forms.storage.errors.storage__bucket" />
                         <CredentialField v-model="forms.storage.storage__region" :field="field('storage.region')" placeholder="auto, or us-east-1" :error="forms.storage.errors.storage__region" />
@@ -208,26 +215,24 @@ const pill = (ready) => (ready
                         Optional: a public domain attached to the bucket. Documents then load from there, a separate site from this one, which keeps
                         scripts in published pages away from people's sign-ins. Without it, this server streams them.
                     </p>
-
-                    <div v-if="!allEnv('storage')" class="flex flex-wrap items-center gap-3">
-                        <UiButton type="submit" :disabled="forms.storage.processing">Save</UiButton>
-                        <UiButton variant="outline" :disabled="forms.storage.processing" @click="testStorage">Test connection</UiButton>
-                        <UiButton v-if="savedIn('storage')" variant="ghost" @click="clear('storage', 'bucket')">Remove saved bucket</UiButton>
-                        <span v-if="flash === 'storage-saved'" class="text-sm text-slate-500">Saved.</span>
-                    </div>
                 </form>
-            </section>
 
-            <!-- 3. Mail -->
-            <section class="flex flex-col gap-4 rounded-lg border border-slate-200 p-5 dark:border-slate-800">
-                <div class="flex flex-wrap items-center justify-between gap-2">
-                    <h2 class="flex items-center gap-2.5 text-lg font-semibold">
-                        <span class="flex size-6 items-center justify-center rounded-full bg-sky-600 text-xs text-white">3</span>
-                        Email
-                    </h2>
+                <template v-if="!allEnv('storage')" #actions>
+                    <div class="flex flex-wrap items-center justify-end gap-2">
+                        <span v-if="flash === 'storage-saved'" class="text-sm text-slate-500">Saved.</span>
+                        <UiButton v-if="savedIn('storage')" variant="ghost" @click="clear('storage', 'bucket')">Remove saved bucket</UiButton>
+                        <UiButton variant="outline" :disabled="forms.storage.processing" @click="testStorage">Test connection</UiButton>
+                        <UiButton type="submit" form="storage-form" :disabled="forms.storage.processing">Save</UiButton>
+                    </div>
+                </template>
+            </UiPanel>
+
+            <!-- Mail -->
+            <UiPanel id="mail" title="Email" class="scroll-mt-6">
+                <template #header>
                     <span class="rounded-full px-2 py-0.5 text-xs" :class="pill(mailReady)">{{ mailReady ? `Sending with ${status.mail}` : 'Not sending' }}</span>
-                </div>
-                <p class="text-sm text-slate-600 dark:text-slate-400">
+                </template>
+                <p class="-mt-4 text-sm text-slate-600 dark:text-slate-400">
                     Sign-in links go out by email, so people can't sign in until this works (unless they use GitHub or a passkey).
                 </p>
 
@@ -236,7 +241,7 @@ const pill = (ready) => (ready
                 </UiCallout>
                 <UiCallout v-if="errors.mail" variant="danger" heading="Email">{{ errors.mail }}</UiCallout>
 
-                <form class="flex flex-col gap-4" @submit.prevent="save('mail')">
+                <form id="mail-form" class="flex flex-col gap-4" @submit.prevent="save('mail')">
                     <div v-if="field('mail.mailer').source === 'env'"><CredentialField :field="field('mail.mailer')" /></div>
                     <UiSelect v-else v-model="forms.mail.mail__mailer" label="Service" :options="mailerOptions" :error="forms.mail.errors.mail__mailer" />
 
@@ -256,15 +261,17 @@ const pill = (ready) => (ready
                         <CredentialField v-model="forms.mail.mail__ses_secret" :field="field('mail.ses_secret')" :error="forms.mail.errors.mail__ses_secret" />
                         <CredentialField v-model="forms.mail.mail__ses_region" :field="field('mail.ses_region')" placeholder="us-east-1" :error="forms.mail.errors.mail__ses_region" />
                     </div>
-
-                    <div class="flex flex-wrap items-center gap-3">
-                        <UiButton v-if="!allEnv('mail')" type="submit" :disabled="forms.mail.processing">Save</UiButton>
-                        <UiButton variant="outline" :disabled="!mailReady" @click="testMail">Send a test email</UiButton>
-                        <UiButton v-if="savedIn('mail')" variant="ghost" @click="clear('mail', 'email settings')">Remove saved settings</UiButton>
-                        <span v-if="flash === 'mail-saved'" class="text-sm text-slate-500">Saved. Send a test email to check it.</span>
-                    </div>
                 </form>
-            </section>
+
+                <template #actions>
+                    <div class="flex flex-wrap items-center justify-end gap-2">
+                        <span v-if="flash === 'mail-saved'" class="text-sm text-slate-500">Saved. Send a test email to check it.</span>
+                        <UiButton v-if="savedIn('mail')" variant="ghost" @click="clear('mail', 'email settings')">Remove saved settings</UiButton>
+                        <UiButton variant="outline" :disabled="!mailReady" @click="testMail">Send a test email</UiButton>
+                        <UiButton v-if="!allEnv('mail')" type="submit" form="mail-form" :disabled="forms.mail.processing">Save</UiButton>
+                    </div>
+                </template>
+            </UiPanel>
         </div>
-    </AppLayout>
+    </SectionLayout>
 </template>

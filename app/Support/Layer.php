@@ -35,6 +35,8 @@ class Layer
 
     public const ENVELOPE_SCHEMA_ID = 'https://framework.pub/schema/layers/v1.json';
 
+    public const SPEC_SCHEMA_ID = 'https://framework.pub/schema/spec/v1.json';
+
     /** Keys whose values the spec defines as lists, so an empty one stays []. */
     private const LIST_KEYS = ['fragments'];
 
@@ -144,6 +146,30 @@ class Layer
             $problems = [...$problems, ...self::credentialProblems($layer['connections'] ?? [], 'connections')];
             $problems = [...$problems, ...self::envProblems($layer['env'] ?? [])];
         }
+
+        return array_values(array_unique($problems));
+    }
+
+    /**
+     * Problems with a resolved spec that a project sends up (PUT
+     * /api/v2/project/spec). The spec is validated as decoded JSON objects,
+     * so empty maps stay maps. Credentials and secret-looking env values are
+     * refused as they are in layers.
+     *
+     * @return list<string>
+     */
+    public static function specProblems(object $spec): array
+    {
+        $validator = new Validator;
+        $validator->setMaxErrors(20);
+        $validator->resolver()->registerFile(self::SPEC_SCHEMA_ID, resource_path('schema/spec.v1.json'));
+
+        $result = $validator->validate($spec, self::SPEC_SCHEMA_ID);
+        $problems = $result->isValid() ? [] : array_map(self::describe(...), self::leafErrors($result->error()));
+
+        $array = json_decode(json_encode($spec), true);
+        $problems = [...$problems, ...self::credentialProblems($array['connections'] ?? [], 'connections')];
+        $problems = [...$problems, ...self::envProblems($array['env'] ?? [])];
 
         return array_values(array_unique($problems));
     }

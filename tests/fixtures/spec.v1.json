@@ -1,0 +1,192 @@
+{
+  "spec_version": 1,
+  "name": "Test project_sensitive",
+  "type": "project_sensitive",
+  "language": "r",
+  "author": {
+    "name": "Ada Lovelace",
+    "email": "ada@example.edu",
+    "affiliation": "Example University",
+    "orcid": "0000-0002-1825-0097",
+    "url": "https://example.edu/ada",
+    "affiliations": [
+      {
+        "name": "Example University",
+        "department": "Biostatistics",
+        "city": "Baltimore",
+        "country": "USA"
+      }
+    ]
+  },
+  "directories": {
+    "functions": "functions",
+    "notebooks": "notebooks",
+    "scripts": "scripts",
+    "inputs_private_raw": "inputs/private/raw",
+    "inputs_public_raw": "inputs/public/raw",
+    "inputs_private_intermediate": "inputs/private/intermediate",
+    "inputs_public_intermediate": "inputs/public/intermediate",
+    "inputs_private_final": "inputs/private/final",
+    "inputs_public_final": "inputs/public/final",
+    "outputs_private_notebooks": "outputs/private/notebooks",
+    "outputs_public_notebooks": "outputs/public/notebooks",
+    "outputs_private_tables": "outputs/private/tables",
+    "outputs_public_tables": "outputs/public/tables",
+    "outputs_private_figures": "outputs/private/figures",
+    "outputs_public_figures": "outputs/public/figures",
+    "outputs_private_models": "outputs/private/models",
+    "outputs_public_models": "outputs/public/models",
+    "outputs_private_reports": "outputs/private/reports",
+    "outputs_public_reports": "outputs/public/reports",
+    "cache": "outputs/private/cache",
+    "scratch": "scratch",
+    "logs": "logs",
+    "docs": "docs"
+  },
+  "extra_directories": {},
+  "render_dirs": {
+    "notebooks": "outputs/private/notebooks",
+    "docs": "outputs/private/docs"
+  },
+  "packages": {
+    "use_renv": false,
+    "default_packages": {
+      "dplyr": {
+        "source": "cran",
+        "auto_attach": true
+      },
+      "ggplot2": {
+        "source": "cran",
+        "auto_attach": true
+      },
+      "tidyr": {
+        "source": "cran",
+        "auto_attach": true
+      },
+      "stringr": {
+        "source": "cran",
+        "auto_attach": true
+      },
+      "readr": {
+        "source": "cran",
+        "auto_attach": true
+      },
+      "lubridate": {
+        "source": "cran",
+        "auto_attach": false
+      },
+      "glue": {
+        "source": "cran",
+        "auto_attach": false
+      },
+      "here": {
+        "source": "cran",
+        "auto_attach": false
+      }
+    }
+  },
+  "git": {
+    "use_git": true,
+    "hooks": {
+      "ai_sync": false,
+      "data_security": false
+    },
+    "gitignore_content": "# Framework (Privacy-First Mode)\n# ================================================================================\n# This project uses Framework's privacy-first structure.\n# All */private/ directories are gitignored by default.\n# Only */public/ directories can be committed after explicit review.\n#\n# WORKFLOW:\n#   1. Sensitive/raw data goes in */private/ directories (NEVER committed)\n#   2. De-identified/aggregated data goes in */public/ directories (safe to commit)\n#   3. Analysis scripts are committed, but outputs are carefully controlled\n#\n# CRITICAL: Private directories are NEVER committed to version control.\n# ================================================================================\n\n# ============================================================================\n# SENSITIVE DATA - NEVER COMMIT\n# ============================================================================\n\n# Private directories - explicit paths for this project type\n/inputs/private/\n/reference/private/\n/outputs/private/\n\n# Generic private directory patterns (defense-in-depth)\n**/private/**\n**/*_private/**\n**/sensitive/**\n\n# Allow structure documentation (README and .gitkeep files in private dirs)\n!/inputs/**/README.md\n!/inputs/**/.gitkeep\n!/reference/**/README.md\n!/reference/**/.gitkeep\n!/outputs/**/README.md\n!/outputs/**/.gitkeep\n\n# ============================================================================\n# SECRETS AND CREDENTIALS - NEVER COMMIT\n# ============================================================================\n\n.env\n.env.local\n.env.*.local\n.Renviron\n.httr-oauth\n**/credentials/**\n**/secrets/**\n*.key\n*.pem\n*.p12\n*.pfx\n\n# ============================================================================\n# UTILITY & CACHE - SAFE TO IGNORE\n# ============================================================================\n\n# Temporary processing directories\n**/cache/**\n**/scratch/**\n**/tmp/**\n**/temp/**\n\n# Logs (run logs, cluster job output)\n**/logs/**\nslurm-*.out\n\n# ============================================================================\n# R ENVIRONMENT\n# ============================================================================\n\n# R session files\n.Rproj.user/\n.Rhistory\n.RData\n.Ruserdata\n.Rapp.history\n.Rprofile\n\n# renv (package management)\n# NOTE: Consider committing renv.lock for reproducibility\nrenv/library/\nrenv/local/\nrenv/cellar/\nrenv/lock/\nrenv/python/\nrenv/sandbox/\nrenv/staging/\n\n# ============================================================================\n# FRAMEWORK INTERNALS\n# ============================================================================\n\nframework.db\nframework.db-wal\nframework.db-shm\n.initiated\n.framework_renv_enabled\n.framework_scaffolded\n\n# ============================================================================\n# QUARTO / RMARKDOWN ARTIFACTS\n# ============================================================================\n\n.quarto/\n_freeze/\n*_cache/\n*_files/\n\n# ============================================================================\n# PYTHON (if using reticulate)\n# ============================================================================\n\n__pycache__/\n.ipynb_checkpoints/\n*.pyc\n.pytest_cache/\nvenv/\n.venv/\n\n# ============================================================================\n# IDE & SYSTEM FILES\n# ============================================================================\n\n# IDE - personal settings only (commit workspace settings if desired)\n.idea/\n.vscode/.history/\n.positron/.history/\n.history/\n\n# macOS\n.DS_Store\n.AppleDouble\n.LSOverride\n\n# Windows\nThumbs.db\nehthumbs.db\n\n# Linux\n*~\n\n# ============================================================================\n# CLOUD/AWS CONFIG\n# ============================================================================\n\n.aws/\n.config/\n\n# ============================================================================\n# TEMPORARY FILES\n# ============================================================================\n\n*.tmp\n*.log\n*.bak\n*.swp\n*~"
+  },
+  "ai": {
+    "enabled": true,
+    "assistants": {
+      "claude": true
+    },
+    "agents_md": "stub"
+  },
+  "scaffold": {
+    "seed_on_scaffold": false,
+    "seed": "123",
+    "set_theme_on_scaffold": true,
+    "ggplot_theme": "theme_minimal",
+    "source_all_functions": true,
+    "notebook_format": "quarto",
+    "ide": "vscode"
+  },
+  "quarto": {
+    "html": {
+      "format": "html",
+      "embed_resources": true,
+      "theme": "default",
+      "toc": true,
+      "toc_depth": 3,
+      "code_fold": false,
+      "code_tools": false,
+      "highlight_style": "github"
+    },
+    "revealjs": {
+      "format": "revealjs",
+      "theme": "default",
+      "incremental": false,
+      "slide_number": true,
+      "transition": "slide",
+      "background_transition": "fade",
+      "controls": true,
+      "progress": true,
+      "center": true,
+      "highlight_style": "github"
+    },
+    "render_dir": "outputs/public/docs"
+  },
+  "connections": {
+    "default_database": "framework",
+    "databases": {
+      "framework": {
+        "driver": "sqlite",
+        "database": "framework.db"
+      }
+    },
+    "storage_buckets": {}
+  },
+  "security": {
+    "sensitive": true
+  },
+  "env": {
+    "POSTGRES_HOST": "",
+    "POSTGRES_PORT": "5432",
+    "POSTGRES_DB": "",
+    "POSTGRES_SCHEMA": "public",
+    "POSTGRES_USER": "",
+    "POSTGRES_PASSWORD": "",
+    "S3_BUCKET": "",
+    "S3_ACCESS_KEY": "",
+    "S3_SECRET_KEY": "",
+    "S3_REGION": "",
+    "S3_ENDPOINT": "",
+    "S3_SESSION_TOKEN": ""
+  },
+  "data_hooks": {},
+  "files": {
+    "AGENTS.md": {
+      "content": "# {ProjectName}\n\nThis file provides guidance to AI assistants working with this Framework project.\nIt is the canonical context file; detailed workflow instructions live in the\nskills listed below. Edit freely - add project-specific notes at the bottom.\n\n**This is a privacy-sensitive project.** Follow the `framework-sensitive-data`\nskill before ANY data operation, output, commit, or publish step. Never commit\nor publish anything under a `private/` directory.\n\n## Skills\n\nDetailed instructions live in skill files, loaded on demand. Claude Code discovers\nthem automatically; other agents should read the relevant SKILL.md before working\non a matching task.\n\n| Skill | Covers | Path |\n|-------|--------|------|\n| `framework-workflow` | scaffold() initialization, critical rules, creating notebooks/scripts | `.claude/skills/framework-workflow/SKILL.md` |\n| `framework-data` | reading and saving data (data_read/data_save are mandatory) | `.claude/skills/framework-data/SKILL.md` |\n| `framework-packages` | adding and managing R packages (package_add, never install.packages) | `.claude/skills/framework-packages/SKILL.md` |\n| `framework-outputs` | results, caching, database queries, publishing | `.claude/skills/framework-outputs/SKILL.md` |\n| `framework-sensitive-data` | PII/PHI handling and private/public directory rules | `.claude/skills/framework-sensitive-data/SKILL.md` |\n\n## Framework Environment\n\nThis project uses the Framework R package. **Every notebook and script MUST\nbegin with `scaffold()`**, which sets the working directory, loads `.env`,\ninstalls/attaches packages from settings.yml, and sources the functions\ndirectory. See the `framework-workflow` skill before writing any code.\n\n## Project Notes\n\n*Add your project-specific notes, conventions, and documentation here.*\n",
+      "template": true
+    }
+  },
+  "skills": {
+    "framework-workflow": {
+      "package": true
+    },
+    "framework-data": {
+      "package": true
+    },
+    "framework-packages": {
+      "package": true
+    },
+    "framework-outputs": {
+      "package": true
+    },
+    "framework-sensitive-data": {
+      "package": true
+    }
+  },
+  "source": {
+    "origin": "r",
+    "framework_version": "1.9.0.9000"
+  }
+}

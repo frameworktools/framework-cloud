@@ -7,6 +7,7 @@ These files are copied from the framework R package, where
 | --- | --- | --- |
 | `layer.v1.json` | One stored layer (base, facet, blueprint) | `inst/schema/layer.v1.json` |
 | `layers.v1.json` | The layers envelope: `.framework/layers.json` and the pull v2 body | `inst/schema/layers.v1.json` |
+| `spec.v1.json` | A resolved project spec: `.framework/spec.json`, sent by `PUT /api/v2/project/spec` | `inst/schema/spec.v1.json` |
 
 `schema.lock.json` records the R package commit they came from and each
 file's SHA-256. To update them, copy them from a newer commit:

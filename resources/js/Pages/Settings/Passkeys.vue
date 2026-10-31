@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
 import SettingsLayout from '@/Layouts/SettingsLayout.vue';
+import UiPanel from '@/Components/UiPanel.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiInput from '@/Components/UiInput.vue';
 
@@ -54,8 +55,9 @@ const remove = (id) => {
 
     <SettingsLayout
         heading="Passkeys"
-        subheading="One-touch sign-in with Touch ID, Face ID, or a security key. Add one per device — this account has no password."
+        subheading="One-touch sign-in with Touch ID, Face ID, or a security key. Add one for each device you use."
     >
+        <UiPanel title="Add a passkey" description="Give it a name so you can tell your devices apart.">
         <div v-if="supported" class="flex flex-col gap-3">
             <p v-if="error" class="text-sm text-red-600 dark:text-red-400">{{ error }}</p>
             <div class="flex items-end gap-3">
@@ -67,7 +69,9 @@ const remove = (id) => {
             <span v-if="added" class="text-sm text-slate-500">Passkey added.</span>
         </div>
         <p v-else class="text-sm text-slate-500">This browser does not support passkeys.</p>
+        </UiPanel>
 
+        <UiPanel title="Your passkeys">
         <div class="flex flex-col divide-y divide-slate-200 dark:divide-slate-700">
             <div v-for="passkey in passkeys" :key="passkey.id" class="flex items-center justify-between gap-4 py-3">
                 <div>
@@ -80,5 +84,6 @@ const remove = (id) => {
             </div>
             <p v-if="!passkeys.length" class="py-3 text-sm text-slate-500">No passkeys yet.</p>
         </div>
+        </UiPanel>
     </SettingsLayout>
 </template>

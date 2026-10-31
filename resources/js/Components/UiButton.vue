@@ -7,7 +7,7 @@ defineProps({
 });
 
 const variants = {
-    primary: 'bg-sky-600 text-white hover:bg-sky-700 disabled:bg-sky-300',
+    primary: 'bg-sky-600 text-white hover:bg-sky-700 disabled:bg-sky-300 dark:disabled:bg-sky-900 dark:disabled:text-sky-300/60',
     outline: 'border border-slate-300 text-slate-800 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-100 dark:hover:bg-slate-800',
     danger: 'bg-red-600 text-white hover:bg-red-700 disabled:bg-red-300',
     ghost: 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800',
