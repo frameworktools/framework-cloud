@@ -1,4 +1,4 @@
-# Blueprints, project structures, package sets, skills, and settings
+# Blueprints, project structures, features, package sets, skills, and settings
 
 Status: draft for review, 2026-10-31.
 
@@ -13,33 +13,63 @@ result of combining them is hard to predict.
 
 ## Model
 
-There are two kinds of thing.
+A blueprint is the only umbrella concept. Everything else is a piece with one
+job.
 
 **Components** have content. People write, version, share, and copy them.
 
-- **Project structure:** the folders, render directories, and starter files such
-  as AGENTS.md.
-- **Package set:** a named group of packages, such as "tidyverse analysis" or
-  "survey statistics".
+- **Project structure:** the folders and Framework's core files, such as
+  `settings.yml`, `scaffold.R`, and AGENTS.md. Nothing optional.
+- **Project feature:** an optional tool that brings its own files, folders,
+  packages, and settings. Examples: Quarto, Quarto manuscript, Quarto slides,
+  targets, renv, uv, and Jupyter.
+- **Package set:** a named list of packages for one language, such as
+  "tidyverse analysis" or "survey statistics". Packages only, no files.
 - **Skill:** one SKILL.md. A **skill set** is a named group of skills.
 
 **Settings** are switches with values. Each user has defaults (Settings >
 Defaults), and each project has its own values.
 
+- **Language:** R, Python, or Stata.
 - **AI assistants:** on or off, and which tools to set up (Claude Code, Codex,
   Copilot). When AI is off, no skills are installed.
 - **Sensitive data:** on or off.
-- **Quarto:** notebook format and render directories.
-- **Reproducibility:** git, renv, and seed on scaffold.
-- **Languages:** the main language, and whether Python runs alongside R.
+- **Git and seed on scaffold:** on or off.
 
-A **blueprint** is a saved, shareable set of choices: one project structure, any number
-of package sets, skills and skill sets, and settings. Settings in a blueprint
-override the user's defaults. Blueprints are versioned snapshots, and a project
-records the blueprint version it came from.
+The rule between the two: if turning something on adds files or packages, it is
+a feature. If it only changes a value, it is a setting.
 
-Each component controls only its own part of a project, so no component
-overrides another. This removes the merge rules that facets needed.
+A **blueprint** is a saved, shareable set of choices: one project structure, any
+number of features, package sets, skills and skill sets, and settings. Settings
+in a blueprint override the user's defaults. Blueprints are versioned snapshots
+that pin the versions of their pieces, and a project records the blueprint
+version it came from.
+
+## Features
+
+| Feature | Brings | Language | Needs |
+|---|---|---|---|
+| Quarto | `_quarto.yml`, render folders | R, Python | |
+| Quarto manuscript | Manuscript config and folder | R, Python | Quarto |
+| Quarto slides | Slides config and folder | R, Python | Quarto |
+| targets | `_targets.R`, the targets package | R | |
+| renv | renv setup and `renv.lock` | R | |
+| uv | `pyproject.toml` and a lock file | Python | |
+| Jupyter | Notebook folder and kernel setup | Python | |
+
+Quarto stops being assumed. Framework's R blueprints include it by default, so
+R users see no change, and Python projects can choose Jupyter or neither.
+
+Rules that keep features from becoming facets again:
+
+- **A feature only adds.** It adds its own files, folders, packages, and
+  settings. It never renames or removes anything in the project structure.
+- **A feature declares its language and its dependencies.** The launch page
+  shows only features for the project's language and adds required ones.
+- **Two features cannot own the same file.** Features that would are marked as
+  conflicting and cannot be chosen together.
+- **Framework writes the features at first.** Sharing user-written features
+  waits until these rules have held up in practice.
 
 ## Creating a project
 
@@ -47,19 +77,20 @@ People either start from a blueprint or pick the pieces.
 
 1. **Start:** choose a blueprint, or "Start from scratch".
 2. **Project structure:** the blueprint's structure is preselected. Change it if needed.
-3. **Packages:** add or remove package sets and single packages.
-4. **AI:** turn AI on or off. Pick skill sets and add single skills.
-5. **Settings:** filled from the blueprint, then the user's defaults. Change any of them.
-6. **Create.** Optionally, "Save these choices as a blueprint".
+3. **Features:** turn features on or off, filtered by language.
+4. **Packages:** add or remove package sets and single packages.
+5. **AI:** turn AI on or off. Pick skill sets and add single skills.
+6. **Settings:** filled from the blueprint, then the user's defaults. Change any of them.
+7. **Create.** Optionally, "Save these choices as a blueprint".
 
-## Rules between components and settings
+## Rules between pieces and settings
 
-- **Sensitive data and project structures.** Turning sensitive data on splits data and
-  output folders by a fixed convention: `inputs/raw` becomes
+- **Sensitive data and project structures.** Turning sensitive data on splits
+  data and output folders by a fixed convention: `inputs/raw` becomes
   `inputs/private/raw` and `inputs/public/raw`, and the same for intermediate,
-  final, and outputs. A project structure may instead declare its own sensitive variant.
-  Sensitive data also adds the git ignores, the private-path warnings, and the
-  sensitive-data skill when AI is on.
+  final, and outputs. A project structure may instead declare its own sensitive
+  variant. Sensitive data also adds the git ignores, the private-path warnings,
+  and the sensitive-data skill when AI is on.
 - **Skills that need packages.** A skill or skill set may list the packages it
   needs. The launch page adds them, and the person can remove them.
 - **AI off.** No skills, no AGENTS.md skill table, and no assistant stub files.
@@ -68,55 +99,57 @@ People either start from a blueprint or pick the pieces.
 
 | Today | Becomes |
 |---|---|
-| Project types (5) | Five Framework blueprints, each with a Framework project structure |
-| Base facets (5) | Five Framework project structures |
+| Project types (5) | Five Framework blueprints |
+| Base facets (5) | Five Framework project structures, with Quarto moved out into a feature |
 | `restricted-data` facet | Sensitive data setting |
 | `claude-code`, `codex`, `copilot` facets | AI assistants setting |
-| `renv` facet | Reproducibility setting (renv already exists in Defaults) |
-| `python` facet | Languages setting |
-| `targets-pipeline` facet | Package set with a starter `_targets.R` (see open questions) |
-| `manuscript`, `slides` facets | Project structures, or folders added to a project structure (see open questions) |
-| User facets | Migrated to the nearest component. Anything that does not fit becomes a project structure |
+| `renv` facet | renv feature |
+| `python` facet | Language setting, plus Python features |
+| `targets-pipeline` facet | targets feature |
+| `manuscript`, `slides` facets | Quarto manuscript and Quarto slides features |
+| User facets | Migrated to the nearest piece. Folders become a project structure, packages a package set |
 | Skills | Unchanged, plus skill sets |
 
 The Facets page, facet import from GitHub, and facet publishing are removed.
-The sidebar's Framework section lists Blueprints, Structures, Package sets, and
-Skills.
+The sidebar's Framework section lists Blueprints, Structures, Features, Package
+sets, and Skills.
 
 ## Behavior keyed on settings, not type names
 
 The R package, Python package, and fw branch on `project_type` today. For
 example, `save_figure()` checks for `project_sensitive`. They should check
-settings and the project structure instead:
+settings, features, and the project structure instead:
 
 - `security.sensitive` decides private and public folders and warnings.
 - The directories in `settings.yml` decide where outputs go.
+- Quarto behavior, such as render directories, applies only when the Quarto
+  feature is on.
 - `type` stays as a label and an alias. `new(type = "project")` keeps working
   and means "Framework's standard blueprint".
 
 ## Spec and API
 
 - The project spec (the layers that R, Python, and fw read) keeps its shape.
-  The cloud resolves a blueprint into the same layer list: project structure, package sets,
-  skills, then settings. The clients need only the type-name changes above.
+  The cloud resolves a blueprint into the same layer list: project structure,
+  features, package sets, skills, then settings. The clients need only the
+  changes above.
 - v1 clients (R 1.1.0) keep receiving the flattened blueprint as they do now.
-- New endpoints list project structures, package sets, and skill sets for `fw` and agents.
+- New endpoints list project structures, features, package sets, and skill sets
+  for `fw` and agents.
 
 ## Order of work
 
-1. Cloud data model: project structures, package sets, skill sets, and blueprint versions
-   that reference them. Migrate facets and types. The spec output is unchanged.
+1. Cloud data model: project structures, features, package sets, skill sets,
+   and blueprint versions that reference them. Migrate facets and types. The
+   spec output is unchanged.
 2. Cloud pages: the library pages and the new launch flow.
-3. R package: key behavior on settings rather than type names, and add skill
-   sets and package sets to `new()`. Python and fw follow the same change.
+3. R package: key behavior on settings and features rather than type names,
+   make Quarto a feature, and add features, skill sets, and package sets to
+   `new()`. Python and fw follow the same change.
 4. Remove facets from the cloud once nothing reads them.
 
 ## Open questions
 
-1. Can a package set include starter files, such as `_targets.R` for targets? If
-   not, targets becomes a project structure or a setting.
-2. Are manuscript and slides project structures of their own, or folders a person adds to
-   any project structure?
-3. Should a blueprint pin component versions, or follow the latest? Pinning
-   matches how blueprints work now and keeps projects reproducible.
-4. Do package sets belong to one language, or can they mix R and Python?
+1. Should Stata get features, such as a do-file runner, or only structures and
+   settings? fw scaffolds Stata, so it would be limited to files.
+2. Does Jupyter belong to R too, through IRkernel, or stay Python only at first?
