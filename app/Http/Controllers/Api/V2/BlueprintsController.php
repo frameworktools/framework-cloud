@@ -35,9 +35,19 @@ class BlueprintsController extends Controller
                 'version' => $b->latestVersion->version,
                 'visibility' => $b->visibility,
                 'system' => $b->isSystem(),
+                'structure' => $b->latestVersion->base?->facet->handle,
+                'tools' => $b->latestVersion->facetVersions->filter(fn ($v) => $v->facet->kind === 'tool')->map(fn ($v) => $v->facet->key)->values()->all(),
+                'package_sets' => $this->handles($b, 'package_set'),
+                'skill_sets' => $this->handles($b, 'skill_set'),
+                // Every piece above the structure, for fw 0.2 and 0.3
                 'facets' => $b->latestVersion->facetVersions->map(fn ($v) => $v->facet->handle)->values()->all(),
             ]);
 
         return response()->json(['blueprints' => $blueprints]);
+    }
+
+    private function handles(Blueprint $blueprint, string $kind): array
+    {
+        return $blueprint->latestVersion->facetVersions->filter(fn ($v) => $v->facet->kind === $kind)->map(fn ($v) => $v->facet->handle)->values()->all();
     }
 }

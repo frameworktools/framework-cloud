@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\FacetVersion;
 use App\Models\Project;
+use App\Models\User;
 use Illuminate\Support\Arr;
 
 /**
@@ -43,9 +44,25 @@ class ProjectLayers
 
         // Per-project overrides are not editable in the cloud yet. The language
         // always goes in, so every tool can tell which one builds the project.
-        $language = $project->language ?? 'r';
-        $layers[] = ['kind' => 'project', 'key' => $project->slug, 'layer' => ['language' => $language] + ($language === 'stata' ? self::withoutRFolders($layers) : [])];
+        $layers[] = self::projectLayer($project->slug, $project->language ?? 'r', $layers);
 
+        return self::envelope($user, $project->name, $layers, $version ? ['key' => $version->blueprint->handle, 'version' => $version->version] : null);
+    }
+
+    /** The topmost layer: the language, and for Stata the R-only folders removed. */
+    public static function projectLayer(string $key, string $language, array $layers): array
+    {
+        return ['kind' => 'project', 'key' => $key, 'layer' => ['language' => $language] + ($language === 'stata' ? self::withoutRFolders($layers) : [])];
+    }
+
+    /**
+     * The envelope around a list of layers: the author from the user's
+     * profile, and provenance when the layers came from a blueprint.
+     *
+     * @param  array{key: string, version: int}|null  $blueprint
+     */
+    public static function envelope(User $user, string $name, array $layers, ?array $blueprint): array
+    {
         // The Profile tab's byline, falling back to the account
         $author = Arr::get($user->globalSettings()->document, 'author', []) ?? [];
         $affiliations = collect($author['affiliations'] ?? [])
@@ -55,7 +72,7 @@ class ProjectLayers
 
         $envelope = [
             'spec_version' => 1,
-            'name' => $project->name,
+            'name' => $name,
             'author' => [
                 'name' => (string) (($author['name'] ?? '') ?: $user->name),
                 'email' => (string) (($author['email'] ?? '') ?: $user->email),
@@ -70,10 +87,10 @@ class ProjectLayers
         ];
 
         // Provenance is on by default, and off for sensitive projects
-        if ($version && ! self::isSensitive($layers)) {
+        if ($blueprint && ! self::isSensitive($layers)) {
             $envelope['source'] = [
                 'origin' => 'cloud',
-                'blueprint' => ['key' => $version->blueprint->handle, 'version' => $version->version],
+                'blueprint' => $blueprint,
                 'fragments' => array_map(fn (array $l) => Arr::only($l, ['kind', 'key', 'version']), array_slice($layers, 0, -1)),
             ];
         }
