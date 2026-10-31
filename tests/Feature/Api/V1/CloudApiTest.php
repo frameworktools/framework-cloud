@@ -35,12 +35,12 @@ class CloudApiTest extends TestCase
 
     public function test_me_identifies_a_project_token(): void
     {
-        $project = Project::factory()->create();
+        $project = Project::factory()->create(['pages_url' => 'https://ada.github.io/study/']);
 
         $this->withToken($project->issuePullToken())
             ->getJson('/api/v1/me')
             ->assertOk()
-            ->assertJson(['kind' => 'project', 'project' => $project->slug]);
+            ->assertJson(['kind' => 'project', 'project' => $project->slug, 'pages_url' => 'https://ada.github.io/study/']);
     }
 
     public function test_settings_are_seeded_with_defaults_on_first_read(): void

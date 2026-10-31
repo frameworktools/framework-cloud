@@ -31,6 +31,8 @@ class MeController extends Controller
             return response()->json([
                 'kind' => 'project',
                 'project' => $tokenable->slug,
+                // The project's GitHub Pages site, so publishing there needs only this token
+                'pages_url' => $tokenable->pages_url,
             ]);
         }
 
