@@ -39,7 +39,7 @@ class PasswordController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended('/dashboard');
+        return PasskeyPromptController::afterSignIn($request, $request->user());
     }
 
     public function forgot(): Response

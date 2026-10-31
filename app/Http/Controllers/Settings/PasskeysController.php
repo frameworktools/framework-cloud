@@ -66,6 +66,11 @@ class PasskeysController extends Controller
             return back()->withErrors(['passkey' => 'That passkey could not be verified. Please try again.']);
         }
 
+        // From the prompt after signing in: go on to where the person was heading
+        if ($request->boolean('continue')) {
+            return redirect()->intended(route('dashboard'));
+        }
+
         return back()->with('status', 'passkey-added');
     }
 

@@ -39,7 +39,7 @@ class PasswordAuthTest extends TestCase
         $user = User::factory()->create(['password' => 'correct horse battery']);
 
         $this->post('/login/password', ['email' => $user->email, 'password' => 'correct horse battery'])
-            ->assertRedirect('/dashboard');
+            ->assertRedirect(route('passkey.prompt'));
 
         $this->assertAuthenticatedAs($user);
     }

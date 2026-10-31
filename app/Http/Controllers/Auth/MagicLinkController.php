@@ -114,7 +114,7 @@ class MagicLinkController extends Controller
         $request->session()->regenerate();
         Cookie::expire(LoginToken::BROWSER_COOKIE);
 
-        return redirect()->intended(route('dashboard'));
+        return PasskeyPromptController::afterSignIn($request, $user);
     }
 
     private function expired(): RedirectResponse

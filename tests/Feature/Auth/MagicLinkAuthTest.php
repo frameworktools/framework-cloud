@@ -80,7 +80,7 @@ class MagicLinkAuthTest extends TestCase
         $user = User::factory()->unverified()->create(['password' => null]);
         $plain = LoginToken::issue($user);
 
-        $this->post("/auth/magic/{$plain}")->assertRedirect(route('dashboard'));
+        $this->post("/auth/magic/{$plain}")->assertRedirect(route('passkey.prompt'));
 
         $this->assertAuthenticatedAs($user);
         $this->assertNotNull($user->fresh()->email_verified_at);
@@ -99,7 +99,7 @@ class MagicLinkAuthTest extends TestCase
         $this->get("/auth/magic/{$plain}")->assertOk();
         $this->assertGuest();
 
-        $this->post("/auth/magic/{$plain}")->assertRedirect(route('dashboard'));
+        $this->post("/auth/magic/{$plain}")->assertRedirect(route('passkey.prompt'));
         $this->assertAuthenticatedAs($user);
     }
 
@@ -126,7 +126,7 @@ class MagicLinkAuthTest extends TestCase
 
         $this->withCookie(LoginToken::BROWSER_COOKIE, $browser)
             ->get($url)
-            ->assertRedirect(route('dashboard'));
+            ->assertRedirect(route('passkey.prompt'));
         $this->assertAuthenticatedAs($user);
     }
 
@@ -157,7 +157,7 @@ class MagicLinkAuthTest extends TestCase
         $user = User::factory()->create();
         $plain = LoginToken::issue($user);
 
-        $this->post("/auth/magic/{$plain}")->assertRedirect(route('dashboard'));
+        $this->post("/auth/magic/{$plain}")->assertRedirect(route('passkey.prompt'));
 
         $this->post('/logout');
         $this->post("/auth/magic/{$plain}")

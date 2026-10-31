@@ -164,6 +164,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('settings/github', [GitHubController::class, 'show'])->name('settings.github');
     Route::delete('settings/github', [App\Http\Controllers\Auth\GitHubController::class, 'destroy']);
 
+    // Offered once after an email link or password sign-in
+    Route::get('welcome/passkey', [App\Http\Controllers\Auth\PasskeyPromptController::class, 'show'])->name('passkey.prompt');
+    Route::post('welcome/passkey/skip', [App\Http\Controllers\Auth\PasskeyPromptController::class, 'skip']);
+
     Route::get('settings/passkeys', [PasskeysController::class, 'index'])->name('settings.passkeys');
     Route::post('settings/passkeys/options', [PasskeysController::class, 'options']);
     Route::post('settings/passkeys', [PasskeysController::class, 'store']);
