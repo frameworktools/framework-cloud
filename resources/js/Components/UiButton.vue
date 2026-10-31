@@ -23,6 +23,7 @@ const sizes = {
 };
 
 const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+// The hint sits at the right edge; equal padding on both sides keeps the label centered
 const hint = isMac ? '⌘S' : 'Ctrl+S';
 const button = ref(null);
 
@@ -46,12 +47,12 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
         :aria-keyshortcuts="saveShortcut ? (isMac ? 'Meta+S' : 'Control+S') : undefined"
         :title="saveShortcut ? `Save (${hint})` : undefined"
         class="inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed dark:focus-visible:ring-offset-slate-950"
-        :class="[variants[variant], sizes[size]]"
+        :class="[variants[variant], sizes[size], saveShortcut && (isMac ? 'relative sm:px-12' : 'relative sm:px-16')]"
     >
         <slot />
         <kbd
             v-if="saveShortcut"
-            class="rounded px-1.5 py-0.5 font-sans text-xs font-medium opacity-70 max-sm:hidden"
+            class="absolute right-2 top-1/2 -translate-y-1/2 rounded px-1.5 py-0.5 font-sans text-xs font-medium opacity-70 max-sm:hidden"
             :class="variant === 'primary' || variant === 'danger' ? 'bg-white/20' : 'bg-slate-100 dark:bg-slate-800'"
         >{{ hint }}</kbd>
     </button>
