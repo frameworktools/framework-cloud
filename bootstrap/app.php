@@ -5,6 +5,7 @@ use App\Http\Middleware\EnsurePasswordsEnabled;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\ServeBuiltAssetsThroughTunnels;
 use App\Http\Middleware\SingleUserMode;
+use App\Http\Middleware\ThrottleRequestsPerRoute;
 use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -54,6 +55,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => EnsureAdmin::class,
             'passwords' => EnsurePasswordsEnabled::class,
+            'throttle' => ThrottleRequestsPerRoute::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

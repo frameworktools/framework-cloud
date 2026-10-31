@@ -162,6 +162,18 @@ class CliDeviceFlowTest extends TestCase
         $this->poll($start['device_code'])->assertStatus(428);
     }
 
+    public function test_polling_does_not_use_up_the_limit_on_starting_a_login(): void
+    {
+        $start = $this->start();
+
+        // fw polls about every five seconds, twelve times a minute
+        foreach (range(1, 12) as $i) {
+            $this->poll($start['device_code']);
+        }
+
+        $this->start();
+    }
+
     public function test_unknown_device_code_is_reported_as_expired(): void
     {
         $this->poll('not-a-real-device-code')->assertStatus(410)->assertExactJson(['error' => 'expired_token']);
