@@ -5,6 +5,8 @@ import SettingsLayout from '@/Layouts/SettingsLayout.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiInput from '@/Components/UiInput.vue';
 import UiPanel from '@/Components/UiPanel.vue';
+import UiSelect from '@/Components/UiSelect.vue';
+import { countryOptions } from '@/countries.js';
 
 const props = defineProps({ author: Object });
 
@@ -77,7 +79,7 @@ const yaml = computed(() => {
                     <UiInput v-model="affiliation.department" label="Department (optional)" />
                     <div class="grid gap-4 sm:grid-cols-2">
                         <UiInput v-model="affiliation.city" label="City (optional)" />
-                        <UiInput v-model="affiliation.country" label="Country (optional)" />
+                        <UiSelect v-model="affiliation.country" label="Country (optional)" :options="countryOptions(affiliation.country)" />
                     </div>
                 </div>
 
