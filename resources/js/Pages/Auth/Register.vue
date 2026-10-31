@@ -39,7 +39,7 @@ const send = () => form.post('/auth/magic-link');
             <UiInput v-model="form.name" label="Name" placeholder="Full name" autocomplete="name" required autofocus :error="form.errors.name" />
             <UiInput
                 v-model="form.email" label="Email address" type="email" placeholder="you@example.com" autocomplete="email" required
-                description="Use any address, including a personal one. It is only for signing in. You can show a different email on your work, such as your university address, in Settings > Profile."
+                description="Use the email address you prefer for signing in. Once you are signed in, you can choose a different public email address in Settings > Profile."
                 :error="form.errors.email"
             />
             <UiButton type="submit" class="w-full" :disabled="form.processing">Send me a sign-in link</UiButton>
