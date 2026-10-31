@@ -18,7 +18,7 @@
             ['anchor' => 'data', 'icon' => 'heroicon-o-shield-check', 'heading' => 'Help protect sensitive data', 'body' => 'Set up private folders, assistant restrictions, and Git checks that help reduce accidental data exposure.'],
             ['anchor' => 'integrity', 'icon' => 'heroicon-o-finger-print', 'heading' => 'Check data integrity', 'body' => 'Record file fingerprints and check whether a cataloged dataset has changed since it was recorded.'],
             ['anchor' => 'environments', 'icon' => 'heroicon-o-cube', 'heading' => 'Manage reproducible environments', 'body' => 'List project packages, install them automatically, and use optional version snapshots to restore them.'],
-            ['anchor' => 'settings', 'icon' => 'heroicon-o-cog-6-tooth', 'heading' => 'Keep your project defaults', 'body' => 'Carry your author details and preferred settings into each new project, on any computer.'],
+            ['anchor' => 'cli', 'icon' => 'heroicon-o-command-line', 'heading' => 'Work from the command line', 'body' => 'The fw command-line tool gives you and your AI agents the platform from a terminal, with JSON output for scripts.'],
             ['anchor' => 'copy', 'icon' => 'heroicon-o-document-duplicate', 'heading' => 'Copy and share project setups', 'body' => 'Adapt a colleague\'s blueprint, or share a reusable setup with your lab or team.'],
             ['anchor' => 'github', 'icon' => 'icon-github', 'heading' => 'Create projects on GitHub', 'body' => 'Create a GitHub repository with your project files committed and ready to clone.'],
             ['anchor' => 'publishing', 'icon' => 'heroicon-o-paper-airplane', 'heading' => 'Publish and share notebooks', 'body' => 'Publish Quarto notebooks as web pages that collaborators can open from a link.'],
@@ -155,7 +155,7 @@
 
         {{-- Project structure --}}
         <section id="structure" class="{{ $section }}">
-            <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
+            <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16 [&>*]:min-w-0">
                 <div>
                     <h2 class="{{ $h2 }}">Start with a clear project structure</h2>
                     <div class="{{ $prose }}">
@@ -203,7 +203,7 @@ my-study/
 
         {{-- AI guidance --}}
         <section id="ai" class="{{ $section }}">
-            <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
+            <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16 [&>*]:min-w-0">
                 <div class="lg:order-2">
                     <h2 class="{{ $h2 }}">Guide AI assistants</h2>
                     <div class="{{ $prose }}">
@@ -248,7 +248,7 @@ description: <span class="{{ $s }}">Use whenever reading or writing data files i
 
         {{-- Sensitive data --}}
         <section id="data" class="{{ $section }}">
-            <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
+            <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16 [&>*]:min-w-0">
                 <div>
                     <h2 class="{{ $h2 }}">Help protect sensitive data</h2>
                     <div class="{{ $prose }}">
@@ -292,7 +292,7 @@ framework::git_hooks_enable(<span class="{{ $s }}">"data_security"</span>)</x-co
 
         {{-- Data integrity --}}
         <section id="integrity" class="{{ $section }}">
-            <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
+            <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16 [&>*]:min-w-0">
                 <div class="lg:order-2">
                     <h2 class="{{ $h2 }}">Check data integrity</h2>
                     <div class="{{ $prose }}">
@@ -336,7 +336,7 @@ framework::ledger_push()</x-code-panel>
 
         {{-- Environments --}}
         <section id="environments" class="{{ $section }}">
-            <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
+            <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16 [&>*]:min-w-0">
                 <div>
                     <h2 class="{{ $h2 }}">Manage reproducible environments</h2>
                     <div class="{{ $prose }}">
@@ -373,39 +373,54 @@ framework::packages_restore()   <span class="{{ $c }}"># reinstall them</span></
         </section>
 
         {{-- Settings --}}
-        <section id="settings" class="{{ $section }}">
-            <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
+        <section id="cli" class="{{ $section }}">
+            <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16 [&>*]:min-w-0">
                 <div class="lg:order-2">
-                    <h2 class="{{ $h2 }}">Keep your project defaults</h2>
+                    <h2 class="{{ $h2 }}">Work from the command line</h2>
                     <div class="{{ $prose }}">
                         <p>
-                            Your name, email, ORCID iD, and affiliations go into the author block
-                            of each new notebook, report, and slide deck.
+                            <code class="{{ $code }}">fw</code> is a single program for macOS, Linux,
+                            and Windows. It lists your projects and blueprints, sets up projects from
+                            Framework Cloud, and checks a project's setup. It also builds Stata
+                            projects (scaffolding only).
                         </p>
                         <p>
-                            Your defaults set the notebook format, IDE, Git, and renv options for
-                            new projects. R reads both from your Framework Cloud account on each
-                            computer you connect.
+                            AI agents can use it too. Commands print JSON with
+                            <code class="{{ $code }}">--json</code>, and each kind of failure has its own
+                            exit code. To sign in, <code class="{{ $code }}">fw login</code> prints a link
+                            for you to approve in your browser, so the agent never handles your token.
+                        </p>
+                        <p>
+                            <code class="{{ $code }}">fw</code> can also publish a rendered notebook and
+                            send the project's settings to Framework Cloud. It sends only the files you
+                            name and refuses files in a project's private folders.
                         </p>
                     </div>
                 </div>
-<x-code-panel title="notebooks/analysis.qmd" class="lg:order-1">
----
-title: <span class="{{ $s }}">"Analysis"</span>
-author:
-  - name: <span class="{{ $s }}">"Ada Lovelace"</span>
-    email: ada@example.edu
-    orcid: 0000-0002-1825-0097
-    affiliations:
-      - name: <span class="{{ $s }}">"Example University"</span>
-        department: <span class="{{ $s }}">"Biostatistics"</span>
----</x-code-panel>
+<x-code-panel title="Terminal" class="lg:order-1">
+<span class="{{ $c }}"># You approve the link. The agent never sees your token.</span>
+$ fw login --yes --json
+{"expires_in": 600,
+ "user_code": <span class="{{ $s }}">"QGMK-JE6Q"</span>,
+ "verification_url":
+   <span class="{{ $s }}">"https://framework.pub/device?code=QGMK-JE6Q"</span>}
+
+$ fw projects list --json | jq -r '.projects[].slug'
+vaccine-study
+
+$ fw new --from <span class="{{ $s }}">vaccine-study</span>
+$ cd vaccine-study &amp;&amp; fw project bootstrap
+$ fw project push-spec
+$ fw publish outputs/notebooks/results.html \
+    --slug <span class="{{ $s }}">results</span> --yes
+Published results, version 1.
+Link: https://framework.pub/d/lh2hr0gjulf3vj1fzhmscgr2</x-code-panel>
             </div>
         </section>
 
         {{-- Copy and share --}}
         <section id="copy" class="{{ $section }}">
-            <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
+            <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16 [&>*]:min-w-0">
                 <div>
                     <h2 class="{{ $h2 }}">Copy and share project setups</h2>
                     <div class="{{ $prose }}">
@@ -437,7 +452,7 @@ author:
 
         {{-- GitHub --}}
         <section id="github" class="{{ $section }}">
-            <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
+            <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16 [&>*]:min-w-0">
                 <div class="lg:order-2">
                     <h2 class="{{ $h2 }}">Create projects on GitHub</h2>
                     <div class="{{ $prose }}">
@@ -470,7 +485,7 @@ author:
 
         {{-- Publishing --}}
         <section id="publishing" class="{{ $section }}">
-            <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
+            <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16 [&>*]:min-w-0">
                 <div>
                     <h2 class="{{ $h2 }}">Publish and share notebooks</h2>
                     <div class="{{ $prose }}">
