@@ -1,0 +1,107 @@
+{
+    "quarto": {
+        "name": "Quarto",
+        "description": "Quarto notebooks and documents. The render folders come from the project structure.",
+        "category": "outputs",
+        "language": [
+            "r",
+            "python"
+        ],
+        "requires": [],
+        "layer": {}
+    },
+    "quarto_manuscript": {
+        "name": "Quarto manuscript",
+        "description": "Adds a manuscript folder with a Quarto manuscript to start from.",
+        "category": "outputs",
+        "language": [
+            "r",
+            "python"
+        ],
+        "requires": [
+            "quarto"
+        ],
+        "layer": {
+            "extra_directories": {
+                "manuscript": {
+                    "label": "Manuscript",
+                    "path": "manuscript"
+                }
+            },
+            "files": {
+                "manuscript/manuscript.qmd": {
+                    "template": true,
+                    "content": "---\ntitle: \"Untitled manuscript\"\nauthor: \"{{author}}\"\nformat:\n  html: default\n  docx: default\nbibliography: references.bib\n---\n\n## Introduction\n\n## Methods\n\n## Results\n\n## Discussion\n"
+                },
+                "manuscript/references.bib": {
+                    "content": ""
+                }
+            }
+        }
+    },
+    "quarto_slides": {
+        "name": "Quarto slides",
+        "description": "Adds a slides folder that renders with Quarto RevealJS.",
+        "category": "outputs",
+        "language": [
+            "r",
+            "python"
+        ],
+        "requires": [
+            "quarto"
+        ],
+        "layer": {
+            "extra_directories": {
+                "slides": {
+                    "label": "Slides",
+                    "path": "slides"
+                }
+            },
+            "render_dirs": {
+                "slides": "outputs/slides"
+            }
+        }
+    },
+    "targets": {
+        "name": "targets pipeline",
+        "description": "Adds the targets and tarchetypes packages and a starter _targets.R.",
+        "category": "reproducibility",
+        "language": [
+            "r"
+        ],
+        "requires": [],
+        "layer": {
+            "packages": {
+                "default_packages": {
+                    "targets": {
+                        "source": "cran",
+                        "auto_attach": false
+                    },
+                    "tarchetypes": {
+                        "source": "cran",
+                        "auto_attach": false
+                    }
+                }
+            },
+            "files": {
+                "_targets.R": {
+                    "content": "library(targets)\n\ntar_option_set(packages = character())\n\nlist(\n  # tar_target(raw, data_read(\"inputs.raw.example\"))\n)\n"
+                }
+            }
+        }
+    },
+    "renv": {
+        "name": "renv",
+        "description": "Turns on renv so the project records the package versions it uses.",
+        "category": "reproducibility",
+        "language": [
+            "r"
+        ],
+        "requires": [],
+        "layer": {
+            "packages": {
+                "use_renv": true
+            }
+        }
+    }
+}

@@ -25,7 +25,7 @@ const sections = computed(() =>
         .filter((g) => g.rows.length || g.key === 'mine'),
 );
 
-const label = (facet) => (facet.kind === 'base' ? 'Project type' : props.categories[facet.category] ?? 'Other');
+const label = (facet) => (facet.kind === 'structure' ? 'Project type' : props.categories[facet.category] ?? 'Other');
 const fork = (id) => router.post(`/facets/${id}/fork`);
 </script>
 
@@ -40,7 +40,7 @@ const fork = (id) => router.post(`/facets/${id}/fork`);
                     Blueprints stack facets on a project type.
                 </template>
                 <template #actions>
-                    <Link href="/facets/create?kind=base"><UiButton variant="outline">New project type</UiButton></Link>
+                    <Link href="/facets/create?kind=structure"><UiButton variant="outline">New project type</UiButton></Link>
                     <Link href="/facets/create"><UiButton><PlusIcon class="size-4" />New facet</UiButton></Link>
                 </template>
             </PageHeader>
@@ -73,7 +73,7 @@ const fork = (id) => router.post(`/facets/${id}/fork`);
                             <div class="min-w-0">
                                 <div class="flex flex-wrap items-center gap-2">
                                     <span class="text-base font-semibold text-slate-900 dark:text-white">{{ facet.name }}</span>
-                                    <UiBadge :variant="facet.kind === 'base' ? 'sky' : 'slate'">{{ label(facet) }}</UiBadge>
+                                    <UiBadge :variant="facet.kind === 'structure' ? 'sky' : 'slate'">{{ label(facet) }}</UiBadge>
                                 </div>
                                 <div class="mt-0.5 truncate font-mono text-xs text-slate-500 dark:text-slate-400">{{ facet.handle }} · v{{ facet.version }}</div>
                                 <p v-if="facet.description" class="mt-2 text-sm text-slate-600 dark:text-slate-400">{{ facet.description }}</p>

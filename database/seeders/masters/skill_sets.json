@@ -1,0 +1,33 @@
+{
+    "framework": {
+        "name": "Framework basics",
+        "description": "How to work in a Framework project: notebooks and scripts, reading and saving data, packages, and outputs.",
+        "language": [
+            "r"
+        ],
+        "skills": [
+            "framework-workflow",
+            "framework-data",
+            "framework-packages",
+            "framework-outputs"
+        ],
+        "packages": {}
+    },
+    "ggplot2": {
+        "name": "Figures with ggplot2",
+        "description": "Exploring data with ggplot2 and polishing figures for papers, reports, and slides.",
+        "language": [
+            "r"
+        ],
+        "skills": [
+            "ggplot2-exploring",
+            "ggplot2-publishing"
+        ],
+        "packages": {
+            "ggplot2": {
+                "source": "cran",
+                "auto_attach": true
+            }
+        }
+    }
+}

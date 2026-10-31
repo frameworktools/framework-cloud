@@ -41,8 +41,10 @@ class ProjectLayersTest extends TestCase
 
         $this->assertSame(1, $response->json('spec_version'));
         $this->assertSame('NHANES Study', $response->json('name'));
-        $this->assertSame(['base', 'blueprint', 'project'], array_column($response->json('layers'), 'kind'));
-        $this->assertSame('stata', $response->json('layers.2.layer.language'));
+        $kinds = array_column($response->json('layers'), 'kind');
+        $this->assertSame('base', $kinds[0]);
+        $this->assertSame(['blueprint', 'project'], array_slice($kinds, -2));
+        $this->assertSame('stata', last($response->json('layers'))['layer']['language']);
         $this->assertSame([], Layer::envelopeProblems($response->json()));
 
         // Empty layers stay JSON objects
@@ -67,7 +69,7 @@ class ProjectLayersTest extends TestCase
         $this->withToken($token)->getJson('/api/v2/projects/nhanes-study/layers')
             ->assertOk()
             ->assertJsonPath('name', 'NHANES Study')
-            ->assertJsonPath('layers.2.layer.language', 'r');
+            ->assertJsonPath('layers.5.layer.language', 'r');
 
         // Reading issues no token
         $this->assertSame(0, PersonalAccessToken::where('tokenable_type', Project::class)->count());

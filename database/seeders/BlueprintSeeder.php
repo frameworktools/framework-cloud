@@ -9,10 +9,12 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\File;
 
 /**
- * Seeds the system library from master files extracted from the framework R
- * package (database/seeders/masters/): its skills, one base facet and one
- * blueprint per project type, and the stock facets. Idempotent: rows are
- * matched by key, and a new version is added only when a master changed.
+ * Seeds Framework's own pieces from master files (database/seeders/masters/):
+ * skills, one project structure per project type, tools, the sensitive-data
+ * setting layer, skill sets, package sets, and one blueprint per project type
+ * built from them. Structures and skills come from the framework R package.
+ * Idempotent: rows are matched by key, and a new version is added only when a
+ * master changed.
  */
 class BlueprintSeeder extends Seeder
 {
@@ -21,8 +23,16 @@ class BlueprintSeeder extends Seeder
         $mastersDir = database_path('seeders/masters');
 
         $this->seedSkills("$mastersDir/skills");
-        $this->seedBases($mastersDir);
-        $this->seedFacets(json_decode(File::get("$mastersDir/facets.json"), true));
+        $this->seedPieces('tool', $this->json("$mastersDir/tools.json"));
+        $this->seedPieces('setting', $this->json("$mastersDir/settings.json"));
+        $this->seedPieces('skill_set', array_map(fn (array $set) => $set + ['layer' => self::skillSetLayer($set)], $this->json("$mastersDir/skill_sets.json")));
+        $this->seedPieces('package_set', array_map(fn (array $set) => $set + ['layer' => ['packages' => ['default_packages' => $set['packages']]]], $this->json("$mastersDir/package_sets.json")));
+        $this->seedBlueprints($mastersDir);
+    }
+
+    private function json(string $path): array
+    {
+        return json_decode(File::get($path), true);
     }
 
     private function seedSkills(string $dir): void
@@ -45,23 +55,58 @@ class BlueprintSeeder extends Seeder
         }
     }
 
-    private function seedBases(string $mastersDir): void
+    /** System skills travel by reference: R installs its own copy. */
+    private static function skillSetLayer(array $set): array
     {
-        $definitions = json_decode(File::get("$mastersDir/blueprints.json"), true);
+        return array_filter([
+            'skills' => array_fill_keys($set['skills'], ['package' => true]),
+            'packages' => $set['packages'] ? ['default_packages' => $set['packages']] : null,
+        ]);
+    }
+
+    private function seedPieces(string $kind, array $definitions): void
+    {
+        $position = 0;
+
+        foreach ($definitions as $key => $definition) {
+            $facet = Facet::updateOrCreate(['user_id' => null, 'key' => $key], [
+                'kind' => $kind,
+                'name' => $definition['name'],
+                'description' => $definition['description'] ?? null,
+                'category' => $definition['category'] ?? null,
+                'language' => $definition['language'] ?? null,
+                'requires' => $definition['requires'] ?? null,
+                'visibility' => 'public',
+                'position' => $position++,
+            ]);
+
+            $facet->publishVersion(['layer' => $definition['layer']]);
+        }
+    }
+
+    /**
+     * One structure and one blueprint per project type. The blueprint stacks
+     * the structure, Quarto when the structure renders with it, the skill
+     * sets, and any single skills.
+     */
+    private function seedBlueprints(string $mastersDir): void
+    {
+        $definitions = $this->json("$mastersDir/blueprints.json");
 
         // Bare (no blueprint) leads: it's the default; the rest are opinionated offerings
         if (isset($definitions['bare'])) {
             $definitions = ['bare' => $definitions['bare']] + $definitions;
         }
 
+        $latest = fn (string $key) => Facet::whereNull('user_id')->where('key', $key)->firstOrFail()->latestVersion;
+        $setSkills = collect($this->json("$mastersDir/skill_sets.json"))->map(fn (array $set) => $set['skills']);
         $position = 0;
 
         foreach ($definitions as $key => $definition) {
             // A top-level null (bare's quarto) has nothing beneath it to remove
             $layer = ['type' => $key] + array_filter($definition['structure'] ?? [], fn ($value) => $value !== null);
 
-            // R keys its sensitive-project behavior on this flag, so the
-            // restricted-data facet can turn it on for any project type
+            // R keys its sensitive-project behavior on this flag
             if ($key === 'project_sensitive') {
                 $layer['security'] = ['sensitive' => true];
             }
@@ -71,10 +116,6 @@ class BlueprintSeeder extends Seeder
                 $layer['files'] = ['AGENTS.md' => ['content' => File::get($agentsPath), 'template' => true]];
             }
 
-            if (! empty($definition['skills'])) {
-                $layer['skills'] = array_fill_keys($definition['skills'], ['package' => true]);
-            }
-
             $attributes = [
                 'name' => $definition['name'],
                 'description' => $definition['description'] ?? null,
@@ -82,30 +123,27 @@ class BlueprintSeeder extends Seeder
                 'position' => $position++,
             ];
 
-            $base = Facet::updateOrCreate(['user_id' => null, 'key' => $key], $attributes + ['kind' => 'base']);
-            $baseVersion = $base->publishVersion(['layer' => $layer]);
+            $structure = Facet::updateOrCreate(['user_id' => null, 'key' => $key], $attributes + ['kind' => 'structure']);
+            $structureVersion = $structure->publishVersion(['layer' => $layer]);
+
+            // The structure's skills become skill sets, plus any skill no set covers
+            $skills = $definition['skills'] ?? [];
+            $sets = $setSkills->filter(fn (array $members) => $skills && ! array_diff($members, $skills))->keys();
+            $single = array_values(array_diff($skills, $sets->flatMap(fn ($set) => $setSkills[$set])->all()));
+
+            // Figures come with every type that has the Framework skills
+            if ($sets->contains('framework')) {
+                $sets->push('ggplot2');
+            }
+
+            $pieces = collect(isset($layer['quarto']) ? ['quarto'] : [])->concat($sets)->map($latest);
 
             $blueprint = Blueprint::updateOrCreate(['user_id' => null, 'key' => $key], $attributes + ['is_system' => true]);
-            $blueprint->publish($baseVersion, []);
-        }
-    }
-
-    private function seedFacets(array $definitions): void
-    {
-        $position = 0;
-
-        foreach ($definitions as $key => $definition) {
-            $facet = Facet::updateOrCreate(['user_id' => null, 'key' => $key], [
-                'kind' => 'facet',
-                'name' => $definition['name'],
-                'description' => $definition['description'] ?? null,
-                'category' => $definition['category'] ?? null,
-                'question' => $definition['question'] ?? null,
-                'visibility' => 'public',
-                'position' => $position++,
-            ]);
-
-            $facet->publishVersion(['layer' => $definition['layer']]);
+            $blueprint->publish(
+                $structureVersion,
+                $pieces->pluck('id')->all(),
+                $single ? ['skills' => array_fill_keys($single, ['package' => true])] : [],
+            );
         }
     }
 }

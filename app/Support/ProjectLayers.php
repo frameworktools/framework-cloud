@@ -26,7 +26,7 @@ class ProjectLayers
         $fragments = $version ? $version->fragments() : collect();
 
         $layers = $fragments->map(fn (FacetVersion $fragment) => [
-            'kind' => $fragment->facet->kind,
+            'kind' => $fragment->facet->layerKind(),
             'key' => $fragment->facet->handle,
             'version' => $fragment->version,
             'layer' => $fragment->layer,

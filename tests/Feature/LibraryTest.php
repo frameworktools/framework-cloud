@@ -43,7 +43,7 @@ class LibraryTest extends TestCase
         return $overrides + [
             'kind' => 'facet',
             'name' => 'IRB data',
-            'category' => 'data',
+            'category' => null,
             'question' => 'Is this under an IRB protocol?',
             'visibility' => 'private',
             'settings_yaml' => "extra_directories:\n  irb:\n    label: IRB\n    path: irb\n",
@@ -64,8 +64,8 @@ class LibraryTest extends TestCase
 
     public function test_seeder_builds_the_system_library_and_is_idempotent(): void
     {
-        $this->assertSame(5, Facet::whereNull('user_id')->where('kind', 'base')->count());
-        $this->assertSame(9, Facet::whereNull('user_id')->where('kind', 'facet')->count());
+        $counts = Facet::whereNull('user_id')->get()->countBy('kind')->all();
+        $this->assertEquals(['structure' => 5, 'tool' => 5, 'setting' => 1, 'skill_set' => 2, 'package_set' => 1], $counts);
         $this->assertSame(7, Skill::whereNull('user_id')->count());
         $this->assertSame(5, Blueprint::systemTypes()->count());
 
@@ -76,7 +76,7 @@ class LibraryTest extends TestCase
 
     public function test_bases_reference_package_skills_and_v1_still_receives_their_text(): void
     {
-        $layer = $this->system(Facet::class, 'project_sensitive')->latestVersion->layer;
+        $layer = $this->system(Blueprint::class, 'project_sensitive')->latestVersion->layer;
         $this->assertSame(['package' => true], $layer['skills']['framework-sensitive-data']);
 
         $user = $this->user();
@@ -88,6 +88,10 @@ class LibraryTest extends TestCase
             $sensitive['skills']['framework-sensitive-data'],
         );
         $this->assertSame(File::get(database_path('seeders/masters/agents/project_sensitive.md')), $sensitive['agents_md']);
+
+        // Skills in skill sets reach v1 too, since it reads only the flattened shape
+        $this->assertSame(File::get(database_path('seeders/masters/skills/ggplot2-exploring.md')), $sensitive['skills']['ggplot2-exploring']);
+        $this->assertArrayHasKey('framework-data', $sensitive['skills']);
     }
 
     public function test_user_builds_a_facet_and_saving_unchanged_content_keeps_the_version(): void
@@ -142,7 +146,7 @@ class LibraryTest extends TestCase
 
         $cases = [
             "connections:\n  databases:\n    main:\n      password: hunter2\n" => 'credential',
-            "type: project\n" => 'Only a base',
+            "type: project\n" => 'Only a project structure',
             "directories:\n  raw: ../outside\n" => 'relative path',
             "author:\n  name: Someone\n" => 'not a setting',
             "env:\n  DB_PASSWORD: hunter2\n" => 'secret',
@@ -175,7 +179,7 @@ class LibraryTest extends TestCase
     {
         $user = $this->user();
         $renv = $this->system(Facet::class, 'renv');
-        $manuscript = $this->system(Facet::class, 'manuscript');
+        $manuscript = $this->system(Facet::class, 'quarto_manuscript');
 
         $this->actingAs($user)->post('/blueprints', $this->blueprintPayload([
             $renv->latestVersion->id, $manuscript->latestVersion->id,
@@ -184,7 +188,7 @@ class LibraryTest extends TestCase
         $blueprint = Blueprint::where('user_id', $user->id)->firstOrFail();
         $version = $blueprint->latestVersion;
         $this->assertSame(1, $version->version);
-        $this->assertSame(['renv', 'manuscript'], $version->facetVersions->map(fn ($v) => $v->facet->key)->all());
+        $this->assertSame(['renv', 'quarto_manuscript'], $version->facetVersions->map(fn ($v) => $v->facet->key)->all());
 
         // A new facet version does not move the blueprint
         $pinned = $renv->latestVersion->id;
@@ -200,7 +204,7 @@ class LibraryTest extends TestCase
         ]));
         $latest = $blueprint->fresh()->latestVersion;
         $this->assertSame(2, $latest->version);
-        $this->assertSame(['manuscript', 'renv'], $latest->facetVersions->map(fn ($v) => $v->facet->key)->all());
+        $this->assertSame(['quarto_manuscript', 'renv'], $latest->facetVersions->map(fn ($v) => $v->facet->key)->all());
         $this->assertSame(2, $latest->facetVersions->last()->version);
     }
 
@@ -279,7 +283,7 @@ class LibraryTest extends TestCase
         $blueprint = Blueprint::create(['user_id' => $user->id, 'key' => 'mine', 'name' => 'Mine', 'visibility' => 'private']);
         $version = $blueprint->publish(
             $this->system(Facet::class, 'project_sensitive')->latestVersion,
-            [$this->system(Facet::class, 'manuscript')->latestVersion->id],
+            [$this->system(Facet::class, 'quarto_manuscript')->latestVersion->id],
         );
 
         $this->actingAs($user)->post('/projects', ['name' => 'Vaccine uptake', 'blueprint_id' => $blueprint->id])->assertRedirect();
@@ -378,10 +382,10 @@ class LibraryTest extends TestCase
         $user = $this->user();
 
         $this->actingAs($user)->get('/blueprints/create')->assertInertia(fn (Assert $page) => $page
-            ->component('Blueprints/Builder')->has('bases', 5)->has('facets', 9));
+            ->component('Blueprints/Builder')->has('bases', 5)->has('facets', 8));
         $this->actingAs($user)->get('/facets')->assertInertia(fn (Assert $page) => $page->component('Facets/Index')->has('facets', 14));
-        $this->actingAs($user)->get('/facets/create?kind=base')->assertInertia(fn (Assert $page) => $page
-            ->component('Facets/Edit')->where('kind', 'base')->where('values.settings_yaml', "type: project\n"));
+        $this->actingAs($user)->get('/facets/create?kind=structure')->assertInertia(fn (Assert $page) => $page
+            ->component('Facets/Edit')->where('kind', 'structure')->where('values.settings_yaml', "type: project\n"));
         $this->actingAs($user)->get('/skills')->assertInertia(fn (Assert $page) => $page->component('Skills/Index')->has('skills', 7));
 
         $system = $this->system(Blueprint::class, 'project_sensitive');
@@ -394,7 +398,7 @@ class LibraryTest extends TestCase
     {
         $this->seed(BlueprintSeeder::class);
 
-        $summary = collect(LayerSummary::of(Facet::where('key', 'restricted-data')->firstOrFail()->latestVersion->layer))
+        $summary = collect(LayerSummary::of(Facet::where('key', 'sensitive_data')->firstOrFail()->latestVersion->layer))
             ->pluck('items', 'label');
 
         $this->assertSame(['.env', 'inputs/private/', 'outputs/private/'], $summary['Kept from AI assistants']);

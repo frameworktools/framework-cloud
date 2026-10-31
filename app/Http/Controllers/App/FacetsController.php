@@ -32,13 +32,13 @@ class FacetsController extends Controller
 
     public function create(Request $request): Response
     {
-        return $this->form($request, null, $request->query('kind') === 'base' ? 'base' : 'facet');
+        return $this->form($request, null, $request->query('kind') === 'structure' ? 'structure' : 'package_set');
     }
 
     public function store(Request $request): RedirectResponse
     {
         $user = $request->user();
-        [$meta, $layer, $notes] = $this->validated($request, $request->input('kind') === 'base' ? 'base' : 'facet');
+        [$meta, $layer, $notes] = $this->validated($request, $request->input('kind') === 'structure' ? 'structure' : 'package_set');
 
         $facet = Facet::create($meta + [
             'user_id' => $user->id,
@@ -112,7 +112,7 @@ class FacetsController extends Controller
     private function form(Request $request, ?Facet $facet, string $kind): Response
     {
         $user = $request->user();
-        $layer = $facet?->latestVersion?->layer ?? ($kind === 'base' ? ['type' => 'project'] : []);
+        $layer = $facet?->latestVersion?->layer ?? ($kind === 'structure' ? ['type' => 'project'] : []);
 
         return Inertia::render('Facets/Edit', [
             'facet' => $facet ? Library::facet($facet->load('owner'), $user) + [
@@ -186,8 +186,8 @@ class FacetsController extends Controller
 
         $meta = array_map(fn ($v) => is_string($v) ? trim($v) : $v, Arr::only($data, ['name', 'description', 'visibility'])) + [
             'kind' => $kind,
-            'category' => $kind === 'base' ? null : ($data['category'] ?? null),
-            'question' => $kind === 'base' ? null : ($data['question'] ?? null),
+            'category' => $kind === 'structure' ? null : ($data['category'] ?? null),
+            'question' => $kind === 'structure' ? null : ($data['question'] ?? null),
         ];
 
         return [$meta, $layer, $data['notes'] ?? null];

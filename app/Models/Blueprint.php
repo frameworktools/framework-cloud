@@ -90,16 +90,22 @@ class Blueprint extends Model
     /**
      * The shape framework 1.x reads from GET /api/v1/blueprints and the v1
      * project pull: the base layer's structure, its AGENTS.md master, and
-     * skill text keyed by name. v1 has no facets, so only the base counts.
+     * skill text keyed by name. v1 reads only that shape, so skills come from
+     * every piece (the structure, skill sets, and the blueprint's own layer),
+     * in merge order, and the rest of each piece is left out.
      *
      * @return array<string, mixed>
      */
     public function toV1Array(): array
     {
-        $layer = $this->latestVersion?->base?->layer ?? [];
+        $version = $this->latestVersion;
+        $layer = $version?->base?->layer ?? [];
+        $entries = $version
+            ? $version->fragments()->map(fn ($fragment) => $fragment->layer['skills'] ?? [])->push($version->layer['skills'] ?? [])->reduce(fn (array $all, $more) => array_merge($all, is_array($more) ? $more : []), [])
+            : [];
 
         $skills = [];
-        foreach ($layer['skills'] ?? [] as $name => $entry) {
+        foreach ($entries as $name => $entry) {
             $content = match (true) {
                 ! is_array($entry) => null,
                 ! empty($entry['package']) => Skill::whereNull('user_id')->where('key', $name)

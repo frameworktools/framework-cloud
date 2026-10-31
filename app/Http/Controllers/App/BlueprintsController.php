@@ -161,8 +161,8 @@ class BlueprintsController extends Controller
         return Inertia::render('Blueprints/Builder', [
             'blueprint' => $blueprint ? Library::blueprint($blueprint, $user) : null,
             'start' => $start,
-            'bases' => $facets->where('kind', 'base')->values()->map(fn ($f) => Library::facet($f, $user)),
-            'facets' => $facets->where('kind', 'facet')->values()->map(fn ($f) => Library::facet($f, $user)),
+            'bases' => $facets->where('kind', 'structure')->values()->map(fn ($f) => Library::facet($f, $user)),
+            'facets' => $facets->whereIn('kind', Facet::PIECES)->values()->map(fn ($f) => Library::facet($f, $user)),
             'categories' => Facet::CATEGORIES,
         ]);
     }
@@ -189,7 +189,7 @@ class BlueprintsController extends Controller
         $versions = FacetVersion::with('facet')->whereIn('id', [$data['base_version_id'], ...$ids])->get()->keyBy('id');
 
         $base = $versions->get((int) $data['base_version_id']);
-        if (! $base || ! $base->facet->isBase() || ! $base->facet->isVisibleTo($user)) {
+        if (! $base || ! $base->facet->isStructure() || ! $base->facet->isVisibleTo($user)) {
             throw ValidationException::withMessages(['base_version_id' => 'Choose a project type.']);
         }
 
@@ -200,7 +200,7 @@ class BlueprintsController extends Controller
         $facetIds = [];
         foreach ($ids as $id) {
             $version = $versions->get($id);
-            if (! $version || $version->facet->isBase() || ! $version->facet->isVisibleTo($user)) {
+            if (! $version || ! in_array($version->facet->kind, [...Facet::PIECES, 'legacy'], true) || ! $version->facet->isVisibleTo($user)) {
                 throw ValidationException::withMessages(['facet_version_ids' => 'One of the chosen facets is not available.']);
             }
             if (in_array($version->facet_id, $facetIds, true)) {

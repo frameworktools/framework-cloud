@@ -77,22 +77,22 @@ class Layer
     }
 
     /**
-     * @param  'base'|'facet'|'blueprint'  $kind
+     * @param  'structure'|'tool'|'package_set'|'skill_set'|'setting'|'legacy'|'blueprint'  $kind
      * @return list<string> problems, empty when the layer is usable
      */
     public static function problems(array $layer, string $kind): array
     {
         $problems = [];
-        $allowed = $kind === 'base' ? ['type', ...self::KEYS] : self::KEYS;
+        $allowed = $kind === 'structure' ? ['type', ...self::KEYS] : self::KEYS;
 
         foreach (array_diff(array_keys($layer), $allowed) as $key) {
             $problems[] = $key === 'type'
-                ? 'Only a base sets the project type.'
+                ? 'Only a project structure sets the project type.'
                 : "\"{$key}\" is not a setting a layer can hold.";
         }
 
-        if ($kind === 'base' && ! in_array($layer['type'] ?? null, Project::TYPES, true)) {
-            $problems[] = 'A base must set type to one of: '.implode(', ', Project::TYPES).'.';
+        if ($kind === 'structure' && ! in_array($layer['type'] ?? null, Project::TYPES, true)) {
+            $problems[] = 'A project structure must set type to one of: '.implode(', ', Project::TYPES).'.';
         }
 
         $problems = [...$problems, ...self::schemaProblems(array_intersect_key($layer, array_flip($allowed)))];

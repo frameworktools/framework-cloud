@@ -25,7 +25,7 @@ const props = defineProps({
 
 const page = usePage();
 const saved = computed(() => ['facet-saved', 'facet-forked'].includes(page.props.flash.status));
-const isBase = computed(() => props.kind === 'base');
+const isBase = computed(() => props.kind === 'structure');
 const noun = computed(() => (isBase.value ? 'project type' : 'facet'));
 
 const form = useForm({

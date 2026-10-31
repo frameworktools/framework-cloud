@@ -87,7 +87,7 @@ class LibraryRepo
 
         return [
             'name' => (string) $data['name'],
-            'kind' => ($data['kind'] ?? 'facet') === 'base' ? 'base' : 'facet',
+            'kind' => in_array($data['kind'] ?? null, ['base', 'structure'], true) ? 'structure' : 'package_set',
             'description' => $data['description'] ?? null,
             'category' => array_key_exists((string) ($data['category'] ?? ''), Facet::CATEGORIES) ? $data['category'] : null,
             'question' => $data['question'] ?? null,
