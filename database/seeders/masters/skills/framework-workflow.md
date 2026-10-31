@@ -1,6 +1,8 @@
 ---
 name: framework-workflow
 description: Use when writing or editing any R notebook or script in this Framework project - covers scaffold() initialization, critical environment rules, and creating notebooks/scripts with make_notebook() and make_script().
+metadata:
+  title: Notebooks and scripts
 ---
 
 # Framework Workflow
@@ -29,7 +31,7 @@ This project uses the Framework R package for reproducible data analysis.
 1. **Import**: Load raw data with `data_read()`
 2. **Clean**: Process and save intermediate data with `data_save()`
 3. **Analyze**: Work from final, analysis-ready datasets
-4. **Export**: Save results with `result_save()` or `save_table()`
+4. **Export**: Save outputs with `save_table()`, `save_figure()`, or `save_model()`
 
 See the `framework-data` skill for data rules and the `framework-outputs` skill for results, caching, and publishing.
 

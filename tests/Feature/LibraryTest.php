@@ -66,7 +66,7 @@ class LibraryTest extends TestCase
     {
         $this->assertSame(5, Facet::whereNull('user_id')->where('kind', 'base')->count());
         $this->assertSame(9, Facet::whereNull('user_id')->where('kind', 'facet')->count());
-        $this->assertSame(5, Skill::whereNull('user_id')->count());
+        $this->assertSame(7, Skill::whereNull('user_id')->count());
         $this->assertSame(5, Blueprint::systemTypes()->count());
 
         $versions = FacetVersion::count() + BlueprintVersion::count() + SkillVersion::count();
@@ -355,6 +355,24 @@ class LibraryTest extends TestCase
         $this->assertSame(['content' => $content], $layer['skills']['irb-checklist']);
     }
 
+    public function test_a_skill_shows_its_metadata_title_and_falls_back_to_its_name(): void
+    {
+        $user = $this->user();
+        $content = "---\nname: irb-checklist\ndescription: Use before sharing output.\nmetadata:\n  title: \"IRB checklist\"\n  version: 2\n---\n\n# IRB\n";
+
+        $this->actingAs($user)->post('/skills', ['content' => $content, 'visibility' => 'private'])->assertRedirect();
+        $skill = Skill::where('user_id', $user->id)->firstOrFail();
+        $this->assertSame('IRB checklist', $skill->name);
+        $this->assertSame('irb-checklist', $skill->key);
+
+        // Removing the title falls back to the official name
+        $this->actingAs($user)->put("/skills/{$skill->id}", ['content' => "---\nname: irb-checklist\ndescription: Use before sharing output.\n---\n", 'visibility' => 'private']);
+        $this->assertSame('irb-checklist', $skill->fresh()->name);
+
+        // The system skills carry readable titles
+        $this->assertSame('Reading and saving data', Skill::whereNull('user_id')->where('key', 'framework-data')->value('name'));
+    }
+
     public function test_library_pages_render(): void
     {
         $user = $this->user();
@@ -364,7 +382,7 @@ class LibraryTest extends TestCase
         $this->actingAs($user)->get('/facets')->assertInertia(fn (Assert $page) => $page->component('Facets/Index')->has('facets', 14));
         $this->actingAs($user)->get('/facets/create?kind=base')->assertInertia(fn (Assert $page) => $page
             ->component('Facets/Edit')->where('kind', 'base')->where('values.settings_yaml', "type: project\n"));
-        $this->actingAs($user)->get('/skills')->assertInertia(fn (Assert $page) => $page->component('Skills/Index')->has('skills', 5));
+        $this->actingAs($user)->get('/skills')->assertInertia(fn (Assert $page) => $page->component('Skills/Index')->has('skills', 7));
 
         $system = $this->system(Blueprint::class, 'project_sensitive');
         $this->actingAs($user)->get("/blueprints/{$system->id}")->assertInertia(fn (Assert $page) => $page

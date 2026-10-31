@@ -57,9 +57,12 @@ class Skill extends Model
 
     /**
      * The name and description from SKILL.md frontmatter, which is what
-     * assistants read.
+     * assistants read, and the readable title people see. The name is the
+     * skill's official id, such as framework-data; the title, such as
+     * "Reading and saving data", comes from metadata.title and falls back to
+     * the name.
      *
-     * @return array{key: string, description: string}
+     * @return array{key: string, description: string, title: string}
      */
     public static function frontmatter(string $content, string $field): array
     {
@@ -78,6 +81,13 @@ class Skill extends Model
             throw ValidationException::withMessages([$field => 'Add a description: assistants use it to decide when to load the skill.']);
         }
 
-        return ['key' => $key, 'description' => trim($description[1])];
+        preg_match('/^metadata:[ \t]*\R((?:[ \t]+\S.*(?:\R|$))+)/m', $frontmatter[1], $metadata);
+        preg_match('/^[ \t]+title:[ \t]*["\']?(.+?)["\']?[ \t]*$/m', $metadata[1] ?? '', $title);
+
+        return [
+            'key' => $key,
+            'description' => trim($description[1]),
+            'title' => mb_substr(trim($title[1] ?? '') ?: $key, 0, 100),
+        ];
     }
 }

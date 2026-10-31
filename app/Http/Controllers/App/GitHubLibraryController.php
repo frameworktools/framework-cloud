@@ -30,7 +30,7 @@ class GitHubLibraryController extends Controller
 
         return $this->onGitHub(function () use ($request, $user, $url) {
             $read = $this->repo($request)->readSkill($url);
-            ['key' => $key, 'description' => $description] = Skill::frontmatter($read['content'], 'url');
+            ['key' => $key, 'description' => $description, 'title' => $title] = Skill::frontmatter($read['content'], 'url');
 
             if (Skill::where('user_id', $user->id)->where('key', $key)->exists()) {
                 throw ValidationException::withMessages(['url' => "You already have a skill named {$key}."]);
@@ -44,7 +44,7 @@ class GitHubLibraryController extends Controller
             $skill = Skill::create([
                 'user_id' => $user->id,
                 'key' => $key,
-                'name' => $key,
+                'name' => $title,
                 'description' => $description,
                 'visibility' => 'private',
                 'source_url' => $url,

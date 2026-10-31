@@ -29,13 +29,13 @@ class BlueprintSeeder extends Seeder
     {
         foreach (File::files($dir) as $position => $file) {
             $content = File::get($file->getPathname());
-            preg_match('/^description:\s*(.+)$/m', $content, $description);
+            $frontmatter = Skill::frontmatter($content, 'content');
 
             $skill = Skill::updateOrCreate(
-                ['user_id' => null, 'key' => $file->getFilenameWithoutExtension()],
+                ['user_id' => null, 'key' => $frontmatter['key']],
                 [
-                    'name' => $file->getFilenameWithoutExtension(),
-                    'description' => $description[1] ?? null,
+                    'name' => $frontmatter['title'],
+                    'description' => $frontmatter['description'],
                     'visibility' => 'public',
                     'position' => $position,
                 ],

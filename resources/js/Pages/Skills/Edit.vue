@@ -36,19 +36,20 @@ const items = computed(() => [
 const save = () => (props.skill ? form.put(`/skills/${props.skill.id}`, { preserveScroll: true }) : form.post('/skills'));
 const fork = () => router.post(`/skills/${props.skill.id}/fork`);
 const destroy = () => {
-    if (confirm(`Delete ${props.skill.key}? Facets that already copied it keep their copy.`)) router.delete(`/skills/${props.skill.id}`);
+    if (confirm(`Delete ${props.skill.name}? Facets that already copied it keep their copy.`)) router.delete(`/skills/${props.skill.id}`);
 };
 </script>
 
 <template>
-    <Head :title="skill ? skill.key : 'New skill'" />
+    <Head :title="skill ? skill.name : 'New skill'" />
 
     <SectionLayout heading="Skill" :items="items">
         <Link href="/skills" class="text-sm text-slate-500 hover:underline">Skills</Link>
-        <PageHeader :title="skill ? skill.key : 'New skill'" :class="skill ? '[&_h1]:font-mono' : ''">
+        <PageHeader :title="skill ? skill.name : 'New skill'">
             <template #description>
-                The frontmatter <code class="font-mono">name</code> is the skill's name, and the
-                <code class="font-mono">description</code> tells an assistant when to load it.
+                The frontmatter <code class="font-mono">name</code> is the skill's official name, which assistants use. The
+                <code class="font-mono">description</code> tells an assistant when to load it, and
+                <code class="font-mono">metadata.title</code> is the readable name shown here.
                 <template v-if="skill?.is_system"> Framework skills ship with the R package, so facets use the installed copy.</template>
             </template>
         </PageHeader>

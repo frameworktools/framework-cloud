@@ -43,7 +43,7 @@ class SkillsController extends Controller
         $skill = Skill::create([
             'user_id' => $user->id,
             'key' => $data['key'],
-            'name' => $data['key'],
+            'name' => $data['title'],
             'description' => $data['description'],
             'visibility' => $data['visibility'],
         ]);
@@ -72,7 +72,7 @@ class SkillsController extends Controller
         $data = $this->validated($request, $skill);
 
         DB::transaction(function () use ($skill, $data) {
-            $skill->update(['description' => $data['description'], 'visibility' => $data['visibility']]);
+            $skill->update(['name' => $data['title'], 'description' => $data['description'], 'visibility' => $data['visibility']]);
             $skill->publishVersion(['content' => $data['content'], 'files' => $skill->latestVersion->files ?? [], 'notes' => $data['notes']]);
         });
 
@@ -129,7 +129,7 @@ class SkillsController extends Controller
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
 
-        ['key' => $key, 'description' => $description] = Skill::frontmatter($data['content'], 'content');
+        ['key' => $key, 'description' => $description, 'title' => $title] = Skill::frontmatter($data['content'], 'content');
 
         if ($skill && $key !== $skill->key) {
             throw ValidationException::withMessages(['content' => "This skill is named {$skill->key}. Fork it to make one with a new name."]);
@@ -137,6 +137,7 @@ class SkillsController extends Controller
 
         return [
             'key' => $key,
+            'title' => $title,
             'description' => $description,
             'content' => $data['content'],
             'visibility' => $data['visibility'],
@@ -148,6 +149,8 @@ class SkillsController extends Controller
         ---
         name: my-skill
         description: Use when ... (say when an assistant should load this skill)
+        metadata:
+          title: My skill
         ---
 
         # My skill

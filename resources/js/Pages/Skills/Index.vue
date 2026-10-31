@@ -71,10 +71,8 @@ const fork = (id) => router.post(`/skills/${id}/fork`);
                                     <SparklesIcon class="size-5" />
                                 </div>
                                 <div class="min-w-0 flex-1">
-                                    <div class="flex flex-wrap items-baseline gap-x-2">
-                                        <Link :href="`/skills/${skill.id}/edit`" class="font-mono text-sm font-semibold text-slate-900 hover:underline dark:text-white">{{ skill.key }}</Link>
-                                        <span class="font-mono text-xs text-slate-500 dark:text-slate-400">{{ skill.handle }} · v{{ skill.version }}</span>
-                                    </div>
+                                    <Link :href="`/skills/${skill.id}/edit`" class="text-base font-semibold text-slate-900 hover:underline dark:text-white">{{ skill.name }}</Link>
+                                    <div class="font-mono text-xs text-slate-500 dark:text-slate-400" title="The skill's official name, which assistants use">{{ skill.handle }} · v{{ skill.version }}</div>
                                     <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{ skill.description }}</p>
                                 </div>
                             </div>
