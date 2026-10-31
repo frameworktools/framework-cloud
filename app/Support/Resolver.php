@@ -121,8 +121,8 @@ class Resolver
 
         $pieces = $this->pieces->values()->all();
         $layers = [
-            ['kind' => 'base', 'key' => $this->structure->facet->handle, 'version' => $this->structure->version, 'layer' => $this->structure->layer],
-            ...array_map(fn (FacetVersion $v) => ['kind' => $v->facet->layerKind(), 'key' => $v->facet->handle, 'version' => $v->version, 'layer' => $v->layer], $pieces),
+            ['kind' => 'base', 'key' => $this->structure->facet->handle, 'version' => $this->structure->version, 'layer' => ProjectLayers::pieceLayer($this->structure->facet, $this->structure->layer)],
+            ...array_map(fn (FacetVersion $v) => ['kind' => $v->facet->layerKind(), 'key' => $v->facet->handle, 'version' => $v->version, 'layer' => ProjectLayers::pieceLayer($v->facet, $v->layer)], $pieces),
             ['kind' => 'blueprint', 'key' => $this->blueprint?->blueprint->handle ?? 'choices', 'layer' => $this->settings],
         ];
         $layers[] = ProjectLayers::projectLayer(str((string) ($choices['name'] ?? 'project'))->slug()->value() ?: 'project', $language, $layers);

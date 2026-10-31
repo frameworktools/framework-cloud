@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\Facet;
 use App\Models\FacetVersion;
 use App\Models\Project;
 use App\Models\User;
@@ -36,7 +37,7 @@ class ProjectLayers
             'kind' => $fragment->facet->layerKind(),
             'key' => $fragment->facet->handle,
             'version' => $fragment->version,
-            'layer' => $fragment->layer,
+            'layer' => self::pieceLayer($fragment->facet, $fragment->layer),
         ])->all();
 
         if ($composition) {
@@ -66,10 +67,49 @@ class ProjectLayers
         return collect($ids)->map(fn (int $id) => $versions->get($id))->filter()->values();
     }
 
-    /** The topmost layer: the language, and for Stata the R-only folders removed. */
+    /**
+     * The topmost layer: the language, and for Stata the R-only folders
+     * removed. With the spec's tools key on, it also names every tool for
+     * the language as on or off, so no client has to guess.
+     */
     public static function projectLayer(string $key, string $language, array $layers): array
     {
-        return ['kind' => 'project', 'key' => $key, 'layer' => ['language' => $language] + ($language === 'stata' ? self::withoutRFolders($layers) : [])];
+        $layer = ['language' => $language] + ($language === 'stata' ? self::withoutRFolders($layers) : []);
+
+        if (config('framework.spec_tools') && $language !== 'stata') {
+            $on = array_column(array_filter($layers, fn (array $l) => str_starts_with((string) ($l['key'] ?? ''), 'framework/') && isset($l['layer']['tools'])), 'layer');
+            $layer['tools'] = Facet::whereNull('user_id')->where('kind', 'tool')->orderBy('position')->get()
+                ->filter(fn (Facet $tool) => ! $tool->language || in_array($language, $tool->language, true))
+                ->mapWithKeys(fn (Facet $tool) => [$tool->key => collect($on)->contains(fn (array $l) => ! empty($l['tools'][$tool->key]))])
+                ->all();
+        }
+
+        return ['kind' => 'project', 'key' => $key, 'layer' => $layer];
+    }
+
+    /**
+     * A piece's layer as clients receive it. With the spec's tools key on, a
+     * tool layer says which tool it is, and a structure says its settings
+     * layout and whether it has core files.
+     */
+    public static function pieceLayer(Facet $facet, array $layer): array
+    {
+        if (! config('framework.spec_tools')) {
+            return $layer;
+        }
+
+        if ($facet->kind === 'tool') {
+            $layer['tools'][$facet->key] = true;
+        }
+
+        if ($facet->kind === 'structure' && $facet->isSystem()) {
+            $layer['settings_layout'] ??= in_array($facet->key, ['project', 'project_sensitive'], true) ? 'split' : 'flat';
+            if ($facet->key === 'bare') {
+                $layer['core_files'] ??= false;
+            }
+        }
+
+        return $layer;
     }
 
     /**

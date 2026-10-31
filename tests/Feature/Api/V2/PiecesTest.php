@@ -179,6 +179,36 @@ class PiecesTest extends TestCase
         $this->assertArrayHasKey('source', $this->withToken($this->token($plain))->postJson('/api/v2/resolve', ['name' => 'X'])->json());
     }
 
+    public function test_with_the_spec_tools_key_on_layers_name_their_tools_and_layout(): void
+    {
+        config(['framework.spec_tools' => true]);
+
+        $envelope = $this->withToken($this->token())->postJson('/api/v2/resolve', [
+            'name' => 'Survey', 'blueprint' => 'framework/project', 'tools' => ['renv' => true],
+        ])->assertOk()->json();
+
+        $this->assertSame([], Layer::envelopeProblems($envelope));
+        $layers = collect($envelope['layers'])->keyBy('key');
+        $this->assertSame('split', $envelope['layers'][0]['layer']['settings_layout']);
+        $this->assertSame(['renv' => true], $layers['framework/renv']['layer']['tools']);
+
+        // The project layer names every R tool, on or off
+        $this->assertSame(
+            ['quarto' => true, 'quarto_manuscript' => false, 'quarto_slides' => false, 'targets' => false, 'renv' => true],
+            $layers['survey']['layer']['tools'],
+        );
+
+        // Stata gets no tools map; bare has no core files
+        $stata = $this->withToken($this->token())->postJson('/api/v2/resolve', ['name' => 'S', 'blueprint' => 'framework/bare', 'language' => 'stata'])->json('layers');
+        $this->assertArrayNotHasKey('tools', last($stata)['layer']);
+        $this->assertFalse($stata[0]['layer']['core_files']);
+
+        // Off, nothing new goes out, for clients older than the schema
+        config(['framework.spec_tools' => false]);
+        $plain = $this->withToken($this->token())->postJson('/api/v2/resolve', ['name' => 'Survey', 'blueprint' => 'framework/project'])->json('layers');
+        $this->assertArrayNotHasKey('settings_layout', $plain[0]['layer']);
+    }
+
     public function test_a_project_token_cannot_list_or_resolve(): void
     {
         $project = User::factory()->create()->projects()->create(['name' => 'S', 'slug' => 's']);
