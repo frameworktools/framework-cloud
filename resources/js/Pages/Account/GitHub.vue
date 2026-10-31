@@ -2,7 +2,7 @@
 import UiPanel from '@/Components/UiPanel.vue';
 import { computed } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
-import SettingsLayout from '@/Layouts/SettingsLayout.vue';
+import AccountLayout from '@/Layouts/AccountLayout.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiCallout from '@/Components/UiCallout.vue';
 import GitHubButton from '@/Components/GitHubButton.vue';
@@ -15,7 +15,7 @@ const connected = computed(() => page.props.flash.status === 'github-connected')
 
 const disconnect = () => {
     if (confirm('Disconnect GitHub? Existing repositories stay on GitHub. Scaffold status stops updating until you connect again.')) {
-        router.delete('/settings/github');
+        router.delete('/account/github');
     }
 };
 </script>
@@ -23,7 +23,7 @@ const disconnect = () => {
 <template>
     <Head title="GitHub" />
 
-    <SettingsLayout
+    <AccountLayout
         heading="GitHub"
         subheading="Create projects as GitHub repositories, then clone them on any machine."
     >
@@ -71,5 +71,5 @@ const disconnect = () => {
             </div>
             </UiPanel>
         </template>
-    </SettingsLayout>
+    </AccountLayout>
 </template>

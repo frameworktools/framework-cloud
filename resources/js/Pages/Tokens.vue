@@ -1,7 +1,8 @@
 <script setup>
 import { computed } from 'vue';
 import { useForm, usePage, router } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import SectionLayout from '@/Layouts/SectionLayout.vue';
+import { accountItems } from '@/Layouts/AccountLayout.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiInput from '@/Components/UiInput.vue';
 import UiCallout from '@/Components/UiCallout.vue';
@@ -34,7 +35,7 @@ const revoke = (id) => {
 <template>
     <Head title="API tokens" />
 
-    <AppLayout>
+    <SectionLayout heading="Account" :items="accountItems">
         <div class="flex flex-col gap-8">
             <PageHeader title="API tokens">
                 <template #description>
@@ -88,5 +89,5 @@ const revoke = (id) => {
                 <EmptyState v-else :icon="KeyIcon" title="No tokens yet." description="Create a token above, then run cloud_login() with it on your computer." />
             </section>
         </div>
-    </AppLayout>
+    </SectionLayout>
 </template>

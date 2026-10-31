@@ -25,7 +25,7 @@ GitHub lets people sign in with GitHub and create projects as repositories.
    confirm. GitHub sends you back with the app saved.
 3. Install the app on the accounts or organizations where projects should go.
 
-Each user then connects their own GitHub account in **Settings > GitHub**.
+Each user then connects their own GitHub account in **Account > GitHub**.
 
 ## Published notebooks
 

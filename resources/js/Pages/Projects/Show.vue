@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref, watch, onBeforeUnmount } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import ProjectsLayout from '@/Layouts/ProjectsLayout.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiCallout from '@/Components/UiCallout.vue';
 import UiBadge from '@/Components/UiBadge.vue';
@@ -69,7 +69,7 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
 <template>
     <Head :title="project.name" />
 
-    <AppLayout>
+    <ProjectsLayout>
         <div class="flex flex-col gap-8">
             <div class="flex flex-col gap-3">
                 <nav class="flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400">
@@ -210,5 +210,5 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                 </ul>
             </UiPanel>
         </div>
-    </AppLayout>
+    </ProjectsLayout>
 </template>

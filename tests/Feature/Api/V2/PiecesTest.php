@@ -274,4 +274,16 @@ class PiecesTest extends TestCase
 
         $this->withToken($project->issuePullToken())->getJson('/api/v2/tools')->assertForbidden();
     }
+
+    public function test_default_git_hooks_go_into_new_projects_that_use_git(): void
+    {
+        $user = User::factory()->create(['project_defaults' => ['hooks' => ['data_security' => true, 'check_sensitive_dirs' => false]]]);
+        $token = $this->token($user);
+
+        $layers = collect($this->withToken($token)->postJson('/api/v2/resolve', ['name' => 'S', 'blueprint' => 'framework/project'])->assertOk()->json('layers'));
+        $this->assertSame(['data_security' => true], $layers->firstWhere('kind', 'blueprint')['layer']['git']['hooks']);
+
+        $layers = collect($this->withToken($token)->postJson('/api/v2/resolve', ['name' => 'S', 'blueprint' => 'framework/project', 'settings' => ['git' => false]])->json('layers'));
+        $this->assertArrayNotHasKey('hooks', $layers->firstWhere('kind', 'blueprint')['layer']['git'] ?? []);
+    }
 }

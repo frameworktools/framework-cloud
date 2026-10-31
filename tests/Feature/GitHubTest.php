@@ -120,7 +120,7 @@ class GitHubTest extends TestCase
         $this->fakeSocialite(42, 'ada', 'ada@example.org');
 
         $this->actingAs($other)->get('/auth/github/callback?code=x&state=y')
-            ->assertRedirect('/settings/github')->assertSessionHasErrors('github');
+            ->assertRedirect('/account/github')->assertSessionHasErrors('github');
         $this->assertNull($other->fresh()->githubAccount);
     }
 
@@ -375,7 +375,7 @@ class GitHubTest extends TestCase
             'api.github.com/user/installations*' => Http::response(['installations' => []]),
         ]);
 
-        $this->actingAs($user)->get('/settings/github')->assertOk();
+        $this->actingAs($user)->get('/account/github')->assertOk();
 
         $this->assertSame('ghu_new', $user->githubAccount->fresh()->access_token);
         Http::assertSent(fn ($r) => str_contains($r->url(), '/user/installations') && $r->hasHeader('Authorization', 'Bearer ghu_new'));

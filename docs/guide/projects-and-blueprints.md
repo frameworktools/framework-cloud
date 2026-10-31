@@ -11,10 +11,10 @@ pieces:
   Quarto, Quarto manuscript, Quarto slides, targets, and renv. Stata projects
   have no tools.
 - **Package sets.** Named lists of packages for one language.
-- **Skills.** Instructions for AI assistants, chosen one at a time or as a
+- **Skills.** Instructions for coding agents, chosen one at a time or as a
   skill set.
 - **Settings.** Whether the project holds sensitive data, whether it is set
-  up for AI assistants, and whether it uses git.
+  up for coding agents, and whether it uses git.
 
 **Blueprints** lists the built-in blueprints, the ones other people have made
 public, and your own. Open one to see what it sets up. **Project
@@ -23,9 +23,17 @@ pieces, and you can make your own of each.
 
 ### Defaults
 
-**Settings > Defaults** sets what a new project starts with: a default
-blueprint, preferred tools, package sets, and skill sets, and whether new
-projects hold sensitive data. A blueprint you choose brings its own pieces,
+**Settings** sets what a new project starts with. Its pages are grouped by
+subject:
+
+- **General.** The default blueprint and editor, package sets and renv or
+  uv, what `scaffold()` does, and git.
+- **AI.** Agent files and preferred skill sets.
+- **Data safety.** Whether new projects hold sensitive data, and the git
+  hooks that run before each commit.
+- **Publishing.** The notebook format, Jupyter, and Quarto.
+
+The pages share one form, so changes on several pages are saved together. A blueprint you choose brings its own pieces,
 and your default settings still apply where it doesn't set them.
 
 ### Borrowing and remixing

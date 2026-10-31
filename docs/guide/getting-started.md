@@ -15,7 +15,7 @@ you set in the next step. See [Signing in](signing-in.md).
 
 ## 2. Fill in your profile
 
-Open **Settings > Profile** and enter your name, the email you want shown on
+Open **Account > Profile** and enter your name, the email you want shown on
 your work, your ORCID iD, your website, and up to five affiliations. Framework
 writes these into the author block of every new notebook, report, and slide
 deck.

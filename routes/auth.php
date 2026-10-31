@@ -43,10 +43,10 @@ Route::middleware(['guest', 'passwords'])->group(function () {
 });
 
 Route::middleware(['auth', 'passwords'])->group(function () {
-    Route::put('settings/password', [PasswordController::class, 'update'])
+    Route::put('account/password', [PasswordController::class, 'update'])
         ->middleware('throttle:6,1')
         ->name('password.update');
-    Route::delete('settings/password', [PasswordController::class, 'destroy'])
+    Route::delete('account/password', [PasswordController::class, 'destroy'])
         ->middleware('throttle:6,1')
         ->name('password.destroy');
 });

@@ -33,7 +33,7 @@ class AuthorController extends Controller
             $affiliations = [['name' => $author['affiliation'], 'department' => '', 'city' => '', 'country' => '']];
         }
 
-        return Inertia::render('Settings/Profile', [
+        return Inertia::render('Account/Profile', [
             'author' => [
                 'name' => ($author['name'] ?? '') ?: $user->name,
                 'email' => ($author['email'] ?? '') ?: $user->email,

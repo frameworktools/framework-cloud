@@ -6,7 +6,7 @@ it up first (see [Server setup](server-setup.md#github)).
 
 ## Connect your account
 
-1. Open **Settings > GitHub** and connect your GitHub account. If you signed
+1. Open **Account > GitHub** and connect your GitHub account. If you signed
    up with GitHub, it is already connected.
 2. Install the Framework app on your GitHub account and on any organization
    where you want new repositories. GitHub asks which repositories the app may
@@ -33,6 +33,6 @@ git clone https://github.com/you/your-project.git
 
 ## Disconnecting
 
-**Settings > GitHub > Disconnect** removes the connection. Your repositories
+**Account > GitHub > Disconnect** removes the connection. Your repositories
 stay on GitHub. To remove the app's access completely, uninstall it in your
 GitHub settings under **Applications**.

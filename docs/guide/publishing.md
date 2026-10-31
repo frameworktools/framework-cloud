@@ -65,7 +65,7 @@ readable link off, use `slug = FALSE` in R or `slug=False` in Python.
 
 On a storage bucket, `slug` is ignored, and `dest` sets the file's path.
 
-Readable links need a handle, which you set in **Settings > Account**. You can
+Readable links need a handle, which you set in **Account > Account details**. You can
 also turn a notebook's readable link on or off on the **Published** page. The
 private link keeps working either way.
 

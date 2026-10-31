@@ -9,7 +9,8 @@ import AppLayout from '@/Layouts/AppLayout.vue';
  *
  * Items either link to other pages ({ label, href, icon }) or to sections
  * of this page ({ label, anchor, icon }). Anchored sections are highlighted
- * as they scroll into view.
+ * as they scroll into view. A { heading } item starts a group, and a link
+ * with preserveState keeps the page's unsaved form when it moves.
  */
 const props = defineProps({
     heading: String,
@@ -21,7 +22,7 @@ const page = usePage();
 const active = ref(props.items.find((i) => i.anchor)?.anchor ?? null);
 
 const isActive = (item) => (item.href
-    ? page.url === item.href || page.url.startsWith(item.href + '/') || page.url.startsWith(item.href + '?')
+    ? page.url === item.href || page.url.startsWith(item.href + '?') || (!item.exact && page.url.startsWith(item.href + '/'))
     : active.value === item.anchor);
 
 const anchors = computed(() => props.items.filter((i) => i.anchor).map((i) => i.anchor));
@@ -64,9 +65,10 @@ const itemClass = (item) => (isActive(item)
 
                     <nav class="flex gap-1 max-lg:-mx-1 max-lg:overflow-x-auto lg:flex-col">
                         <div v-if="group" class="mb-1 mt-2 px-3 text-xs font-medium uppercase tracking-wider text-slate-500 max-lg:hidden">{{ group }}</div>
-                        <template v-for="item in items" :key="item.href ?? item.anchor">
+                        <template v-for="item in items" :key="item.href ?? item.anchor ?? item.heading">
+                            <div v-if="item.heading" class="mb-1 mt-3 px-3 text-xs font-medium uppercase tracking-wider text-slate-500 first:mt-0 max-lg:hidden">{{ item.heading }}</div>
                             <Link
-                                v-if="item.href" :href="item.href"
+                                v-else-if="item.href" :href="item.href" :preserve-state="!!item.preserveState" :preserve-scroll="!!item.preserveState"
                                 class="flex shrink-0 items-center gap-2 rounded-md px-3 py-2 text-sm transition" :class="itemClass(item)"
                             >
                                 <component :is="item.icon" v-if="item.icon" class="size-4 shrink-0" />

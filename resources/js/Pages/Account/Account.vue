@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useForm, usePage } from '@inertiajs/vue3';
-import SettingsLayout from '@/Layouts/SettingsLayout.vue';
+import AccountLayout from '@/Layouts/AccountLayout.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiInput from '@/Components/UiInput.vue';
 import UiSwitch from '@/Components/UiSwitch.vue';
@@ -20,25 +20,25 @@ const form = useForm({
     handle: props.profile.handle ?? '',
     profile_public: props.profile.profile_public,
 });
-const save = () => form.patch('/settings/account');
+const save = () => form.patch('/account/account');
 
 const passwordStatus = computed(() => ({
     'password-updated': 'Password saved.',
     'password-removed': 'Password removed.',
 })[page.props.flash.status]);
 const passwordForm = useForm({ current_password: '', password: '', password_confirmation: '' });
-const savePassword = () => passwordForm.put('/settings/password', { preserveScroll: true, onFinish: () => passwordForm.reset() });
-const removePassword = () => passwordForm.delete('/settings/password', { preserveScroll: true, onFinish: () => passwordForm.reset() });
+const savePassword = () => passwordForm.put('/account/password', { preserveScroll: true, onFinish: () => passwordForm.reset() });
+const removePassword = () => passwordForm.delete('/account/password', { preserveScroll: true, onFinish: () => passwordForm.reset() });
 
 const showDelete = ref(false);
 const deleteForm = useForm({ confirm_email: '' });
-const destroy = () => deleteForm.delete('/settings/account');
+const destroy = () => deleteForm.delete('/account/account');
 </script>
 
 <template>
     <Head title="Account" />
 
-    <SettingsLayout heading="Account" subheading="How you sign in, and your public page.">
+    <AccountLayout heading="Account" subheading="How you sign in, and your public page.">
         <UiPanel title="Details">
         <form id="account-form" class="flex flex-col gap-4" @submit.prevent="save">
             <UiInput v-model="form.name" label="Name" required :error="form.errors.name" />
@@ -103,5 +103,5 @@ const destroy = () => deleteForm.delete('/settings/account');
                 <UiButton variant="danger" :disabled="deleteForm.processing" @click="destroy">Delete account</UiButton>
             </div>
         </UiModal>
-    </SettingsLayout>
+    </AccountLayout>
 </template>

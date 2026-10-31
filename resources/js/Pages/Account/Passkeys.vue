@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
-import SettingsLayout from '@/Layouts/SettingsLayout.vue';
+import AccountLayout from '@/Layouts/AccountLayout.vue';
 import UiPanel from '@/Components/UiPanel.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiInput from '@/Components/UiInput.vue';
@@ -21,7 +21,7 @@ async function addPasskey() {
     busy.value = true;
     try {
         // Fetch creation options, then hand them to the authenticator
-        const response = await fetch('/settings/passkeys/options', {
+        const response = await fetch('/account/passkeys/options', {
             method: 'POST',
             headers: {
                 Accept: 'application/json',
@@ -32,7 +32,7 @@ async function addPasskey() {
         });
         if (!response.ok) throw new Error('Could not start passkey creation.');
         const attestation = await window.passkeys.createWithOptions(await response.json());
-        router.post('/settings/passkeys', { passkey: attestation, name: name.value }, {
+        router.post('/account/passkeys', { passkey: attestation, name: name.value }, {
             onFinish: () => { busy.value = false; name.value = ''; },
         });
     } catch (e) {
@@ -45,7 +45,7 @@ async function addPasskey() {
 
 const remove = (id) => {
     if (confirm('Remove this passkey? Devices using it will need email sign-in.')) {
-        router.delete(`/settings/passkeys/${id}`);
+        router.delete(`/account/passkeys/${id}`);
     }
 };
 </script>
@@ -53,7 +53,7 @@ const remove = (id) => {
 <template>
     <Head title="Passkeys" />
 
-    <SettingsLayout
+    <AccountLayout
         heading="Passkeys"
         subheading="One-touch sign-in with Touch ID, Face ID, or a security key. Add one for each device you use."
     >
@@ -85,5 +85,5 @@ const remove = (id) => {
             <p v-if="!passkeys.length" class="py-3 text-sm text-slate-500">No passkeys yet.</p>
         </div>
         </UiPanel>
-    </SettingsLayout>
+    </AccountLayout>
 </template>

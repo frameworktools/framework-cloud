@@ -139,27 +139,36 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('device/approve', [DeviceController::class, 'approve'])->middleware('throttle:30,1');
     Route::post('device/deny', [DeviceController::class, 'deny'])->middleware('throttle:30,1');
 
-    Route::redirect('settings', 'settings/profile');
-    Route::get('settings/profile', [AuthorController::class, 'edit'])->name('settings.profile');
-    Route::patch('settings/profile', [AuthorController::class, 'update']);
-    Route::get('settings/account', [AccountController::class, 'edit'])->name('settings.account');
-    Route::patch('settings/account', [AccountController::class, 'update']);
-    Route::delete('settings/account', [AccountController::class, 'destroy']);
+    // Your account: who you are, how you sign in, and what's connected
+    Route::redirect('account', 'account/profile');
+    Route::get('account/profile', [AuthorController::class, 'edit'])->name('account.profile');
+    Route::patch('account/profile', [AuthorController::class, 'update']);
+    Route::get('account/account', [AccountController::class, 'edit'])->name('account.account');
+    Route::patch('account/account', [AccountController::class, 'update']);
+    Route::delete('account/account', [AccountController::class, 'destroy']);
 
-    Route::get('settings/defaults', [DefaultsController::class, 'edit'])->name('settings.defaults');
-    Route::patch('settings/defaults', [DefaultsController::class, 'update']);
+    Route::get('account/github', [GitHubController::class, 'show'])->name('account.github');
+    Route::delete('account/github', [App\Http\Controllers\Auth\GitHubController::class, 'destroy']);
 
-    Route::get('settings/github', [GitHubController::class, 'show'])->name('settings.github');
-    Route::delete('settings/github', [App\Http\Controllers\Auth\GitHubController::class, 'destroy']);
+    Route::get('account/passkeys', [PasskeysController::class, 'index'])->name('account.passkeys');
+    Route::post('account/passkeys/options', [PasskeysController::class, 'options']);
+    Route::post('account/passkeys', [PasskeysController::class, 'store']);
+    Route::delete('account/passkeys/{passkeyId}', [PasskeysController::class, 'destroy']);
 
     // Offered once after an email link or password sign-in
     Route::get('welcome/passkey', [PasskeyPromptController::class, 'show'])->name('passkey.prompt');
     Route::post('welcome/passkey/skip', [PasskeyPromptController::class, 'skip']);
 
-    Route::get('settings/passkeys', [PasskeysController::class, 'index'])->name('settings.passkeys');
-    Route::post('settings/passkeys/options', [PasskeysController::class, 'options']);
-    Route::post('settings/passkeys', [PasskeysController::class, 'store']);
-    Route::delete('settings/passkeys/{passkeyId}', [PasskeysController::class, 'destroy']);
+    // Your defaults for new projects: one form, shown a section at a time.
+    // The account pages used to live here.
+    Route::redirect('settings', 'settings/basics');
+    Route::redirect('settings/defaults', '/settings/basics');
+    foreach (['profile', 'account', 'github', 'passkeys'] as $moved) {
+        Route::redirect("settings/{$moved}", "/account/{$moved}");
+    }
+    Route::get('settings/{section}', [DefaultsController::class, 'edit'])
+        ->whereIn('section', DefaultsController::SECTIONS)->name('settings');
+    Route::patch('settings', [DefaultsController::class, 'update']);
 
     // This server's own credentials (GitHub App, storage, mail)
     Route::middleware('admin')->group(function () {

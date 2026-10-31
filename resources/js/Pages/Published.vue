@@ -97,7 +97,7 @@ const date = (value) => new Date(value).toLocaleDateString(undefined, { year: 'n
                             <dt class="w-full shrink-0 sm:w-28 font-medium text-slate-600 dark:text-slate-400">Readable link</dt>
                             <dd v-if="doc.readable_url" class="min-w-0 flex-1 truncate font-mono text-xs text-slate-800 dark:text-slate-200">{{ doc.readable_url }}</dd>
                             <dd v-else-if="doc.readable && !handle" class="min-w-0 flex-1 text-slate-500">
-                                On, but you need a handle. <Link href="/settings/account" class="text-sky-600 hover:underline dark:text-sky-400">Set one</Link>.
+                                On, but you need a handle. <Link href="/account/account" class="text-sky-600 hover:underline dark:text-sky-400">Set one</Link>.
                             </dd>
                             <dd v-else class="min-w-0 flex-1 text-slate-500">Off. Only the private link works.</dd>
                             <UiButton v-if="doc.readable_url" variant="ghost" size="sm" @click="copy(`r${doc.id}`, doc.readable_url)">{{ copied === `r${doc.id}` ? 'Copied' : 'Copy' }}</UiButton>

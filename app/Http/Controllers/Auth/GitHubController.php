@@ -33,7 +33,7 @@ class GitHubController extends Controller
         abort_unless(filled(config('services.github.client_id')), 404);
 
         $failed = fn (string $message) => $request->user()
-            ? to_route('settings.github')->withErrors(['github' => $message])
+            ? to_route('account.github')->withErrors(['github' => $message])
             : to_route('login')->withErrors(['email' => $message]);
 
         if ($request->has('error')) {
@@ -58,7 +58,7 @@ class GitHubController extends Controller
 
             $this->store($current, $github, $account);
 
-            return to_route('settings.github')->with('status', 'github-connected');
+            return to_route('account.github')->with('status', 'github-connected');
         }
 
         $user = $account?->user ?? $this->userForEmail($github->getEmail());

@@ -233,7 +233,7 @@ const items = computed(() => [
 
                 <div v-if="onGitHub" class="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
                     <p v-if="!github.login" class="text-sm text-slate-600 dark:text-slate-400">
-                        <Link href="/settings/github" class="text-sky-600 hover:underline dark:text-sky-400">Connect GitHub</Link> first.
+                        <Link href="/account/github" class="text-sky-600 hover:underline dark:text-sky-400">Connect GitHub</Link> first.
                     </p>
                     <p v-else-if="github.owners === null" class="text-sm text-slate-600 dark:text-slate-400">
                         GitHub could not be reached. Reload to try again.

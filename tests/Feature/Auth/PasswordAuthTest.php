@@ -101,7 +101,7 @@ class PasswordAuthTest extends TestCase
     {
         $user = User::factory()->create(['password' => null]);
 
-        $this->actingAs($user)->put('/settings/password', [
+        $this->actingAs($user)->put('/account/password', [
             'password' => 'my first password',
             'password_confirmation' => 'my first password',
         ])->assertSessionHasNoErrors();
@@ -113,19 +113,19 @@ class PasswordAuthTest extends TestCase
     {
         $user = User::factory()->create(['password' => 'the old password']);
 
-        $this->actingAs($user)->put('/settings/password', [
+        $this->actingAs($user)->put('/account/password', [
             'current_password' => 'not it',
             'password' => 'the new password',
             'password_confirmation' => 'the new password',
         ])->assertSessionHasErrors('current_password');
 
-        $this->put('/settings/password', [
+        $this->put('/account/password', [
             'current_password' => 'the old password',
             'password' => 'the new password',
             'password_confirmation' => 'the new password',
         ])->assertSessionHasNoErrors();
 
-        $this->delete('/settings/password', ['current_password' => 'the new password'])->assertSessionHasNoErrors();
+        $this->delete('/account/password', ['current_password' => 'the new password'])->assertSessionHasNoErrors();
         $this->assertNull($user->fresh()->password);
     }
 
@@ -133,7 +133,7 @@ class PasswordAuthTest extends TestCase
     {
         $user = User::factory()->create(['password' => null]);
 
-        $this->actingAs($user)->put('/settings/password', [
+        $this->actingAs($user)->put('/account/password', [
             'password' => 'short',
             'password_confirmation' => 'short',
         ])->assertSessionHasErrors('password');

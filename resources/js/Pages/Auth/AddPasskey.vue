@@ -26,7 +26,7 @@ async function addPasskey() {
     error.value = '';
     busy.value = true;
     try {
-        const response = await fetch('/settings/passkeys/options', {
+        const response = await fetch('/account/passkeys/options', {
             method: 'POST',
             headers: {
                 Accept: 'application/json',
@@ -37,7 +37,7 @@ async function addPasskey() {
         });
         if (!response.ok) throw new Error('Could not start creating a passkey.');
         const attestation = await window.passkeys.createWithOptions(await response.json());
-        router.post('/settings/passkeys', { passkey: attestation, name: deviceName(), continue: true }, {
+        router.post('/account/passkeys', { passkey: attestation, name: deviceName(), continue: true }, {
             onError: (errors) => { error.value = errors.passkey ?? 'That passkey could not be saved. Please try again.'; },
             onFinish: () => { busy.value = false; },
         });

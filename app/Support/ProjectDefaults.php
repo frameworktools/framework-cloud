@@ -9,12 +9,16 @@ use Illuminate\Support\Arr;
  * What a user's new projects start with when they don't choose otherwise.
  * Some of it lives in the synced settings document that the R package also
  * reads (the default blueprint, git, renv, and AI); the rest is cloud-only in
- * users.project_defaults (package sets, skill sets, tools, and sensitive).
+ * users.project_defaults (package sets, skill sets, tools, sensitive, and
+ * git hooks).
  */
 class ProjectDefaults
 {
+    /** The git hooks a user can turn on for new projects, as the R package names them. */
+    public const HOOKS = ['data_security', 'check_sensitive_dirs'];
+
     /**
-     * @return array{blueprint: string, package_sets: list<string>, skill_sets: list<string>, tools: array<string, bool>, settings: array{sensitive: bool, git: bool, ai: bool}}
+     * @return array{blueprint: string, package_sets: list<string>, skill_sets: list<string>, tools: array<string, bool>, settings: array{sensitive: bool, git: bool, ai: bool, hooks: list<string>}}
      */
     public static function for(User $user): array
     {
@@ -30,6 +34,7 @@ class ProjectDefaults
                 'sensitive' => (bool) ($own['sensitive'] ?? false),
                 'git' => (bool) Arr::get($doc, 'defaults.use_git', true),
                 'ai' => (bool) Arr::get($doc, 'ai.enabled', true),
+                'hooks' => array_keys(array_filter(Arr::only($own['hooks'] ?? [], self::HOOKS))),
             ],
         ];
     }

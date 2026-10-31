@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { useForm, usePage } from '@inertiajs/vue3';
-import SettingsLayout from '@/Layouts/SettingsLayout.vue';
+import AccountLayout from '@/Layouts/AccountLayout.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiInput from '@/Components/UiInput.vue';
 import UiPanel from '@/Components/UiPanel.vue';
@@ -14,7 +14,7 @@ const page = usePage();
 const saved = computed(() => page.props.flash.status === 'author-updated');
 
 const form = useForm({ ...props.author, affiliations: props.author.affiliations.map((a) => ({ ...a })) });
-const save = () => form.patch('/settings/profile', { preserveScroll: true });
+const save = () => form.patch('/account/profile', { preserveScroll: true });
 
 const MAX = 5;
 const blank = () => ({ name: '', department: '', city: '', country: '' });
@@ -49,7 +49,7 @@ const yaml = computed(() => {
 <template>
     <Head title="Profile" />
 
-    <SettingsLayout
+    <AccountLayout
         heading="Profile"
         subheading="How you appear as an author. Framework puts this in the front matter of new notebooks, reports, and slides."
     >
@@ -99,5 +99,5 @@ const yaml = computed(() => {
             </UiButton>
             <p v-if="saved" class="text-center text-xs text-slate-500">Saved.</p>
         </template>
-    </SettingsLayout>
+    </AccountLayout>
 </template>

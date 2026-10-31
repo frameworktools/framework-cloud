@@ -10,7 +10,7 @@ class HandleInertiaRequests extends Middleware
 {
     protected $rootView = 'app';
 
-    private const RECENT_PROJECTS = 6;
+    private const PROJECT_LIST = 50;
 
     public function share(Request $request): array
     {
@@ -46,16 +46,16 @@ class HandleInertiaRequests extends Middleware
                 ['label' => 'Blueprints', 'href' => '/blueprints', 'section' => 'Framework'],
                 ['label' => 'Project structures', 'href' => '/structures', 'section' => 'Framework'],
                 ['label' => 'Package sets', 'href' => '/package-sets', 'section' => 'Framework'],
-                ['label' => 'Skill sets', 'href' => '/skill-sets', 'section' => 'Framework'],
-                ['label' => 'Skills', 'href' => '/skills', 'section' => 'Framework'],
-                ['label' => 'Your settings', 'href' => '/settings/profile', 'section' => 'Settings', 'match' => '/settings'],
-                ['label' => 'API tokens', 'href' => '/tokens', 'section' => 'Settings'],
-                $user?->is_admin ? ['label' => 'Server setup', 'href' => '/admin/setup', 'section' => 'Settings'] : null,
+                ['label' => 'Skills', 'href' => '/skills', 'section' => 'AI'],
+                ['label' => 'Skill sets', 'href' => '/skill-sets', 'section' => 'AI'],
+                ['label' => 'Settings', 'href' => '/settings/basics', 'section' => 'You', 'match' => '/settings'],
+                ['label' => 'Account', 'href' => '/account/profile', 'section' => 'You', 'match' => ['/account', '/tokens']],
+                $user?->is_admin ? ['label' => 'Server setup', 'href' => '/admin/setup', 'section' => 'You'] : null,
             ])),
 
             // The newest projects, for switching between them from the sidebar
-            'recentProjects' => fn () => $user ? [
-                'items' => $user->projects()->latest()->limit(self::RECENT_PROJECTS)->get(['id', 'name', 'slug']),
+            'projectList' => fn () => $user ? [
+                'items' => $user->projects()->latest()->limit(self::PROJECT_LIST)->get(['id', 'name', 'slug']),
                 'total' => $user->projects()->count(),
             ] : null,
 

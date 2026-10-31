@@ -1,7 +1,7 @@
 <script setup>
 import { computed, watch, onBeforeUnmount } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import ProjectsLayout from '@/Layouts/ProjectsLayout.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiCallout from '@/Components/UiCallout.vue';
 import UiBadge from '@/Components/UiBadge.vue';
@@ -17,9 +17,9 @@ const props = defineProps({ projects: Array, steps: Array, setup: Array });
 const page = usePage();
 
 const copy = {
-    profile: { title: 'Fill in your profile', text: 'Your name and affiliation go on the notebooks and reports you create.', href: '/settings/profile', icon: UserCircleIcon },
+    profile: { title: 'Fill in your profile', text: 'Your name and affiliation go on the notebooks and reports you create.', href: '/account/profile', icon: UserCircleIcon },
     machine: { title: 'Connect your computer', text: 'Make a token, then run cloud_login() once in R or Python, or fw login in a terminal.', href: '/tokens', icon: ComputerDesktopIcon },
-    github: { title: 'Connect GitHub', text: 'Create projects as GitHub repositories, ready to clone.', href: '/settings/github', icon: GitHubMark },
+    github: { title: 'Connect GitHub', text: 'Create projects as GitHub repositories, ready to clone.', href: '/account/github', icon: GitHubMark },
     project: { title: 'Create a project', text: 'Pick a blueprint and set it up on GitHub or your computer.', href: '/projects/create', icon: FolderPlusIcon },
 };
 const remaining = computed(() => props.steps.filter((s) => !s.done).length);
@@ -41,7 +41,7 @@ onBeforeUnmount(() => clearInterval(timer));
 <template>
     <Head title="Projects" />
 
-    <AppLayout>
+    <ProjectsLayout>
         <div class="flex flex-col gap-10">
             <PageHeader title="Projects" description="Each project is made from a blueprint. Set it up on GitHub, or on any computer with a project token.">
                 <template #actions>
@@ -123,5 +123,5 @@ onBeforeUnmount(() => clearInterval(timer));
                 </template>
             </EmptyState>
         </div>
-    </AppLayout>
+    </ProjectsLayout>
 </template>

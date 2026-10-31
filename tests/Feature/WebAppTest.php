@@ -49,8 +49,8 @@ class WebAppTest extends TestCase
                 ->component('Projects')
                 ->has('projects', 1)
                 ->has('steps')
-                ->where('recentProjects.total', 1)
-                ->where('recentProjects.items.0.slug', 'survey'));
+                ->where('projectList.total', 1)
+                ->where('projectList.items.0.slug', 'survey'));
     }
 
     public function test_a_project_has_its_own_page(): void

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use App\Models\Blueprint;
 use App\Support\Catalog;
+use App\Support\ProjectDefaults;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -13,12 +14,16 @@ use Inertia\Response;
 
 class DefaultsController extends Controller
 {
-    public function edit(Request $request): Response
+    /** The settings pages, in sidebar order. They share one form. */
+    public const SECTIONS = ['basics', 'packages', 'scaffold', 'git', 'agents', 'data', 'hooks', 'notebooks', 'quarto'];
+
+    public function edit(Request $request, string $section): Response
     {
         $setting = $request->user()->globalSettings();
         $doc = $setting->document;
 
         return Inertia::render('Settings/Defaults', [
+            'section' => $section,
             'revision' => $setting->revision,
             'blueprints' => Blueprint::systemTypes()->get(['key', 'name']),
             'catalog' => Catalog::for($request->user()),
@@ -36,6 +41,7 @@ class DefaultsController extends Controller
                 'skill_sets' => $request->user()->project_defaults['skill_sets'] ?? [],
                 'tools' => (object) ($request->user()->project_defaults['tools'] ?? []),
                 'sensitive' => (bool) ($request->user()->project_defaults['sensitive'] ?? false),
+                'hooks' => (object) ($request->user()->project_defaults['hooks'] ?? []),
             ],
         ]);
     }
@@ -59,6 +65,8 @@ class DefaultsController extends Controller
             'tools' => ['array'],
             'tools.*' => ['boolean'],
             'sensitive' => ['boolean'],
+            'hooks' => ['array'],
+            'hooks.*' => ['boolean'],
         ]);
 
         $setting = $request->user()->globalSettings();
@@ -82,6 +90,7 @@ class DefaultsController extends Controller
             'skill_sets' => array_values($validated['skill_sets'] ?? []),
             'tools' => array_map('boolval', Arr::except($validated['tools'] ?? [], ['renv'])),
             'sensitive' => (bool) ($validated['sensitive'] ?? false),
+            'hooks' => array_map('boolval', Arr::only($validated['hooks'] ?? [], ProjectDefaults::HOOKS)),
         ]])->save();
 
         return back()->with('status', 'defaults-updated');

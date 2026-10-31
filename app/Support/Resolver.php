@@ -218,6 +218,13 @@ class Resolver
             $this->settings['git']['use_git'] = (bool) $settings['git'];
         }
 
+        // Hooks only matter in a git repository; a blueprint's own choice wins
+        if (($this->settings['git']['use_git'] ?? true) !== false) {
+            foreach (array_intersect($settings['hooks'] ?? [], ProjectDefaults::HOOKS) as $hook) {
+                $this->settings['git']['hooks'][$hook] ??= true;
+            }
+        }
+
         $sensitive = ProjectLayers::isSensitive([['layer' => $this->structure->layer], ['layer' => $this->settings]]);
         $structureSplits = isset($this->structure->layer['directories']['inputs_private_raw']);
 
@@ -290,8 +297,8 @@ class Resolver
      */
     private function changedDefaults(array $defaults): array
     {
-        $builtIn = ['sensitive' => false, 'git' => true, 'ai' => true];
-        $set = ['sensitive' => isset($this->settings['security']['sensitive']), 'git' => isset($this->settings['git']['use_git']), 'ai' => isset($this->settings['ai'])];
+        $builtIn = ['sensitive' => false, 'git' => true, 'ai' => true, 'hooks' => []];
+        $set = ['sensitive' => isset($this->settings['security']['sensitive']), 'git' => isset($this->settings['git']['use_git']), 'ai' => isset($this->settings['ai']), 'hooks' => false];
 
         return array_filter($defaults, fn ($value, $key) => isset($builtIn[$key]) && $value !== $builtIn[$key] && ! $set[$key], ARRAY_FILTER_USE_BOTH);
     }

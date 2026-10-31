@@ -26,13 +26,13 @@ class SettingsAndAdminTest extends TestCase
     {
         $user = User::factory()->create(['email_verified_at' => now()]);
 
-        $this->actingAs($user)->get('/settings/defaults')
+        $this->actingAs($user)->get('/settings/basics')
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Settings/Defaults')
                 ->where('revision', 0));
 
         $this->actingAs($user)
-            ->patch('/settings/defaults', [
+            ->patch('/settings', [
                 'project_type' => 'bare',
                 'notebook_format' => 'quarto',
                 'ide' => 'rstudio',
@@ -46,6 +46,7 @@ class SettingsAndAdminTest extends TestCase
                 'skill_sets' => ['framework/ggplot2'],
                 'tools' => ['targets' => true, 'renv' => true],
                 'sensitive' => true,
+                'hooks' => ['data_security' => true, 'not_a_hook' => true],
             ])
             ->assertRedirect();
 
@@ -55,6 +56,7 @@ class SettingsAndAdminTest extends TestCase
             'skill_sets' => ['framework/ggplot2'],
             'tools' => ['targets' => true],
             'sensitive' => true,
+            'hooks' => ['data_security' => true],
         ], $user->fresh()->project_defaults);
         $this->assertArrayNotHasKey('package_sets', $user->globalSettings()->document['defaults']);
 
@@ -69,14 +71,14 @@ class SettingsAndAdminTest extends TestCase
     {
         $user = User::factory()->create(['email_verified_at' => now(), 'name' => 'Ada Lovelace']);
 
-        $this->actingAs($user)->get('/settings/profile')
+        $this->actingAs($user)->get('/account/profile')
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Settings/Profile')
+                ->component('Account/Profile')
                 ->where('author.name', 'Ada Lovelace')
                 ->where('author.affiliations', []));
 
         $this->actingAs($user)
-            ->patch('/settings/profile', [
+            ->patch('/account/profile', [
                 'name' => 'Ada Lovelace',
                 'email' => 'ada@example.edu',
                 'orcid' => '0000-0002-1825-0097',
@@ -109,7 +111,7 @@ class SettingsAndAdminTest extends TestCase
         $user = User::factory()->create(['email_verified_at' => now()]);
 
         $this->actingAs($user)
-            ->patch('/settings/profile', ['name' => 'A', 'orcid' => '1234'])
+            ->patch('/account/profile', ['name' => 'A', 'orcid' => '1234'])
             ->assertSessionHasErrors('orcid');
     }
 
