@@ -1,0 +1,63 @@
+# Publishes this repository's published/ folder with GitHub Pages. Framework
+# Cloud added this file when Pages was turned on for the project.
+#
+# Everything in published/ is public on the web, even when the repository is
+# private. Render a notebook into published/<name>/ and push to publish it.
+name: Framework Pages
+
+on:
+  push:
+    branches: ["{{branch}}"]
+    paths: ["published/**", ".github/workflows/framework-pages.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Without an index.html of its own, the site's front page lists what
+      # has been published
+      - name: Prepare the site
+        run: |
+          mkdir -p published
+          touch published/.nojekyll
+          if [ ! -f published/index.html ]; then
+            {
+              echo '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">'
+              echo "<title>${GITHUB_REPOSITORY#*/}</title>"
+              echo '<body style="font-family:system-ui,sans-serif;max-width:40rem;margin:3rem auto;padding:0 1rem;line-height:1.5">'
+              echo "<h1>${GITHUB_REPOSITORY#*/}</h1><ul>"
+              found=0
+              for dir in published/*/; do
+                [ -d "$dir" ] || continue
+                name=$(basename "$dir")
+                echo "<li><a href=\"$name/\">$name</a></li>"
+                found=1
+              done
+              [ "$found" = 1 ] || echo '<li>Nothing is published yet.</li>'
+              echo '</ul></body></html>'
+            } > published/index.html
+          fi
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: published
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

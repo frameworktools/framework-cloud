@@ -9,6 +9,8 @@ use App\Models\BlueprintVersion;
 use App\Models\Project;
 use App\Services\GitHub\GitHubNotConnected;
 use App\Services\GitHub\Installations;
+use App\Services\GitHub\Pages;
+use App\Services\GitHub\PagesFailed;
 use App\Services\GitHub\Scaffolder;
 use App\Support\Library;
 use App\Support\ProjectLayers;
@@ -37,6 +39,7 @@ class ProjectsController extends Controller
                         'status' => $p->scaffold_status,
                         'run_url' => $p->scaffold_run_url,
                         'error' => $p->scaffold_error,
+                        'pages_url' => $p->pages_url,
                     ] : ($p->scaffold_status === 'failed' ? ['status' => 'failed', 'error' => $p->scaffold_error] : null),
                     'blueprint' => $p->blueprintVersion ? [
                         'id' => $p->blueprintVersion->blueprint_id,
@@ -157,11 +160,25 @@ class ProjectsController extends Controller
         return $this->onGitHub(fn () => $scaffolder->retry($project));
     }
 
+    public function enablePages(Request $request, int $project, Pages $pages): RedirectResponse
+    {
+        $project = $request->user()->projects()->where('scaffold_status', 'done')->whereNotNull('github_repo')->findOrFail($project);
+
+        return $this->onGitHub(fn () => $pages->enable($project));
+    }
+
+    public function disablePages(Request $request, int $project, Pages $pages): RedirectResponse
+    {
+        $project = $request->user()->projects()->whereNotNull('pages_url')->findOrFail($project);
+
+        return $this->onGitHub(fn () => $pages->disable($project));
+    }
+
     private function onGitHub(callable $call): RedirectResponse
     {
         try {
             $call();
-        } catch (GitHubNotConnected $e) {
+        } catch (GitHubNotConnected|PagesFailed $e) {
             return back()->withErrors(['github' => $e->getMessage()]);
         } catch (RequestException $e) {
             return back()->withErrors(['github' => 'GitHub returned an error: '.($e->response->json('message') ?? $e->response->status())]);

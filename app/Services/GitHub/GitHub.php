@@ -145,6 +145,39 @@ class GitHub
         $this->send('post', "/repos/{$repo}/actions/workflows/{$workflow}/dispatches", ['ref' => $ref]);
     }
 
+    /** The repository's GitHub Pages site, or null when Pages is off. */
+    public function pages(string $repo): ?array
+    {
+        $response = $this->request()->get(self::API."/repos/{$repo}/pages");
+
+        if ($response->status() === 404) {
+            return null;
+        }
+
+        return $response->throw()->json();
+    }
+
+    /** Turn Pages on, built by a GitHub Actions workflow, or switch an existing site to one. */
+    public function enablePages(string $repo): array
+    {
+        if ($this->pages($repo)) {
+            $this->send('put', "/repos/{$repo}/pages", ['build_type' => 'workflow']);
+        } else {
+            $this->send('post', "/repos/{$repo}/pages", ['build_type' => 'workflow']);
+        }
+
+        return $this->pages($repo) ?? [];
+    }
+
+    public function disablePages(string $repo): void
+    {
+        $response = $this->request()->delete(self::API."/repos/{$repo}/pages");
+
+        if ($response->status() !== 404) {
+            $response->throw();
+        }
+    }
+
     private function get(string $path, array $query = []): Response
     {
         return $this->request()->get(self::API.$path, $query)->throw();

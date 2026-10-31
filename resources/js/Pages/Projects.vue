@@ -27,6 +27,18 @@ const pullToken = computed(() =>
 const githubError = computed(() => page.props.errors.github);
 const refresh = (id) => router.post(`/projects/${id}/scaffold/refresh`, {}, { preserveScroll: true });
 const retry = (id) => router.post(`/projects/${id}/scaffold/retry`, {}, { preserveScroll: true });
+const pagesBusy = ref(null);
+const enablePages = (project) => {
+    const where = project.github.private ? ' The repository is private, but the site will not be.' : '';
+    if (!confirm(`Publish the published/ folder of ${project.github.repo} with GitHub Pages? Anything in that folder will be public on the web.${where}`)) return;
+    pagesBusy.value = project.id;
+    router.post(`/projects/${project.id}/pages`, {}, { preserveScroll: true, onFinish: () => { pagesBusy.value = null; } });
+};
+const disablePages = (project) => {
+    if (!confirm('Turn off GitHub Pages for this project? The site goes offline. The published/ folder stays in the repository.')) return;
+    pagesBusy.value = project.id;
+    router.delete(`/projects/${project.id}/pages`, { preserveScroll: true, onFinish: () => { pagesBusy.value = null; } });
+};
 const statusVariant = { pending: 'amber', running: 'amber', done: 'green', failed: 'red' };
 const statusLabel = { pending: 'Creating repository', running: 'Scaffolding on GitHub', done: 'Ready to clone', failed: 'Scaffold failed' };
 
@@ -122,6 +134,20 @@ const headline = (key) => key.split('_').map((w) => w[0].toUpperCase() + w.slice
                         </div>
                         <p v-if="project.github?.error" class="text-sm text-red-600 dark:text-red-400">{{ project.github.error }}</p>
                         <div v-if="project.github?.status === 'done'"><CodeChip>git clone {{ project.github.url }}.git</CodeChip></div>
+                        <div v-if="project.github?.status === 'done'" class="flex flex-wrap items-center gap-2">
+                            <template v-if="project.github.pages_url">
+                                <UiBadge variant="green">GitHub Pages</UiBadge>
+                                <a :href="project.github.pages_url" class="font-mono text-xs text-slate-700 hover:underline dark:text-slate-300">{{ project.github.pages_url }}</a>
+                                <span class="text-xs text-slate-500">public · deploys published/</span>
+                                <UiButton variant="ghost" size="sm" :disabled="pagesBusy === project.id" @click="disablePages(project)">Turn off</UiButton>
+                            </template>
+                            <template v-else>
+                                <UiButton variant="outline" size="sm" :disabled="pagesBusy === project.id" @click="enablePages(project)">
+                                    {{ pagesBusy === project.id ? 'Setting up…' : 'Publish with GitHub Pages' }}
+                                </UiButton>
+                                <span class="text-xs text-slate-500">Free. Notebooks you render into published/ go on a public site.</span>
+                            </template>
+                        </div>
                         <div v-if="project.tokens.length">
                             <button
                                 type="button"

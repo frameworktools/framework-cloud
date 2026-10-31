@@ -254,6 +254,7 @@ class SetupController extends Controller
                     'contents' => 'write',
                     'workflows' => 'write',
                     'actions' => 'write',
+                    'pages' => 'write',
                     'metadata' => 'read',
                     'emails' => 'read',
                 ],

@@ -125,6 +125,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('projects/{project}', [ProjectsController::class, 'destroy']);
     Route::post('projects/{project}/scaffold/refresh', [ProjectsController::class, 'refreshScaffold']);
     Route::post('projects/{project}/scaffold/retry', [ProjectsController::class, 'retryScaffold']);
+    Route::post('projects/{project}/pages', [ProjectsController::class, 'enablePages'])->middleware('throttle:10,1');
+    Route::delete('projects/{project}/pages', [ProjectsController::class, 'disablePages'])->middleware('throttle:10,1');
 
     // The shared library: blueprints compose facets, facets carry skills
     foreach ([
