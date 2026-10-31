@@ -61,6 +61,7 @@ class HandleInertiaRequests extends Middleware
 
             'githubSignIn' => filled(config('services.github.client_id')),
             'passwords' => (bool) config('framework.passwords'),
+            'quickLogin' => app()->environment('local') && config('framework.quick_login'),
             // Signing out would sign straight back in, so the app hides it
             'singleUser' => SingleUserMode::appliesTo($request),
             'appUrl' => rtrim(config('app.url'), '/'),

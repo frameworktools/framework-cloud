@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\GitHubController;
 use App\Http\Controllers\Auth\MagicLinkController;
 use App\Http\Controllers\Auth\PasswordController;
+use App\Http\Controllers\Auth\QuickLoginController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,6 +18,10 @@ Route::middleware('guest')->group(function () {
     Route::post('auth/magic-link', [MagicLinkController::class, 'send'])
         ->middleware('throttle:6,1')
         ->name('magic-link.send');
+
+    // Development only: one-click sign-in as a test user or the admin. The
+    // controller answers 404 unless quick login is on.
+    Route::post('login/quick/{role}', QuickLoginController::class)->whereIn('role', ['user', 'admin'])->name('login.quick');
 
     // Passkey sign-in (GET passkeys/authentication-options + POST passkeys/authenticate)
     Route::passkeys();

@@ -134,6 +134,13 @@ return [
     'admin_email' => env('FW_ADMIN_EMAIL'),
 
     /*
+    | One-click sign-in buttons on the login page, as a test user or the
+    | admin. Only for development: they work only when APP_ENV is local and
+    | FW_QUICK_LOGIN is on.
+    */
+    'quick_login' => env('APP_ENV') === 'local' && (bool) env('FW_QUICK_LOGIN', false),
+
+    /*
     | Which credential variables are set, recorded here because env() returns
     | null at runtime once config is cached. See App\Support\Credentials.
     */

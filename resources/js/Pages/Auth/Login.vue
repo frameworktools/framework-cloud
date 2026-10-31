@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue';
-import { useForm, usePage } from '@inertiajs/vue3';
+import { router, useForm, usePage } from '@inertiajs/vue3';
 import AuthLayout from '@/Layouts/AuthLayout.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiInput from '@/Components/UiInput.vue';
@@ -132,6 +132,14 @@ async function signInWithPasskey() {
                 </template>
             </div>
         </template>
+
+        <div v-if="page.props.quickLogin" class="flex flex-col gap-2 rounded-lg border border-dashed border-amber-400 p-3">
+            <p class="text-xs text-amber-700 dark:text-amber-400">Development only</p>
+            <div class="flex gap-2">
+                <UiButton class="flex-1" variant="outline" @click="router.post('/login/quick/user')">Sign in as test user</UiButton>
+                <UiButton class="flex-1" variant="outline" @click="router.post('/login/quick/admin')">Sign in as admin</UiButton>
+            </div>
+        </div>
 
         <p class="text-center text-sm text-slate-500 dark:text-slate-400">
             Don't have an account?
