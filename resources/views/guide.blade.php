@@ -13,7 +13,7 @@
     <header class="border-b border-slate-200 dark:border-slate-800">
         <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
             <a href="/" class="font-semibold tracking-tight">
-                <span class="inline-flex items-center gap-2"><img src="/images/logo.png" alt="" class="h-8 w-auto"><span>Framework <span class="text-sky-600 dark:text-sky-400">Cloud</span></span></span>
+                <span class="inline-flex items-center gap-2"><img src="/images/logo.png" alt="" class="h-8 w-auto"><span>Framework <span class="text-sky-600 dark:text-sky-500">Cloud</span></span></span>
                 <span class="ml-1 text-sm font-normal text-slate-500">docs</span>
             </a>
             <nav class="flex items-center gap-4 text-sm">
