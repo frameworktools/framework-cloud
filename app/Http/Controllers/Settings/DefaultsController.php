@@ -77,12 +77,12 @@ class DefaultsController extends Controller
         $setting->replaceDocument($doc, client: ['device' => 'web', 'app' => 'framework.pub']);
 
         // Preferred pieces stay in the cloud; renv already lives in the synced settings
-        $request->user()->update(['project_defaults' => [
+        $request->user()->forceFill(['project_defaults' => [
             'package_sets' => array_values($validated['package_sets'] ?? []),
             'skill_sets' => array_values($validated['skill_sets'] ?? []),
             'tools' => array_map('boolval', Arr::except($validated['tools'] ?? [], ['renv'])),
             'sensitive' => (bool) ($validated['sensitive'] ?? false),
-        ]]);
+        ]])->save();
 
         return back()->with('status', 'defaults-updated');
     }
