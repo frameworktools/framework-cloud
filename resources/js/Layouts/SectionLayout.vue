@@ -72,8 +72,9 @@ const itemClass = (item) => [
         <div class="flex min-h-screen max-lg:flex-col">
             <aside class="shrink-0 border-slate-200 lg:w-64 lg:border-r dark:border-slate-800 max-lg:border-b">
                 <div class="flex flex-col gap-4 p-6 lg:sticky lg:top-0 lg:max-h-screen lg:overflow-y-auto">
+                    <slot name="top" />
                     <Link v-if="back" :href="back.href" class="-mb-2 text-sm text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white">← {{ back.label }}</Link>
-                    <h2 v-if="heading" class="truncate text-sm font-semibold text-slate-900 dark:text-white">{{ heading }}</h2>
+                    <h2 v-if="heading" class="-mb-2 truncate text-sm font-semibold text-slate-900 dark:text-white">{{ heading }}</h2>
 
                     <slot name="lead" />
 

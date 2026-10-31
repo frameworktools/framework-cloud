@@ -14,8 +14,8 @@ const items = computed(() => list.value.items.map((p) => ({ label: p.name, href:
 
 <template>
     <SectionLayout heading="Projects" :items="items">
-        <template #lead>
-            <Link href="/projects/create" class="block"><UiButton class="w-full"><PlusIcon class="size-4" />New project</UiButton></Link>
+        <template #top>
+            <Link href="/projects/create" class="self-start"><UiButton size="sm"><PlusIcon class="size-4" />New project</UiButton></Link>
         </template>
         <slot />
         <template v-if="list.total > list.items.length" #aside>
