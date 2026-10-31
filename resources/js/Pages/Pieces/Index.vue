@@ -35,7 +35,6 @@ const fork = (id) => router.post(`/${props.path}/${id}/fork`);
         <div class="flex flex-col gap-10">
             <PageHeader :title="copy.title" :description="copy.description">
                 <template #actions>
-                    <Link v-if="kind === 'skill_set'" href="/skills"><UiButton variant="outline">Single skills</UiButton></Link>
                     <Link :href="`/${path}/create`"><UiButton><PlusIcon class="size-4" />New {{ copy.noun }}</UiButton></Link>
                 </template>
             </PageHeader>

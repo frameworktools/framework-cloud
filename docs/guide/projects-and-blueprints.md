@@ -17,9 +17,9 @@ pieces:
   up for AI assistants, and whether it uses git.
 
 **Blueprints** lists the built-in blueprints, the ones other people have made
-public, and your own. Open one to see what it sets up. **Structures**,
-**Package sets**, and **Skills** list the pieces, and you can make your own
-of each.
+public, and your own. Open one to see what it sets up. **Project
+structures**, **Package sets**, **Skill sets**, and **Skills** list the
+pieces, and you can make your own of each.
 
 ### Defaults
 
