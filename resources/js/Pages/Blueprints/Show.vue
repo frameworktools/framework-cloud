@@ -16,6 +16,7 @@ const page = usePage();
 const errors = computed(() => Object.values(page.props.errors ?? {}));
 const latest = computed(() => props.versions[props.versions.length - 1]?.version);
 const fragments = computed(() => [props.version.base, ...props.version.facets]);
+const kindNames = { tool: 'Tool', package_set: 'Package set', skill_set: 'Skill set', setting: 'Setting', legacy: 'Older piece', retired: 'Older piece' };
 const outdated = computed(() => fragments.value.filter((f) => f.version < f.latest_version));
 
 const fork = () => router.post(`/blueprints/${props.blueprint.id}/fork`);
@@ -75,7 +76,7 @@ const date = (value) => new Date(value).toLocaleDateString();
                                         <div class="flex flex-wrap items-center justify-between gap-2">
                                             <span class="flex flex-wrap items-center gap-2">
                                                 <span class="font-semibold text-slate-900 dark:text-white">{{ index === 0 ? fragment.name : `+ ${fragment.name}` }}</span>
-                                                <UiBadge :variant="index === 0 ? 'sky' : 'slate'">{{ index === 0 ? 'Project type' : 'Facet' }}</UiBadge>
+                                                <UiBadge :variant="index === 0 ? 'sky' : 'slate'">{{ index === 0 ? 'Project structure' : (kindNames[fragment.kind] ?? 'Piece') }}</UiBadge>
                                             </span>
                                             <span class="font-mono text-xs text-slate-500 dark:text-slate-400">
                                                 {{ fragment.handle }} v{{ fragment.version }}

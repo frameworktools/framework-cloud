@@ -1,4 +1,4 @@
-// Shared bits for the blueprint, facet, and skill library pages.
+// Shared bits for the blueprint, structure, package set, and skill pages.
 
 export const visibilityOptions = [
     { value: 'private', label: 'Private: only you' },

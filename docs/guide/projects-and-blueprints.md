@@ -2,42 +2,63 @@
 
 ## Blueprints
 
-A blueprint describes how a new project is set up: its folders, R packages,
-Quarto templates, settings, and instructions for AI assistants. Each
-blueprint is built from smaller pieces called facets, and skills hold
-instructions for AI assistants.
+A blueprint is a saved set of choices for new projects. It combines these
+pieces:
+
+- **Project structure.** The folders and core files a project starts with,
+  such as `settings.yml` and `AGENTS.md`.
+- **Tools.** Optional tools that add their own files, folders, and packages:
+  Quarto, Quarto manuscript, Quarto slides, targets, and renv. Stata projects
+  have no tools.
+- **Package sets.** Named lists of packages for one language.
+- **Skills.** Instructions for AI assistants, chosen one at a time or as a
+  skill set.
+- **Settings.** Whether the project holds sensitive data, whether it is set
+  up for AI assistants, and whether it uses git.
 
 **Blueprints** lists the built-in blueprints, the ones other people have made
-public, and your own. Open one to see what it sets up.
+public, and your own. Open one to see what it sets up. **Structures**,
+**Package sets**, and **Skills** list the pieces, and you can make your own
+of each.
+
+### Defaults
+
+**Settings > Defaults** sets what a new project starts with: a default
+blueprint, preferred tools, package sets, and skill sets, and whether new
+projects hold sensitive data. A blueprint you choose brings its own pieces,
+and your default settings still apply where it doesn't set them.
 
 ### Borrowing and remixing
 
-To start from someone else's blueprint, click **Copy and edit**. You get your
-own copy, and you can change anything in it. Saving creates a new version, so
-earlier projects keep the version they were made with.
+To start from someone else's blueprint, structure, or set, click **Copy and
+edit**. You get your own copy, and you can change anything in it. Saving
+creates a new version, so earlier projects keep the version they were made
+with.
 
-Each blueprint, facet, and skill has a visibility setting:
+Each blueprint, structure, set, and skill has a visibility setting:
 
 - **Private.** Only you can see it.
 - **Unlisted.** Anyone with the link can see and copy it. It doesn't appear
   in lists.
 - **Public.** Everyone on the server can find, use, and copy it.
 
-Facets and skills can also be imported from a GitHub repository and published
-back to one. Imported items start out private and record where they came
-from.
+Skills can also be imported from a GitHub repository and published back to
+one. Imported skills start out private and record where they came from.
 
 ### Sensitive data
 
-Some blueprints are marked for restricted data. Projects made from them must
-be private repositories on GitHub, and they don't record data provenance
-unless you turn it on.
+Turning on sensitive data splits a project's data and output folders into
+private and public folders and keeps private files out of git. Projects with
+sensitive data must be private repositories on GitHub, and they don't record
+data provenance unless you turn it on.
 
 ## Projects
 
 **Projects > New project** opens the project builder.
 
-1. Choose a blueprint.
+1. Choose a blueprint. It starts as your default blueprint. Click **Change
+   pieces** to change its structure, tools, packages, skills, or settings for
+   this project only.
 2. Give the project a name and, if you like, a description.
 3. Choose the language. It starts as the blueprint's language.
 4. Choose where to set it up:

@@ -32,8 +32,8 @@ const fork = (id) => router.post(`/blueprints/${id}/fork`);
         <div class="flex flex-col gap-10">
             <PageHeader title="Blueprints">
                 <template #description>
-                    A blueprint is a project type plus the facets you add to it. Start one from
-                    scratch, or copy someone else's and change it.
+                    A blueprint is a saved set of choices for new projects: a project structure, tools,
+                    package sets, skills, and settings. Start one from scratch, or copy someone else's and change it.
                 </template>
                 <template #actions>
                     <Link href="/blueprints/create"><UiButton><PlusIcon class="size-4" />New blueprint</UiButton></Link>
