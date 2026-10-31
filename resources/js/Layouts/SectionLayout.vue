@@ -73,9 +73,9 @@ const itemClass = (item) => [
     <AppLayout bleed>
         <div class="flex min-h-screen max-lg:flex-col">
             <aside class="shrink-0 border-slate-200 lg:w-64 lg:border-r dark:border-slate-800 max-lg:border-b">
-                <!-- On wide screens the column fills the window: its contents scroll, and the actions stay in a footer at the bottom -->
-                <div class="flex flex-col lg:sticky lg:top-0 lg:h-screen">
-                    <div class="flex min-h-0 flex-1 flex-col gap-4 p-6 lg:overflow-y-auto [&>*]:shrink-0">
+                <!-- On wide screens the column scrolls on its own once it's taller than the window; the actions follow its contents and stick to the bottom only while it scrolls -->
+                <div class="flex flex-col lg:sticky lg:top-0 lg:max-h-screen lg:overflow-y-auto">
+                    <div class="flex flex-col gap-4 p-6 [&>*]:shrink-0">
                         <slot name="top" />
                         <Link v-if="back" :href="back.href" class="-mb-2 text-sm text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white">← {{ back.label }}</Link>
                         <h2 v-if="heading" class="-mb-2 truncate text-sm font-semibold text-slate-900 dark:text-white">{{ heading }}</h2>
@@ -106,7 +106,7 @@ const itemClass = (item) => [
                         </div>
 
                     </div>
-                    <div v-if="$slots.actions" class="flex shrink-0 flex-col gap-2 border-t border-slate-200 px-6 py-4 dark:border-slate-800 max-lg:hidden">
+                    <div v-if="$slots.actions" class="-mt-2 flex shrink-0 flex-col gap-2 bg-white px-6 pb-6 pt-2 dark:bg-slate-950 max-lg:hidden lg:sticky lg:bottom-0">
                         <slot name="actions" />
                     </div>
                 </div>
