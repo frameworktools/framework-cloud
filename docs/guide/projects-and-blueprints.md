@@ -43,37 +43,53 @@ with the values in the form, including changes you haven't saved.
 
 #### How defaults apply
 
-Your default blueprint is used when a new project doesn't name one, such as
-`fw new NAME --defaults`. An account that never chose one gets the Standard
-Project Structure.
+Every way of creating a project resolves it the same way: the New project
+page, R's and Python's `new()`, and `fw new`. When you're signed in, R,
+Python, and `fw` ask Framework Cloud to resolve the project, so they all
+build what the Blueprint page previews.
 
-Without a named blueprint, a new project gets:
+A new project starts from the blueprint you name, or from your default
+blueprint when you don't name one. Its workflow comes from your default for
+the project's language: Quarto for R, Jupyter for Python, and Scripts only
+for Stata, unless you chose otherwise. When a blueprint doesn't support your
+workflow, it uses its own and says so.
 
-- the default blueprint's structure, tools, package sets, and skill sets,
-- your default packages and skill sets, added to the blueprint's,
-- your tool defaults on top: a tool you turned on is added, and one you
-  turned off is left out, even if the blueprint has it.
+Settings combine in one order, highest first:
 
-Choosing a blueprint replaces your default blueprint, packages, skill sets,
-and tools, including ones the blueprint doesn't mention. Your
-Git, agent setup, and data safety hooks defaults still apply where the blueprint
-doesn't set them itself. Sensitive data has no default: the blueprint and
-its project structure decide, and Privacy Sensitive turns it on. When you
-change a blueprint's pieces on the New project page, the sensitive data
-switch on that page decides.
+1. **What the blueprint requires**, such as Quarto for the Course blueprint.
+   Nothing overrides a requirement. Choosing something that conflicts with
+   one, such as turning Quarto off in a course, is refused before the
+   project is created.
+2. **What you choose for this project.**
+3. **Your defaults.** Only the ones you changed from Framework's own count,
+   so a blueprint's values show through everywhere else.
+4. **The blueprint's own values.**
+5. **The workflow**, then the **project structure**, then Framework's
+   built-in defaults.
 
-- **Agent setup.** Off, a project gets no context file and no skill sets.
-- **Data safety hooks.** They need Git, so they're skipped when Git is off. A
-  blueprint's own choice for a hook wins.
+Your packages, package sets, and skill sets are added to the blueprint's.
+Your editor files and AI agents are yours alone, so no blueprint sets them.
+Sensitive data comes from the blueprint and its project structure, and
+Privacy Sensitive turns it on.
 
-Some defaults sync to the computers where you've run `cloud_login()` in R
-or Python: the default blueprint, editor, notebook format, Git, renv, the
-random seed, and agent setup with its context file and skills. Package sets,
-skill sets, the other tools, and data safety hooks stay in your
-account. They apply when Framework Cloud resolves a new project: on the New
-project page, or with `fw new` and a cloud choice such as `--defaults` or
-`--blueprint`. Plain `fw new NAME` builds the project with R's or Python's
-own `new()`, which reads only the synced defaults.
+- **Agent setup.** Off, a project gets no agent files and no skill sets.
+- **Data safety hooks.** They need Git, so they're skipped when Git is off.
+
+A project keeps the configuration it was created with. Changing your
+defaults affects only projects you create afterward.
+
+R, Python, and `fw` save your resolved defaults on each computer when they
+connect. Offline, they build from that copy and say which date it's from.
+With no copy, they ask first, or stop in a script unless you pass
+`offline = TRUE` (R), `offline=True` (Python), or `--offline` (`fw`). They
+never switch to a different configuration without saying so.
+
+#### Guided setup
+
+New accounts start with six questions: language, typical project, workflow,
+editors, Git, and AI agents. The answers become your defaults, and a summary
+shows what new projects will include before you save. Run it again from
+**Project defaults > Blueprint > Run guided setup**.
 
 ### Borrowing and remixing
 
