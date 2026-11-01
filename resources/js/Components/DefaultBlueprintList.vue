@@ -16,11 +16,11 @@ const props = defineProps({
 const model = defineModel({ type: String });
 const page = usePage();
 
-// The chosen blueprint starts open; any number can stay open to compare
+// The chosen blueprint starts open; Details opens others alongside it to compare
 const open = ref(new Set([model.value]));
-// Choosing a blueprint opens it too; opening one never chooses it
+// Choosing a blueprint opens it alone; opening one with Details never chooses it
 watch(model, (key) => {
-    if (key && !open.value.has(key)) open.value = new Set([...open.value, key]);
+    if (key) open.value = new Set([key]);
 });
 const toggleOpen = (key) => {
     const next = new Set(open.value);
