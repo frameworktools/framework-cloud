@@ -71,8 +71,9 @@ Pieces from your defaults combine with a blueprint, including one you chose
 by name:
 
 - **Packages, package sets, and skill sets** from your defaults are added to
-  the blueprint's. A project that lists its own package sets or skill sets
-  uses those instead of yours, alongside the blueprint's.
+  the blueprint's. A project that lists its own package sets or skill sets,
+  as the New project page does when you change its pieces, uses exactly
+  that list instead of yours, even an empty one.
 - **Tools, including starter documents** such as a Quarto manuscript: a tool
   you turned on is added, and one you turned off is left out, even when the
   blueprint has it. A tool the workflow or the blueprint requires stays. A
@@ -112,9 +113,11 @@ other formats: `make_notebook("analysis.ipynb")` creates a Jupyter notebook in
 a Quarto project.
 
 A project gets the tools its workflow needs: Quarto for the Quarto and R
-Markdown workflows, and Jupyter and Quarto for the Jupyter workflow. **Add
-Jupyter to Quarto and Scripts-only projects** and **Add Quarto to
-Scripts-only projects** add them to the other workflows.
+Markdown workflows, and Jupyter and Quarto for the Jupyter workflow. A
+required tool can't be turned off for a project. **Add Jupyter to projects
+using another workflow** and **Add Quarto to projects using Scripts only**
+add them to the other workflows, including projects from a blueprint you
+choose by name.
 
 `save_notebook()` renders a notebook, Quarto or Jupyter, with Quarto, into
 the project structure's render folder, such as `outputs/notebooks/`. It

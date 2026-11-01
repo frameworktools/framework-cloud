@@ -1,5 +1,5 @@
 <script setup>
-import { computed, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useForm, usePage } from '@inertiajs/vue3';
 import SectionLayout from '@/Layouts/SectionLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
@@ -43,17 +43,67 @@ const sections = computed(() =>
         .filter((g) => g.rows.length),
 );
 const blueprint = computed(() => props.blueprints.find((b) => b.id === form.blueprint_id));
-const startFrom = (b) => {
-    if (!b) return;
-    const choices = b.choices;
-    form.structure = choices.structure;
-    form.tools = { ...choices.tools };
-    form.package_sets = [...choices.package_sets];
-    form.skill_sets = [...choices.skill_sets];
-    form.skills = [...choices.skills];
-    form.settings = { ...choices.settings };
+
+// What the form would create, resolved by the server exactly as creating it
+// would: the blueprint combined with your defaults, or the pieces chosen here
+const choicePayload = (data) => ({
+    blueprint_id: data.blueprint_id,
+    language: data.language,
+    ...(data.customized ? {
+        customized: true,
+        structure: data.structure,
+        // Only tools for the project's language; a blueprint may carry others, such as uv
+        tools: Object.fromEntries(Object.entries(data.tools).filter(([key]) => {
+            const tool = props.catalog.tools.find((t) => t.key === key);
+            return data.language !== 'stata' && (!tool?.language || tool.language.includes(data.language));
+        })),
+        package_sets: data.package_sets,
+        skill_sets: data.skill_sets,
+        skills: data.skills,
+        settings: data.settings,
+    } : {}),
+});
+const resolved = ref(null);
+const resolving = ref(false);
+let request = 0;
+let timer = null;
+const resolve = async () => {
+    const id = ++request;
+    resolving.value = true;
+    try {
+        const response = await fetch('/projects/preview', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': page.props.csrf, 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify(choicePayload(form.data())),
+        });
+        const data = await response.json().catch(() => ({ problem: "The preview couldn't be loaded." }));
+        if (id === request) resolved.value = response.ok ? data : { problem: data.problem ?? data.message };
+    } finally {
+        if (id === request) resolving.value = false;
+    }
 };
-watch(blueprint, (b) => { form.customized = false; startFrom(b); }, { immediate: true });
+watch(() => JSON.stringify(choicePayload(form.data())), () => {
+    clearTimeout(timer);
+    timer = setTimeout(resolve, 150);
+}, { immediate: true });
+
+// Changing pieces starts from the resolved result, so the switches show what the project would get
+const startFrom = (r) => {
+    if (!r || r.problem) return;
+    form.structure = r.structure;
+    form.tools = Object.fromEntries(Object.entries(r.tools).map(([key, t]) => [key, t.on]));
+    form.package_sets = r.package_sets.map((s) => s.key);
+    form.skill_sets = r.skill_sets.map((s) => s.key);
+    form.skills = [...r.skills];
+    form.settings = { ...r.settings };
+};
+const customize = () => {
+    startFrom(resolved.value);
+    form.customized = true;
+};
+watch(blueprint, () => { form.customized = false; });
+// Tools the workflow or blueprint needs, and why
+const requiredTools = computed(() => Object.fromEntries(Object.entries(resolved.value?.tools ?? {}).filter(([, t]) => t.required).map(([key, t]) => [key, t.required])));
 const structurePiece = computed(() => props.catalog.structures.find((s) => s.key === form.structure));
 const sensitive = computed(() => (form.customized ? form.settings.sensitive || !!structurePiece.value?.sensitive : blueprint.value?.sensitive ?? false));
 const pieceName = (list, key) => props.catalog[list].find((p) => p.key === key)?.name ?? key;
@@ -74,22 +124,8 @@ const onGitHub = computed(() => form.destination === 'github');
 const create = () => form
     .transform((data) => ({
         name: data.name,
-        blueprint_id: data.blueprint_id,
-        language: data.language,
         description: data.description,
-        ...(data.customized ? {
-            customized: true,
-            structure: data.structure,
-            // Only tools for the project's language; a blueprint may carry others, such as uv
-            tools: Object.fromEntries(Object.entries(data.tools).filter(([key]) => {
-                const tool = props.catalog.tools.find((t) => t.key === key);
-                return data.language !== 'stata' && (!tool?.language || tool.language.includes(data.language));
-            })),
-            package_sets: data.package_sets,
-            skill_sets: data.skill_sets,
-            skills: data.skills,
-            settings: data.settings,
-        } : {}),
+        ...choicePayload(data),
         github: onGitHub.value
             ? { enabled: true, owner: data.github.owner, name: repoName.value, private: data.github.private }
             : { enabled: false },
@@ -158,15 +194,28 @@ const items = computed(() => [
                                 ><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.17l3.71-3.94a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z" clip-rule="evenodd" /></svg>
                             </button>
                             <div v-if="b.id === form.blueprint_id" class="flex flex-col gap-2 px-4 pb-4 pl-11 text-sm">
-                                <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1 text-slate-600 dark:text-slate-400">
-                                    <dt class="text-xs text-slate-500">Structure</dt><dd>{{ pieceName('structures', b.choices.structure) }}</dd>
-                                    <template v-if="Object.keys(b.choices.tools).length"><dt class="text-xs text-slate-500">Tools</dt><dd>{{ Object.keys(b.choices.tools).map((k) => pieceName('tools', k)).join(', ') }}</dd></template>
-                                    <template v-if="b.choices.package_sets.length"><dt class="text-xs text-slate-500">Packages</dt><dd>{{ b.choices.package_sets.map((k) => pieceName('package_sets', k)).join(', ') }}</dd></template>
-                                    <template v-if="b.choices.skill_sets.length"><dt class="text-xs text-slate-500">Skills</dt><dd>{{ b.choices.skill_sets.map((k) => pieceName('skill_sets', k)).join(', ') }}</dd></template>
+                                <!-- What the project gets: the blueprint with your defaults, or the pieces chosen below -->
+                                <p v-if="resolved?.problem" class="text-amber-800 dark:text-amber-300">{{ resolved.problem }}</p>
+                                <dl v-else-if="resolved" class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1 text-slate-600 dark:text-slate-400" :class="resolving ? 'opacity-60' : ''">
+                                    <dt class="text-xs text-slate-500">Structure</dt><dd>{{ pieceName('structures', resolved.structure) }}</dd>
+                                    <template v-if="resolved.workflow"><dt class="text-xs text-slate-500">Workflow</dt><dd>{{ resolved.workflow.name }}</dd></template>
+                                    <template v-if="Object.values(resolved.tools).some((t) => t.on)">
+                                        <dt class="text-xs text-slate-500">Tools</dt>
+                                        <dd>{{ Object.entries(resolved.tools).filter(([, t]) => t.on).map(([k]) => pieceName('tools', k)).join(', ') }}</dd>
+                                    </template>
+                                    <template v-if="resolved.package_sets.length">
+                                        <dt class="text-xs text-slate-500">Packages</dt>
+                                        <dd><template v-for="(s, i) in resolved.package_sets" :key="s.key">{{ i ? ', ' : '' }}{{ s.name }}<span v-if="s.from === 'yours'" class="text-xs text-slate-500"> (your default)</span></template></dd>
+                                    </template>
+                                    <template v-if="resolved.skill_sets.length">
+                                        <dt class="text-xs text-slate-500">Skills</dt>
+                                        <dd><template v-for="(s, i) in resolved.skill_sets" :key="s.key">{{ i ? ', ' : '' }}{{ s.name }}<span v-if="s.from === 'yours'" class="text-xs text-slate-500"> (your default)</span></template></dd>
+                                    </template>
+                                    <template v-for="n in resolved.notices" :key="n"><dt class="sr-only">Note</dt><dd class="col-span-2 text-xs text-amber-800 dark:text-amber-300">{{ n }}</dd></template>
                                 </dl>
                                 <div class="flex items-center gap-3">
-                                    <UiButton v-if="!form.customized" size="sm" variant="outline" @click="form.customized = true">Change pieces</UiButton>
-                                    <UiButton v-else size="sm" variant="ghost" @click="form.customized = false; startFrom(b)">Use the blueprint as is</UiButton>
+                                    <UiButton v-if="!form.customized" size="sm" variant="outline" :disabled="!resolved || !!resolved.problem" @click="customize">Change pieces</UiButton>
+                                    <UiButton v-else size="sm" variant="ghost" @click="form.customized = false">Use the blueprint as is</UiButton>
                                     <Link :href="`/blueprints/${b.id}`" class="font-mono text-xs text-slate-500 hover:underline">{{ b.handle }} v{{ b.version }}</Link>
                                 </div>
                             </div>
@@ -175,7 +224,7 @@ const items = computed(() => [
                 </div>
             </UiPanel>
 
-            <ChoicesEditor v-if="form.customized" :form="form" :catalog="catalog" :languages="[form.language]" />
+            <ChoicesEditor v-if="form.customized" :form="form" :catalog="catalog" :languages="[form.language]" :required="requiredTools" />
 
             <UiPanel id="name" title="Name" class="scroll-mt-6">
                 <div>

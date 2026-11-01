@@ -6,7 +6,7 @@ import BlueprintPreview from '@/Components/BlueprintPreview.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiCheckboxCards from '@/Components/UiCheckboxCards.vue';
 import UiRadioCards from '@/Components/UiRadioCards.vue';
-import { agentNames, agentOptions as agentOptionsFor, fromChoices, pick, toChoices } from '@/agents.js';
+import { agentNames, agentOptions, fromChoices, pick, toChoices } from '@/agents.js';
 
 /**
  * Guided setup: six questions, then a review. The answers are a draft until
@@ -24,7 +24,7 @@ const ideEditors = { rstudio: ['rstudio'], vscode: ['vscode'], positron: ['vscod
 
 // The saved answers, read the same way setup asks them. R Markdown is R's Quarto workflow writing .Rmd.
 const savedWorkflow = (lang) => (lang === 'r' && props.values.workflows.r === 'quarto' && props.values.rmarkdown ? 'rmarkdown' : props.values.workflows[lang]);
-const savedAgents = () => toChoices(props.values.ai_enabled, props.values.ai_agents);
+const savedAgents = () => toChoices(props.values.ai_enabled, props.values.ai_agents, props.values.ai_other);
 const fromSaved = {
     language: props.values.language ?? 'r',
     project_type: props.values.project_type,
@@ -144,8 +144,7 @@ const gitOptions = [
     { value: 'no', label: 'No', description: 'You can run git init in a project later.' },
 ];
 const gitChoice = computed({ get: () => (draft.git ? 'yes' : 'no'), set: (v) => (draft.git = v === 'yes') });
-// None stands alone, and AGENTS.md (Other agents) comes with any agent
-const agentOptions = computed(() => agentOptionsFor(draft.agents));
+// None stands alone; the rest combine freely
 const agents = computed({
     get: () => draft.agents,
     set: (picked) => (draft.agents = pick(draft.agents, picked)),
@@ -177,8 +176,7 @@ const describe = {
     workflow: (a) => workflowNames[a.workflows[a.language]],
     editors: (a) => a.editors.map((e) => editorOptions.find((o) => o.value === e)?.label).join(', ') || 'None',
     git: (a) => (a.git ? 'Yes' : 'No'),
-    // AGENTS.md comes with every agent, so Other agents shows only on its own
-    agents: (a) => a.agents.filter((x) => x !== 'other' || a.agents.length === 1).map((x) => agentNames[x]).join(', '),
+    agents: (a) => a.agents.map((x) => agentNames[x]).join(', '),
 };
 const review = computed(() => [
     { key: 'language', label: 'Language' },
@@ -213,6 +211,7 @@ const save = () => draft
         git: d.git,
         ai: aiOn.value,
         agents: named.value,
+        other_agents: fromChoices(d.agents).other,
     }))
     .post('/welcome');
 const skip = () => router.post('/welcome/skip');

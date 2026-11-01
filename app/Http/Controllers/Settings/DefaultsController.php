@@ -70,6 +70,8 @@ class DefaultsController extends Controller
             ...ProjectDefaults::scaffold((array) ($doc['defaults'] ?? [])),
             'ai_enabled' => (bool) Arr::get($doc, 'ai.enabled', true),
             'ai_agents' => ProjectDefaults::agents(Arr::get($doc, 'ai.assistants')),
+            // Uses agents beyond the named ones (AGENTS.md); never saved means none named
+            'ai_other' => (bool) ($user->project_defaults['ai_other'] ?? ! ProjectDefaults::agents(Arr::get($doc, 'ai.assistants'))),
             'quarto' => ProjectDefaults::quarto((array) ($doc['quarto'] ?? [])),
             'ai_skills' => (bool) Arr::get($doc, 'ai.skills', true),
             'package_sets' => $user->project_defaults['package_sets'] ?? [],
@@ -196,6 +198,7 @@ class DefaultsController extends Controller
             'quarto' => ['array'],
             'quarto.html' => ['array'],
             'quarto.revealjs' => ['array'],
+            'ai_other' => ['boolean'],
             'ai_agents' => ['array'],
             'ai_agents.*' => ['in:'.implode(',', ProjectDefaults::AGENTS)],
             'ai_skills' => ['boolean'],
@@ -253,6 +256,7 @@ class DefaultsController extends Controller
             // Jupyter notebooks need the Jupyter tool's kernel
             'tools' => array_map('boolval', Arr::except($validated['tools'] ?? [], ['renv'])),
             'hooks' => array_map('boolval', Arr::only($validated['hooks'] ?? [], ProjectDefaults::HOOKS)),
+            'ai_other' => (bool) ($validated['ai_other'] ?? $request->user()->project_defaults['ai_other'] ?? false),
         ]])->save();
 
         return back()->with('status', 'defaults-updated');

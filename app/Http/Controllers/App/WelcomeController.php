@@ -54,6 +54,7 @@ class WelcomeController extends Controller
             'ai' => ['required', 'boolean'],
             'agents' => ['array'],
             'agents.*' => ['in:'.implode(',', ProjectDefaults::AGENTS)],
+            'other_agents' => ['boolean'],
         ]);
 
         // The blueprint must take the language and workflow
@@ -97,7 +98,7 @@ class WelcomeController extends Controller
         $setting->replaceDocument($doc, client: ['device' => 'web', 'app' => 'framework.pub']);
 
         $user->forceFill([
-            'project_defaults' => ['language' => $validated['language']] + ($user->project_defaults ?? []),
+            'project_defaults' => ['language' => $validated['language'], 'ai_other' => (bool) ($validated['other_agents'] ?? false)] + ($user->project_defaults ?? []),
             'setup_completed_at' => now(),
         ])->save();
 

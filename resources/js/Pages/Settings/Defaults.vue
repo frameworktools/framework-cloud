@@ -138,19 +138,19 @@ const quartoTabKey = (event, i) => {
 };
 const packageLanguage = ref(props.values.language === 'python' ? 'python' : 'r');
 
-// The same agent choices as guided setup, saved as setup on or off plus the
-// named agents; None keeps the saved agents for when setup is back on
+// The same agent choices as guided setup, saved as setup on or off, the
+// named agents, and other agents; None keeps the rest for when it's back on
 const agentChoices = computed({
-    get: () => toChoices(form.ai_enabled, form.ai_agents),
+    get: () => toChoices(form.ai_enabled, form.ai_agents, form.ai_other),
     set: (picked) => {
-        const next = fromChoices(pick(toChoices(form.ai_enabled, form.ai_agents), picked));
+        const next = fromChoices(pick(toChoices(form.ai_enabled, form.ai_agents, form.ai_other), picked));
         form.ai_enabled = next.enabled;
-        if (next.enabled) form.ai_agents = next.agents;
+        if (next.enabled) {
+            form.ai_agents = next.agents;
+            form.ai_other = next.other;
+        }
     },
 });
-// Which languages' workflows already bring a tool, so its switch says what it adds beyond them
-const workflowBrings = (key) => ['r', 'python'].filter((l) => (key === 'jupyter' ? form.workflows[l] === 'jupyter' : ['quarto', 'jupyter'].includes(form.workflows[l])));
-const listLanguages = (langs) => langs.map((l) => languageNames[l]).join(' and ');
 
 const editors = computed({
     get: () => ({ rstudio: ['rstudio'], vscode: ['vscode'], positron: ['vscode'], both: ['rstudio', 'vscode'] })[form.ide] ?? [],
@@ -296,7 +296,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
             <template v-else-if="section === 'agents'">
                 <section class="flex flex-col gap-3">
                     <h2 :class="heading">Which coding agents do you use?</h2>
-                    <UiCheckboxCards v-model="agentChoices" legend="Coding agents" hide-legend :options="agentOptions(agentChoices)" />
+                    <UiCheckboxCards v-model="agentChoices" legend="Coding agents" hide-legend :options="agentOptions" />
                     <details class="max-w-md text-sm text-slate-600 dark:text-slate-400">
                         <summary class="cursor-pointer text-sky-700 hover:underline dark:text-sky-400">What each one adds</summary>
                         <ul class="mt-2 flex list-disc flex-col gap-1 pl-5">
@@ -357,17 +357,11 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
             </template>
 
             <section v-else-if="section === 'jupyter'" class="flex max-w-xl flex-col gap-5">
-                <!-- The Jupyter workflow always includes Jupyter; this adds it to the other workflows -->
                 <UiSwitch
-                    v-if="tool('jupyter')" :model-value="!!form.tools.jupyter" label="Add Jupyter to Quarto and Scripts-only projects"
-                    description="Sets up the Jupyter kernel for the project's language, alongside its workflow."
+                    v-if="tool('jupyter')" :model-value="!!form.tools.jupyter" label="Add Jupyter to projects using another workflow"
+                    description="Included automatically with the Jupyter workflow."
                     @update:model-value="(on) => setTool('jupyter', on)"
                 />
-                <p :class="note">
-                    Projects with the Jupyter <Link href="/settings/notebooks" preserve-state :class="link">notebook workflow</Link> always include it<template v-if="workflowBrings('jupyter').length">, which is your default for {{ listLanguages(workflowBrings('jupyter')) }}</template>.
-                    A project with another workflow, chosen for it or set by its blueprint, gets Jupyter only with this on.
-                    Stata projects don't use Jupyter.
-                </p>
                 <p :class="note">
                     Notebook outputs can contain data. <Link href="/settings/hooks" preserve-state :class="link">Block notebook outputs</Link> stops a commit until they're cleared.
                     <a href="/docs/projects-and-blueprints#notebook-workflows" :class="link">More about Jupyter in Framework</a>
@@ -477,8 +471,8 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                     </div>
 
                     <div v-show="quartoTab === 'setup'" id="quarto-panel-setup" role="tabpanel" aria-labelledby="quarto-tab-setup" tabindex="0" class="flex flex-col gap-6 focus-visible:outline-none">
-                        <SettingGroup title="Project files" description="Projects with the Quarto, R Markdown, or Jupyter workflow always include Quarto. Your HTML and Slides settings go into _quarto.yml.">
-                            <SettingRow v-if="tool('quarto')" v-slot="{ id, labelledby, describedby }" label="Add Quarto to Scripts-only projects" description="Adds _quarto.yml, so documents render with your settings.">
+                        <SettingGroup title="Project files">
+                            <SettingRow v-if="tool('quarto')" v-slot="{ id, labelledby, describedby }" label="Add Quarto to projects using Scripts only" description="Included automatically with the Quarto, R Markdown, and Jupyter workflows.">
                                 <UiToggle :id="id" :model-value="!!form.tools.quarto" :aria-labelledby="labelledby" :aria-describedby="describedby" @update:model-value="(on) => setTool('quarto', on)" />
                             </SettingRow>
                         </SettingGroup>

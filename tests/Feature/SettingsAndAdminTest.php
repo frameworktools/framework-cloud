@@ -77,6 +77,7 @@ class SettingsAndAdminTest extends TestCase
             'skill_sets' => ['framework/ggplot2'],
             'tools' => ['targets' => true],
             'hooks' => ['data_security' => true],
+            'ai_other' => false,
         ], $user->fresh()->project_defaults);
         $this->assertArrayNotHasKey('package_sets', $user->globalSettings()->document['defaults']);
 

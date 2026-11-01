@@ -119,4 +119,21 @@ class WelcomeTest extends TestCase
         $this->assertSame($before, $user->fresh()->globalSettings()->document);
         $this->assertNull($user->fresh()->project_defaults['language'] ?? null);
     }
+
+    public function test_other_agents_is_its_own_answer_and_none_keeps_the_saved_agents(): void
+    {
+        $user = $this->newcomer();
+        $answers = ['language' => 'r', 'project_type' => 'project', 'workflow' => 'quarto', 'editors' => [], 'git' => true];
+
+        $this->actingAs($user)->post('/welcome', $answers + ['ai' => true, 'agents' => ['claude'], 'other_agents' => true])->assertSessionHasNoErrors();
+        $this->assertTrue($user->fresh()->project_defaults['ai_other']);
+        $this->assertSame(['claude'], $user->fresh()->globalSettings()->document['ai']['assistants']);
+        $this->actingAs($user)->get('/settings/agents')->assertInertia(fn (Assert $page) => $page->where('values.ai_other', true)->where('values.ai_agents', ['claude']));
+
+        // None turns setup off and keeps which agents were saved
+        $this->actingAs($user)->post('/welcome', $answers + ['ai' => false, 'agents' => [], 'other_agents' => false])->assertSessionHasNoErrors();
+        $doc = $user->fresh()->globalSettings()->document;
+        $this->assertFalse($doc['ai']['enabled']);
+        $this->assertSame(['claude'], $doc['ai']['assistants']);
+    }
 }

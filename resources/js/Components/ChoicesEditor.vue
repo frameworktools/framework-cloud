@@ -12,9 +12,12 @@ const props = defineProps({
     form: Object, // structure, language, tools, package_sets, skill_sets, skills, settings
     catalog: Object,
     languages: { type: Array, default: () => ['r', 'python', 'stata'] },
+    required: { type: Object, default: () => ({}) }, // tool key → why it can't be turned off
 });
 
 const f = props.form;
+// Tools that can't be turned off here, with why, such as a workflow that needs them
+const required = (tool) => props.required?.[tool.key] ?? null;
 const fits = (piece) => !piece.language || piece.language.includes(f.language);
 
 const structures = computed(() => props.catalog.structures.filter((s) => f.language !== 'stata' || ['project', 'project_sensitive', 'bare'].includes(s.type)));
@@ -72,8 +75,8 @@ const choiceClass = (on) => on
         <div v-if="tools.length" class="flex flex-col divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white dark:divide-slate-700 dark:border-slate-700 dark:bg-slate-900">
             <div v-for="tool in tools" :key="tool.key" class="p-3">
                 <UiSwitch
-                    :model-value="toolOn(tool)" :label="tool.name"
-                    :description="tool.description + (tool.requires.length ? ` Needs ${tool.requires.map((k) => catalog.tools.find((t) => t.key === k)?.name ?? k).join(' and ')}.` : '')"
+                    :model-value="toolOn(tool) || !!required(tool)" :label="tool.name" :disabled="!!required(tool)"
+                    :description="required(tool) ? `${required(tool)}, so it stays on.` : tool.description + (tool.requires.length ? ` Needs ${tool.requires.map((k) => catalog.tools.find((t) => t.key === k)?.name ?? k).join(' and ')}.` : '')"
                     @update:model-value="(on) => setTool(tool, on)"
                 />
                 <p v-if="toolOn(tool) && missing(tool).length" class="mt-1 text-xs text-amber-600">Turn on {{ missing(tool).join(' and ') }} too.</p>

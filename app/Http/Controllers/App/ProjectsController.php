@@ -17,8 +17,10 @@ use App\Services\GitHub\Scaffolder;
 use App\Support\Catalog;
 use App\Support\ProjectDefaults;
 use App\Support\ProjectLayers;
+use App\Support\ResolvedSelections;
 use App\Support\Resolver;
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -198,12 +200,8 @@ class ProjectsController extends Controller
             return back()->withErrors(['blueprint_id' => 'Choose a blueprint.']);
         }
 
-        $choices = ($validated['customized'] ?? false)
-            ? ['from' => $blueprint->handle] + Arr::only($validated, ['name', 'language', 'structure', 'tools', 'package_sets', 'skill_sets', 'skills', 'settings'])
-            : ['blueprint' => $blueprint->handle] + Arr::only($validated, ['name', 'language']);
-
         $resolver = new Resolver($request->user());
-        $resolved = $resolver->resolve($choices);
+        $resolved = $resolver->resolve(self::choicesFrom($validated, $blueprint));
 
         if (($validated['github']['enabled'] ?? false) && ($reason = Scaffolder::unavailableFor($resolved['language']))) {
             return back()->withErrors(['github.enabled' => $reason]);
@@ -228,6 +226,56 @@ class ProjectsController extends Controller
             'token_language' => $project->language,
             'status' => 'project-token',
         ]);
+    }
+
+    /**
+     * POST /projects/preview: what the New project form would create, resolved
+     * exactly as creating it would: the blueprint with your defaults, or the
+     * pieces chosen for this project. The form shows this and starts its
+     * customization from it.
+     */
+    public function preview(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'blueprint_id' => ['required', 'integer'],
+            'language' => ['nullable', Rule::in(Project::LANGUAGES)],
+            'customized' => ['boolean'],
+            'structure' => ['nullable', 'string', 'max:200'],
+            'tools' => ['nullable', 'array'],
+            'tools.*' => ['boolean'],
+            'package_sets' => ['nullable', 'array'],
+            'package_sets.*' => ['string', 'max:200'],
+            'skill_sets' => ['nullable', 'array'],
+            'skill_sets.*' => ['string', 'max:200'],
+            'skills' => ['nullable', 'array'],
+            'skills.*' => ['string', 'max:200'],
+            'settings' => ['nullable', 'array'],
+        ]);
+        $blueprint = Blueprint::with('owner', 'latestVersion.facetVersions.facet')->find($validated['blueprint_id']);
+        abort_unless($blueprint?->isVisibleTo($request->user()) && $blueprint->latestVersion, 404);
+
+        try {
+            $resolved = (new Resolver($request->user()))->resolve(self::choicesFrom(['name' => 'Preview'] + $validated, $blueprint));
+        } catch (ValidationException $e) {
+            return response()->json(['problem' => collect($e->errors())->flatten()->first()], 422);
+        }
+
+        return response()->json(ResolvedSelections::for($request->user(), $resolved, $blueprint->latestVersion, $validated['customized'] ?? false));
+    }
+
+    /**
+     * The resolver's choices for the New project form: the blueprint as it
+     * is, or, customized, exactly the pieces shown. Lists that are present,
+     * even empty, are the project's own.
+     *
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    private static function choicesFrom(array $validated, Blueprint $blueprint): array
+    {
+        return ($validated['customized'] ?? false)
+            ? ['from' => $blueprint->handle] + Arr::only($validated, ['name', 'language', 'structure', 'tools', 'package_sets', 'skill_sets', 'skills', 'settings'])
+            : ['blueprint' => $blueprint->handle] + Arr::only($validated, ['name', 'language']);
     }
 
     /** Ask GitHub how the scaffold run went, in case a webhook was missed. */
