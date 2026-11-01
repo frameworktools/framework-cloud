@@ -134,7 +134,7 @@ const heading = 'text-sm font-semibold text-slate-900 dark:text-white';
     <Head title="Set up your defaults" />
 
     <AppLayout bleed>
-        <div class="mx-auto flex max-w-3xl flex-col gap-8 px-6 py-10 lg:px-12">
+        <div class="mx-auto flex max-w-5xl flex-col gap-8 px-6 py-10 lg:px-12">
             <div class="flex items-start justify-between gap-6">
                 <div>
                     <p class="text-sm text-slate-500">{{ step.key === 'summary' ? 'Review' : `Question ${index + 1} of ${steps.length - 1}` }}</p>
@@ -152,7 +152,14 @@ const heading = 'text-sm font-semibold text-slate-900 dark:text-white';
 
                 <div v-else-if="step.key === 'project'" class="flex flex-col gap-3">
                     <p class="text-sm text-slate-600 dark:text-slate-400">Each type sets up its folders. You can pick another type for any project.</p>
-                    <UiRadioCards v-model="form.project_type" name="project_type" :legend="step.title" hide-legend :options="projectOptions" stacked />
+                    <!-- The chosen type's folders beside the choices -->
+                    <div class="grid gap-8 lg:grid-cols-[minmax(0,28rem)_minmax(0,1fr)]">
+                        <UiRadioCards v-model="form.project_type" name="project_type" :legend="step.title" hide-legend :options="projectOptions" stacked />
+                        <section class="self-start rounded-lg border border-slate-200 p-4 lg:sticky lg:top-6 dark:border-slate-700" aria-live="polite">
+                            <h2 class="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">{{ blueprint?.name }}</h2>
+                            <BlueprintPreview v-if="blueprint" tree-only :blueprint="blueprint" :language="form.language" :values="previewValues" />
+                        </section>
+                    </div>
                 </div>
 
                 <div v-else-if="step.key === 'workflow'" class="flex flex-col gap-3">

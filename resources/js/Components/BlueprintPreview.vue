@@ -13,6 +13,8 @@ const props = defineProps({
     blueprint: { type: Object, required: true }, // { key, handle, version, id }
     language: { type: String, required: true },
     values: { type: Object, required: true }, // the defaults to resolve with
+    // Only the folder tree, without the summary beside it
+    treeOnly: Boolean,
 });
 const page = usePage();
 
@@ -82,7 +84,15 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
 </script>
 
 <template>
-    <div class="grid gap-x-8 gap-y-5 border-t border-slate-200 pt-4 xl:grid-cols-[minmax(0,1fr)_16rem] dark:border-slate-800">
+    <div v-if="treeOnly" :class="loading ? 'opacity-60' : ''">
+        <div v-if="!preview" class="text-sm text-slate-500">Loading…</div>
+        <p v-else-if="!preview.available" class="text-sm text-slate-600 dark:text-slate-400">{{ preview.problem }}</p>
+        <div v-else class="overflow-x-auto">
+            <div class="whitespace-pre font-mono text-xs leading-[1.2] text-slate-800 dark:text-slate-200"><div>project-dir/</div><div v-for="(line, i) in treeLines(preview.tree)" :key="i"><span class="text-slate-400 dark:text-slate-600">{{ line.prefix }}</span><span :class="[line.dir ? 'font-medium' : '', line.later ? 'text-slate-400 dark:text-slate-500' : '']" :title="line.title">{{ line.name }}</span></div></div>
+            <p v-if="preview.tree.some((e) => e.later)" class="mt-2 text-xs text-slate-500">Lighter folders are made when they're first used or rendered.</p>
+        </div>
+    </div>
+    <div v-else class="grid gap-x-8 gap-y-5 border-t border-slate-200 pt-4 xl:grid-cols-[minmax(0,1fr)_16rem] dark:border-slate-800">
         <!-- What the resolver set aside, such as a workflow the blueprint doesn't support -->
         <ul v-if="preview?.notices?.length" class="flex flex-col gap-1 text-sm text-amber-800 xl:col-span-2 dark:text-amber-300">
             <li v-for="n in preview.notices" :key="n">{{ n }}</li>
