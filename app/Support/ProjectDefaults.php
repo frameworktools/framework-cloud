@@ -30,7 +30,8 @@ class ProjectDefaults
     /**
      * What scaffold() does at the start of every notebook and script, for an
      * account that never chose: seed with 123, as R does, and leave the
-     * ggplot2 theme alone. The theme and sourcing functions/ are R only.
+     * ggplot2 theme alone. The theme is R only; R sources functions/, and
+     * Python puts it on the import path.
      */
     public const SCAFFOLD = [
         'seed_on_scaffold' => true,

@@ -83,8 +83,9 @@ const only = (piece) => (piece?.language?.length === 1 ? (piece.language[0] === 
 const fits = (piece) => (form.language === 'stata' ? false : !piece?.language?.length || piece.language.includes(form.language));
 const notUsed = computed(() => `Not used in ${languageNames[form.language]} projects.`);
 const describe = (piece, text = piece?.description) => [text, fits(piece) ? only(piece) : notUsed.value].filter(Boolean).join(' ');
-// The settings only R reads, described and dimmed the way pieces are
+// Settings by the languages that read them, described and dimmed the way pieces are
 const rOnly = { language: ['r'] };
+const rAndPython = { language: ['r', 'python'] };
 const dim = (piece) => (fits(piece) ? '' : 'opacity-60');
 const setTool = (key, on) => {
     form.tools = { ...form.tools, [key]: on };
@@ -162,16 +163,19 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
             </template>
 
             <section v-else-if="section === 'scaffold'" class="flex max-w-xl flex-col gap-5">
-                <UiSwitch v-model="form.seed_on_scaffold" label="Set a random seed" description="scaffold() sets a seed, so random results repeat from run to run." />
-                <UiInput v-if="form.seed_on_scaffold" v-model="form.seed" class="-mt-2 max-w-40" label="Seed" :error="form.errors.seed" />
+                <UiSwitch
+                    v-model="form.seed_on_scaffold" :class="dim(rAndPython)" label="Set a random seed"
+                    :description="describe(rAndPython, 'scaffold() sets a seed, so random results repeat from run to run. In Python it seeds random and NumPy\'s global generator.')"
+                />
+                <UiInput v-if="form.seed_on_scaffold" v-model="form.seed" class="-mt-2 max-w-40" :class="dim(rAndPython)" label="Seed" :error="form.errors.seed" />
                 <UiSwitch
                     v-model="form.set_theme_on_scaffold" :class="dim(rOnly)" label="Set a ggplot2 theme"
                     :description="describe(rOnly, 'scaffold() calls theme_set(), so every plot starts from the same theme.')"
                 />
                 <UiSelect v-if="form.set_theme_on_scaffold" v-model="form.ggplot_theme" class="-mt-2 max-w-48" :class="dim(rOnly)" label="Theme" :options="ggplotThemes.map((t) => ({ value: t, label: t }))" :error="form.errors.ggplot_theme" />
                 <UiSwitch
-                    v-model="form.source_all_functions" :class="dim(rOnly)" label="Load your functions"
-                    :description="describe(rOnly, 'scaffold() sources every R file in functions/, so your helpers are ready in every notebook and script.')"
+                    v-model="form.source_all_functions" :class="dim(rAndPython)" label="Load your functions"
+                    :description="describe(rAndPython, 'scaffold() makes functions/ ready in every notebook and script. R sources each file in it. Python adds the folder to the import path, so functions/helpers.py imports as helpers.')"
                 />
                 <UiSwitch v-if="tool('targets')" :class="dim(tool('targets'))" :model-value="!!form.tools.targets" :label="tool('targets').name" :description="describe(tool('targets'))" @update:model-value="(on) => setTool('targets', on)" />
             </section>
@@ -224,7 +228,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
             </section>
 
             <section v-else-if="section === 'hooks'" class="flex max-w-xl flex-col gap-5">
-                <p class="text-xs text-slate-500">R projects only; requires Git.</p>
+                <p :class="note">For R and Python projects with Git.<template v-if="form.language === 'stata'"> Stata projects don't get hooks.</template></p>
                 <UiSwitch
                     v-for="hook in hooks" :key="hook.key"
                     :model-value="!!form.hooks[hook.key]" :label="hook.label" :description="hook.description"

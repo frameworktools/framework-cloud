@@ -68,8 +68,8 @@ class ProjectLayers
     /**
      * The topmost layer: the language, the editor files (scaffold.ide: .Rproj
      * for RStudio, .code-workspace for VS Code and Positron), the owner's
-     * scaffold() settings where no layer beneath sets them (seed for R and
-     * Python; theme and functions/ for R), and for Stata the R-only folders
+     * scaffold() settings where no layer beneath sets them (the seed and
+     * functions/ for R and Python, the ggplot2 theme for R), and for Stata the R-only folders
      * removed. With the spec's tools key on, it also names every tool for
      * the language as on or off, so no client has to guess.
      */
@@ -81,7 +81,7 @@ class ProjectLayers
         }
         $keys = match ($language) {
             'r' => array_keys(ProjectDefaults::SCAFFOLD),
-            'python' => ['seed_on_scaffold', 'seed'],
+            'python' => ['seed_on_scaffold', 'seed', 'source_all_functions'],
             default => [],
         };
         foreach (Arr::only($scaffold, $keys) as $name => $value) {

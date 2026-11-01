@@ -270,8 +270,8 @@ class SettingsAndAdminTest extends TestCase
 
         $scaffold = fn (string $language) => last((new Resolver($user->fresh()))->resolve(['name' => 'Survey', 'language' => $language])['envelope']['layers'])['layer']['scaffold'] ?? [];
         $this->assertSame(['ide' => 'vscode', 'seed_on_scaffold' => true, 'seed' => '20241107', 'set_theme_on_scaffold' => true, 'ggplot_theme' => 'theme_bw', 'source_all_functions' => false], $scaffold('r'));
-        // Python seeds too; the theme and functions/ are R's
-        $this->assertSame(['ide' => 'vscode', 'seed_on_scaffold' => true, 'seed' => '20241107'], $scaffold('python'));
+        // Python seeds and puts functions/ on the import path; the theme is R's
+        $this->assertSame(['ide' => 'vscode', 'seed_on_scaffold' => true, 'seed' => '20241107', 'source_all_functions' => false], $scaffold('python'));
         $this->assertSame([], $scaffold('stata'));
 
         $this->actingAs($user)->patch('/settings', $base + ['seed' => 'abc', 'ggplot_theme' => 'theme_neon'])
