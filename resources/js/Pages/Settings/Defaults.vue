@@ -38,9 +38,9 @@ const current = computed(() => sections.find((s) => s.key === props.section));
 
 const languageNames = { r: 'R', python: 'Python', stata: 'Stata' };
 const languageOptions = [
-    { value: 'r', label: 'R' },
-    { value: 'python', label: 'Python' },
-    { value: 'stata', label: 'Stata', description: 'Scaffolding only.' },
+    { value: 'r', label: 'R', description: 'Projects built by the framework R package.' },
+    { value: 'python', label: 'Python', description: 'Projects built by the framework Python package.' },
+    { value: 'stata', label: 'Stata', description: 'Scaffolding only: folders, do-files, and settings.do, built by fw.' },
 ];
 const formatOptions = computed(() => [
     { value: 'quarto', label: 'Quarto' },
@@ -98,7 +98,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
         <PageHeader v-else :title="current.label" />
 
         <form id="settings-form" class="mt-8 flex max-w-3xl flex-col gap-8" @submit.prevent="save">
-            <UiRadioCards v-if="section === 'language'" v-model="form.language" name="language" legend="Language" hide-legend :options="languageOptions" columns="grid-cols-3 max-w-lg" />
+            <UiRadioCards v-if="section === 'language'" v-model="form.language" name="language" legend="Language" hide-legend :options="languageOptions" stacked />
 
             <template v-else-if="section === 'blueprint'">
                 <DefaultBlueprintList v-model="form.project_type" :blueprints="blueprints" :defaults="form" />
