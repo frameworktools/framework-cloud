@@ -141,7 +141,7 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
 
                         <!-- The project's folders and files -->
                         <div class="min-w-0">
-                            <div :class="label" class="mb-3">Project structure</div>
+                            <div :class="label" class="mb-2">Project structure</div>
                             <div v-if="!previews[b.key]" class="text-sm text-slate-500">Loading…</div>
                             <p v-else-if="!previews[b.key].available" class="text-sm text-slate-600 dark:text-slate-400">{{ previews[b.key].problem }}</p>
                             <div v-else class="overflow-x-auto" :class="loading[b.key] ? 'opacity-60' : ''">
@@ -155,7 +155,7 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
                         <div v-if="previews[b.key]?.available" class="flex min-w-0 flex-col gap-6 text-sm text-slate-700 xl:border-l xl:border-slate-200 xl:pl-8 dark:text-slate-300 xl:dark:border-slate-800" :class="loading[b.key] ? 'opacity-60' : ''">
                             <section>
                                 <div :class="label">Packages</div>
-                                <ul class="mt-2 flex flex-col gap-1">
+                                <ul class="mt-1 flex flex-col gap-1">
                                     <li v-for="set in previews[b.key].package_sets" :key="set.id">
                                         <details>
                                             <summary class="cursor-pointer">{{ set.name }} <span v-if="set.from === 'defaults'" class="text-xs text-slate-500" title="From your Project defaults">· your default</span></summary>
@@ -169,16 +169,16 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
 
                             <section>
                                 <div :class="label">AI agents</div>
-                                <div class="mt-2">Setup: {{ previews[b.key].agents ? 'On' : 'Off' }} <span v-if="previews[b.key].settings.agents.from === 'defaults'" class="text-xs text-slate-500" title="From your Project defaults">· your default</span></div>
+                                <div class="mt-1">Setup: {{ previews[b.key].agents ? 'On' : 'Off' }} <span v-if="previews[b.key].settings.agents.from === 'defaults'" class="text-xs text-slate-500" title="From your Project defaults">· your default</span></div>
                             </section>
 
                             <!-- Each skill on its own line, under the set it comes from -->
                             <section>
                                 <div :class="label">Skills</div>
-                                <p v-if="!previews[b.key].agents" class="mt-2 text-slate-500">None, with agent setup off</p>
+                                <p v-if="!previews[b.key].agents" class="mt-1 text-slate-500">None, with agent setup off</p>
                                 <template v-else>
                                     <!-- A set opens to its skills -->
-                                    <details v-for="set in previews[b.key].skill_sets" :key="set.id" class="group mt-2">
+                                    <details v-for="set in previews[b.key].skill_sets" :key="set.id" class="group mt-2 first-of-type:mt-1">
                                         <summary class="flex cursor-pointer list-none items-center gap-1 [&::-webkit-details-marker]:hidden">
                                             <ChevronRightIcon class="-ml-1 size-4 shrink-0 text-slate-400 transition-transform group-open:rotate-90" />
                                             <span>{{ set.name }}</span>
@@ -191,13 +191,13 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
                                     <ul v-if="previews[b.key].skills.length" class="mt-2 flex flex-col gap-1 pl-4">
                                         <li v-for="skill in previews[b.key].skills" :key="skill">{{ skill }}</li>
                                     </ul>
-                                    <p v-if="!previews[b.key].skill_sets.length && !previews[b.key].skills.length" class="mt-2 text-slate-500">None</p>
+                                    <p v-if="!previews[b.key].skill_sets.length && !previews[b.key].skills.length" class="mt-1 text-slate-500">None</p>
                                 </template>
                             </section>
 
                             <section class="text-xs text-slate-600 dark:text-slate-400">
                                 <div :class="label">Tools</div>
-                                <div class="mt-2">
+                                <div class="mt-1">
                                     <template v-for="(t, i) in previews[b.key].tools" :key="t.name">{{ i ? ' · ' : '' }}{{ t.name }}</template>
                                     <span v-if="!previews[b.key].tools.length">None</span>
                                 </div>
@@ -206,13 +206,13 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
 
                             <section>
                                 <div :class="label">Git</div>
-                                <div class="mt-2">Git: {{ previews[b.key].settings.git.on ? 'On' : 'Off' }} <span v-if="previews[b.key].settings.git.from === 'defaults'" class="text-xs text-slate-500" title="From your Project defaults">· your default</span></div>
+                                <div class="mt-1">Git: {{ previews[b.key].settings.git.on ? 'On' : 'Off' }} <span v-if="previews[b.key].settings.git.from === 'defaults'" class="text-xs text-slate-500" title="From your Project defaults">· your default</span></div>
                             </section>
 
                             <!-- Hooks need Git, so they only show with it on -->
                             <section v-if="previews[b.key].settings.git.on">
                                 <div :class="label">Git hooks</div>
-                                <ul class="mt-2 flex flex-col gap-1">
+                                <ul class="mt-1 flex flex-col gap-1">
                                     <li v-for="hook in previews[b.key].settings.hooks.on" :key="hook">{{ hookNames[hook] ?? hook }}</li>
                                     <li v-if="!previews[b.key].settings.hooks.on.length" class="text-slate-500">None</li>
                                 </ul>
@@ -220,7 +220,7 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
 
                             <section>
                                 <div :class="label">Sensitive data</div>
-                                <div class="mt-2">{{ previews[b.key].settings.sensitive.on ? 'On' : 'Off' }} <span class="text-xs text-slate-500" :title="previews[b.key].settings.sensitive.from === 'defaults' ? 'From your Project defaults' : 'Set by the blueprint'">· {{ previews[b.key].settings.sensitive.from === 'defaults' ? 'your default' : 'blueprint' }}</span></div>
+                                <div class="mt-1">{{ previews[b.key].settings.sensitive.on ? 'On' : 'Off' }} <span class="text-xs text-slate-500" :title="previews[b.key].settings.sensitive.from === 'defaults' ? 'From your Project defaults' : 'Set by the blueprint'">· {{ previews[b.key].settings.sensitive.from === 'defaults' ? 'your default' : 'blueprint' }}</span></div>
                             </section>
                         </div>
 
