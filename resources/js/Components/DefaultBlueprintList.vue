@@ -227,7 +227,6 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
                         <div class="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-slate-200 pt-3 text-xs text-slate-500 xl:col-span-2 dark:border-slate-800">
                             <span class="font-mono">{{ b.handle }} v{{ b.version }}</span>
                             <Link :href="`/blueprints/${b.id}`" :class="link">View the blueprint</Link>
-                            <span>Preview with your defaults, including unsaved changes</span>
                         </div>
                     </div>
                 </div>
