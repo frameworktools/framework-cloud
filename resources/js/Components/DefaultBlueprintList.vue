@@ -1,18 +1,20 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import { ChevronRightIcon } from '@heroicons/vue/20/solid';
 
 /**
  * The default blueprint, picked from a list. Each row's details open on
- * their own: opening them never changes the choice. The details are read
- * from the blueprint's latest version, and anything it leaves to the
- * person's own defaults says so, with the value those defaults give now.
+ * their own and never change the choice. An open row previews the project
+ * the blueprint would create as the default, resolved on the server with the
+ * form's values, saved or not, for the language picked in the preview.
  */
 const props = defineProps({
     blueprints: { type: Array, required: true },
-    defaults: { type: Object, required: true }, // the Project defaults form, for "uses your default" values
+    defaults: { type: Object, required: true }, // the Project defaults form
 });
 const model = defineModel({ type: String });
+const page = usePage();
 
 // The chosen blueprint starts open; any number can stay open to compare
 const open = ref(new Set([model.value]));
@@ -22,25 +24,75 @@ const toggleOpen = (key) => {
     open.value = next;
 };
 
-const onOff = (value) => (value ? 'on' : 'off');
-const languageNote = (language) => (language?.length === 1 ? (language[0] === 'r' ? 'R only' : 'Python only') : null);
-const hookNames = { data_security: 'check for secrets', check_sensitive_dirs: 'check private folders' };
-const defaultHooks = computed(() => Object.entries(props.defaults.hooks ?? {}).filter(([, on]) => on).map(([key]) => hookNames[key] ?? key));
+// The preview's language is only for looking: it isn't a default
+const languageNames = { r: 'R', python: 'Python', stata: 'Stata' };
+const language = reactive(Object.fromEntries(props.blueprints.map((b) => [b.key, 'r'])));
 
-// Folders grouped under their parent folder, one line each
-const tree = (paths) => {
-    const groups = new Map();
-    for (const path of paths) {
-        const cut = path.lastIndexOf('/');
-        const parent = cut === -1 ? '' : path.slice(0, cut + 1);
-        const leaf = path.slice(cut + 1);
-        groups.set(parent, [...(groups.get(parent) ?? []), leaf.includes('.') ? leaf : `${leaf}/`]);
+// What the server resolves the previews from: every default that changes a new project
+const values = computed(() => {
+    const d = props.defaults;
+    return { package_sets: d.package_sets, skill_sets: d.skill_sets, tools: d.tools, use_renv: d.use_renv, sensitive: d.sensitive, use_git: d.use_git, ai_enabled: d.ai_enabled, hooks: d.hooks };
+});
+const previews = reactive({});
+const loading = reactive({});
+const load = async (key) => {
+    const lang = language[key];
+    const id = `${key}:${lang}:${JSON.stringify(values.value)}`;
+    if (previews[key]?.id === id) return;
+    loading[key] = true;
+    try {
+        const response = await fetch('/settings/blueprint/preview', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': page.props.csrf, 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify({ blueprint: key, language: lang, values: values.value }),
+        });
+        const data = response.ok ? await response.json() : { available: false, problem: "The preview couldn't be loaded." };
+        // A later request may have finished first
+        if (`${key}:${language[key]}:${JSON.stringify(values.value)}` === id) previews[key] = { id, ...data };
+    } finally {
+        loading[key] = false;
     }
-    return [...groups].map(([parent, leaves]) => ({ parent, leaves }));
+};
+let timer = null;
+watch([open, () => ({ ...language }), values], () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => open.value.forEach(load), 150);
+}, { immediate: true, deep: true });
+
+// The folder tree with connectors, from the preview's flat entries
+const treeLines = (entries) => {
+    const root = { children: new Map() };
+    for (const entry of entries) {
+        let node = root;
+        const parts = entry.path.split('/');
+        parts.forEach((part, i) => {
+            if (!node.children.has(part)) node.children.set(part, { name: part, dir: true, children: new Map() });
+            node = node.children.get(part);
+            if (i === parts.length - 1) Object.assign(node, { dir: entry.type === 'dir', note: entry.note, when: entry.when, later: entry.later });
+        });
+    }
+    const lines = [];
+    const sorted = (node) => [...node.children.values()].sort((a, b) => (a.dir === b.dir ? a.name.localeCompare(b.name) : a.dir ? -1 : 1));
+    const walk = (node, prefix) => {
+        const kids = sorted(node);
+        kids.forEach((child, i) => {
+            const last = i === kids.length - 1;
+            lines.push({ prefix: prefix + (last ? '└── ' : '├── '), name: child.name + (child.dir ? '/' : ''), dir: child.dir, note: child.note, when: child.when, later: !!child.later });
+            walk(child, prefix + (last ? '    ' : '│   '));
+        });
+    };
+    // A folder holding only later folders is itself made later
+    const mark = (node) => {
+        node.children.forEach(mark);
+        if (node.children.size && [...node.children.values()].every((c) => c.later)) node.later = true;
+    };
+    root.children.forEach(mark);
+    walk(root, '');
+    return lines;
 };
 
-const label = 'text-xs font-medium uppercase tracking-wide text-slate-500';
-const muted = 'text-xs text-slate-500 dark:text-slate-400';
+const hookNames = { data_security: 'Check for secrets', check_sensitive_dirs: 'Check private folders' };
+const label = 'text-[11px] font-semibold uppercase tracking-wider text-slate-500';
 const link = 'text-sky-600 hover:underline dark:text-sky-400';
 </script>
 
@@ -48,7 +100,9 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
     <fieldset>
         <legend class="sr-only">Default blueprint</legend>
         <div class="divide-y divide-slate-200 rounded-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-800">
-            <div v-for="b in blueprints" :key="b.key" :class="model === b.key ? 'bg-sky-50/60 dark:bg-sky-950/20' : ''">
+            <div v-for="b in blueprints" :key="b.key" class="relative">
+                <!-- The chosen row's accent: a thin bar at its left edge -->
+                <span v-if="model === b.key" class="absolute inset-y-0 left-0 w-0.5 bg-sky-600" aria-hidden="true" />
                 <div class="flex items-start gap-3 px-4 py-3">
                     <label class="flex min-w-0 flex-1 cursor-pointer items-start gap-3">
                         <input v-model="model" type="radio" name="project_type" :value="b.key" class="mt-0.5 size-4 shrink-0 accent-sky-600">
@@ -67,77 +121,89 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
                     </button>
                 </div>
 
-                <dl v-if="open.has(b.key)" :id="`blueprint-${b.key}`" class="grid gap-x-6 gap-y-4 px-4 pb-4 pl-11 text-sm text-slate-700 sm:grid-cols-[9rem_1fr] dark:text-slate-300">
-                    <dt :class="label">Project structure</dt>
-                    <dd>
-                        <div>{{ b.structure.name }}</div>
-                        <div v-if="b.structure.paths.length" class="mt-1.5 flex flex-col gap-0.5 font-mono text-xs text-slate-600 dark:text-slate-400">
-                            <div v-for="line in tree(b.structure.paths)" :key="line.parent">
-                                <span v-if="line.parent" class="text-slate-900 dark:text-slate-200">{{ line.parent }}</span>
-                                {{ line.leaves.join('  ') }}
+                <div v-if="open.has(b.key)" :id="`blueprint-${b.key}`" class="px-4 pb-4 sm:pl-11">
+                    <div class="grid gap-x-8 gap-y-5 rounded-md border border-slate-200 bg-slate-50 p-4 lg:grid-cols-[minmax(0,1fr)_15rem] dark:border-slate-800 dark:bg-slate-900/60">
+                        <!-- The project's folders and files -->
+                        <div class="min-w-0">
+                            <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+                                <div :class="label">New project</div>
+                                <div class="flex rounded-md border border-slate-300 bg-white p-0.5 text-xs dark:border-slate-700 dark:bg-slate-950" role="group" :aria-label="`Preview language for ${b.name}`">
+                                    <button
+                                        v-for="lang in ['r', 'python', 'stata']" :key="lang" type="button"
+                                        :disabled="!b.languages.includes(lang)" :aria-pressed="language[b.key] === lang"
+                                        :title="b.languages.includes(lang) ? `Preview as a ${languageNames[lang]} project` : `Not available for ${languageNames[lang]}`"
+                                        class="rounded px-2 py-0.5 transition disabled:cursor-not-allowed disabled:opacity-40"
+                                        :class="language[b.key] === lang ? 'bg-slate-200 font-medium text-slate-900 dark:bg-slate-700 dark:text-white' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'"
+                                        @click="language[b.key] = lang"
+                                    >{{ languageNames[lang] }}</button>
+                                </div>
+                            </div>
+                            <div v-if="!previews[b.key]" class="text-sm text-slate-500">Loading…</div>
+                            <p v-else-if="!previews[b.key].available" class="text-sm text-slate-600 dark:text-slate-400">{{ previews[b.key].problem }}</p>
+                            <div v-else class="overflow-x-auto" :class="loading[b.key] ? 'opacity-60' : ''">
+                                <div class="whitespace-pre font-mono text-[13px] leading-6 text-slate-800 dark:text-slate-200"><div>project/</div><div v-for="(line, i) in treeLines(previews[b.key].tree)" :key="i"><span class="text-slate-400 dark:text-slate-600">{{ line.prefix }}</span><span :class="[line.dir ? 'font-medium' : '', line.later ? 'text-slate-400 dark:text-slate-500' : '']" :title="line.later ? 'Made when first used or rendered' : undefined">{{ line.name }}</span><span v-if="line.note" class="ml-3 font-sans text-xs text-slate-500">{{ line.note }}</span><span v-if="line.when" class="ml-3 font-sans text-xs italic text-slate-500" title="Depends on something set when the project is made">({{ line.when }})</span></div></div>
+                                <p v-if="previews[b.key].tree.some((e) => e.later)" class="mt-2 text-xs text-slate-500">Lighter folders are made when they're first used or rendered.</p>
                             </div>
                         </div>
-                        <div v-else :class="muted">No folders</div>
-                    </dd>
 
-                    <dt :class="label">Tools</dt>
-                    <dd>
-                        <div v-if="b.tools.length">
-                            <template v-for="(t, i) in b.tools" :key="t.name">{{ i ? ', ' : '' }}{{ t.name }}<span v-if="languageNote(t.language)" class="text-slate-500"> ({{ languageNote(t.language) }})</span></template>
-                        </div>
-                        <div v-else>None included</div>
-                        <div :class="muted">Your tool defaults are applied on top: tools you've turned on are added, and tools you've turned off are left out.</div>
-                    </dd>
+                        <!-- What else it gets, most important first -->
+                        <div v-if="previews[b.key]?.available" class="flex min-w-0 flex-col gap-4 text-sm text-slate-700 dark:text-slate-300" :class="loading[b.key] ? 'opacity-60' : ''">
+                            <section>
+                                <div :class="label">Packages</div>
+                                <ul class="mt-1 flex flex-col gap-1">
+                                    <li v-for="set in previews[b.key].package_sets" :key="set.id">
+                                        <details>
+                                            <summary class="cursor-pointer">{{ set.name }} <span v-if="set.from === 'defaults'" class="text-xs text-slate-500" title="From your Project defaults">· your default</span></summary>
+                                            <div class="mt-1 pl-4 font-mono text-xs text-slate-600 dark:text-slate-400">{{ set.packages.join(', ') }}</div>
+                                        </details>
+                                    </li>
+                                    <li v-for="p in previews[b.key].other_packages" :key="p.package + p.from"><span class="font-mono text-xs">{{ p.package }}</span> <span class="text-xs text-slate-500">with {{ p.from }}</span></li>
+                                    <li v-if="!previews[b.key].package_sets.length && !previews[b.key].other_packages.length" class="text-slate-500">None</li>
+                                </ul>
+                            </section>
 
-                    <dt :class="label">Packages</dt>
-                    <dd class="flex flex-col gap-1">
-                        <div v-for="set in b.package_sets" :key="set.id">
-                            <Link :href="`/package-sets/${set.id}/edit`" :class="link">{{ set.name }}</Link>
-                            <span class="font-mono text-xs text-slate-500"> {{ set.packages.join(', ') }}</span>
-                        </div>
-                        <div v-if="!b.package_sets.length">No package sets included</div>
-                        <div v-for="p in b.other_packages" :key="p.package + p.from" class="text-sm"><span class="font-mono text-xs">{{ p.package }}</span>, from {{ p.from }}</div>
-                        <div :class="muted">Your default package sets are added.</div>
-                    </dd>
+                            <section>
+                                <div :class="label">Agents</div>
+                                <div class="mt-1">Agent setup: {{ previews[b.key].agents ? 'On' : 'Off' }} <span v-if="previews[b.key].settings.agents.from === 'defaults'" class="text-xs text-slate-500" title="From your Project defaults">· your default</span></div>
+                                <ul v-if="previews[b.key].agents" class="mt-1 flex flex-col gap-1.5">
+                                    <li v-for="set in previews[b.key].skill_sets" :key="set.id">
+                                        <div>{{ set.name }} <span v-if="set.from === 'defaults'" class="text-xs text-slate-500" title="From your Project defaults">· your default</span></div>
+                                        <div class="border-l border-slate-300 pl-2 text-xs text-slate-500 dark:border-slate-700">{{ set.skills.join(', ') }}</div>
+                                    </li>
+                                    <li v-for="skill in previews[b.key].skills" :key="skill">{{ skill }} <span class="text-xs text-slate-500">skill</span></li>
+                                    <li v-if="!previews[b.key].skill_sets.length && !previews[b.key].skills.length" class="text-slate-500">No skills</li>
+                                </ul>
+                            </section>
 
-                    <dt :class="label">Agents</dt>
-                    <dd class="flex flex-col gap-1">
-                        <div v-for="set in b.skill_sets" :key="set.id">
-                            <Link :href="`/skill-sets/${set.id}/edit`" :class="link">{{ set.name }}</Link>
-                            <span class="text-slate-500">: {{ set.skills.join(', ') }}</span>
-                        </div>
-                        <div v-if="b.skills.length">Skills: {{ b.skills.join(', ') }}</div>
-                        <div v-if="!b.skill_sets.length && !b.skills.length">None included</div>
-                        <div :class="muted">Your default skill sets are added. With agent setup off, no skills are installed.</div>
-                    </dd>
+                            <section class="text-xs text-slate-600 dark:text-slate-400">
+                                <div :class="label">Tools</div>
+                                <div class="mt-1">
+                                    <template v-for="(t, i) in previews[b.key].tools" :key="t.name">{{ i ? ' · ' : '' }}{{ t.name }}</template>
+                                    <span v-if="!previews[b.key].tools.length">None</span>
+                                </div>
+                                <div v-for="name in previews[b.key].tools_off" :key="name" class="mt-0.5 text-slate-500" title="Turned off in your Project defaults"><s>{{ name }}</s> off in your defaults</div>
+                            </section>
 
-                    <dt :class="label">Settings</dt>
-                    <dd class="flex flex-col gap-1">
-                        <div>
-                            Sensitive data:
-                            <template v-if="b.settings.sensitive !== null">{{ onOff(b.settings.sensitive) }}, set by its {{ b.settings.sensitive_from === 'structure' ? 'project structure' : 'blueprint' }}</template>
-                            <span v-else class="text-slate-500">uses your default ({{ onOff(defaults.sensitive) }})</span>
+                            <section class="text-xs text-slate-600 dark:text-slate-400">
+                                <div :class="label">Settings</div>
+                                <dl class="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5">
+                                    <dt>Git</dt>
+                                    <dd>{{ previews[b.key].settings.git.on ? 'On' : 'Off' }} <span v-if="previews[b.key].settings.git.from === 'defaults'" class="text-slate-500" title="From your Project defaults">· your default</span></dd>
+                                    <dt>Sensitive data</dt>
+                                    <dd>{{ previews[b.key].settings.sensitive.on ? 'On' : 'Off' }} <span class="text-slate-500" :title="previews[b.key].settings.sensitive.from === 'defaults' ? 'From your Project defaults' : 'Set by the blueprint'">· {{ previews[b.key].settings.sensitive.from === 'defaults' ? 'your default' : 'blueprint' }}</span></dd>
+                                    <dt>Git hooks</dt>
+                                    <dd>{{ previews[b.key].settings.hooks.on.map((h) => hookNames[h] ?? h).join(', ') || 'None' }} <span v-if="previews[b.key].settings.hooks.from === 'defaults'" class="text-slate-500" title="From your Project defaults">· your default</span></dd>
+                                </dl>
+                            </section>
                         </div>
-                        <div>
-                            Git:
-                            <template v-if="b.settings.git !== null">{{ onOff(b.settings.git) }}, set by the blueprint</template>
-                            <span v-else class="text-slate-500">uses your default ({{ onOff(defaults.use_git) }})</span>
-                        </div>
-                        <div>
-                            Agent setup:
-                            <template v-if="b.settings.ai !== null">{{ onOff(b.settings.ai) }}, set by the blueprint</template>
-                            <span v-else class="text-slate-500">uses your default ({{ onOff(defaults.ai_enabled) }})</span>
-                        </div>
-                        <div>
-                            Git hooks:
-                            <template v-if="b.settings.hooks !== null">set by the blueprint</template>
-                            <span v-else class="text-slate-500">uses your defaults ({{ defaultHooks.length ? defaultHooks.join(', ') : 'none on' }})</span>
-                        </div>
-                    </dd>
 
-                    <dt :class="label">Version</dt>
-                    <dd><Link :href="`/blueprints/${b.id}`" class="font-mono text-xs" :class="link">{{ b.handle }} v{{ b.version }}</Link></dd>
-                </dl>
+                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-slate-200 pt-3 text-xs text-slate-500 lg:col-span-2 dark:border-slate-800">
+                            <span class="font-mono">{{ b.handle }} v{{ b.version }}</span>
+                            <Link :href="`/blueprints/${b.id}`" :class="link">View the blueprint</Link>
+                            <span>Preview with your defaults, including unsaved changes</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </fieldset>

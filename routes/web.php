@@ -174,6 +174,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('settings/{section}', [DefaultsController::class, 'edit'])
         ->whereIn('section', DefaultsController::SECTIONS)->name('settings');
     Route::patch('settings', [DefaultsController::class, 'update']);
+    // What a blueprint would create as the default, with the form's unsaved values
+    Route::post('settings/blueprint/preview', [DefaultsController::class, 'preview'])->middleware('throttle:120,1');
 
     // This server's own credentials (GitHub App, storage, mail)
     Route::middleware('admin')->group(function () {

@@ -4,10 +4,11 @@ namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
 use App\Models\Blueprint;
-use App\Models\FacetVersion;
-use App\Models\Skill;
+use App\Models\Project;
 use App\Support\Catalog;
+use App\Support\DefaultsPreview;
 use App\Support\ProjectDefaults;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -28,10 +29,11 @@ class DefaultsController extends Controller
             'section' => $section,
             'revision' => $setting->revision,
             'blueprints' => Blueprint::systemTypes()->with('latestVersion.base.facet', 'latestVersion.facetVersions.facet')->get()
-                ->filter(fn (Blueprint $b) => $b->latestVersion)->map(fn (Blueprint $b) => self::details($b))->values(),
+                ->filter(fn (Blueprint $b) => $b->latestVersion)->sortBy(fn (Blueprint $b) => array_search($b->key, self::ORDER, true))
+                ->map(fn (Blueprint $b) => self::listing($b))->values(),
             'catalog' => Catalog::for($request->user()),
             'values' => [
-                'project_type' => Arr::get($doc, 'defaults.project_type', 'bare'),
+                'project_type' => Arr::get($doc, 'defaults.project_type', ProjectDefaults::BLUEPRINT),
                 'notebook_format' => Arr::get($doc, 'defaults.notebook_format', 'quarto'),
                 'ide' => Arr::get($doc, 'defaults.ide', 'positron'),
                 'use_git' => (bool) Arr::get($doc, 'defaults.use_git', true),
@@ -49,27 +51,19 @@ class DefaultsController extends Controller
         ]);
     }
 
+    /** The order the Blueprint page lists them in: the standard project first, Bare last. */
+    private const ORDER = ['project', 'project_sensitive', 'presentation', 'course', 'bare'];
+
     /**
-     * What a blueprint sets up, read from its latest version: the structure's
-     * folders, its pieces, and the settings it sets itself. A setting it
-     * leaves out is null, which means the person's own default applies.
+     * A blueprint as the Blueprint page lists it. What it creates comes
+     * from preview(), resolved with the person's defaults.
      *
      * @return array<string, mixed>
      */
-    private static function details(Blueprint $blueprint): array
+    private static function listing(Blueprint $blueprint): array
     {
         $version = $blueprint->latestVersion;
-        $layer = $version->layer ?? [];
-        $structure = $version->base->layer ?? [];
-        $pieces = $version->facetVersions;
-        $ofKind = fn (string $kind) => $pieces->filter(fn (FacetVersion $v) => $v->facet->kind === $kind)->values();
-        $skillName = fn (string $key) => Skill::whereNull('user_id')->where('key', $key)->value('name') ?? $key;
-
-        // Folders and files from the structure, without the project root itself
-        $paths = collect([...array_values($structure['directories'] ?? []), ...array_values($structure['render_dirs'] ?? [])])
-            ->filter(fn ($path) => is_string($path) && $path !== '.' && $path !== '')->unique()->sort()->values();
-
-        $packages = fn (?array $pieceLayer) => array_keys($pieceLayer['packages']['default_packages'] ?? []);
+        $type = $version->base->layer['type'] ?? 'bare';
 
         return [
             'key' => $blueprint->key,
@@ -78,26 +72,23 @@ class DefaultsController extends Controller
             'description' => $blueprint->description,
             'handle' => $blueprint->handle,
             'version' => $version->version,
-            'structure' => ['name' => $version->base->facet->name, 'paths' => $paths->all()],
-            'tools' => $ofKind('tool')->map(fn (FacetVersion $v) => ['name' => $v->facet->name, 'language' => $v->facet->language])->all(),
-            'package_sets' => $ofKind('package_set')->map(fn (FacetVersion $v) => [
-                'name' => $v->facet->name, 'id' => $v->facet->id, 'packages' => $packages($v->layer),
-            ])->all(),
-            // Packages that come with other pieces, such as ggplot2 with its skill set
-            'other_packages' => $pieces->reject(fn (FacetVersion $v) => $v->facet->kind === 'package_set')
-                ->flatMap(fn (FacetVersion $v) => array_map(fn ($package) => ['package' => $package, 'from' => $v->facet->name], $packages($v->layer)))->values()->all(),
-            'skill_sets' => $ofKind('skill_set')->map(fn (FacetVersion $v) => [
-                'name' => $v->facet->name, 'id' => $v->facet->id, 'skills' => array_map($skillName, array_keys($v->layer['skills'] ?? [])),
-            ])->all(),
-            'skills' => array_map($skillName, array_keys($layer['skills'] ?? [])),
-            'settings' => [
-                'sensitive' => $layer['security']['sensitive'] ?? $structure['security']['sensitive'] ?? null,
-                'sensitive_from' => isset($layer['security']['sensitive']) ? 'blueprint' : (isset($structure['security']['sensitive']) ? 'structure' : null),
-                'git' => $layer['git']['use_git'] ?? null,
-                'ai' => $layer['ai']['enabled'] ?? null,
-                'hooks' => $layer['git']['hooks'] ?? null,
-            ],
+            'structure' => $version->base->facet->name,
+            'languages' => array_values(array_filter(Project::LANGUAGES, fn (string $language) => ! Project::typeProblem($language, $type))),
         ];
+    }
+
+    /** The preview for one blueprint and language, from the form's values, saved or not. Saves nothing. */
+    public function preview(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'blueprint' => ['required', 'string'],
+            'language' => ['required', 'in:r,python,stata'],
+            'values' => ['array'],
+        ]);
+
+        $blueprint = Blueprint::systemTypes()->where('key', $validated['blueprint'])->with('latestVersion.base', 'latestVersion.facetVersions.facet')->firstOrFail();
+
+        return response()->json(DefaultsPreview::for($request->user(), $blueprint, $validated['language'], $validated['values'] ?? []));
     }
 
     public function update(Request $request): RedirectResponse

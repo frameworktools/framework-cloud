@@ -29,9 +29,9 @@ class DefaultSettings
                 'affiliation' => '',
             ],
             'defaults' => [
-                // No blueprint by default: library(framework) + a token is all you
-                // need. Blueprints are opinionated offerings users opt into.
-                'project_type' => 'bare',
+                // No default blueprint here: an account that never chose one
+                // gets ProjectDefaults::BLUEPRINT, the same as R's own default.
+                // Whatever is saved here is an explicit choice, Bare included.
                 'notebook_format' => 'quarto',
                 'ide' => 'positron',
                 'use_git' => true,

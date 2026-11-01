@@ -157,13 +157,13 @@ class PiecesTest extends TestCase
         $token = $this->token($user);
 
         $this->withToken($token)->getJson('/api/v2/defaults')->assertOk()
-            ->assertJsonPath('blueprint', 'framework/bare')
+            ->assertJsonPath('blueprint', 'framework/project')
             ->assertJsonPath('package_sets', ['framework/tidyverse-analysis'])
             ->assertJsonPath('settings.sensitive', true);
 
         $envelope = $this->withToken($token)->postJson('/api/v2/resolve', ['name' => 'Survey'])->assertOk()->json();
         $keys = array_column($envelope['layers'], 'key');
-        $this->assertSame('framework/bare', $keys[0]);
+        $this->assertSame('framework/project', $keys[0]);
         $this->assertContains('framework/tidyverse-analysis', $keys);
         $this->assertContains('framework/targets', $keys);
         $this->assertTrue($envelope['layers'][count($keys) - 2]['layer']['security']['sensitive']);

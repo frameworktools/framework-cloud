@@ -34,8 +34,11 @@ class Resolver
 
     private string $language = 'r';
 
-    /** @param bool $withDefaults false when building a blueprint, which shouldn't carry anyone's defaults */
-    public function __construct(private User $user, private bool $withDefaults = true) {}
+    /**
+     * @param  bool  $withDefaults  false when building a blueprint, which shouldn't carry anyone's defaults
+     * @param  array<string, mixed>|null  $defaults  other defaults than the saved ones, to preview them
+     */
+    public function __construct(private User $user, private bool $withDefaults = true, private ?array $defaults = null) {}
 
     /**
      * @param  array{name?: string, language?: string, blueprint?: string, structure?: string, tools?: array<string, bool>, package_sets?: list<string>, skill_sets?: list<string>, skills?: list<string>, settings?: array<string, mixed>}  $choices
@@ -44,7 +47,7 @@ class Resolver
     public function resolve(array $choices): array
     {
         if ($this->withDefaults) {
-            $choices = ProjectDefaults::apply($this->user, $choices);
+            $choices = ProjectDefaults::apply($this->user, $choices, $this->defaults);
         }
         $this->pieces = collect();
 

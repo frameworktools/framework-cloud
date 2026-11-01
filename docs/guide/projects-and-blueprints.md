@@ -34,8 +34,47 @@ grouped by subject:
 - **Documents.** The notebook format, Jupyter, and Quarto.
 
 The pages share one form, so changes on several pages are saved together.
-A blueprint you choose brings its own pieces, and your defaults still apply
-where it doesn't set them.
+
+The Blueprint page previews what each blueprint creates as your default:
+its folders and files, packages, agent skills, tools, and settings, for R,
+Python, or Stata. The preview is resolved the same way a new project is,
+with the values in the form, including changes you haven't saved.
+
+#### How defaults apply
+
+Your default blueprint is used when a new project doesn't name one, such as
+`fw new NAME --defaults`. An account that never chose one gets the Standard
+Project Structure.
+
+Without a named blueprint, a new project gets:
+
+- the default blueprint's structure, tools, package sets, and skill sets,
+- your default package sets and skill sets, added to the blueprint's,
+- your tool defaults on top: a tool you turned on is added, and one you
+  turned off is left out, even if the blueprint has it.
+
+Choosing a blueprint replaces your default blueprint, package sets, skill
+sets, and tools, including ones the blueprint doesn't mention. Your
+sensitive data, Git, agent setup, and Git hooks defaults still apply where
+the blueprint doesn't set them itself.
+
+- **Sensitive data.** On in your defaults, it makes a new project sensitive
+  unless the blueprint or its project structure sets sensitive data itself.
+  None of Framework's blueprints turn it off, and the Privacy Sensitive one
+  turns it on. When you change a blueprint's pieces on the New project page,
+  the sensitive data switch on that page decides.
+- **Agent setup.** Off, a project gets no context file and no skill sets.
+- **Git hooks.** They need Git, so they're skipped when Git is off. A
+  blueprint's own choice for a hook wins.
+
+Some defaults sync to the computers where you've run `cloud_login()` in R
+or Python: the default blueprint, editor, notebook format, Git, renv, the
+random seed, and agent setup with its context file and skills. Package sets,
+skill sets, the other tools, sensitive data, and Git hooks stay in your
+account. They apply when Framework Cloud resolves a new project: on the New
+project page, or with `fw new` and a cloud choice such as `--defaults` or
+`--blueprint`. Plain `fw new NAME` builds the project with R's or Python's
+own `new()`, which reads only the synced defaults.
 
 ### Borrowing and remixing
 

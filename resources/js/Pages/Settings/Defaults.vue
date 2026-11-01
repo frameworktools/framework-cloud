@@ -77,9 +77,14 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
     <Head :title="`${current.label} · Project defaults`" />
 
     <SectionLayout heading="Project defaults" :items="items">
-        <PageHeader :title="current.label" description="These defaults are used when you create a project." />
+        <PageHeader v-if="section === 'blueprint'" :title="current.label">
+            <template #actions>
+                <a href="/docs/projects-and-blueprints#how-defaults-apply" class="text-sm text-slate-500 hover:text-slate-900 hover:underline dark:hover:text-white">Documentation</a>
+            </template>
+        </PageHeader>
+        <PageHeader v-else :title="current.label" description="These defaults are used when you create a project." />
 
-        <details class="mt-3 text-sm text-slate-600 dark:text-slate-400">
+        <details v-if="section !== 'blueprint'" class="mt-3 text-sm text-slate-600 dark:text-slate-400">
             <summary class="w-fit cursor-pointer select-none text-slate-500 hover:text-slate-800 dark:hover:text-slate-200">How defaults apply</summary>
             <div class="mt-2 flex max-w-2xl flex-col gap-2 border-l-2 border-slate-200 pl-4 dark:border-slate-700">
                 <p>

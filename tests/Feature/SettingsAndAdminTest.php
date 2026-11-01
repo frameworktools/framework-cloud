@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Blueprint;
 use App\Models\User;
 use App\Support\Layer;
+use App\Support\ProjectDefaults;
 use App\Support\ProjectLayers;
 use Database\Seeders\BlueprintSeeder;
 use Database\Seeders\ProductionSeeder;
@@ -30,13 +31,11 @@ class SettingsAndAdminTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Settings/Defaults')
                 ->where('revision', 0)
-                // Blueprint details: what each one sets, and null where the person's default applies
-                ->where('blueprints.1.key', 'project')
-                ->where('blueprints.1.settings.sensitive', null)
-                ->where('blueprints.1.skill_sets.0.name', 'Framework basics')
-                ->where('blueprints.2.settings.sensitive', true)
-                ->where('blueprints.2.settings.sensitive_from', 'structure')
-                ->where('blueprints.2.structure.paths', fn ($paths) => collect($paths)->contains('inputs/private/raw')));
+                // Standard first and the default for an account that never chose; Bare last
+                ->where('values.project_type', 'project')
+                ->where('blueprints.0.key', 'project')
+                ->where('blueprints.4.key', 'bare')
+                ->where('blueprints.2.languages', ['r', 'python']));
 
         $this->actingAs($user)
             ->patch('/settings', [
@@ -155,5 +154,45 @@ class SettingsAndAdminTest extends TestCase
 
         $this->assertSame('Ada Lovelace', $user->fresh()->name);
         $this->assertSame(1, User::count());
+    }
+
+    public function test_a_saved_bare_default_stays_and_an_unsaved_one_means_the_standard_project(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $this->assertSame('framework/project', ProjectDefaults::for($user)['blueprint']);
+
+        $setting = $user->globalSettings();
+        $doc = $setting->document;
+        $doc['defaults']['project_type'] = 'bare';
+        $setting->replaceDocument($doc);
+
+        $this->assertSame('framework/bare', ProjectDefaults::for($user->fresh())['blueprint']);
+        $this->actingAs($user)->get('/settings/blueprint')
+            ->assertInertia(fn (Assert $page) => $page->where('values.project_type', 'bare'));
+    }
+
+    public function test_the_blueprint_preview_resolves_with_unsaved_defaults_and_saves_nothing(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $revision = $user->globalSettings()->revision;
+
+        $preview = $this->actingAs($user)->postJson('/settings/blueprint/preview', [
+            'blueprint' => 'project_sensitive', 'language' => 'r',
+            'values' => ['package_sets' => ['framework/tidyverse-analysis'], 'use_git' => false],
+        ])->assertOk();
+
+        $paths = collect($preview->json('tree'))->pluck('path');
+        $this->assertTrue($paths->contains('inputs/private/raw'));
+        $this->assertTrue($paths->contains('scaffold.R'));
+        $this->assertFalse($paths->contains('.git'));
+        $this->assertSame('defaults', $preview->json('package_sets.0.from'));
+        $this->assertTrue($preview->json('settings.sensitive.on'));
+        $this->assertSame('blueprint', $preview->json('settings.sensitive.from'));
+
+        // Stata has no presentation structure; previewing changes nothing saved
+        $this->actingAs($user)->postJson('/settings/blueprint/preview', ['blueprint' => 'presentation', 'language' => 'stata'])
+            ->assertOk()->assertJsonPath('available', false);
+        $this->assertSame($revision, $user->globalSettings()->revision);
+        $this->assertNull($user->fresh()->project_defaults);
     }
 }

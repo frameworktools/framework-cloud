@@ -55,7 +55,8 @@ class CloudApiTest extends TestCase
             ->assertJsonPath('schema_version', '2')
             ->assertJsonPath('document.ai.canonical_file', 'AGENTS.md')
             ->assertJsonPath('document.project_types.bare.label', 'Bare (no blueprint)')
-            ->assertJsonPath('document.defaults.project_type', 'bare');
+            // No default blueprint until the person chooses one: R and the cloud fall back to the standard project
+            ->assertJsonMissingPath('document.defaults.project_type');
     }
 
     public function test_settings_update_bumps_revision_and_records_history(): void

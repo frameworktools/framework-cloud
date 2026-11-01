@@ -14,6 +14,9 @@ use Illuminate\Support\Arr;
  */
 class ProjectDefaults
 {
+    /** The blueprint for an account that never chose one: the standard project, as in R. */
+    public const BLUEPRINT = 'project';
+
     /** The git hooks a user can turn on for new projects, as the R package names them. */
     public const HOOKS = ['data_security', 'check_sensitive_dirs'];
 
@@ -26,7 +29,7 @@ class ProjectDefaults
         $own = $user->project_defaults ?? [];
 
         return [
-            'blueprint' => 'framework/'.Arr::get($doc, 'defaults.project_type', 'bare'),
+            'blueprint' => 'framework/'.Arr::get($doc, 'defaults.project_type', self::BLUEPRINT),
             'package_sets' => array_values($own['package_sets'] ?? []),
             'skill_sets' => array_values($own['skill_sets'] ?? []),
             'tools' => ['renv' => (bool) Arr::get($doc, 'defaults.use_renv', false)] + ($own['tools'] ?? []),
@@ -40,16 +43,40 @@ class ProjectDefaults
     }
 
     /**
+     * The same defaults from the Project defaults form's values, saved or
+     * not, for previewing what a new project would get.
+     *
+     * @param  array<string, mixed>  $values  as DefaultsController hands them to the form
+     * @return array{blueprint: string, package_sets: list<string>, skill_sets: list<string>, tools: array<string, bool>, settings: array{sensitive: bool, git: bool, ai: bool, hooks: list<string>}}
+     */
+    public static function fromValues(array $values): array
+    {
+        return [
+            'blueprint' => 'framework/'.($values['project_type'] ?? self::BLUEPRINT),
+            'package_sets' => array_values(array_filter((array) ($values['package_sets'] ?? []), 'is_string')),
+            'skill_sets' => array_values(array_filter((array) ($values['skill_sets'] ?? []), 'is_string')),
+            'tools' => ['renv' => (bool) ($values['use_renv'] ?? false)] + array_map('boolval', Arr::except((array) ($values['tools'] ?? []), ['renv'])),
+            'settings' => [
+                'sensitive' => (bool) ($values['sensitive'] ?? false),
+                'git' => (bool) ($values['use_git'] ?? true),
+                'ai' => (bool) ($values['ai_enabled'] ?? true),
+                'hooks' => array_keys(array_filter(Arr::only((array) ($values['hooks'] ?? []), self::HOOKS))),
+            ],
+        ];
+    }
+
+    /**
      * The choices a resolve starts from. Without a blueprint or structure,
      * the default blueprint and the preferred pieces apply. Settings always
      * fall back to the defaults, with the blueprint's own settings in between.
      *
      * @param  array<string, mixed>  $choices
+     * @param  array<string, mixed>|null  $defaults  from fromValues() to preview unsaved defaults
      * @return array<string, mixed>
      */
-    public static function apply(User $user, array $choices): array
+    public static function apply(User $user, array $choices, ?array $defaults = null): array
     {
-        $defaults = self::for($user);
+        $defaults ??= self::for($user);
 
         if (blank($choices['blueprint'] ?? null) && blank($choices['structure'] ?? null)) {
             $choices['blueprint'] = $defaults['blueprint'];
