@@ -5,7 +5,6 @@ import { PlusIcon } from '@heroicons/vue/20/solid';
 import { AcademicCapIcon, CalendarIcon, FolderIcon, ListBulletIcon, PresentationChartBarIcon, Squares2X2Icon } from '@heroicons/vue/24/outline';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import UiButton from '@/Components/UiButton.vue';
-import EmptyState from '@/Components/EmptyState.vue';
 import UiBadge from '@/Components/UiBadge.vue';
 import GitHubMark from '@/Components/GitHubMark.vue';
 import PageHeader from '@/Components/PageHeader.vue';
@@ -135,7 +134,18 @@ const created = (date) => new Date(date).toLocaleDateString(undefined, { year: '
                 </Link>
             </div>
 
-            <EmptyState v-else class="mt-6" compact title="No projects yet." />
+            <!-- No projects: one tile that starts the first -->
+            <Link
+                v-else href="/projects/create"
+                class="group mt-6 flex max-w-sm flex-col items-center rounded-2xl border-2 border-dashed border-slate-300 bg-white px-6 py-10 text-center transition hover:border-sky-400 hover:bg-sky-50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-sky-500 dark:hover:bg-sky-950/30"
+            >
+                <span class="flex size-12 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-sky-600 shadow-md shadow-sky-500/20 transition group-hover:scale-105">
+                    <PlusIcon class="size-6 text-white" aria-hidden="true" />
+                </span>
+                <span class="mt-4 text-base font-semibold text-slate-900 dark:text-white">No projects yet</span>
+                <span class="mt-1 text-sm text-slate-500 dark:text-slate-400">Start your first project from your defaults or a blueprint.</span>
+                <span class="mt-4 text-sm font-medium text-sky-600 group-hover:underline dark:text-sky-400">New project</span>
+            </Link>
         </div>
     </AppLayout>
 </template>
