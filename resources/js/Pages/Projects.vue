@@ -137,7 +137,7 @@ const created = (date) => new Date(date).toLocaleDateString(undefined, { year: '
             <!-- No projects: one tile that starts the first -->
             <Link
                 v-else href="/projects/create"
-                class="group mt-6 flex max-w-sm flex-col items-center rounded-2xl border-2 border-dashed border-slate-300 bg-white px-6 py-10 text-center transition hover:border-sky-400 hover:bg-sky-50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-sky-500 dark:hover:bg-sky-950/30"
+                class="group mx-auto mt-16 flex w-full max-w-xl flex-col items-center rounded-2xl border-2 border-dashed border-slate-300 bg-white px-6 py-12 text-center transition hover:border-sky-400 hover:bg-sky-50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-sky-500 dark:hover:bg-sky-950/30"
             >
                 <span class="flex size-12 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-sky-600 shadow-md shadow-sky-500/20 transition group-hover:scale-105">
                     <PlusIcon class="size-6 text-white" aria-hidden="true" />
