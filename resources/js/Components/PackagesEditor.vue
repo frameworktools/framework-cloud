@@ -22,7 +22,8 @@ const sources = computed(() => (r.value
     ? [{ value: 'cran', label: 'CRAN' }, { value: 'github', label: 'GitHub' }, { value: 'bioc', label: 'Bioconductor' }]
     : [{ value: 'pypi', label: 'PyPI' }, { value: 'github', label: 'GitHub' }]));
 
-const blank = () => ({ name: '', source: r.value ? 'cran' : 'pypi', auto_attach: r.value, version: null, repo: null });
+// New packages are installed but not attached until the person turns it on
+const blank = () => ({ name: '', source: r.value ? 'cran' : 'pypi', auto_attach: false, version: null, repo: null });
 const update = (i, patch) => {
     rows.value = rows.value.map((row, j) => (j === i ? { ...row, ...patch } : row));
 };
@@ -47,6 +48,26 @@ const field = 'w-full rounded-md border border-slate-300 bg-white px-3 py-2 text
 
 <template>
     <div class="flex flex-col gap-4">
+        <!-- Package sets: each opens to its packages, and adds the ones the list lacks -->
+        <details v-if="presets.length" class="group rounded-lg border border-slate-200 dark:border-slate-700">
+            <summary class="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-medium text-slate-800 dark:text-slate-200 [&::-webkit-details-marker]:hidden">
+                <ChevronRightIcon class="size-4 text-slate-400 transition-transform group-open:rotate-90" />
+                Load a package set
+            </summary>
+            <div class="divide-y divide-slate-200 border-t border-slate-200 dark:divide-slate-800 dark:border-slate-700">
+                <div v-for="preset in presets" :key="preset.key" class="flex items-start justify-between gap-4 px-4 py-3">
+                    <div class="min-w-0">
+                        <div class="text-sm font-medium text-slate-900 dark:text-white">{{ preset.name }}</div>
+                        <div class="mt-0.5 font-mono text-xs text-slate-500">{{ preset.packages.map((p) => p.name).join(', ') }}</div>
+                    </div>
+                    <UiButton size="sm" variant="outline" class="shrink-0" :disabled="!missing(preset).length" @click="load(preset)">
+                        {{ missing(preset).length ? `Add ${missing(preset).length}` : 'All added' }}
+                    </UiButton>
+                </div>
+                <p class="px-4 py-3 text-sm"><Link href="/package-sets" class="text-sky-600 hover:underline dark:text-sky-400">Manage package sets</Link></p>
+            </div>
+        </details>
+
         <div class="divide-y divide-slate-200 rounded-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-700">
             <!-- Column labels, for the rows below -->
             <div class="hidden gap-3 px-4 py-2 text-xs font-medium text-slate-500 sm:grid" :class="r ? 'grid-cols-[1fr_9rem_7rem_2rem]' : 'grid-cols-[1fr_9rem_7rem_2rem]'">
@@ -80,26 +101,8 @@ const field = 'w-full rounded-md border border-slate-300 bg-white px-3 py-2 text
                 ><XMarkIcon class="size-5" /></button>
             </div>
             <p v-if="!rows.length" class="px-4 py-3 text-sm text-slate-500">No packages yet.</p>
-            <div class="px-4 py-2.5"><UiButton size="sm" variant="outline" @click="add">Add package</UiButton></div>
         </div>
+        <div><UiButton size="sm" variant="outline" @click="add">Add package</UiButton></div>
 
-        <!-- Package sets: each opens to its packages, and adds the ones the list lacks -->
-        <details v-if="presets.length" class="group rounded-lg border border-slate-200 dark:border-slate-700">
-            <summary class="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-medium text-slate-800 dark:text-slate-200 [&::-webkit-details-marker]:hidden">
-                <ChevronRightIcon class="size-4 text-slate-400 transition-transform group-open:rotate-90" />
-                Load a package set
-            </summary>
-            <div class="divide-y divide-slate-200 border-t border-slate-200 dark:divide-slate-800 dark:border-slate-700">
-                <div v-for="preset in presets" :key="preset.key" class="flex items-start justify-between gap-4 px-4 py-3">
-                    <div class="min-w-0">
-                        <div class="text-sm font-medium text-slate-900 dark:text-white">{{ preset.name }}</div>
-                        <div class="mt-0.5 font-mono text-xs text-slate-500">{{ preset.packages.map((p) => p.name).join(', ') }}</div>
-                    </div>
-                    <UiButton size="sm" variant="outline" class="shrink-0" :disabled="!missing(preset).length" @click="load(preset)">
-                        {{ missing(preset).length ? `Add ${missing(preset).length}` : 'All added' }}
-                    </UiButton>
-                </div>
-            </div>
-        </details>
     </div>
 </template>

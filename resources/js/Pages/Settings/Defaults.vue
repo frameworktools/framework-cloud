@@ -149,7 +149,6 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                         :presets="presets.filter((p) => p.language.includes(packageLanguage) && p.packages.length)"
                     />
                     <p v-if="Object.keys(form.errors).some((k) => k.startsWith('packages.'))" class="text-sm text-red-600">Check the package names: letters, numbers, dots, dashes, and underscores. GitHub packages are owner/repo.</p>
-                    <p class="text-sm"><Link href="/package-sets" :class="link">Manage package sets</Link></p>
                 </section>
 
                 <section class="flex max-w-xl flex-col gap-4 border-t border-slate-200 pt-8 dark:border-slate-800">
