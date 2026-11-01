@@ -19,7 +19,19 @@ const workflowNames = { quarto: 'Quarto', jupyter: 'Jupyter', scripts: 'Scripts 
 const initialWorkflows = { r: 'quarto', python: 'jupyter', stata: 'scripts' };
 const ideEditors = { rstudio: ['rstudio'], vscode: ['vscode'], positron: ['vscode'], both: ['rstudio', 'vscode'], none: [] };
 
-const form = useForm({
+// Progress saved when someone left for the structure builder, picked up once
+const STORE = 'welcome.progress';
+const restored = (() => {
+    try {
+        const saved = JSON.parse(sessionStorage.getItem(STORE) ?? 'null');
+        sessionStorage.removeItem(STORE);
+        return saved;
+    } catch {
+        return null;
+    }
+})();
+
+const form = useForm(restored?.answers ?? {
     language: props.values.language ?? 'r',
     project_type: props.values.project_type,
     workflow: null,
@@ -36,13 +48,16 @@ const workflowsFor = (b) => (b?.workflows ?? []).filter((w) => form.language !==
 // Earlier answers preselect later ones: a project type the language has, the
 // language's workflow where the project type has it, and the language's editor
 const preferredWorkflow = () => props.values.workflows[form.language] ?? initialWorkflows[form.language];
-watch(() => form.language, () => {
+// Restored answers stand as they were
+watch(() => form.language, (language, previous) => {
+    if (restored && previous === undefined) return;
     if (!blueprint.value || !supported(blueprint.value)) form.project_type = 'project';
     if (!props.again || form.editors === null) form.editors = form.language === 'r' ? ['rstudio'] : form.language === 'python' ? ['vscode'] : [];
 }, { immediate: true });
 // A new language starts from its own workflow; a new project type keeps the
 // workflow when it has it
-watch([() => form.language, () => form.project_type], ([language], [previous]) => {
+watch([() => form.language, () => form.project_type], ([language], [previous] = []) => {
+    if (restored && previous === undefined) return;
     const options = workflowsFor(blueprint.value);
     const preferred = preferredWorkflow();
     if (language !== previous || !options.includes(form.workflow)) form.workflow = options.includes(preferred) ? preferred : options[0];
@@ -50,7 +65,7 @@ watch([() => form.language, () => form.project_type], ([language], [previous]) =
 
 const steps = computed(() => [
     { key: 'language', title: 'Which environment do you work in most?' },
-    { key: 'project', title: 'What kind of project do you usually start?' },
+    { key: 'project', title: 'Which project structure do you prefer?' },
     ...(form.language === 'stata' ? [] : [
         { key: 'workflow', title: 'How do you write notebooks?' },
         { key: 'editors', title: 'Which editors do you use?' },
@@ -59,7 +74,7 @@ const steps = computed(() => [
     { key: 'agents', title: 'Do you work with AI coding agents?' },
     { key: 'summary', title: 'Your project defaults' },
 ]);
-const index = ref(0);
+const index = ref(restored?.index ?? 0);
 const step = computed(() => steps.value[Math.min(index.value, steps.value.length - 1)]);
 const next = () => (index.value = Math.min(index.value + 1, steps.value.length - 1));
 const back = () => (index.value = Math.max(index.value - 1, 0));
@@ -70,7 +85,17 @@ const languageOptions = [
     { value: 'python', label: 'Python', description: 'Projects built by the framework Python package, with uv for the environment.' },
     { value: 'stata', label: 'Stata', description: 'Folders, master.do, and do-files, set up by the fw command-line tool. Framework doesn\'t manage Stata packages.' },
 ];
-const projectOptions = computed(() => props.blueprints.filter(supported).map((b) => ({ value: b.key, label: b.name, description: b.description })));
+// What sets each structure apart; the tree beside them shows the folders
+const structureNotes = {
+    project: 'Separate folders for inputs, scripts, notebooks, and outputs. Suits most analyses.',
+    project_sensitive: 'The standard folders, with inputs and outputs split into private and public. Private files stay out of Git.',
+    presentation: 'One slide deck, with the data and code behind it.',
+    course: 'Slides, modules, assignments, and readings for teaching.',
+    bare: 'Start with the essential Framework settings and organize your own folders.',
+};
+const projectOptions = computed(() => props.blueprints.filter(supported).map((b) => ({
+    value: b.key, label: b.name, description: structureNotes[b.key] ?? b.description, badge: b.key === 'project' ? 'Recommended' : null,
+})));
 const workflowOptions = computed(() => workflowsFor(blueprint.value).map((w) => ({
     value: w,
     label: workflowNames[w],
@@ -125,6 +150,13 @@ const answers = computed(() => [
     { key: 'agents', label: 'AI agents', value: form.ai ? (form.agents.map((a) => agentOptions.find((o) => o.value === a)?.label).join(', ') || 'Yes, AGENTS.md only') : 'No' },
 ]);
 
+// Leaving for the structure builder keeps your answers and place for when you come back
+const remember = () => {
+    try {
+        sessionStorage.setItem(STORE, JSON.stringify({ answers: form.data(), index: index.value }));
+    } catch {}
+};
+
 const save = () => form.transform((data) => ({ ...data, editors: data.editors ?? [] })).post('/welcome');
 const skip = () => router.post('/welcome/skip');
 const heading = 'text-sm font-semibold text-slate-900 dark:text-white';
@@ -151,7 +183,8 @@ const heading = 'text-sm font-semibold text-slate-900 dark:text-white';
                 <UiRadioCards v-if="step.key === 'language'" v-model="form.language" name="language" :legend="step.title" hide-legend :options="languageOptions" stacked />
 
                 <div v-else-if="step.key === 'project'" class="flex flex-col gap-3">
-                    <p class="text-sm text-slate-600 dark:text-slate-400">Each type sets up its folders. You can pick another type for any project.</p>
+                    <p class="text-sm text-slate-600 dark:text-slate-400">These recommended structures organize your files from a small analysis to a larger project. Choose a default here; you can use a different structure for each project.</p>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">Prefer your own arrangement? Choose Bare, or <Link href="/structures/create" class="text-sky-600 hover:underline dark:text-sky-400" @click="remember">create a custom project structure</Link>.</p>
                     <!-- The chosen type's folders beside the choices -->
                     <div class="grid gap-8 lg:grid-cols-[minmax(0,28rem)_minmax(0,1fr)]">
                         <UiRadioCards v-model="form.project_type" name="project_type" :legend="step.title" hide-legend :options="projectOptions" stacked />

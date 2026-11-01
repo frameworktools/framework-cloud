@@ -6,7 +6,7 @@ defineProps({
     legend: String,
     // The page heading already names the choice: keep the legend for screen readers only
     hideLegend: Boolean,
-    options: { type: Array, required: true }, // [{ value, label, description?, disabled? }]
+    options: { type: Array, required: true }, // [{ value, label, description?, disabled?, badge? }]
     columns: { type: String, default: 'sm:grid-cols-2' },
     // One card per row, the radio at the right, for a few choices that each need a line of explanation
     stacked: Boolean,
@@ -32,7 +32,10 @@ const model = defineModel({ type: String });
             >
                 <input v-model="model" type="radio" :name="name" :value="option.value" :disabled="option.disabled" class="mt-0.5 size-4 shrink-0 accent-sky-600 focus:outline-none">
                 <span class="flex min-w-0 flex-col gap-0.5">
-                    <span class="font-medium text-slate-900 dark:text-white" :class="stacked ? 'text-base' : 'text-sm'">{{ option.label }}</span>
+                    <span class="flex items-center gap-2">
+                        <span class="font-medium text-slate-900 dark:text-white" :class="stacked ? 'text-base' : 'text-sm'">{{ option.label }}</span>
+                        <span v-if="option.badge" class="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">{{ option.badge }}</span>
+                    </span>
                     <span v-if="option.description" class="text-slate-500 dark:text-slate-400" :class="stacked ? 'mt-0.5 text-sm' : 'text-xs'">{{ option.description }}</span>
                 </span>
             </label>
