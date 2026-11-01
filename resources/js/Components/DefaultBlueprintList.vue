@@ -177,13 +177,18 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
                                 <div :class="label">Skills</div>
                                 <p v-if="!previews[b.key].agents" class="mt-1 text-slate-500">None, with agent setup off</p>
                                 <template v-else>
-                                    <div v-for="set in previews[b.key].skill_sets" :key="set.id" class="mt-1.5">
-                                        <div class="text-xs text-slate-500">{{ set.name }}<span v-if="set.from === 'defaults'" title="From your Project defaults"> · your default</span></div>
-                                        <ul class="mt-0.5 flex flex-col gap-0.5">
+                                    <!-- A set opens to its skills -->
+                                    <details v-for="set in previews[b.key].skill_sets" :key="set.id" class="group mt-1">
+                                        <summary class="flex cursor-pointer list-none items-center gap-1 [&::-webkit-details-marker]:hidden">
+                                            <ChevronRightIcon class="-ml-1 size-4 shrink-0 text-slate-400 transition-transform group-open:rotate-90" />
+                                            <span>{{ set.name }}</span>
+                                            <span v-if="set.from === 'defaults'" class="text-xs text-slate-500" title="From your Project defaults">· your default</span>
+                                        </summary>
+                                        <ul class="mb-1 mt-0.5 flex flex-col gap-0.5 pl-4 text-xs text-slate-600 dark:text-slate-400">
                                             <li v-for="skill in set.skills" :key="skill">{{ skill }}</li>
                                         </ul>
-                                    </div>
-                                    <ul v-if="previews[b.key].skills.length" class="mt-1.5 flex flex-col gap-0.5">
+                                    </details>
+                                    <ul v-if="previews[b.key].skills.length" class="mt-1 flex flex-col gap-0.5 pl-4">
                                         <li v-for="skill in previews[b.key].skills" :key="skill">{{ skill }}</li>
                                     </ul>
                                     <p v-if="!previews[b.key].skill_sets.length && !previews[b.key].skills.length" class="mt-1 text-slate-500">None</p>
