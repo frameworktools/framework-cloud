@@ -129,7 +129,7 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
                     <div class="grid gap-x-8 gap-y-5 border-t border-slate-200 pt-4 xl:grid-cols-[minmax(0,1fr)_16rem] dark:border-slate-800">
                         <!-- The project's folders and files -->
                         <div class="min-w-0">
-                            <div class="mb-2 flex flex-wrap items-center gap-3">
+                            <div class="mb-3 flex flex-col items-start gap-2">
                                 <div :class="label">Project structure</div>
                                 <div class="flex rounded-md border border-slate-300 bg-white p-0.5 text-xs dark:border-slate-700 dark:bg-slate-950" role="group" :aria-label="`Preview language for ${b.name}`">
                                     <button
