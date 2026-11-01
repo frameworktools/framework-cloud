@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Blueprint;
 use App\Models\User;
+use App\Support\DefaultsPreview;
 use App\Support\ProjectLayers;
 use Database\Seeders\BlueprintSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -72,5 +73,40 @@ class ProjectBuilderTest extends TestCase
         $this->actingAs($user)->postJson('/projects/preview', [
             'blueprint_id' => $this->blueprint('course')->id, 'language' => 'r', 'customized' => true, 'structure' => 'framework/course', 'tools' => ['quarto' => false],
         ])->assertStatus(422)->assertJsonPath('problem', 'Quarto is required by the Quarto workflow.');
+    }
+
+    public function test_the_preview_shows_the_files_and_agents_and_a_project_can_choose_its_own_agents(): void
+    {
+        $user = User::factory()->create();
+        $doc = $user->globalSettings()->document;
+        $doc['ai']['assistants'] = ['claude'];
+        $user->globalSettings()->replaceDocument($doc);
+        $before = $user->fresh()->globalSettings()->document;
+
+        $preview = $this->actingAs($user)->postJson('/projects/preview', ['blueprint_id' => $this->blueprint('project')->id, 'language' => 'r', 'name' => 'Clinic Visits'])->assertOk();
+        $paths = array_column($preview->json('tree'), 'path');
+        $this->assertContains('clinic-visits.code-workspace', $paths);
+        $this->assertContains(['from' => 'notebooks', 'to' => 'outputs/notebooks'], $preview->json('render_dirs'));
+        $this->assertSame(['enabled' => true, 'named' => ['claude'], 'other' => false], $preview->json('agents'));
+
+        // Codex for this project only
+        $choices = [
+            'name' => 'Clinic Visits', 'blueprint_id' => $this->blueprint('project')->id, 'language' => 'r', 'customized' => true,
+            'structure' => 'framework/project', 'tools' => ['quarto' => true],
+            'settings' => ['sensitive' => false, 'git' => true, 'ai' => ['enabled' => true, 'assistants' => ['claude' => false, 'codex' => true, 'copilot' => false]]],
+        ];
+        $this->actingAs($user)->post('/projects', $choices)->assertSessionHasNoErrors();
+        $spec = DefaultsPreview::merge(ProjectLayers::for($user->projects()->sole())['layers']);
+        $this->assertSame(['claude' => false, 'codex' => true, 'copilot' => false], $spec['ai']['assistants']);
+        $this->assertSame($before, $user->fresh()->globalSettings()->document);
+    }
+
+    public function test_setup_commands_name_the_configured_client_address_not_the_request_host(): void
+    {
+        config(['framework.client_url' => 'https://cloud.example.org']);
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->withHeaders(['Host' => 'attacker.example.com', 'X-Forwarded-Host' => 'attacker.example.com'])
+            ->get('/projects')->assertInertia(fn ($page) => $page->where('clientUrl', 'https://cloud.example.org'));
     }
 }

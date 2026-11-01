@@ -54,10 +54,24 @@ class ResolvedSelections
         $sets = fn (string $kind, string $field) => $pieces->filter(fn (FacetVersion $v) => $v->facet->kind === $kind)
             ->map(fn (FacetVersion $v) => ['key' => $v->facet->handle, 'name' => $v->facet->name, 'from' => $from($v, $field)])->values()->all();
 
-        $spec = DefaultsPreview::merge($resolved['envelope']['layers']);
+        // The name names files such as the .Rproj, as creation does
+        $spec = ['name' => $resolved['envelope']['name']] + DefaultsPreview::merge($resolved['envelope']['layers']);
+
+        $named = array_keys(array_filter((array) ($spec['ai']['assistants'] ?? [])));
+        $aiOn = (bool) ($spec['ai']['enabled'] ?? true);
 
         return [
             'language' => $language,
+            // The files and folders creation writes, and where documents render
+            'tree' => ProjectTree::for($spec, $language, $on, (bool) ($spec['security']['sensitive'] ?? false)),
+            'render_dirs' => collect((array) ($spec['render_dirs'] ?? []))
+                ->map(fn ($target, $key) => ['from' => $spec['directories'][$key] ?? $key, 'to' => $target])->values()->all(),
+            // Agents as the shared selector shows them; other agents is the person's own answer
+            'agents' => [
+                'enabled' => $aiOn,
+                'named' => array_values(array_intersect(ProjectDefaults::AGENTS, $named)),
+                'other' => $aiOn && ((bool) ($user->project_defaults['ai_other'] ?? false) || ! $named),
+            ],
             'structure' => $resolved['structure']->facet->handle,
             'workflow' => $resolved['workflow'] ? ['key' => $resolved['workflow'], 'name' => $workflow?->facet->name] : null,
             'tools' => (object) $tools,

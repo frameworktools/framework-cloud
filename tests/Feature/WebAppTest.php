@@ -157,7 +157,7 @@ class WebAppTest extends TestCase
             'structure' => 'framework/project', 'tools' => ['quarto' => true, 'renv' => true],
             'package_sets' => ['framework/tidyverse-analysis'], 'skill_sets' => ['framework/framework'], 'skills' => [],
             'settings' => ['sensitive' => false, 'ai' => true, 'git' => true],
-        ])->assertRedirect('/projects/clinic-visits');
+        ])->assertRedirect('/projects/clinic-visits/computers');
 
         $project = $user->projects()->firstOrFail();
         $this->assertSame($blueprint->latestVersion->id, $project->blueprint_version_id);
@@ -193,7 +193,7 @@ class WebAppTest extends TestCase
 
         $this->actingAs($user)
             ->post('/projects', ['name' => 'Local Study', 'blueprint_id' => $this->systemBlueprint('bare')->id])
-            ->assertRedirect('/projects/local-study')
+            ->assertRedirect('/projects/local-study/computers')
             ->assertSessionHas('status', 'project-token')
             ->assertSessionHas('token');
 

@@ -82,6 +82,8 @@ class DefaultsPreview
             ])->all(),
             'skills' => $aiOn ? array_map(self::skillName(...), array_values(array_diff(array_keys($spec['skills'] ?? []), $inSets))) : [],
             'agents' => $aiOn,
+            'agent_keys' => array_values(array_intersect(ProjectDefaults::AGENTS, array_keys(array_filter((array) ($spec['ai']['assistants'] ?? []))))),
+            'agent_other' => (bool) ($values['ai_other'] ?? false),
             'agent_names' => array_values(array_map(fn (string $a) => ProjectDefaults::AGENT_NAMES[$a], array_intersect(ProjectDefaults::AGENTS, array_keys(array_filter((array) ($spec['ai']['assistants'] ?? [])))))),
             'tools' => $ofKind('tool')->map(fn (FacetVersion $v) => ['name' => $v->facet->name, 'from' => $from($v)])->all(),
             // A tool the blueprint has that the defaults turn off

@@ -12,6 +12,12 @@ return [
     */
     'spec_tools' => (bool) env('FW_SPEC_TOOLS', true),
 
+    // The address R, Python, and fw use to reach this server, shown in setup
+    // commands. Defaults to APP_URL. Set it when people's computers reach the
+    // server at another address than the web app's, such as a tunnel. It
+    // never comes from the request's Host header.
+    'client_url' => rtrim((string) (env('FW_CLIENT_URL') ?: env('APP_URL', 'http://localhost')), '/'),
+
     // scaffold.workflow and the script notebook format (framework f526b1d).
     // FW_SPEC_WORKFLOWS=false keeps them out for a server whose clients
     // predate that schema.

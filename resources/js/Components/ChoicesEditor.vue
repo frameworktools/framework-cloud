@@ -1,5 +1,7 @@
 <script setup>
 import { computed } from 'vue';
+import UiCheckboxCards from '@/Components/UiCheckboxCards.vue';
+import { agentOptions, pick } from '@/agents.js';
 import UiPanel from '@/Components/UiPanel.vue';
 import UiSwitch from '@/Components/UiSwitch.vue';
 import UiSelect from '@/Components/UiSelect.vue';
@@ -13,9 +15,14 @@ const props = defineProps({
     catalog: Object,
     languages: { type: Array, default: () => ['r', 'python', 'stata'] },
     required: { type: Object, default: () => ({}) }, // tool key → why it can't be turned off
+    // A project's agents, with the shared selector (form.agents); a blueprint only turns setup on or off
+    agentPicker: Boolean,
 });
 
 const f = props.form;
+// None stands alone; skills stay as they are while it's selected
+const agentModel = computed({ get: () => f.agents, set: (picked) => (f.agents = pick(f.agents, picked)) });
+const agentsOn = computed(() => (props.agentPicker ? !f.agents.includes('none') : f.settings.ai));
 // Tools that can't be turned off here, with why, such as a workflow that needs them
 const required = (tool) => props.required?.[tool.key] ?? null;
 const fits = (piece) => !piece.language || piece.language.includes(f.language);
@@ -67,7 +74,9 @@ const choiceClass = (on) => on
                 <div v-if="!s.system" class="mt-1 font-mono text-xs text-slate-400">{{ s.key }}</div>
             </button>
         </div>
-        <div v-if="structure" class="rounded-md bg-white p-3 dark:bg-slate-900"><LayerSummary :sections="structure.summary" /></div>
+        <slot name="structure-preview">
+            <div v-if="structure" class="rounded-md bg-white p-3 dark:bg-slate-900"><LayerSummary :sections="structure.summary" /></div>
+        </slot>
         <p v-if="form.errors.structure" class="text-xs text-red-600 dark:text-red-400">{{ form.errors.structure }}</p>
     </UiPanel>
 
@@ -97,9 +106,12 @@ const choiceClass = (on) => on
         <p v-if="form.errors.package_sets" class="text-xs text-red-600 dark:text-red-400">{{ form.errors.package_sets }}</p>
     </UiPanel>
 
-    <UiPanel id="ai" title="AI assistants" class="scroll-mt-6" description="Skills teach assistants such as Claude Code and Codex how to work in the project.">
-        <UiSwitch v-model="form.settings.ai" label="Set the project up for AI assistants" description="Adds AGENTS.md and the skills below. Turn off for no assistant files at all." />
-        <template v-if="form.settings.ai">
+    <UiPanel id="ai" :title="agentPicker ? 'Agents' : 'AI assistants'" class="scroll-mt-6" :description="agentPicker ? null : 'Skills teach assistants such as Claude Code and Codex how to work in the project.'">
+        <UiCheckboxCards v-if="agentPicker" v-model="agentModel" legend="Agents" hide-legend :options="agentOptions" />
+        <UiSwitch v-else v-model="form.settings.ai" label="Set the project up for AI assistants" description="Adds AGENTS.md and the skills below. Turn off for no assistant files at all." />
+        <template v-if="agentsOn || agentPicker">
+            <p v-if="!agentsOn" class="text-xs text-slate-500">With None, the project gets no skills. These are kept if you choose an agent again.</p>
+            <fieldset :disabled="!agentsOn" class="flex flex-col gap-3" :class="agentsOn ? '' : 'opacity-60'">
             <div v-if="skillSets.length" class="flex flex-col divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white dark:divide-slate-700 dark:border-slate-700 dark:bg-slate-900">
                 <div v-for="set in skillSets" :key="set.key" class="p-3">
                     <UiSwitch :model-value="form.skill_sets.includes(set.key)" :label="set.name" :description="set.description" @update:model-value="(on) => toggle('skill_sets', set.key, on)" />
@@ -112,6 +124,7 @@ const choiceClass = (on) => on
                 </div>
             </div>
             <UiSelect model-value="" :options="skillOptions" @update:model-value="addSkill" />
+            </fieldset>
         </template>
         <p v-if="form.errors.skills || form.errors.skill_sets" class="text-xs text-red-600 dark:text-red-400">{{ form.errors.skills || form.errors.skill_sets }}</p>
     </UiPanel>

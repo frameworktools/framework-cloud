@@ -9,7 +9,7 @@ import UiPanel from '@/Components/UiPanel.vue';
 import CodeChip from '@/Components/CodeChip.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import { ChevronRightIcon } from '@heroicons/vue/24/outline';
-import { useServerArg, useServerFlag, useSetupCommand } from '@/cloud.js';
+import { clientUrl, useServerArg, useServerFlag, useSetupCommand } from '@/cloud.js';
 import { languageNames } from '@/library.js';
 import { statusLabel, statusVariant, typeName } from '@/projects.js';
 
@@ -24,6 +24,22 @@ const pieceGroups = computed(() => Object.keys(kindTitles)
 const hookNames = { data_security: 'Check for secrets', check_sensitive_dirs: 'Warn about private folders git would commit' };
 
 const page = usePage();
+
+// The address setup commands name (FW_CLIENT_URL or APP_URL), checked from
+// this browser: a computer that can't reach it can't set the project up
+const serverUrl = computed(() => clientUrl(page));
+const viewingOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+const viewingElsewhere = computed(() => viewingOrigin !== serverUrl.value);
+const reachable = ref(null);
+const checkServer = async () => {
+    reachable.value = 'checking';
+    try {
+        await fetch(`${serverUrl.value}/up`, { mode: 'no-cors', cache: 'no-store' });
+        reachable.value = 'yes';
+    } catch {
+        reachable.value = 'no';
+    }
+};
 const serverArg = useServerArg();
 const serverFlag = useServerFlag();
 const setupCommand = useSetupCommand();
@@ -97,6 +113,16 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                     Paste the token when fw asks for it. If you have run <code class="font-mono text-xs">fw login</code>,
                     <code class="font-mono text-xs">fw new --from {{ project.slug }}{{ serverFlag }}</code> needs no token.
                 </p>
+                <!-- Where the command connects, and whether this computer can reach it -->
+                <p class="text-sm">
+                    <template v-if="page.props.flash.token_language === 'python'">Python connects to the server you signed in to with <code class="font-mono text-xs">cloud_login()</code>, which should be {{ serverUrl }}.</template>
+                    <template v-else>The command connects to {{ serverUrl }}.</template>
+                    <template v-if="viewingElsewhere"> You're viewing this page at {{ viewingOrigin }}, so check that your computer can reach it.</template>
+                    <button v-if="reachable !== 'checking'" type="button" class="ml-1 text-sky-700 underline dark:text-sky-400" @click="checkServer">Check from this computer</button>
+                    <span v-else class="ml-1 text-slate-500">Checking…</span>
+                </p>
+                <p v-if="reachable === 'yes'" class="text-sm">This computer reached {{ serverUrl }}.</p>
+                <p v-else-if="reachable === 'no'" class="text-sm text-red-700 dark:text-red-300">This computer couldn't reach {{ serverUrl }}. Ask whoever runs this server to set FW_CLIENT_URL to an address your computer can reach.</p>
             </UiCallout>
 
             <UiPanel v-if="section === 'overview'" title="Configuration">

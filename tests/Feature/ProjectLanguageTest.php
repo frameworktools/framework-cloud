@@ -36,7 +36,7 @@ class ProjectLanguageTest extends TestCase
         $blueprint->update(['language' => 'stata']);
 
         $this->actingAs($user)->post('/projects', ['name' => 'Survey', 'blueprint_id' => $blueprint->id])
-            ->assertRedirect('/projects/survey')
+            ->assertRedirect('/projects/survey/computers')
             ->assertSessionHas('token_language', 'stata');
 
         $this->assertSame('stata', Project::sole()->language);

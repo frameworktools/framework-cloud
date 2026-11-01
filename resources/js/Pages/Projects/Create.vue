@@ -11,7 +11,9 @@ import UiSwitch from '@/Components/UiSwitch.vue';
 import UiTextarea from '@/Components/UiTextarea.vue';
 import UiCallout from '@/Components/UiCallout.vue';
 import ChoicesEditor from '@/Components/ChoicesEditor.vue';
-import { useServerArg, useServerFlag } from '@/cloud.js';
+import ProjectTreeView from '@/Components/ProjectTreeView.vue';
+import UiModal from '@/Components/UiModal.vue';
+import { agentSummary, fromChoices, NAMED, toChoices } from '@/agents.js';
 import { group, groups, languageOptions, stataTypes } from '@/library.js';
 
 const props = defineProps({ blueprints: Array, catalog: Object, defaults: Object, selected: Number, github: Object });
@@ -34,7 +36,9 @@ const form = useForm({
     package_sets: [],
     skill_sets: [],
     skills: [],
-    settings: { sensitive: false, ai: true, git: true },
+    settings: { sensitive: false, git: true },
+    // The shared agent choices, an override for this project only
+    agents: ['other'],
 });
 
 const sections = computed(() =>
@@ -49,6 +53,7 @@ const blueprint = computed(() => props.blueprints.find((b) => b.id === form.blue
 const choicePayload = (data) => ({
     blueprint_id: data.blueprint_id,
     language: data.language,
+    name: data.name || undefined,
     ...(data.customized ? {
         customized: true,
         structure: data.structure,
@@ -60,34 +65,44 @@ const choicePayload = (data) => ({
         package_sets: data.package_sets,
         skill_sets: data.skill_sets,
         skills: data.skills,
-        settings: data.settings,
+        settings: { ...data.settings, ai: agentSettings(data.agents) },
     } : {}),
 });
+// The agents as the resolver takes them: setup on or off, and each named agent in or out
+const agentSettings = (choices) => {
+    const { enabled, agents } = fromChoices(choices);
+    return { enabled, assistants: Object.fromEntries(NAMED.map((a) => [a, agents.includes(a)])) };
+};
 const resolved = ref(null);
-const resolving = ref(false);
+const resolvedFor = ref(null);
 let request = 0;
 let timer = null;
+const payloadKey = computed(() => JSON.stringify(choicePayload(form.data())));
 const resolve = async () => {
     const id = ++request;
-    resolving.value = true;
-    try {
-        const response = await fetch('/projects/preview', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': page.props.csrf, 'X-Requested-With': 'XMLHttpRequest' },
-            body: JSON.stringify(choicePayload(form.data())),
-        });
-        const data = await response.json().catch(() => ({ problem: "The preview couldn't be loaded." }));
-        if (id === request) resolved.value = response.ok ? data : { problem: data.problem ?? data.message };
-    } finally {
-        if (id === request) resolving.value = false;
-    }
+    const key = payloadKey.value;
+    const response = await fetch('/projects/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': page.props.csrf, 'X-Requested-With': 'XMLHttpRequest' },
+        body: key,
+    }).catch(() => null);
+    const data = await response?.json().catch(() => null);
+    if (id !== request) return;
+    resolved.value = response?.ok ? data : { problem: data?.problem ?? data?.message ?? "The preview couldn't be loaded." };
+    resolvedFor.value = key;
 };
-watch(() => JSON.stringify(choicePayload(form.data())), () => {
+watch(payloadKey, () => {
     clearTimeout(timer);
-    timer = setTimeout(resolve, 150);
+    timer = setTimeout(resolve, 250);
 }, { immediate: true });
+// A result for other choices than the form's is never shown, so nothing stale contradicts the form
+const current = computed(() => (resolvedFor.value === payloadKey.value ? resolved.value : null));
+// For a blueprint as it is, the result for that blueprint, even while a new name resolves
+const shownFor = (b) => (current.value && b.id === form.blueprint_id ? current.value : null);
 
 // Changing pieces starts from the resolved result, so the switches show what the project would get
+const pieces = () => JSON.stringify([form.structure, form.tools, form.package_sets, form.skill_sets, form.skills, form.settings, form.agents]);
+const untouched = ref(null);
 const startFrom = (r) => {
     if (!r || r.problem) return;
     form.structure = r.structure;
@@ -95,13 +110,29 @@ const startFrom = (r) => {
     form.package_sets = r.package_sets.map((s) => s.key);
     form.skill_sets = r.skill_sets.map((s) => s.key);
     form.skills = [...r.skills];
-    form.settings = { ...r.settings };
+    form.settings = { sensitive: r.settings.sensitive, git: r.settings.git };
+    form.agents = toChoices(r.agents.enabled, r.agents.named, r.agents.other);
+    untouched.value = pieces();
 };
 const customize = () => {
-    startFrom(resolved.value);
+    startFrom(current.value);
     form.customized = true;
 };
-watch(blueprint, () => { form.customized = false; });
+// Edits to the pieces, which switching blueprints would discard
+const edited = computed(() => form.customized && untouched.value !== null && pieces() !== untouched.value);
+const pendingBlueprint = ref(null);
+const confirming = computed({ get: () => pendingBlueprint.value !== null, set: (open) => { if (!open) pendingBlueprint.value = null; } });
+const useBlueprint = (id) => {
+    form.blueprint_id = id;
+    form.customized = false;
+    untouched.value = null;
+    pendingBlueprint.value = null;
+};
+const chooseBlueprint = (id) => {
+    if (id === form.blueprint_id) return;
+    if (edited.value) pendingBlueprint.value = id;
+    else useBlueprint(id);
+};
 // Tools the workflow or blueprint needs, and why
 const requiredTools = computed(() => Object.fromEntries(Object.entries(resolved.value?.tools ?? {}).filter(([, t]) => t.required).map(([key, t]) => [key, t.required])));
 const structurePiece = computed(() => props.catalog.structures.find((s) => s.key === form.structure));
@@ -134,8 +165,6 @@ const create = () => form
 
 const githubError = computed(() => page.props.errors.github ?? form.errors['github.enabled']);
 
-const serverArg = useServerArg();
-const serverFlag = useServerFlag();
 
 const items = computed(() => [
     { label: 'Blueprint', anchor: 'blueprint' },
@@ -168,7 +197,7 @@ const items = computed(() => [
                             <button
                                 type="button" class="flex w-full items-start gap-3 p-4 text-left"
                                 :aria-expanded="b.id === form.blueprint_id"
-                                @click="form.blueprint_id = b.id"
+                                @click="chooseBlueprint(b.id)"
                             >
                                 <span
                                     class="mt-1 flex size-4 shrink-0 items-center justify-center rounded-full border"
@@ -181,10 +210,6 @@ const items = computed(() => [
                                             v-if="b.sensitive"
                                             class="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800 dark:bg-amber-900/40 dark:text-amber-200"
                                         >Sensitive data</span>
-                                        <span
-                                            v-for="facet in b.facets" :key="facet"
-                                            class="rounded bg-sky-50 px-1.5 py-0.5 text-xs text-sky-800 dark:bg-sky-950/50 dark:text-sky-300"
-                                        >+ {{ facet }}</span>
                                     </span>
                                     <span v-if="b.description" class="text-sm text-slate-600 dark:text-slate-400">{{ b.description }}</span>
                                 </span>
@@ -195,26 +220,26 @@ const items = computed(() => [
                             </button>
                             <div v-if="b.id === form.blueprint_id" class="flex flex-col gap-2 px-4 pb-4 pl-11 text-sm">
                                 <!-- What the project gets: the blueprint with your defaults, or the pieces chosen below -->
-                                <p v-if="resolved?.problem" class="text-amber-800 dark:text-amber-300">{{ resolved.problem }}</p>
-                                <dl v-else-if="resolved" class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1 text-slate-600 dark:text-slate-400" :class="resolving ? 'opacity-60' : ''">
-                                    <dt class="text-xs text-slate-500">Structure</dt><dd>{{ pieceName('structures', resolved.structure) }}</dd>
-                                    <template v-if="resolved.workflow"><dt class="text-xs text-slate-500">Workflow</dt><dd>{{ resolved.workflow.name }}</dd></template>
-                                    <template v-if="Object.values(resolved.tools).some((t) => t.on)">
-                                        <dt class="text-xs text-slate-500">Tools</dt>
-                                        <dd>{{ Object.entries(resolved.tools).filter(([, t]) => t.on).map(([k]) => pieceName('tools', k)).join(', ') }}</dd>
-                                    </template>
-                                    <template v-if="resolved.package_sets.length">
+                                <p v-if="!shownFor(b)" class="text-slate-500">Resolving…</p>
+                                <p v-else-if="shownFor(b).problem" class="text-amber-800 dark:text-amber-300">{{ shownFor(b).problem }}</p>
+                                <dl v-else class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1 text-slate-600 dark:text-slate-400">
+                                    <dt class="text-xs text-slate-500">Structure</dt><dd>{{ pieceName('structures', shownFor(b).structure) }}</dd>
+                                    <template v-if="shownFor(b).workflow"><dt class="text-xs text-slate-500">Workflow</dt><dd>{{ shownFor(b).workflow.name }}</dd></template>
+                                    <dt class="text-xs text-slate-500">Tools</dt>
+                                    <dd>{{ Object.entries(shownFor(b).tools).filter(([, t]) => t.on).map(([k]) => pieceName('tools', k)).join(', ') || 'None' }}</dd>
+                                    <template v-if="shownFor(b).package_sets.length">
                                         <dt class="text-xs text-slate-500">Packages</dt>
-                                        <dd><template v-for="(s, i) in resolved.package_sets" :key="s.key">{{ i ? ', ' : '' }}{{ s.name }}<span v-if="s.from === 'yours'" class="text-xs text-slate-500"> (your default)</span></template></dd>
+                                        <dd><template v-for="(s, i) in shownFor(b).package_sets" :key="s.key">{{ i ? ', ' : '' }}{{ s.name }}<span v-if="s.from === 'yours'" class="text-xs text-slate-500"> (your default)</span></template></dd>
                                     </template>
-                                    <template v-if="resolved.skill_sets.length">
+                                    <dt class="text-xs text-slate-500">Agents</dt><dd>{{ agentSummary(shownFor(b).agents.enabled, shownFor(b).agents.named, shownFor(b).agents.other) }}</dd>
+                                    <template v-if="shownFor(b).agents.enabled && shownFor(b).skill_sets.length">
                                         <dt class="text-xs text-slate-500">Skills</dt>
-                                        <dd><template v-for="(s, i) in resolved.skill_sets" :key="s.key">{{ i ? ', ' : '' }}{{ s.name }}<span v-if="s.from === 'yours'" class="text-xs text-slate-500"> (your default)</span></template></dd>
+                                        <dd><template v-for="(s, i) in shownFor(b).skill_sets" :key="s.key">{{ i ? ', ' : '' }}{{ s.name }}<span v-if="s.from === 'yours'" class="text-xs text-slate-500"> (your default)</span></template></dd>
                                     </template>
-                                    <template v-for="n in resolved.notices" :key="n"><dt class="sr-only">Note</dt><dd class="col-span-2 text-xs text-amber-800 dark:text-amber-300">{{ n }}</dd></template>
+                                    <template v-for="n in shownFor(b).notices" :key="n"><dt class="sr-only">Note</dt><dd class="col-span-2 text-xs text-amber-800 dark:text-amber-300">{{ n }}</dd></template>
                                 </dl>
                                 <div class="flex items-center gap-3">
-                                    <UiButton v-if="!form.customized" size="sm" variant="outline" :disabled="!resolved || !!resolved.problem" @click="customize">Change pieces</UiButton>
+                                    <UiButton v-if="!form.customized" size="sm" variant="outline" :disabled="!shownFor(b) || !!shownFor(b).problem" @click="customize">Change pieces</UiButton>
                                     <UiButton v-else size="sm" variant="ghost" @click="form.customized = false">Use the blueprint as is</UiButton>
                                     <Link :href="`/blueprints/${b.id}`" class="font-mono text-xs text-slate-500 hover:underline">{{ b.handle }} v{{ b.version }}</Link>
                                 </div>
@@ -224,7 +249,21 @@ const items = computed(() => [
                 </div>
             </UiPanel>
 
-            <ChoicesEditor v-if="form.customized" :form="form" :catalog="catalog" :languages="[form.language]" :required="requiredTools" />
+            <ChoicesEditor v-if="form.customized" :form="form" :catalog="catalog" :languages="[form.language]" :required="requiredTools" agent-picker>
+                <!-- The files and folders this project gets, as the pieces stand -->
+                <template #structure-preview>
+                    <div class="flex flex-col gap-3 rounded-md bg-white p-3 dark:bg-slate-900" :class="current ? '' : 'opacity-60'">
+                        <ProjectTreeView v-if="(current ?? resolved)?.tree" :entries="(current ?? resolved).tree" />
+                        <div v-if="(current ?? resolved)?.render_dirs?.length" class="text-xs text-slate-600 dark:text-slate-400">
+                            <div class="font-medium text-slate-900 dark:text-white">Rendered documents go to</div>
+                            <ul class="mt-1 font-mono">
+                                <li v-for="d in (current ?? resolved).render_dirs" :key="d.from">{{ d.from }}/ → {{ d.to }}/</li>
+                            </ul>
+                        </div>
+                        <p v-if="(current ?? resolved)?.settings.sensitive" class="text-xs text-amber-800 dark:text-amber-300">Sensitive data: private folders stay out of Git, and Framework warns before anything private is uploaded or published.</p>
+                    </div>
+                </template>
+            </ChoicesEditor>
 
             <UiPanel id="name" title="Name" class="scroll-mt-6">
                 <div>
@@ -327,25 +366,21 @@ const items = computed(() => [
                     </Link>
                 </div>
 
-                <div class="flex flex-col gap-1.5 border-t border-slate-200 pt-3 text-xs dark:border-slate-700">
-                    <div class="font-medium text-slate-900 dark:text-white">Next</div>
-                    <ol v-if="onGitHub" class="list-decimal space-y-1 pl-4 text-slate-600 dark:text-slate-400">
-                        <li>Framework Cloud creates <span class="break-all font-mono">{{ form.github.owner ?? 'owner' }}/{{ repoName || 'repository' }}</span>.</li>
-                        <li>A one-time GitHub Action builds the project files.</li>
-                        <li>You clone it and start working.</li>
-                    </ol>
-                    <ol v-else-if="stata" class="list-decimal space-y-1 pl-4 text-slate-600 dark:text-slate-400">
-                        <li>In a terminal, run <code class="break-words font-mono">fw login{{ serverFlag }}</code> once.</li>
-                        <li>Run <code class="break-words font-mono">fw new --from {{ slug || '&lt;project-name&gt;' }}{{ serverFlag }}</code>.</li>
-                    </ol>
-                    <ol v-else class="list-decimal space-y-1 pl-4 text-slate-600 dark:text-slate-400">
-                        <li>You get a project token. Copy it.</li>
-                        <li v-if="form.language === 'python'">In Python, run <code class="break-words font-mono">framework.new(key="&lt;token&gt;")</code>.</li>
-                        <li v-else>In R, run <code class="break-words font-mono">framework::setup("&lt;token&gt;"{{ serverArg }})</code>.</li>
-                    </ol>
-                </div>
+                <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 border-t border-slate-200 pt-3 text-xs text-slate-600 dark:border-slate-700 dark:text-slate-400">
+                    <dt class="text-slate-500">Language</dt><dd>{{ languages.find((l) => l.value === form.language)?.label ?? form.language }}</dd>
+                    <template v-if="current?.workflow"><dt class="text-slate-500">Workflow</dt><dd>{{ current.workflow.name }}</dd></template>
+                    <dt class="text-slate-500">Pieces</dt><dd>{{ form.customized ? 'Changed for this project' : 'As the blueprint has them' }}</dd>
+                    <dt class="text-slate-500">Set up</dt><dd>{{ onGitHub ? 'On GitHub' : 'On your computer' }}</dd>
+                </dl>
             </div>
         </template>
 
+        <UiModal v-model="confirming" title="Switch blueprint?">
+            <p class="text-sm text-slate-600 dark:text-slate-400">You changed this project's pieces. Switching to {{ blueprints.find((b) => b.id === pendingBlueprint)?.name }} starts from that blueprint and discards those changes. The name, description, and where it's set up stay.</p>
+            <div class="flex justify-end gap-3">
+                <UiButton variant="outline" @click="confirming = false">Keep editing</UiButton>
+                <UiButton @click="useBlueprint(pendingBlueprint)">Switch blueprint</UiButton>
+            </div>
+        </UiModal>
     </SectionLayout>
 </template>

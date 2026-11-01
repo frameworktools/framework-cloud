@@ -37,7 +37,7 @@ const workflowsFor = (b) => b.workflows.filter((w) => props.language !== 'stata'
 // What the server resolves the previews from: every default that changes a new project
 const values = computed(() => {
     const d = props.defaults;
-    return { ide: d.ide, packages: d.packages, skill_sets: d.skill_sets, tools: d.tools, use_renv: d.use_renv, use_git: d.use_git, ai_enabled: d.ai_enabled, ai_agents: d.ai_agents, hooks: d.hooks, workflows: d.workflows, rmarkdown: d.rmarkdown, quarto: d.quarto, scaffold: d.scaffold };
+    return { ide: d.ide, packages: d.packages, skill_sets: d.skill_sets, tools: d.tools, use_renv: d.use_renv, use_git: d.use_git, ai_enabled: d.ai_enabled, ai_agents: d.ai_agents, ai_other: d.ai_other, hooks: d.hooks, workflows: d.workflows, rmarkdown: d.rmarkdown, quarto: d.quarto, scaffold: d.scaffold };
 });
 </script>
 

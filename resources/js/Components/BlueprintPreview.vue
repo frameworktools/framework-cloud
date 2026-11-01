@@ -2,6 +2,8 @@
 import { onBeforeUnmount, ref, watch } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import { ChevronRightIcon } from '@heroicons/vue/20/solid';
+import ProjectTreeView from '@/Components/ProjectTreeView.vue';
+import { agentSummary } from '@/agents.js';
 
 /**
  * What a blueprint creates as someone's default, for one language: the
@@ -44,40 +46,6 @@ watch([() => props.blueprint.key, () => props.language, () => JSON.stringify(pro
 }, { immediate: true });
 onBeforeUnmount(() => clearTimeout(timer));
 
-// The folder tree with connectors, from the preview's flat entries
-const treeLines = (entries) => {
-    const root = { children: new Map() };
-    for (const entry of entries) {
-        let node = root;
-        const parts = entry.path.split('/');
-        parts.forEach((part, i) => {
-            if (!node.children.has(part)) node.children.set(part, { name: part, dir: true, children: new Map() });
-            node = node.children.get(part);
-            if (i === parts.length - 1) Object.assign(node, { dir: entry.type === 'dir', note: entry.note, when: entry.when, later: entry.later });
-        });
-    }
-    const lines = [];
-    const sorted = (node) => [...node.children.values()].sort((a, b) => (a.dir === b.dir ? a.name.localeCompare(b.name) : a.dir ? -1 : 1));
-    const walk = (node, prefix) => {
-        const kids = sorted(node);
-        kids.forEach((child, i) => {
-            const last = i === kids.length - 1;
-            // What a name doesn't say goes in its tooltip
-            const title = [child.note && child.note[0].toUpperCase() + child.note.slice(1), child.when && `Only ${child.when}`, child.later && 'Made when first used or rendered'].filter(Boolean).join('. ') || undefined;
-            lines.push({ prefix: prefix + (last ? '└── ' : '├── '), name: child.name + (child.dir ? '/' : ''), dir: child.dir, later: !!child.later, title });
-            walk(child, prefix + (last ? '    ' : '│   '));
-        });
-    };
-    // A folder holding only later folders is itself made later
-    const mark = (node) => {
-        node.children.forEach(mark);
-        if (node.children.size && [...node.children.values()].every((c) => c.later)) node.later = true;
-    };
-    root.children.forEach(mark);
-    walk(root, '');
-    return lines;
-};
-
 const hookNames = { data_security: 'Check for secrets', check_sensitive_dirs: 'Check private folders', check_notebook_outputs: 'Check notebook outputs' };
 const label = 'text-xs font-semibold uppercase tracking-wider text-slate-500';
 const link = 'text-sky-600 hover:underline dark:text-sky-400';
@@ -87,10 +55,7 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
     <div v-if="treeOnly" :class="loading ? 'opacity-60' : ''">
         <div v-if="!preview" class="text-sm text-slate-500">Loading…</div>
         <p v-else-if="!preview.available" class="text-sm text-slate-600 dark:text-slate-400">{{ preview.problem }}</p>
-        <div v-else class="overflow-x-auto">
-            <div class="whitespace-pre font-mono text-xs leading-[1.2] text-slate-800 dark:text-slate-200"><div>project-dir/</div><div v-for="(line, i) in treeLines(preview.tree)" :key="i"><span class="text-slate-400 dark:text-slate-600">{{ line.prefix }}</span><span :class="[line.dir ? 'font-medium' : '', line.later ? 'text-slate-400 dark:text-slate-500' : '']" :title="line.title">{{ line.name }}</span></div></div>
-            <p v-if="preview.tree.some((e) => e.later)" class="mt-2 text-xs text-slate-500">Lighter folders are made when they're first used or rendered.</p>
-        </div>
+        <ProjectTreeView v-else :entries="preview.tree" />
     </div>
     <div v-else class="grid gap-x-8 gap-y-5 border-t border-slate-200 pt-4 xl:grid-cols-[minmax(0,1fr)_16rem] dark:border-slate-800">
         <!-- What the resolver set aside, such as a workflow the blueprint doesn't support -->
@@ -103,11 +68,7 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
             <div :class="label" class="mb-2">Project structure</div>
             <div v-if="!preview" class="text-sm text-slate-500">Loading…</div>
             <p v-else-if="!preview.available" class="text-sm text-slate-600 dark:text-slate-400">{{ preview.problem }}</p>
-            <div v-else class="overflow-x-auto" :class="loading ? 'opacity-60' : ''">
-                <!-- Line height just over the font size keeps the connectors joined -->
-                <div class="whitespace-pre font-mono text-xs leading-[1.2] text-slate-800 dark:text-slate-200"><div>project-dir/</div><div v-for="(line, i) in treeLines(preview.tree)" :key="i"><span class="text-slate-400 dark:text-slate-600">{{ line.prefix }}</span><span :class="[line.dir ? 'font-medium' : '', line.later ? 'text-slate-400 dark:text-slate-500' : '']" :title="line.title">{{ line.name }}</span></div></div>
-                <p v-if="preview.tree.some((e) => e.later)" class="mt-2 text-xs text-slate-500">Lighter folders are made when they're first used or rendered.</p>
-            </div>
+            <ProjectTreeView v-else :entries="preview.tree" :class="loading ? 'opacity-60' : ''" />
         </div>
 
         <!-- What else it gets, most important first -->
@@ -125,7 +86,7 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
 
             <section>
                 <div :class="label">AI agents</div>
-                <div class="mt-1">{{ preview.agents ? (preview.agent_names.join(', ') || 'On, no agent chosen') : 'Off' }} <span v-if="preview.settings.agents.from === 'defaults'" class="text-xs text-slate-500" title="From your Project defaults">· your default</span></div>
+                <div class="mt-1">{{ agentSummary(preview.agents, preview.agent_keys, preview.agent_other) }} <span v-if="preview.settings.agents.from === 'defaults'" class="text-xs text-slate-500" title="From your Project defaults">· your default</span></div>
             </section>
 
             <!-- Each skill on its own line, under the set it comes from -->

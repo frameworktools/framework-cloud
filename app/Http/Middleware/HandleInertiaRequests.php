@@ -59,6 +59,8 @@ class HandleInertiaRequests extends Middleware
             // Signing out would sign straight back in, so the app hides it
             'singleUser' => SingleUserMode::appliesTo($request),
             'appUrl' => rtrim(config('app.url'), '/'),
+            // What setup commands name: the configured client-facing address
+            'clientUrl' => config('framework.client_url'),
             'csrf' => $request->session()->token(),
         ];
     }

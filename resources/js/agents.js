@@ -35,3 +35,10 @@ export const agentOptions = [
     { value: 'other', label: 'Other agents', description: 'Any other agent that reads AGENTS.md.' },
     { value: 'none', label: 'None', description: 'No agent files or skills.' },
 ];
+
+/** One label for what a project or default gets, used by every summary. */
+export const agentSummary = (enabled, named, other) => {
+    if (!enabled) return 'None';
+    const names = named.filter((a) => NAMED.includes(a)).map((a) => agentNames[a]);
+    return [...names, ...(other || !names.length ? ['Other agents'] : [])].join(', ');
+};

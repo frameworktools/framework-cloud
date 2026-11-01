@@ -6,7 +6,7 @@ import BlueprintPreview from '@/Components/BlueprintPreview.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiCheckboxCards from '@/Components/UiCheckboxCards.vue';
 import UiRadioCards from '@/Components/UiRadioCards.vue';
-import { agentNames, agentOptions, fromChoices, pick, toChoices } from '@/agents.js';
+import { agentOptions, agentSummary, fromChoices, pick, toChoices } from '@/agents.js';
 
 /**
  * Guided setup: six questions, then a review. The answers are a draft until
@@ -176,7 +176,10 @@ const describe = {
     workflow: (a) => workflowNames[a.workflows[a.language]],
     editors: (a) => a.editors.map((e) => editorOptions.find((o) => o.value === e)?.label).join(', ') || 'None',
     git: (a) => (a.git ? 'Yes' : 'No'),
-    agents: (a) => a.agents.map((x) => agentNames[x]).join(', '),
+    agents: (a) => {
+        const { enabled, agents: named, other } = fromChoices(a.agents);
+        return agentSummary(enabled, named, other);
+    },
 };
 const review = computed(() => [
     { key: 'language', label: 'Language' },

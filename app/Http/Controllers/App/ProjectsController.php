@@ -184,7 +184,11 @@ class ProjectsController extends Controller
             'settings' => ['nullable', 'array'],
             'settings.sensitive' => ['boolean'],
             'settings.git' => ['boolean'],
-            'settings.ai' => ['boolean'],
+            // On or off, or the project's own agents: {enabled, assistants: {claude: bool, ...}}
+            'settings.ai' => ['nullable'],
+            'settings.ai.enabled' => ['sometimes', 'boolean'],
+            'settings.ai.assistants' => ['sometimes', 'array'],
+            'settings.ai.assistants.*' => ['boolean'],
             'github' => ['nullable', 'array'],
             'github.enabled' => ['boolean'],
             'github.owner' => ['required_if_accepted:github.enabled', 'nullable', 'string', 'max:100'],
@@ -220,8 +224,8 @@ class ProjectsController extends Controller
             return to_route('projects.show', $project->slug);
         }
 
-        // Set up locally: hand over the token now, since that is the next step
-        return to_route('projects.show', $project->slug)->with([
+        // Set up locally: hand over the token now, on the page that explains it
+        return to_route('projects.section', [$project->slug, 'computers'])->with([
             'token' => $project->issuePullToken(),
             'token_language' => $project->language,
             'status' => 'project-token',
@@ -238,6 +242,7 @@ class ProjectsController extends Controller
     {
         $validated = $request->validate([
             'blueprint_id' => ['required', 'integer'],
+            'name' => ['nullable', 'string', 'max:100'],
             'language' => ['nullable', Rule::in(Project::LANGUAGES)],
             'customized' => ['boolean'],
             'structure' => ['nullable', 'string', 'max:200'],
@@ -250,12 +255,14 @@ class ProjectsController extends Controller
             'skills' => ['nullable', 'array'],
             'skills.*' => ['string', 'max:200'],
             'settings' => ['nullable', 'array'],
+            'settings.ai' => ['nullable'],
+            'settings.ai.assistants' => ['sometimes', 'array'],
         ]);
         $blueprint = Blueprint::with('owner', 'latestVersion.facetVersions.facet')->find($validated['blueprint_id']);
         abort_unless($blueprint?->isVisibleTo($request->user()) && $blueprint->latestVersion, 404);
 
         try {
-            $resolved = (new Resolver($request->user()))->resolve(self::choicesFrom(['name' => 'Preview'] + $validated, $blueprint));
+            $resolved = (new Resolver($request->user()))->resolve(self::choicesFrom(['name' => filled($validated['name'] ?? null) ? $validated['name'] : 'project'] + $validated, $blueprint));
         } catch (ValidationException $e) {
             return response()->json(['problem' => collect($e->errors())->flatten()->first()], 422);
         }
