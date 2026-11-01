@@ -6,7 +6,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 
 /**
  * The Framework GUI's three-column page: the app sidebar, a section sidebar
- * with the page's main button at its foot, and the main panel.
+ * with the page's main button under its menu, and the main panel.
  *
  * Items either link to other pages ({ label, href }) or to sections of this
  * page ({ label, anchor }). Items have no icons; an item that opens and
@@ -77,7 +77,7 @@ const itemClass = (item) => [
     <AppLayout bleed>
         <div class="flex min-h-screen max-lg:flex-col">
             <aside class="shrink-0 border-slate-200 lg:border-r dark:border-slate-800 max-lg:border-b" :class="narrow ? 'lg:w-60' : 'lg:w-64'">
-                <!-- On wide screens the column fills the window: the menu scrolls on its own, and the actions sit in a footer at the bottom -->
+                <!-- On wide screens the column fills the window and stays put: the menu scrolls on its own, with the actions under it -->
                 <div class="flex flex-col lg:sticky lg:top-0 lg:h-screen">
                     <div class="flex min-h-0 flex-1 flex-col gap-4 p-6 lg:overflow-y-auto [&>*]:shrink-0" :class="narrow ? 'lg:px-8' : ''">
                         <slot name="top" />
@@ -113,9 +113,10 @@ const itemClass = (item) => [
                             <slot name="aside" />
                         </div>
 
-                    </div>
-                    <div v-if="$slots.actions" class="flex shrink-0 flex-col gap-2 border-t border-slate-200 px-6 py-4 dark:border-slate-800 max-lg:hidden" :class="narrow ? 'lg:px-8' : ''">
-                        <slot name="actions" />
+                        <!-- The page's main button sits right under the menu, and sticks to the column's foot when the menu is longer than the window -->
+                        <div v-if="$slots.actions" class="sticky bottom-0 -mb-6 flex flex-col gap-2 bg-white pb-6 pt-2 max-lg:hidden dark:bg-slate-950">
+                            <slot name="actions" />
+                        </div>
                     </div>
                 </div>
             </aside>
