@@ -46,11 +46,12 @@ class ProjectDefaults
 
     /**
      * The coding agents Framework sets projects up for, as R, Python, and fw
-     * name them, and the one an account that never chose gets, as in R.
+     * name them. An account that never chose has none: the project still gets
+     * AGENTS.md, and skills go to .agents/skills.
      */
     public const AGENTS = ['claude', 'codex', 'copilot'];
 
-    public const AGENTS_DEFAULT = ['claude'];
+    public const AGENTS_DEFAULT = [];
 
     public const AGENT_NAMES = ['claude' => 'Claude Code', 'codex' => 'Codex', 'copilot' => 'GitHub Copilot'];
 
@@ -105,7 +106,7 @@ class ProjectDefaults
     }
 
     /**
-     * The agents a person uses, in AGENTS order. Never saved means R's default.
+     * The agents a person uses, in AGENTS order. Never saved means none.
      *
      * @return list<string>
      */

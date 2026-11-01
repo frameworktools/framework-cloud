@@ -282,7 +282,7 @@ class SettingsAndAdminTest extends TestCase
     {
         $user = User::factory()->create(['email_verified_at' => now()]);
         $this->actingAs($user)->get('/settings/agents')
-            ->assertInertia(fn (Assert $page) => $page->where('values.ai_agents', ['claude'])->where('values.ai_canonical_file', 'AGENTS.md'));
+            ->assertInertia(fn (Assert $page) => $page->where('values.ai_agents', [])->where('values.ai_canonical_file', 'AGENTS.md'));
 
         $base = ['project_type' => 'project', 'notebook_format' => 'quarto', 'ide' => 'vscode'];
         $this->actingAs($user)->patch('/settings', $base + ['ai_agents' => ['copilot', 'codex'], 'ai_canonical_file' => 'AGENTS.md'])->assertSessionHasNoErrors();

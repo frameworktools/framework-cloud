@@ -138,7 +138,7 @@ class ProjectLanguageTest extends TestCase
         $this->assertSame([
             'language' => 'r',
             'scaffold' => ['ide' => 'positron'] + ProjectDefaults::SCAFFOLD,
-            'ai' => ['assistants' => ['claude' => true, 'codex' => false, 'copilot' => false]],
+            'ai' => ['assistants' => ['claude' => false, 'codex' => false, 'copilot' => false]],
         ], end(ProjectLayers::for($project->fresh())['layers'])['layer']);
     }
 }
