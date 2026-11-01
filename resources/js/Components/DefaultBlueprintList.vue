@@ -96,7 +96,7 @@ const treeLines = (entries) => {
 };
 
 const hookNames = { data_security: 'Check for secrets', check_sensitive_dirs: 'Check private folders' };
-const label = 'text-[11px] font-semibold uppercase tracking-wider text-slate-500';
+const label = 'text-xs font-semibold uppercase tracking-wider text-slate-500';
 const link = 'text-sky-600 hover:underline dark:text-sky-400';
 </script>
 
@@ -126,11 +126,11 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
                 </div>
 
                 <div v-if="open.has(b.key)" :id="`blueprint-${b.key}`" class="px-4 pb-4 sm:pl-11">
-                    <div class="grid gap-x-8 gap-y-5 rounded-md border border-slate-200 bg-white p-4 xl:grid-cols-[minmax(0,1fr)_15rem] dark:border-slate-800 dark:bg-slate-950">
+                    <div class="grid gap-x-8 gap-y-5 border-t border-slate-200 pt-4 xl:grid-cols-[minmax(0,1fr)_16rem] dark:border-slate-800">
                         <!-- The project's folders and files -->
                         <div class="min-w-0">
-                            <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
-                                <div :class="label">New project</div>
+                            <div class="mb-2 flex flex-wrap items-center gap-3">
+                                <div :class="label">Project structure</div>
                                 <div class="flex rounded-md border border-slate-300 bg-white p-0.5 text-xs dark:border-slate-700 dark:bg-slate-950" role="group" :aria-label="`Preview language for ${b.name}`">
                                     <button
                                         v-for="lang in ['r', 'python', 'stata']" :key="lang" type="button"
@@ -152,7 +152,7 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
                         </div>
 
                         <!-- What else it gets, most important first -->
-                        <div v-if="previews[b.key]?.available" class="flex min-w-0 flex-col gap-4 text-sm text-slate-700 dark:text-slate-300" :class="loading[b.key] ? 'opacity-60' : ''">
+                        <div v-if="previews[b.key]?.available" class="flex min-w-0 flex-col gap-4 text-sm text-slate-700 xl:border-l xl:border-slate-200 xl:pl-8 dark:text-slate-300 xl:dark:border-slate-800" :class="loading[b.key] ? 'opacity-60' : ''">
                             <section>
                                 <div :class="label">Packages</div>
                                 <ul class="mt-1 flex flex-col gap-1">
