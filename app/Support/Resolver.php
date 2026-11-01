@@ -368,7 +368,13 @@ class Resolver
         foreach ($choices['skills'] ?? [] as $handle) {
             $skill = Skill::visibleTo($this->user)->with('owner', 'latestVersion')->get()->firstWhere('handle', $handle)
                 ?? throw ValidationException::withMessages(['skills' => "There is no skill {$handle}."]);
-            $layer['skills'][$skill->key] = $skill->layerEntry();
+            // A skill for another language is left out, as sets are
+            if (! $skill->fits($this->language)) {
+                $this->notices[] = "{$skill->name} is for ".implode(' and ', array_map(fn ($l) => Project::LANGUAGE_NAMES[$l] ?? $l, $skill->language)).', so this '.Project::LANGUAGE_NAMES[$this->language].' project leaves it out.';
+
+                continue;
+            }
+            $layer['skills'][$skill->key] = $skill->layerEntry($this->language);
         }
 
         if (filled($format = $choices['notebook_format'] ?? null)) {

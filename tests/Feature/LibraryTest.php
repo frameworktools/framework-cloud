@@ -435,7 +435,7 @@ class LibraryTest extends TestCase
             ->component('Blueprints/Builder')->has('catalog.structures', 5)->has('catalog.tools', 7)->has('catalog.skill_sets', 2));
         $this->actingAs($user)->get('/structures')->assertInertia(fn (Assert $page) => $page->component('Pieces/Structures')->has('structures', 5));
         $this->actingAs($user)->get('/package-sets')->assertInertia(fn (Assert $page) => $page->component('Pieces/PackageSets')->has('sets', 1));
-        $this->actingAs($user)->get('/skill-sets')->assertInertia(fn (Assert $page) => $page->component('Pieces/Index')->has('pieces', 2));
+        $this->actingAs($user)->get('/skill-sets')->assertInertia(fn (Assert $page) => $page->component('Pieces/SkillSets')->has('sets', 2));
         $this->actingAs($user)->get('/structures/create')->assertInertia(fn (Assert $page) => $page
             ->component('Pieces/Edit')->where('kind', 'structure')->where('values.settings_yaml', "type: project\n"));
         $this->actingAs($user)->get('/facets')->assertRedirect('/structures');
@@ -444,7 +444,7 @@ class LibraryTest extends TestCase
         $system = $this->system(Blueprint::class, 'project_sensitive');
         $this->actingAs($user)->get("/blueprints/{$system->id}")->assertInertia(fn (Assert $page) => $page
             ->component('Blueprints/Show')->where('version.base.handle', 'framework/project_sensitive'));
-        $this->actingAs($user)->get("/skills/{$this->system(Skill::class, 'framework-data')->id}/edit")->assertOk();
+        $this->actingAs($user)->get("/skills/{$this->system(Skill::class, 'framework-data')->id}")->assertOk();
     }
 
     public function test_sensitive_layers_say_what_assistants_are_kept_from(): void

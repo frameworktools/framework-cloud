@@ -140,7 +140,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('blueprints/{blueprint}/preview', [BlueprintsController::class, 'previewBlueprint'])->middleware('throttle:120,1')->name('blueprints.preview-one');
     Route::post('blueprints/{blueprint}/default', [BlueprintsController::class, 'makeDefault'])->name('blueprints.default');
     Route::resource('blueprints', BlueprintsController::class);
-    Route::resource('skills', SkillsController::class)->except('show');
+    Route::resource('skills', SkillsController::class);
 
     Route::get('tokens', [TokensController::class, 'index'])->name('tokens');
     Route::post('tokens', [TokensController::class, 'store']);

@@ -1,0 +1,26 @@
+{
+    "repository": "framework-py",
+    "commit": "a73fa25c409c91e9aa9a38718088e40b711295a2",
+    "files": {
+        "framework-data.md": {
+            "source": "src/framework/templates/skills/framework-data/SKILL.md",
+            "sha256": "8ddcbd6f43a011612fc928014c457012bea16921d8a91802451693f5777dceca"
+        },
+        "framework-outputs.md": {
+            "source": "src/framework/templates/skills/framework-outputs/SKILL.md",
+            "sha256": "e62a569bc1814e673448befd23d1d0f1ecda89ba64d73c2e1c96dda7d65ae537"
+        },
+        "framework-packages.md": {
+            "source": "src/framework/templates/skills/framework-packages/SKILL.md",
+            "sha256": "85179875db4c4caf5dcea2e218ead2c5b13c600e8e1626bf13cb6a6e44a03712"
+        },
+        "framework-sensitive-data.md": {
+            "source": "src/framework/templates/skills/framework-sensitive-data/SKILL.md",
+            "sha256": "d5089de39e36095d2c72dcd46845c2b4dc6497997c24cb99b3a854c249864cf7"
+        },
+        "framework-workflow.md": {
+            "source": "src/framework/templates/skills/framework-workflow/SKILL.md",
+            "sha256": "f9421cf35cc9acefb415f2a5b7640ae597e1d18cea6ea37304fb240695deff54"
+        }
+    }
+}

@@ -4,7 +4,10 @@ namespace App\Http\Controllers\App;
 
 use App\Http\Controllers\Controller;
 use App\Models\Skill;
+use App\Models\User;
+use App\Support\Docs\Markdown;
 use App\Support\Library;
+use App\Support\ProjectDefaults;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +26,41 @@ class SkillsController extends Controller
             'skills' => Skill::listedFor($user)->with(['owner', 'latestVersion'])
                 ->orderByRaw('user_id is not null')->orderBy('position')->orderBy('key')
                 ->get()->map(fn ($s) => Library::skill($s, $user)),
+            'language' => self::preferredLanguage($user),
+        ]);
+    }
+
+    /** The R or Python tab a catalog starts on: the saved language, R for Stata. */
+    public static function preferredLanguage(User $user): string
+    {
+        return (ProjectDefaults::for($user)['language'] ?? 'r') === 'python' ? 'python' : 'r';
+    }
+
+    /**
+     * GET /skills/{skill}?language=r: the whole skill, rendered, exactly as
+     * a project in that language gets it, with its source beside.
+     */
+    public function show(Request $request, Skill $skill): Response
+    {
+        $user = $request->user();
+        abort_unless($skill->isVisibleTo($user), 404);
+        $skill->load('owner', 'latestVersion');
+
+        $languages = $skill->language ?: ['r', 'python'];
+        $asked = $request->query('language');
+        $language = in_array($asked, $languages, true) ? $asked : (in_array(self::preferredLanguage($user), $languages, true) ? self::preferredLanguage($user) : $languages[0]);
+        $source = $skill->latestVersion->contentFor($language);
+        // Agents read the frontmatter; people read what follows it
+        $body = preg_replace('/\A---\R.*?\R---\R?/s', '', $source);
+
+        return Inertia::render('Skills/Show', [
+            'skill' => Library::skill($skill, $user),
+            'language' => $language,
+            // Languages with their own text, where the reader can switch
+            'variants' => $skill->language ? array_values(array_intersect($skill->language, ['r', 'python'])) : [],
+            'html' => Markdown::render($body)['html'],
+            'source' => $source,
+            'from' => in_array($request->query('from'), ['skills', 'skill-sets'], true) ? $request->query('from') : 'skills',
         ]);
     }
 
@@ -45,6 +83,7 @@ class SkillsController extends Controller
             'key' => $data['key'],
             'name' => $data['title'],
             'description' => $data['description'],
+            'language' => $data['language'],
             'visibility' => $data['visibility'],
         ]);
         $skill->publishVersion(['content' => $data['content'], 'files' => [], 'notes' => $data['notes']]);
@@ -52,10 +91,13 @@ class SkillsController extends Controller
         return to_route('skills.edit', $skill)->with('status', 'skill-saved');
     }
 
-    /** Anyone who can see a skill can read it; owners also get the editor. */
-    public function edit(Request $request, Skill $skill): Response
+    /** Owners get the editor; anyone else who can see a skill reads it. */
+    public function edit(Request $request, Skill $skill): Response|RedirectResponse
     {
         abort_unless($skill->isVisibleTo($request->user()), 404);
+        if (! $skill->isEditableBy($request->user())) {
+            return to_route('skills.show', $skill);
+        }
 
         return Inertia::render('Skills/Edit', [
             'skill' => Library::skill($skill->load('owner'), $request->user()) + [
@@ -72,8 +114,11 @@ class SkillsController extends Controller
         $data = $this->validated($request, $skill);
 
         DB::transaction(function () use ($skill, $data) {
-            $skill->update(['name' => $data['title'], 'description' => $data['description'], 'visibility' => $data['visibility']]);
-            $skill->publishVersion(['content' => $data['content'], 'files' => $skill->latestVersion->files ?? [], 'notes' => $data['notes']]);
+            // A skill with text per language keeps its languages and variants
+            $variants = $skill->latestVersion->variants;
+            $skill->update(['name' => $data['title'], 'description' => $data['description'], 'visibility' => $data['visibility']]
+                + ($variants ? [] : ['language' => $data['language']]));
+            $skill->publishVersion(['content' => $data['content'], 'variants' => $variants, 'files' => $skill->latestVersion->files ?? [], 'notes' => $data['notes']]);
         });
 
         return back()->with('status', 'skill-saved');
@@ -94,11 +139,13 @@ class SkillsController extends Controller
             'key' => $skill->key,
             'name' => $skill->name,
             'description' => $skill->description,
+            'language' => $skill->language,
             'visibility' => 'private',
             'forked_from_id' => $source->id,
         ]);
         $copy->publishVersion([
             'content' => $source->content,
+            'variants' => $source->variants,
             'files' => $source->files ?? [],
             'notes' => "Forked from {$skill->handle} v{$source->version}",
         ]);
@@ -126,6 +173,7 @@ class SkillsController extends Controller
         $data = $request->validate([
             'content' => ['required', 'string', 'max:65536'],
             'visibility' => ['required', Rule::in(Skill::VISIBILITIES)],
+            'language' => ['nullable', Rule::in(['r', 'python'])],
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
 
@@ -141,6 +189,7 @@ class SkillsController extends Controller
             'description' => $description,
             'content' => $data['content'],
             'visibility' => $data['visibility'],
+            'language' => filled($data['language'] ?? null) ? [$data['language']] : null,
             'notes' => $data['notes'] ?? null,
         ];
     }

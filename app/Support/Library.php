@@ -133,6 +133,10 @@ class Library
             'handle' => $skill->handle,
             'name' => $skill->name,
             'description' => $skill->description,
+            // Languages it's for; none means any
+            'language' => $skill->language,
+            // A language with its own text has its own description
+            'descriptions' => (object) $skill->descriptions(),
             'visibility' => $skill->visibility,
             'is_system' => $skill->isSystem(),
             'owner' => self::owner($skill),

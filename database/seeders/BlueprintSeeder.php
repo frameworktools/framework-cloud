@@ -90,23 +90,31 @@ class BlueprintSeeder extends Seeder
         return json_decode(File::get($path), true);
     }
 
+    /**
+     * Framework's skills: R's text from the framework R package, and for
+     * the ones framework-py ships too, Python's own text as a variant
+     * (masters/skills/python, copied at the commit in its lock.json). A
+     * skill is for the languages that have its text.
+     */
     private function seedSkills(string $dir): void
     {
         foreach (File::files($dir) as $position => $file) {
             $content = File::get($file->getPathname());
             $frontmatter = Skill::frontmatter($content, 'content');
+            $python = File::exists($path = "{$dir}/python/{$frontmatter['key']}.md") ? File::get($path) : null;
 
             $skill = Skill::updateOrCreate(
                 ['user_id' => null, 'key' => $frontmatter['key']],
                 [
                     'name' => $frontmatter['title'],
                     'description' => $frontmatter['description'],
+                    'language' => $python ? ['r', 'python'] : ['r'],
                     'visibility' => 'public',
                     'position' => $position,
                 ],
             );
 
-            $skill->publishVersion(['content' => $content, 'files' => []]);
+            $skill->publishVersion(['content' => $content, 'variants' => $python ? ['python' => $python] : null, 'files' => []]);
         }
     }
 

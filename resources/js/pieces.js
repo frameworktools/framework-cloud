@@ -16,7 +16,7 @@ export const pieceCopy = {
     skill_set: {
         title: 'Skill sets',
         noun: 'skill set',
-        description: 'A skill set groups skills that belong together, with the packages they need. Projects get them when agent setup is on.',
+        description: 'Skills that belong together, with the packages they need.',
         empty: "You haven't made a skill set yet.",
     },
 };

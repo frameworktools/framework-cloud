@@ -22,8 +22,15 @@ const readOnly = computed(() => props.skill && !props.skill.editable);
 const form = useForm({
     content: props.content,
     visibility: props.skill?.visibility ?? 'private',
+    // One language, or empty for any
+    language: props.skill?.language?.length === 1 ? props.skill.language[0] : '',
     notes: '',
 });
+const languageOptions = [
+    { value: '', label: 'Any language' },
+    { value: 'r', label: 'R only' },
+    { value: 'python', label: 'Python only' },
+];
 
 const canPublish = computed(() => !!props.skill && !!page.props.githubSignIn);
 const items = computed(() => [
@@ -62,6 +69,7 @@ const destroy = () => {
             </UiPanel>
 
             <UiPanel v-if="!readOnly" id="details" title="Details" class="scroll-mt-6">
+                <UiSelect v-if="!skill?.is_system && !(skill?.language?.length > 1)" v-model="form.language" label="Language" :options="languageOptions" :error="form.errors.language" />
                 <UiSelect v-model="form.visibility" label="Who can see it" :options="visibilityOptions" :error="form.errors.visibility" />
                 <UiInput v-if="skill" v-model="form.notes" label="What changed (optional)" :error="form.errors.notes" />
                 <p v-if="skill?.source_url" class="text-sm text-slate-500">

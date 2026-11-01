@@ -29,7 +29,31 @@ class Skill extends Model
 
     protected function versionContent(): array
     {
-        return ['content', 'files'];
+        return ['content', 'variants', 'files'];
+    }
+
+    protected function casts(): array
+    {
+        return ['language' => 'array'];
+    }
+
+    /**
+     * The description agents read for each language with its own text,
+     * from that text's frontmatter.
+     *
+     * @return array<string, string>
+     */
+    public function descriptions(): array
+    {
+        return collect($this->latestVersion?->variants ?? [])
+            ->map(fn (string $content) => rescue(fn () => self::frontmatter($content, 'content')['description'], null, false))
+            ->filter()->all();
+    }
+
+    /** Whether a project in this language can use the skill; none listed means any. */
+    public function fits(string $language): bool
+    {
+        return ! $this->language || in_array($language, $this->language, true);
     }
 
     /**
@@ -39,14 +63,14 @@ class Skill extends Model
      *
      * @return array<string, mixed>
      */
-    public function layerEntry(): array
+    public function layerEntry(?string $language = null): array
     {
         if ($this->isSystem()) {
             return ['package' => true];
         }
 
         $version = $this->latestVersion;
-        $entry = ['content' => $version->content];
+        $entry = ['content' => $version->contentFor($language)];
 
         if (! empty($version->files)) {
             $entry['files'] = $version->files;

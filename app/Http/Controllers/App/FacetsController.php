@@ -51,19 +51,37 @@ class FacetsController extends Controller
             ]);
         }
 
-        // Structures show their folders and files, each with what it renders
-        if ($kind === 'structure') {
-            return Inertia::render('Pieces/Structures', [
-                'structures' => $pieces->map(fn (Facet $f) => Library::facet($f, $user) + [
-                    'preview' => StructurePreview::of($f->latestVersion?->layer ?? []),
+        // Skill sets with each skill to read, and the packages they need apart
+        if ($kind === 'skill_set') {
+            $skills = Skill::listedFor($user)->with('owner', 'latestVersion')->orderByRaw('user_id is not null')->get();
+
+            return Inertia::render('Pieces/SkillSets', [
+                'sets' => $pieces->map(fn (Facet $f) => Library::facet($f, $user) + [
+                    'skills' => collect($f->latestVersion?->layer['skills'] ?? [])->map(function ($entry, $key) use ($skills, $f) {
+                        // Framework's copy for a packaged skill, else the owner's
+                        $skill = ($entry['package'] ?? false) ? $skills->first(fn (Skill $s) => $s->key === $key && $s->isSystem())
+                            : ($skills->first(fn (Skill $s) => $s->key === $key && $s->user_id === $f->user_id) ?? $skills->firstWhere('key', $key));
+
+                        return [
+                            'key' => (string) $key,
+                            'id' => $skill?->id,
+                            'name' => $skill?->name ?? (string) $key,
+                            'description' => $skill?->description,
+                            'descriptions' => (object) ($skill?->descriptions() ?? []),
+                            'language' => $skill?->language,
+                        ];
+                    })->values(),
+                    'packages' => self::setPackages($f),
                 ]),
+                'language' => SkillsController::preferredLanguage($user),
             ]);
         }
 
-        return Inertia::render('Pieces/Index', [
-            'kind' => $kind,
-            'path' => self::PATHS[$kind],
-            'pieces' => $pieces->map(fn ($f) => Library::facet($f, $user)),
+        // Structures show their folders and files, each with what it renders
+        return Inertia::render('Pieces/Structures', [
+            'structures' => $pieces->map(fn (Facet $f) => Library::facet($f, $user) + [
+                'preview' => StructurePreview::of($f->latestVersion?->layer ?? []),
+            ]),
         ]);
     }
 

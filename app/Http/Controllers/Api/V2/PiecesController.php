@@ -53,6 +53,8 @@ class PiecesController extends Controller
                 'key' => $s->handle,
                 'name' => $s->name,
                 'description' => $s->description,
+                // The languages it's for (none means any), as the resolver applies them
+                'language' => $s->language,
                 'version' => $s->latestVersion?->version,
                 'system' => $s->isSystem(),
                 'visibility' => $s->visibility,
