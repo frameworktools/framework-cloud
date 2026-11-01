@@ -115,10 +115,23 @@ class Resolver
             }
         }
 
-        // The default package list for the language, under what the pieces bring
-        if ($rows = $choices['default_packages'][$language] ?? []) {
-            foreach (ProjectDefaults::packageLayer($rows) as $name => $entry) {
-                $this->settings['packages']['default_packages'][$name] ??= $entry;
+        // The person's package list for the language, under what the pieces
+        // bring. R starts every project with Framework's own list, so a
+        // package taken out of it is removed with a null.
+        if (null !== ($rows = $choices['default_packages'][$language] ?? null)) {
+            $entries = ProjectDefaults::packageLayer($rows);
+            if ($language === 'r') {
+                $fromPieces = $this->pieces->flatMap(fn (FacetVersion $v) => array_keys($v->layer['packages']['default_packages'] ?? []))->all();
+                foreach (array_column(ProjectDefaults::DEFAULT_PACKAGES['r'], 'name') as $name) {
+                    if (! isset($entries[$name]) && ! in_array($name, $fromPieces, true)) {
+                        $entries[$name] = null;
+                    }
+                }
+            }
+            foreach ($entries as $name => $entry) {
+                if (! array_key_exists($name, $this->settings['packages']['default_packages'] ?? [])) {
+                    $this->settings['packages']['default_packages'][$name] = $entry;
+                }
             }
         }
 

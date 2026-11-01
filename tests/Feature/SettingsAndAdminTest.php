@@ -260,6 +260,16 @@ class SettingsAndAdminTest extends TestCase
         $this->assertSame(['source' => 'pypi', 'version' => '>=2', 'auto_attach' => false], $spec('python')['packages']['default_packages']['pandas']);
         $this->assertArrayNotHasKey('pandas', $spec('r')['packages']['default_packages']);
 
+        // R starts every project with Framework's own list, so what the person took out goes as a null
+        $layers = (new Resolver($user))->resolve(['name' => 'Survey', 'language' => 'r'])['envelope']['layers'];
+        $blueprintLayer = collect($layers)->firstWhere('kind', 'blueprint')['layer'];
+        $this->assertArrayHasKey('glue', $blueprintLayer['packages']['default_packages']);
+        $this->assertNull($blueprintLayer['packages']['default_packages']['glue']);
+
+        // A list left as Framework's own sends nothing, and the blueprint stays pinned
+        $plain = User::factory()->create();
+        $this->assertTrue((new Resolver($plain))->resolve(['name' => 'X'])['unchanged']);
+
         // A chosen blueprint brings its own
         $chosen = DefaultsPreview::merge((new Resolver($user))->resolve(['name' => 'Survey', 'blueprint' => 'framework/course'])['envelope']['layers']);
         $this->assertArrayNotHasKey('dplyr', $chosen['packages']['default_packages'] ?? []);

@@ -39,7 +39,10 @@ class DefaultsPreview
         }
 
         $layers = $resolved['envelope']['layers'];
-        $spec = self::merge($layers);
+        // R starts every project with Framework's own package list, beneath the layers
+        $spec = self::merge($resolved['language'] === 'r'
+            ? [['layer' => ['packages' => ['default_packages' => ProjectDefaults::packageLayer(ProjectDefaults::packages(ProjectDefaults::DEFAULT_PACKAGES)['r'])]]], ...$layers]
+            : $layers);
         $version = $blueprint->latestVersion;
         $own = $version->facetVersions->pluck('id')->all();
         $from = fn (FacetVersion $v) => in_array($v->id, $own, true) ? 'blueprint' : 'defaults';

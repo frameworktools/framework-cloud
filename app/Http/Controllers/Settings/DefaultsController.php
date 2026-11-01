@@ -74,7 +74,7 @@ class DefaultsController extends Controller
     {
         $own = $user->project_defaults ?? [];
         if (isset($own['packages']) || empty($own['package_sets'])) {
-            return ProjectDefaults::packages($own['packages'] ?? []);
+            return ProjectDefaults::packages($own['packages'] ?? ProjectDefaults::DEFAULT_PACKAGES);
         }
 
         $lists = [];

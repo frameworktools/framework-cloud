@@ -6,6 +6,8 @@ import { ref, watch } from 'vue';
  * Bioconductor match by name, PyPI by exact name. Arrow keys move through
  * the suggestions, Enter picks one, and Escape closes them.
  */
+defineOptions({ inheritAttrs: false });
+
 const props = defineProps({
     source: { type: String, required: true }, // cran | bioc | pypi
     placeholder: String,
@@ -74,7 +76,7 @@ const sourceNames = { cran: 'CRAN', bioc: 'Bioconductor', pypi: 'PyPI' };
 <template>
     <div class="relative">
         <input
-            :id="id" :value="model" type="text" autocomplete="off" spellcheck="false" :placeholder="placeholder"
+            v-bind="$attrs" :id="id" :value="model" type="text" autocomplete="off" spellcheck="false" :placeholder="placeholder"
             role="combobox" :aria-expanded="results.length > 0" aria-autocomplete="list"
             class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900 placeholder-slate-400 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
             @input="onInput" @keydown="onKeydown" @blur="onBlur"

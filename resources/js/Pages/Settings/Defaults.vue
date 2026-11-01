@@ -113,6 +113,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                 <a href="/docs/projects-and-blueprints#how-defaults-apply" class="ml-3 text-sm text-slate-500 hover:text-slate-900 hover:underline dark:hover:text-white">Documentation</a>
             </template>
         </PageHeader>
+        <PageHeader v-else-if="section === 'packages'" :title="current.label" description="Select your preferred set of default packages for new projects." />
         <PageHeader v-else-if="section === 'editor'" :title="current.label" description="Select the editors/IDEs you typically use." />
         <PageHeader v-else-if="section === 'language'" :title="current.label" description="Choose your default statistical programming environment for new projects." />
         <PageHeader v-else :title="current.label" />
@@ -139,17 +140,10 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                         class="rounded px-3 py-1 transition"
                         :class="packageLanguage === lang ? 'bg-slate-200 font-medium text-slate-900 dark:bg-slate-700 dark:text-white' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'"
                         @click="packageLanguage = lang"
-                    >{{ languageNames[lang] }} packages<span class="ml-1.5 text-xs text-slate-500">{{ form.packages[lang].length }}</span></button>
+                    >{{ languageNames[lang] }}<span class="ml-1.5 text-xs text-slate-500">{{ form.packages[lang].length }}</span></button>
                 </div>
 
                 <section class="flex flex-col gap-4">
-                    <div>
-                        <h2 :class="heading">Default packages</h2>
-                        <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                            {{ packageLanguage === 'r' ? 'Installed, and attached if you choose, when scaffold() runs.' : 'Added to the project\'s pyproject.toml.' }}
-                            Used when a new project doesn't start from a blueprint.
-                        </p>
-                    </div>
                     <PackagesEditor
                         :key="packageLanguage" v-model="form.packages[packageLanguage]" :language="packageLanguage"
                         :presets="presets.filter((p) => p.language.includes(packageLanguage) && p.packages.length)"

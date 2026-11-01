@@ -42,7 +42,7 @@ class ProjectDefaults
             'blueprint' => 'framework/'.Arr::get($doc, 'defaults.project_type', self::BLUEPRINT),
             'package_sets' => array_values($own['package_sets'] ?? []),
             'skill_sets' => array_values($own['skill_sets'] ?? []),
-            'packages' => self::packages($own['packages'] ?? []),
+            'packages' => self::packages($own['packages'] ?? self::DEFAULT_PACKAGES),
             'tools' => ['renv' => (bool) Arr::get($doc, 'defaults.use_renv', false)] + ($own['tools'] ?? []),
             'settings' => [
                 'sensitive' => (bool) ($own['sensitive'] ?? false),
@@ -56,6 +56,29 @@ class ProjectDefaults
 
     /** The languages with a default package list: Stata has no packages. */
     public const PACKAGE_LANGUAGES = ['r', 'python'];
+
+    /**
+     * Package lists for an account that never made its own: the R package's
+     * defaults (inst/settings/global-settings-default.yml), with the rest of
+     * the core tidyverse and lme4. Python starts empty, as framework-py does.
+     */
+    public const DEFAULT_PACKAGES = [
+        'r' => [
+            ['name' => 'dplyr', 'source' => 'cran', 'auto_attach' => true],
+            ['name' => 'ggplot2', 'source' => 'cran', 'auto_attach' => true],
+            ['name' => 'tidyr', 'source' => 'cran', 'auto_attach' => true],
+            ['name' => 'stringr', 'source' => 'cran', 'auto_attach' => true],
+            ['name' => 'readr', 'source' => 'cran', 'auto_attach' => true],
+            ['name' => 'purrr', 'source' => 'cran', 'auto_attach' => true],
+            ['name' => 'tibble', 'source' => 'cran', 'auto_attach' => true],
+            ['name' => 'forcats', 'source' => 'cran', 'auto_attach' => true],
+            ['name' => 'lubridate', 'source' => 'cran', 'auto_attach' => false],
+            ['name' => 'glue', 'source' => 'cran', 'auto_attach' => false],
+            ['name' => 'here', 'source' => 'cran', 'auto_attach' => false],
+            ['name' => 'lme4', 'source' => 'cran', 'auto_attach' => true],
+        ],
+        'python' => [],
+    ];
 
     /**
      * Default package lists, one per language, as rows in the order the
@@ -138,7 +161,8 @@ class ProjectDefaults
             $choices['package_sets'] = array_values(array_unique([...$defaults['package_sets'], ...($choices['package_sets'] ?? [])]));
             $choices['skill_sets'] = array_values(array_unique([...$defaults['skill_sets'], ...($choices['skill_sets'] ?? [])]));
             $choices['tools'] = ($choices['tools'] ?? []) + $defaults['tools'];
-            $choices['default_packages'] = $defaults['packages'];
+            // A list left as Framework's own needs nothing sent: R starts every project with it
+            $choices['default_packages'] = array_filter($defaults['packages'], fn (array $rows, string $language) => $rows !== self::packages(self::DEFAULT_PACKAGES)[$language], ARRAY_FILTER_USE_BOTH);
             $choices['from_defaults'] = true;
         }
 

@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue';
+import { ChevronRightIcon, XMarkIcon } from '@heroicons/vue/20/solid';
 import PackageNameInput from '@/Components/PackageNameInput.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiSwitch from '@/Components/UiSwitch.vue';
@@ -7,8 +8,8 @@ import UiSwitch from '@/Components/UiSwitch.vue';
 /**
  * One language's default packages, as the Framework GUI's packages editor
  * had them: each package with its name, where it comes from, and for R
- * whether scaffold() attaches it. Package sets load their packages into
- * the list; the list is what's saved.
+ * whether scaffold() attaches it, one row each in a single list. Package
+ * sets load their packages into the list; the list is what's saved.
  */
 const props = defineProps({
     language: { type: String, required: true }, // r | python
@@ -36,71 +37,69 @@ const setRepo = (i, value) => update(i, { repo: value || null, name: (value ?? '
 const setSource = (i, source) => update(i, source === 'github' ? { source } : { source, repo: null });
 
 // A set adds the packages the list doesn't have yet
+const missing = (preset) => preset.packages.filter((p) => !rows.value.some((row) => row.name.toLowerCase() === p.name.toLowerCase()));
 const load = (preset) => {
-    const have = new Set(rows.value.map((row) => row.name.toLowerCase()));
-    rows.value = [...rows.value.filter((row) => row.name), ...preset.packages.filter((p) => !have.has(p.name.toLowerCase())).map((p) => ({ ...blank(), ...p }))];
+    rows.value = [...rows.value.filter((row) => row.name), ...missing(preset).map((p) => ({ ...blank(), ...p }))];
 };
-const has = (preset) => preset.packages.every((p) => rows.value.some((row) => row.name.toLowerCase() === p.name.toLowerCase()));
+
+const field = 'w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100';
 </script>
 
 <template>
     <div class="flex flex-col gap-4">
-        <div v-if="presets.length" class="flex flex-wrap items-center gap-2">
-            <span class="text-sm text-slate-600 dark:text-slate-400">Load a package set:</span>
-            <button
-                v-for="preset in presets" :key="preset.key" type="button" :disabled="has(preset)"
-                :title="has(preset) ? 'Its packages are all in the list' : preset.packages.map((p) => p.name).join(', ')"
-                class="rounded-full border border-slate-300 px-3 py-1 text-sm text-slate-700 transition hover:border-sky-500 hover:text-sky-700 disabled:cursor-default disabled:opacity-50 disabled:hover:border-slate-300 disabled:hover:text-slate-700 dark:border-slate-600 dark:text-slate-300"
-                @click="load(preset)"
-            >+ {{ preset.name }}</button>
+        <div class="divide-y divide-slate-200 rounded-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-700">
+            <!-- Column labels, for the rows below -->
+            <div class="hidden gap-3 px-4 py-2 text-xs font-medium text-slate-500 sm:grid" :class="r ? 'grid-cols-[1fr_9rem_7rem_2rem]' : 'grid-cols-[1fr_9rem_7rem_2rem]'">
+                <span>Package</span><span>Source</span><span>{{ r ? 'Auto-attach' : 'Version' }}</span><span class="sr-only">Remove</span>
+            </div>
+            <div v-for="(row, i) in rows" :key="i" class="grid items-center gap-3 px-4 py-2.5 sm:grid-cols-[1fr_9rem_7rem_2rem]">
+                <input
+                    v-if="row.source === 'github'" :value="row.repo ?? ''" type="text" placeholder="owner/repo" spellcheck="false" aria-label="Repository"
+                    :class="[field, 'font-mono']" @input="setRepo(i, $event.target.value.trim())"
+                >
+                <PackageNameInput
+                    v-else :source="row.source" :model-value="row.name" aria-label="Package"
+                    :placeholder="{ cran: 'Search CRAN…', bioc: 'Search Bioconductor…', pypi: 'Name on PyPI' }[row.source]"
+                    @update:model-value="(name) => update(i, { name })"
+                />
+                <select :value="row.source" aria-label="Source" :class="field" @change="setSource(i, $event.target.value)">
+                    <option v-for="s in sources" :key="s.value" :value="s.value">{{ s.label }}</option>
+                </select>
+                <div v-if="r" class="[&>label]:w-fit" :title="'Call library() when scaffold() runs'">
+                    <UiSwitch :model-value="row.auto_attach" @update:model-value="(on) => update(i, { auto_attach: on })" />
+                    <span class="sr-only">Auto-attach {{ row.name }}</span>
+                </div>
+                <input
+                    v-else :value="row.version ?? ''" type="text" placeholder="any" spellcheck="false" aria-label="Version"
+                    :class="[field, 'font-mono']" @input="update(i, { version: $event.target.value.trim() || null })"
+                >
+                <button
+                    type="button" :aria-label="`Remove ${row.name || 'package'}`" title="Remove"
+                    class="justify-self-end rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                    @click="remove(i)"
+                ><XMarkIcon class="size-5" /></button>
+            </div>
+            <p v-if="!rows.length" class="px-4 py-3 text-sm text-slate-500">No packages yet.</p>
+            <div class="px-4 py-2.5"><UiButton size="sm" variant="outline" @click="add">Add package</UiButton></div>
         </div>
 
-        <div v-if="rows.length" class="flex flex-col gap-3">
-            <div v-for="(row, i) in rows" :key="i" class="rounded-lg border border-slate-200 p-4 dark:border-slate-700">
-                <div class="grid gap-3 sm:grid-cols-[1fr_10rem]">
-                    <div class="flex flex-col gap-1.5">
-                        <label :for="`pkg-${language}-${i}`" class="text-sm font-medium text-slate-800 dark:text-slate-200">{{ row.source === 'github' ? 'Repository' : 'Package' }}</label>
-                        <input
-                            v-if="row.source === 'github'" :id="`pkg-${language}-${i}`" :value="row.repo ?? ''" type="text" placeholder="owner/repo" spellcheck="false"
-                            class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 font-mono text-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
-                            @input="setRepo(i, $event.target.value.trim())"
-                        >
-                        <PackageNameInput
-                            v-else :id="`pkg-${language}-${i}`" :source="row.source" :model-value="row.name"
-                            :placeholder="{ cran: 'Search CRAN…', bioc: 'Search Bioconductor…', pypi: 'Name on PyPI' }[row.source]"
-                            @update:model-value="(name) => update(i, { name })"
-                        />
+        <!-- Package sets: each opens to its packages, and adds the ones the list lacks -->
+        <details v-if="presets.length" class="group rounded-lg border border-slate-200 dark:border-slate-700">
+            <summary class="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-medium text-slate-800 dark:text-slate-200 [&::-webkit-details-marker]:hidden">
+                <ChevronRightIcon class="size-4 text-slate-400 transition-transform group-open:rotate-90" />
+                Load a package set
+            </summary>
+            <div class="divide-y divide-slate-200 border-t border-slate-200 dark:divide-slate-800 dark:border-slate-700">
+                <div v-for="preset in presets" :key="preset.key" class="flex items-start justify-between gap-4 px-4 py-3">
+                    <div class="min-w-0">
+                        <div class="text-sm font-medium text-slate-900 dark:text-white">{{ preset.name }}</div>
+                        <div class="mt-0.5 font-mono text-xs text-slate-500">{{ preset.packages.map((p) => p.name).join(', ') }}</div>
                     </div>
-                    <div class="flex flex-col gap-1.5">
-                        <label :for="`src-${language}-${i}`" class="text-sm font-medium text-slate-800 dark:text-slate-200">Source</label>
-                        <select
-                            :id="`src-${language}-${i}`" :value="row.source"
-                            class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
-                            @change="setSource(i, $event.target.value)"
-                        >
-                            <option v-for="s in sources" :key="s.value" :value="s.value">{{ s.label }}</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="mt-3 flex items-center justify-between gap-4">
-                    <UiSwitch
-                        v-if="r" class="flex-1" :model-value="row.auto_attach" label="Auto-attach" description="Call library() when scaffold() runs."
-                        @update:model-value="(on) => update(i, { auto_attach: on })"
-                    />
-                    <div v-else class="flex items-center gap-2">
-                        <label :for="`ver-${language}-${i}`" class="text-sm text-slate-700 dark:text-slate-300">Version</label>
-                        <input
-                            :id="`ver-${language}-${i}`" :value="row.version ?? ''" type="text" placeholder="any" spellcheck="false"
-                            class="w-28 rounded-md border border-slate-300 bg-white px-2 py-1 font-mono text-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
-                            @input="update(i, { version: $event.target.value.trim() || null })"
-                        >
-                    </div>
-                    <UiButton size="sm" variant="outline" @click="remove(i)">Remove</UiButton>
+                    <UiButton size="sm" variant="outline" class="shrink-0" :disabled="!missing(preset).length" @click="load(preset)">
+                        {{ missing(preset).length ? `Add ${missing(preset).length}` : 'All added' }}
+                    </UiButton>
                 </div>
             </div>
-        </div>
-        <p v-else class="text-sm text-slate-500">No packages yet. Add them one at a time, or load a package set.</p>
-
-        <div><UiButton size="sm" variant="outline" @click="add">Add package</UiButton></div>
+        </details>
     </div>
 </template>
