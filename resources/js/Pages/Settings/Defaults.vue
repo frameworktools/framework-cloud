@@ -51,7 +51,7 @@ const formatOptions = computed(() => [
 // saved as the one value R and Python read (positron means vscode)
 const editorOptions = [
     { value: 'rstudio', label: 'RStudio', description: 'Adds an .Rproj file.' },
-    { value: 'vscode', label: 'VS Code and Positron', description: 'Adds a .code-workspace file.' },
+    { value: 'vscode', label: 'Positron / VS Code', description: 'Adds a .code-workspace file.' },
 ];const hooks = [
     { key: 'data_security', label: 'Check for secrets', description: 'Blocks a commit that looks like it holds passwords, keys, or other secrets.' },
     { key: 'check_sensitive_dirs', label: 'Check private folders', description: "Warns when a private data or output folder isn't in .gitignore. The commit goes ahead." },
