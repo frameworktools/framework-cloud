@@ -38,8 +38,8 @@ const current = computed(() => sections.find((s) => s.key === props.section));
 
 const languageNames = { r: 'R', python: 'Python', stata: 'Stata' };
 const languageOptions = [
-    { value: 'r', label: 'R' },
-    { value: 'python', label: 'Python' },
+    { value: 'r', label: 'R', description: 'Use the R statistical computing environment.' },
+    { value: 'python', label: 'Python', description: 'Use the Python programming language.' },
     { value: 'stata', label: 'Stata', description: 'Scaffolding only.' },
 ];
 const formatOptions = computed(() => [
