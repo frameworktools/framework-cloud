@@ -168,16 +168,26 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
                             </section>
 
                             <section>
-                                <div :class="label">Agents</div>
-                                <div class="mt-1">Agent setup: {{ previews[b.key].agents ? 'On' : 'Off' }} <span v-if="previews[b.key].settings.agents.from === 'defaults'" class="text-xs text-slate-500" title="From your Project defaults">· your default</span></div>
-                                <ul v-if="previews[b.key].agents" class="mt-1 flex flex-col gap-1.5">
-                                    <li v-for="set in previews[b.key].skill_sets" :key="set.id">
-                                        <div>{{ set.name }} <span v-if="set.from === 'defaults'" class="text-xs text-slate-500" title="From your Project defaults">· your default</span></div>
-                                        <div class="border-l border-slate-300 pl-2 text-xs text-slate-500 dark:border-slate-700">{{ set.skills.join(', ') }}</div>
-                                    </li>
-                                    <li v-for="skill in previews[b.key].skills" :key="skill">{{ skill }} <span class="text-xs text-slate-500">skill</span></li>
-                                    <li v-if="!previews[b.key].skill_sets.length && !previews[b.key].skills.length" class="text-slate-500">No skills</li>
-                                </ul>
+                                <div :class="label">AI agents</div>
+                                <div class="mt-1">Setup: {{ previews[b.key].agents ? 'On' : 'Off' }} <span v-if="previews[b.key].settings.agents.from === 'defaults'" class="text-xs text-slate-500" title="From your Project defaults">· your default</span></div>
+                            </section>
+
+                            <!-- Each skill on its own line, under the set it comes from -->
+                            <section>
+                                <div :class="label">Skills</div>
+                                <p v-if="!previews[b.key].agents" class="mt-1 text-slate-500">None, with agent setup off</p>
+                                <template v-else>
+                                    <div v-for="set in previews[b.key].skill_sets" :key="set.id" class="mt-1.5">
+                                        <div class="text-xs text-slate-500">{{ set.name }}<span v-if="set.from === 'defaults'" title="From your Project defaults"> · your default</span></div>
+                                        <ul class="mt-0.5 flex flex-col gap-0.5">
+                                            <li v-for="skill in set.skills" :key="skill">{{ skill }}</li>
+                                        </ul>
+                                    </div>
+                                    <ul v-if="previews[b.key].skills.length" class="mt-1.5 flex flex-col gap-0.5">
+                                        <li v-for="skill in previews[b.key].skills" :key="skill">{{ skill }}</li>
+                                    </ul>
+                                    <p v-if="!previews[b.key].skill_sets.length && !previews[b.key].skills.length" class="mt-1 text-slate-500">None</p>
+                                </template>
                             </section>
 
                             <section class="text-xs text-slate-600 dark:text-slate-400">
