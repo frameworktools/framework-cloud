@@ -57,12 +57,11 @@ class ProjectTree
                 }
             }
             if ($agents) {
-                // Of Framework's skills, fw ships only these for Stata
-                foreach (array_intersect($skills, ['framework-stata', 'framework-sensitive-data']) as $skill) {
-                    $add(".claude/skills/{$skill}", 'dir');
-                }
-                if ($sensitive) {
-                    $add('.claude/settings.json', 'file', 'keeps private folders from Claude Code');
+                // Of Framework's skills, fw ships only these for Stata. The folder
+                // shows alone, with what's inside in its tooltip.
+                $inside = array_values(array_intersect($skills, ['framework-stata', 'framework-sensitive-data']));
+                if ($inside || $sensitive) {
+                    $add('.claude', 'dir', self::inside($inside, $sensitive));
                 }
             }
         } else {
@@ -130,12 +129,10 @@ class ProjectTree
             if ($core && $agents) {
                 $add('AGENTS.md', 'file');
                 $add('CLAUDE.md', 'file', null, 'with Claude Code');
-                $add('.agents/skills', 'dir', null, 'or .claude/skills/ with Claude Code');
-                foreach ($skills as $skill) {
-                    $add(".agents/skills/{$skill}", 'dir');
-                }
+                // Agent folders show alone, with what's inside in their tooltips
+                $add('.agents', 'dir', self::inside($skills, false), 'or .claude/ with Claude Code');
                 if ($sensitive) {
-                    $add('.claude/settings.json', 'file', 'keeps private folders from Claude Code', 'with Claude Code');
+                    $add('.claude', 'dir', 'settings.json, which keeps private folders from Claude Code', 'with Claude Code');
                 }
             }
         }
@@ -143,7 +140,6 @@ class ProjectTree
         if ($git) {
             $add('.git', 'dir', 'with a first commit');
         }
-        $add('.framework/spec.json', 'file', 'the layers it was made from');
 
         // Folders and files the layers add, such as a manuscript or slides
         foreach ((array) ($spec['extra_directories'] ?? []) as $dir) {
@@ -156,6 +152,15 @@ class ProjectTree
         }
 
         return array_values($entries);
+    }
+
+    /** What an agent folder holds, for its tooltip. */
+    private static function inside(array $skills, bool $settings): string
+    {
+        return implode('; ', array_filter([
+            $skills ? 'skills/: '.implode(', ', $skills) : null,
+            $settings ? 'settings.json, which keeps private folders from Claude Code' : null,
+        ]));
     }
 
     private static function isFile(string $path): bool
