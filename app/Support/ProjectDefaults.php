@@ -17,6 +17,9 @@ class ProjectDefaults
     /** The blueprint for an account that never chose one: the standard project, as in R. */
     public const BLUEPRINT = 'project';
 
+    /** The language the Project defaults pages start from when the person hasn't picked one. */
+    public const LANGUAGE = 'r';
+
     /** The git hooks a user can turn on for new projects, as the R package names them. */
     public const HOOKS = ['data_security', 'check_sensitive_dirs'];
 

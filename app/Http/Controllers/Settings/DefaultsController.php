@@ -18,7 +18,7 @@ use Inertia\Response;
 class DefaultsController extends Controller
 {
     /** The settings pages, in sidebar order. They share one form. */
-    public const SECTIONS = ['blueprint', 'editor', 'packages', 'scaffold', 'git', 'agents', 'data', 'hooks', 'notebooks', 'quarto'];
+    public const SECTIONS = ['language', 'blueprint', 'editor', 'packages', 'scaffold', 'git', 'agents', 'data', 'hooks', 'notebooks', 'quarto'];
 
     public function edit(Request $request, string $section): Response
     {
@@ -33,6 +33,7 @@ class DefaultsController extends Controller
                 ->map(fn (Blueprint $b) => self::listing($b))->values(),
             'catalog' => Catalog::for($request->user()),
             'values' => [
+                'language' => $request->user()->project_defaults['language'] ?? ProjectDefaults::LANGUAGE,
                 'project_type' => Arr::get($doc, 'defaults.project_type', ProjectDefaults::BLUEPRINT),
                 'notebook_format' => Arr::get($doc, 'defaults.notebook_format', 'quarto'),
                 'ide' => Arr::get($doc, 'defaults.ide', 'positron'),
@@ -94,6 +95,7 @@ class DefaultsController extends Controller
     public function update(Request $request): RedirectResponse
     {
         $validated = $request->validate([
+            'language' => ['sometimes', 'in:r,python,stata'],
             'project_type' => ['required', 'exists:blueprints,key'],
             'notebook_format' => ['required', 'in:quarto,rmarkdown'],
             'ide' => ['required', 'in:positron,vscode,rstudio,both,none'],
@@ -131,6 +133,7 @@ class DefaultsController extends Controller
 
         // Preferred pieces stay in the cloud; renv already lives in the synced settings
         $request->user()->forceFill(['project_defaults' => [
+            'language' => $validated['language'] ?? $request->user()->project_defaults['language'] ?? ProjectDefaults::LANGUAGE,
             'package_sets' => array_values($validated['package_sets'] ?? []),
             'skill_sets' => array_values($validated['skill_sets'] ?? []),
             'tools' => array_map('boolval', Arr::except($validated['tools'] ?? [], ['renv'])),

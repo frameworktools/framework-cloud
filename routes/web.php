@@ -164,8 +164,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Your defaults for new projects: one form, shown a section at a time.
     // The account pages used to live here.
-    Route::redirect('settings', '/settings/blueprint');
-    Route::redirect('settings/defaults', '/settings/blueprint');
+    Route::redirect('settings', '/settings/language');
+    Route::redirect('settings/defaults', '/settings/language');
     // Blueprint & editor were one page
     Route::redirect('settings/basics', '/settings/blueprint');
     foreach (['profile', 'account', 'github', 'passkeys'] as $moved) {

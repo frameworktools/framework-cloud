@@ -58,6 +58,7 @@ class SettingsAndAdminTest extends TestCase
 
         // Preferred pieces stay in the cloud, out of the synced document; renv stays synced
         $this->assertSame([
+            'language' => 'r',
             'package_sets' => ['framework/tidyverse-analysis'],
             'skill_sets' => ['framework/ggplot2'],
             'tools' => ['targets' => true],
@@ -194,5 +195,20 @@ class SettingsAndAdminTest extends TestCase
             ->assertOk()->assertJsonPath('available', false);
         $this->assertSame($revision, $user->globalSettings()->revision);
         $this->assertNull($user->fresh()->project_defaults);
+    }
+
+    public function test_the_default_language_starts_as_r_and_saves_with_the_other_defaults(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $this->actingAs($user)->get('/settings/language')
+            ->assertInertia(fn (Assert $page) => $page->where('section', 'language')->where('values.language', 'r'));
+
+        $this->actingAs($user)->patch('/settings', [
+            'language' => 'stata', 'project_type' => 'project', 'notebook_format' => 'quarto', 'ide' => 'positron', 'ai_canonical_file' => 'AGENTS.md',
+        ])->assertSessionHasNoErrors();
+        $this->assertSame('stata', $user->fresh()->project_defaults['language']);
+
+        $this->actingAs($user)->patch('/settings', ['language' => 'fortran', 'project_type' => 'project', 'notebook_format' => 'quarto', 'ide' => 'positron', 'ai_canonical_file' => 'AGENTS.md'])
+            ->assertSessionHasErrors('language');
     }
 }

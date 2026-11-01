@@ -24,9 +24,11 @@ const toggleOpen = (key) => {
     open.value = next;
 };
 
-// The preview's language is only for looking: it isn't a default
+// Previews start in your default language, where the blueprint has it.
+// Switching one is only for looking: it doesn't change the default.
 const languageNames = { r: 'R', python: 'Python', stata: 'Stata' };
-const language = reactive(Object.fromEntries(props.blueprints.map((b) => [b.key, 'r'])));
+const startLanguage = (b) => (b.languages.includes(props.defaults.language) ? props.defaults.language : 'r');
+const language = reactive(Object.fromEntries(props.blueprints.map((b) => [b.key, startLanguage(b)])));
 
 // What the server resolves the previews from: every default that changes a new project
 const values = computed(() => {
@@ -77,7 +79,9 @@ const treeLines = (entries) => {
         const kids = sorted(node);
         kids.forEach((child, i) => {
             const last = i === kids.length - 1;
-            lines.push({ prefix: prefix + (last ? '└── ' : '├── '), name: child.name + (child.dir ? '/' : ''), dir: child.dir, note: child.note, when: child.when, later: !!child.later });
+            // What a name doesn't say goes in its tooltip
+            const title = [child.note && child.note[0].toUpperCase() + child.note.slice(1), child.when && `Only ${child.when}`, child.later && 'Made when first used or rendered'].filter(Boolean).join('. ') || undefined;
+            lines.push({ prefix: prefix + (last ? '└── ' : '├── '), name: child.name + (child.dir ? '/' : ''), dir: child.dir, later: !!child.later, title });
             walk(child, prefix + (last ? '    ' : '│   '));
         });
     };
@@ -122,7 +126,7 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
                 </div>
 
                 <div v-if="open.has(b.key)" :id="`blueprint-${b.key}`" class="px-4 pb-4 sm:pl-11">
-                    <div class="grid gap-x-8 gap-y-5 rounded-md border border-slate-200 bg-slate-50 p-4 lg:grid-cols-[minmax(0,1fr)_15rem] dark:border-slate-800 dark:bg-slate-900/60">
+                    <div class="grid gap-x-8 gap-y-5 rounded-md border border-slate-200 bg-white p-4 xl:grid-cols-[minmax(0,1fr)_15rem] dark:border-slate-800 dark:bg-slate-950">
                         <!-- The project's folders and files -->
                         <div class="min-w-0">
                             <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
@@ -141,7 +145,8 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
                             <div v-if="!previews[b.key]" class="text-sm text-slate-500">Loading…</div>
                             <p v-else-if="!previews[b.key].available" class="text-sm text-slate-600 dark:text-slate-400">{{ previews[b.key].problem }}</p>
                             <div v-else class="overflow-x-auto" :class="loading[b.key] ? 'opacity-60' : ''">
-                                <div class="whitespace-pre font-mono text-[13px] leading-6 text-slate-800 dark:text-slate-200"><div>project/</div><div v-for="(line, i) in treeLines(previews[b.key].tree)" :key="i"><span class="text-slate-400 dark:text-slate-600">{{ line.prefix }}</span><span :class="[line.dir ? 'font-medium' : '', line.later ? 'text-slate-400 dark:text-slate-500' : '']" :title="line.later ? 'Made when first used or rendered' : undefined">{{ line.name }}</span><span v-if="line.note" class="ml-3 font-sans text-xs text-slate-500">{{ line.note }}</span><span v-if="line.when" class="ml-3 font-sans text-xs italic text-slate-500" title="Depends on something set when the project is made">({{ line.when }})</span></div></div>
+                                <!-- Line height just over the font size keeps the connectors joined -->
+                                <div class="whitespace-pre font-mono text-xs leading-[1.2] text-slate-800 dark:text-slate-200"><div>project/</div><div v-for="(line, i) in treeLines(previews[b.key].tree)" :key="i"><span class="text-slate-400 dark:text-slate-600">{{ line.prefix }}</span><span :class="[line.dir ? 'font-medium' : '', line.later ? 'text-slate-400 dark:text-slate-500' : '', line.title ? 'cursor-help' : '']" :title="line.title">{{ line.name }}</span></div></div>
                                 <p v-if="previews[b.key].tree.some((e) => e.later)" class="mt-2 text-xs text-slate-500">Lighter folders are made when they're first used or rendered.</p>
                             </div>
                         </div>
@@ -197,7 +202,7 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
                             </section>
                         </div>
 
-                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-slate-200 pt-3 text-xs text-slate-500 lg:col-span-2 dark:border-slate-800">
+                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-slate-200 pt-3 text-xs text-slate-500 xl:col-span-2 dark:border-slate-800">
                             <span class="font-mono">{{ b.handle }} v{{ b.version }}</span>
                             <Link :href="`/blueprints/${b.id}`" :class="link">View the blueprint</Link>
                             <span>Preview with your defaults, including unsaved changes</span>

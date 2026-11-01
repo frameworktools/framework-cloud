@@ -19,6 +19,7 @@ const saved = computed(() => page.props.flash.status === 'defaults-updated');
 
 const sections = [
     { heading: 'New projects' },
+    { key: 'language', label: 'Language' },
     { key: 'blueprint', label: 'Blueprint' },
     { key: 'editor', label: 'Editor' },
     { key: 'packages', label: 'Packages' },
@@ -35,10 +36,16 @@ const sections = [
 const items = sections.map((s) => (s.heading ? s : { label: s.label, href: `/settings/${s.key}`, preserveState: true }));
 const current = computed(() => sections.find((s) => s.key === props.section));
 
-const formatOptions = [
-    { value: 'quarto', label: 'Quarto' },
-    { value: 'rmarkdown', label: 'R Markdown' },
+const languageNames = { r: 'R', python: 'Python', stata: 'Stata' };
+const languageOptions = [
+    { value: 'r', label: 'R' },
+    { value: 'python', label: 'Python' },
+    { value: 'stata', label: 'Stata', description: 'Scaffolding only.' },
 ];
+const formatOptions = computed(() => [
+    { value: 'quarto', label: 'Quarto' },
+    { value: 'rmarkdown', label: 'R Markdown', description: form.language === 'r' ? null : `Not used in ${languageNames[form.language]} projects.` },
+]);
 const ideOptions = [
     { value: 'positron', label: 'Positron' },
     { value: 'vscode', label: 'VS Code' },
@@ -55,7 +62,12 @@ const form = useForm({ ...props.values, tools: { ...props.values.tools }, hooks:
 
 const tool = (key) => props.catalog.tools.find((t) => t.key === key);
 const only = (piece) => (piece?.language?.length === 1 ? (piece.language[0] === 'r' ? 'R only.' : 'Python only.') : '');
-const describe = (piece, text = piece?.description) => [text, only(piece)].filter(Boolean).join(' ');
+// Your default language decides what these pages point out: a piece for
+// another language stays as it is, dimmed, since other projects may use it
+const fits = (piece) => (form.language === 'stata' ? false : !piece?.language?.length || piece.language.includes(form.language));
+const notUsed = computed(() => `Not used in ${languageNames[form.language]} projects.`);
+const describe = (piece, text = piece?.description) => [text, fits(piece) ? only(piece) : notUsed.value].filter(Boolean).join(' ');
+const dim = (piece) => (fits(piece) ? '' : 'opacity-60');
 const setTool = (key, on) => {
     form.tools = { ...form.tools, [key]: on };
     // Turning a tool on turns on what it needs; turning one off turns off what needs it
@@ -76,12 +88,13 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
 <template>
     <Head :title="`${current.label} · Project defaults`" />
 
-    <SectionLayout heading="Project defaults" :items="items">
+    <SectionLayout heading="Project defaults" :items="items" narrow>
         <PageHeader v-if="section === 'blueprint'" :title="current.label">
             <template #actions>
                 <a href="/docs/projects-and-blueprints#how-defaults-apply" class="text-sm text-slate-500 hover:text-slate-900 hover:underline dark:hover:text-white">Documentation</a>
             </template>
         </PageHeader>
+        <PageHeader v-else-if="section === 'language'" :title="current.label" description="The language these pages start from, such as in the Blueprint preview." />
         <PageHeader v-else :title="current.label" description="These defaults are used when you create a project." />
 
         <details v-if="section !== 'blueprint'" class="mt-3 text-sm text-slate-600 dark:text-slate-400">
@@ -100,21 +113,27 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
         </details>
 
         <form id="settings-form" class="mt-8 flex max-w-3xl flex-col gap-8" @submit.prevent="save">
-            <template v-if="section === 'blueprint'">
+            <UiRadioCards v-if="section === 'language'" v-model="form.language" name="language" legend="Language" hide-legend :options="languageOptions" columns="grid-cols-3 max-w-lg" />
+
+            <template v-else-if="section === 'blueprint'">
                 <DefaultBlueprintList v-model="form.project_type" :blueprints="blueprints" :defaults="form" />
                 <p v-if="form.errors.project_type" class="-mt-6 text-sm text-red-600">{{ form.errors.project_type }}</p>
             </template>
 
-            <UiRadioCards v-else-if="section === 'editor'" v-model="form.ide" name="ide" legend="Editor" hide-legend :options="ideOptions" columns="grid-cols-2 sm:grid-cols-3" />
+            <template v-else-if="section === 'editor'">
+                <p v-if="form.language === 'stata'" class="text-sm text-slate-600 dark:text-slate-400">Stata projects don't get editor files. These apply to your R and Python projects.</p>
+                <UiRadioCards v-model="form.ide" name="ide" legend="Editor" hide-legend :options="ideOptions" columns="grid-cols-2 sm:grid-cols-3" />
+            </template>
 
             <template v-else-if="section === 'packages'">
+                <p v-if="form.language === 'stata'" class="text-sm text-slate-600 dark:text-slate-400">Stata projects don't use package sets or environments. These apply to your R and Python projects.</p>
                 <section class="flex flex-col gap-4">
                     <div>
                         <h2 :class="heading">Package sets</h2>
                         <p class="mt-1 text-xs text-slate-500">Used when a new project doesn't start from a blueprint.</p>
                     </div>
                     <UiCheckbox
-                        v-for="set in catalog.package_sets" :key="set.key"
+                        v-for="set in catalog.package_sets" :key="set.key" :class="dim(set)"
                         :model-value="form.package_sets.includes(set.key)" :label="set.name" :description="describe(set)"
                         @update:model-value="(on) => toggle('package_sets', set.key, on)"
                     />
@@ -122,14 +141,14 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                 </section>
                 <section class="flex max-w-xl flex-col gap-4 border-t border-slate-200 pt-8 dark:border-slate-800">
                     <h2 :class="heading">Package environments</h2>
-                    <UiSwitch v-model="form.use_renv" label="renv" description="Records the R package versions the project uses in renv.lock. R only." />
-                    <UiSwitch v-if="tool('uv')" :model-value="!!form.tools.uv" :label="tool('uv').name" description="Manages the Python environment in pyproject.toml and uv.lock. Python only." @update:model-value="(on) => setTool('uv', on)" />
+                    <UiSwitch v-model="form.use_renv" :class="dim(tool('renv'))" label="renv" :description="describe(tool('renv'), 'Records the R package versions the project uses in renv.lock.')" />
+                    <UiSwitch v-if="tool('uv')" :class="dim(tool('uv'))" :model-value="!!form.tools.uv" :label="tool('uv').name" :description="describe(tool('uv'), 'Manages the Python environment in pyproject.toml and uv.lock.')" @update:model-value="(on) => setTool('uv', on)" />
                 </section>
             </template>
 
             <section v-else-if="section === 'scaffold'" class="flex max-w-xl flex-col gap-5">
                 <UiSwitch v-model="form.seed_on_scaffold" label="Set a random seed" description="scaffold() sets a seed, so random results repeat from run to run." />
-                <UiSwitch v-if="tool('targets')" :model-value="!!form.tools.targets" :label="tool('targets').name" :description="describe(tool('targets'))" @update:model-value="(on) => setTool('targets', on)" />
+                <UiSwitch v-if="tool('targets')" :class="dim(tool('targets'))" :model-value="!!form.tools.targets" :label="tool('targets').name" :description="describe(tool('targets'))" @update:model-value="(on) => setTool('targets', on)" />
             </section>
 
             <section v-else-if="section === 'git'" class="flex max-w-xl flex-col gap-5">
@@ -156,7 +175,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                             <p class="mt-1 text-xs text-slate-500">Used when a new project doesn't start from a blueprint.</p>
                         </div>
                         <UiCheckbox
-                            v-for="set in catalog.skill_sets" :key="set.key" :disabled="!form.ai_enabled"
+                            v-for="set in catalog.skill_sets" :key="set.key" :disabled="!form.ai_enabled" :class="form.ai_enabled ? dim(set) : ''"
                             :model-value="form.skill_sets.includes(set.key)" :label="set.name" :description="describe(set)"
                             @update:model-value="(on) => toggle('skill_sets', set.key, on)"
                         />
@@ -190,13 +209,15 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
             </section>
 
             <template v-else-if="section === 'notebooks'">
+                <p v-if="form.language === 'stata'" class="text-sm text-slate-600 dark:text-slate-400">Stata projects don't get notebooks. These apply to your R and Python projects.</p>
                 <UiRadioCards v-model="form.notebook_format" name="notebook_format" legend="Notebook format" :options="formatOptions" columns="grid-cols-2 max-w-md" />
                 <section v-if="tool('jupyter')" class="max-w-xl border-t border-slate-200 pt-8 dark:border-slate-800">
-                    <UiSwitch :model-value="!!form.tools.jupyter" label="Also add Jupyter" description="Jupyter notebooks with the kernel for the project's language: IRkernel for R, ipykernel for Python." @update:model-value="(on) => setTool('jupyter', on)" />
+                    <UiSwitch :model-value="!!form.tools.jupyter" :class="dim(tool('jupyter'))" label="Also add Jupyter" :description="describe(tool('jupyter'), 'Jupyter notebooks with the kernel for the project\'s language: IRkernel for R, ipykernel for Python.')" @update:model-value="(on) => setTool('jupyter', on)" />
                 </section>
             </template>
 
-            <section v-else-if="section === 'quarto'" class="flex max-w-xl flex-col gap-5">
+            <section v-else-if="section === 'quarto'" class="flex max-w-xl flex-col gap-5" :class="form.language === 'stata' ? 'opacity-60' : ''">
+                <p v-if="form.language === 'stata'" class="text-sm text-slate-600 dark:text-slate-400">Stata projects don't use Quarto. These apply to your R and Python projects.</p>
                 <p class="text-xs text-slate-500">Used when a new project doesn't start from a blueprint.</p>
                 <UiSwitch v-if="tool('quarto')" :model-value="!!form.tools.quarto" label="Quarto" description="Quarto notebooks and documents." @update:model-value="(on) => setTool('quarto', on)" />
                 <div class="flex flex-col gap-5 border-l-2 border-slate-200 pl-5 dark:border-slate-700">
