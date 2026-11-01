@@ -38,27 +38,25 @@ const created = (date) => new Date(date).toLocaleDateString(undefined, { year: '
 
     <AppLayout bleed>
         <!-- Full width beside the sidebar, so the grid can fit three tiles on a laptop -->
-        <div class="@container px-6 py-8 lg:px-8">
+        <div class="@container px-6 py-8 lg:px-12">
             <PageHeader title="Projects">
                 <template #actions>
+                    <div v-if="projects.length" class="flex rounded-md border border-slate-300 p-0.5 dark:border-slate-700" role="group" aria-label="View">
+                        <button
+                            v-for="option in [{ key: 'tiles', label: 'Tiles', icon: Squares2X2Icon }, { key: 'list', label: 'List', icon: ListBulletIcon }]" :key="option.key"
+                            type="button" :aria-pressed="view === option.key" :aria-label="option.label" :title="option.label"
+                            class="inline-flex items-center rounded p-1.5 transition"
+                            :class="view === option.key ? 'bg-slate-200 text-slate-900 dark:bg-slate-700 dark:text-white' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200'"
+                            @click="view = option.key"
+                        >
+                            <component :is="option.icon" class="size-5" />
+                        </button>
+                    </div>
                     <Link href="/projects/create"><UiButton><PlusIcon class="size-4" />New project</UiButton></Link>
                 </template>
             </PageHeader>
 
-            <!-- The view switch has its own row under the heading -->
-            <div v-if="projects.length" class="mt-6 flex w-fit rounded-md border border-slate-300 p-0.5 dark:border-slate-700" role="group" aria-label="View">
-                <button
-                    v-for="option in [{ key: 'tiles', label: 'Tiles', icon: Squares2X2Icon }, { key: 'list', label: 'List', icon: ListBulletIcon }]" :key="option.key"
-                    type="button" :aria-pressed="view === option.key" :title="option.label"
-                    class="inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-sm font-medium transition"
-                    :class="view === option.key ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'"
-                    @click="view = option.key"
-                >
-                    <component :is="option.icon" class="size-4" />{{ option.label }}
-                </button>
-            </div>
-
-            <div v-if="projects.length && view === 'tiles'" class="mt-6 grid grid-cols-1 gap-5 @2xl:grid-cols-2 @4xl:grid-cols-3">
+            <div v-if="projects.length && view === 'tiles'" class="mt-8 grid grid-cols-1 gap-5 @2xl:grid-cols-2 @4xl:grid-cols-3">
                 <div
                     v-for="project in projects" :key="project.id"
                     class="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-300 hover:shadow-xl hover:shadow-slate-900/5 dark:border-slate-800 dark:bg-slate-900 dark:hover:shadow-sky-500/5"
