@@ -199,16 +199,23 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
                                 <div v-for="name in previews[b.key].tools_off" :key="name" class="mt-0.5 text-slate-500" title="Turned off in your Project defaults"><s>{{ name }}</s> off in your defaults</div>
                             </section>
 
-                            <section class="text-xs text-slate-600 dark:text-slate-400">
-                                <div :class="label">Settings</div>
-                                <dl class="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5">
-                                    <dt>Git</dt>
-                                    <dd>{{ previews[b.key].settings.git.on ? 'On' : 'Off' }} <span v-if="previews[b.key].settings.git.from === 'defaults'" class="text-slate-500" title="From your Project defaults">· your default</span></dd>
-                                    <dt>Sensitive data</dt>
-                                    <dd>{{ previews[b.key].settings.sensitive.on ? 'On' : 'Off' }} <span class="text-slate-500" :title="previews[b.key].settings.sensitive.from === 'defaults' ? 'From your Project defaults' : 'Set by the blueprint'">· {{ previews[b.key].settings.sensitive.from === 'defaults' ? 'your default' : 'blueprint' }}</span></dd>
-                                    <dt>Git hooks</dt>
-                                    <dd>{{ previews[b.key].settings.hooks.on.map((h) => hookNames[h] ?? h).join(', ') || 'None' }} <span v-if="previews[b.key].settings.hooks.from === 'defaults'" class="text-slate-500" title="From your Project defaults">· your default</span></dd>
-                                </dl>
+                            <section>
+                                <div :class="label">Git</div>
+                                <div class="mt-1">Git: {{ previews[b.key].settings.git.on ? 'On' : 'Off' }} <span v-if="previews[b.key].settings.git.from === 'defaults'" class="text-xs text-slate-500" title="From your Project defaults">· your default</span></div>
+                            </section>
+
+                            <!-- Hooks need Git, so they only show with it on -->
+                            <section v-if="previews[b.key].settings.git.on">
+                                <div :class="label">Git hooks</div>
+                                <ul class="mt-1 flex flex-col gap-0.5">
+                                    <li v-for="hook in previews[b.key].settings.hooks.on" :key="hook">{{ hookNames[hook] ?? hook }}</li>
+                                    <li v-if="!previews[b.key].settings.hooks.on.length" class="text-slate-500">None</li>
+                                </ul>
+                            </section>
+
+                            <section>
+                                <div :class="label">Sensitive data</div>
+                                <div class="mt-1">{{ previews[b.key].settings.sensitive.on ? 'On' : 'Off' }} <span class="text-xs text-slate-500" :title="previews[b.key].settings.sensitive.from === 'defaults' ? 'From your Project defaults' : 'Set by the blueprint'">· {{ previews[b.key].settings.sensitive.from === 'defaults' ? 'your default' : 'blueprint' }}</span></div>
                             </section>
                         </div>
 
