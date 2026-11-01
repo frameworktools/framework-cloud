@@ -26,8 +26,9 @@ pieces, and you can make your own of each.
 **Project defaults** sets what a new project starts with. Its pages are
 grouped by subject:
 
-- **New projects.** The default blueprint, the editor, package sets and renv
-  or uv, what `scaffold()` does, git, and agent files with preferred skill
+- **New projects.** The default language and blueprint, editor support,
+  default R and Python packages (a package set loads its packages into the
+  list) with renv or uv, what `scaffold()` does, git, and agent files with preferred skill
   sets.
 - **Data safety.** Whether new projects hold sensitive data, and the git
   hooks that run before each commit.
@@ -49,12 +50,12 @@ Project Structure.
 Without a named blueprint, a new project gets:
 
 - the default blueprint's structure, tools, package sets, and skill sets,
-- your default package sets and skill sets, added to the blueprint's,
+- your default packages and skill sets, added to the blueprint's,
 - your tool defaults on top: a tool you turned on is added, and one you
   turned off is left out, even if the blueprint has it.
 
-Choosing a blueprint replaces your default blueprint, package sets, skill
-sets, and tools, including ones the blueprint doesn't mention. Your
+Choosing a blueprint replaces your default blueprint, packages, skill sets,
+and tools, including ones the blueprint doesn't mention. Your
 sensitive data, Git, agent setup, and Git hooks defaults still apply where
 the blueprint doesn't set them itself.
 

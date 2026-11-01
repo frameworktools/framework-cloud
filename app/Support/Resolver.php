@@ -115,6 +115,13 @@ class Resolver
             }
         }
 
+        // The default package list for the language, under what the pieces bring
+        if ($rows = $choices['default_packages'][$language] ?? []) {
+            foreach (ProjectDefaults::packageLayer($rows) as $name => $entry) {
+                $this->settings['packages']['default_packages'][$name] ??= $entry;
+            }
+        }
+
         foreach ($choices['skills'] ?? [] as $handle) {
             $skill = Skill::visibleTo($this->user)->with('owner', 'latestVersion')->get()->firstWhere('handle', $handle)
                 ?? throw ValidationException::withMessages(['skills' => "There is no skill {$handle}."]);

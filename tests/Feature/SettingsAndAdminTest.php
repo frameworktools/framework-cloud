@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Blueprint;
 use App\Models\User;
+use App\Support\DefaultsPreview;
 use App\Support\Layer;
 use App\Support\ProjectDefaults;
 use App\Support\ProjectLayers;
@@ -50,6 +51,10 @@ class SettingsAndAdminTest extends TestCase
                 'ai_canonical_file' => 'AGENTS.md',
                 'ai_skills' => true,
                 'package_sets' => ['framework/tidyverse-analysis'],
+                'packages' => [
+                    'r' => [['name' => 'dplyr', 'source' => 'cran', 'auto_attach' => true], ['name' => 'fw-helpers', 'source' => 'github', 'repo' => 'example/fw-helpers', 'auto_attach' => false]],
+                    'python' => [['name' => 'pandas', 'source' => 'pypi', 'version' => '>=2', 'auto_attach' => false]],
+                ],
                 'skill_sets' => ['framework/ggplot2'],
                 'tools' => ['targets' => true, 'renv' => true],
                 'sensitive' => true,
@@ -60,7 +65,15 @@ class SettingsAndAdminTest extends TestCase
         // Preferred pieces stay in the cloud, out of the synced document; renv stays synced
         $this->assertSame([
             'language' => 'r',
-            'package_sets' => ['framework/tidyverse-analysis'],
+            // Sets only load packages into the lists now, so the lists are what's kept
+            'package_sets' => [],
+            'packages' => [
+                'r' => [
+                    ['name' => 'dplyr', 'source' => 'cran', 'auto_attach' => true, 'version' => null, 'repo' => null],
+                    ['name' => 'fw-helpers', 'source' => 'github', 'auto_attach' => false, 'version' => null, 'repo' => 'example/fw-helpers'],
+                ],
+                'python' => [['name' => 'pandas', 'source' => 'pypi', 'auto_attach' => false, 'version' => '>=2', 'repo' => null]],
+            ],
             'skill_sets' => ['framework/ggplot2'],
             'tools' => ['targets' => true],
             'sensitive' => true,
@@ -233,5 +246,27 @@ class SettingsAndAdminTest extends TestCase
         $setting->replaceDocument($doc);
         $layers = (new Resolver($user->fresh()))->resolve(['name' => 'Survey'])['envelope']['layers'];
         $this->assertSame('both', end($layers)['layer']['scaffold']['ide']);
+    }
+
+    public function test_default_packages_go_into_new_projects_without_a_blueprint(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now(), 'project_defaults' => ['packages' => [
+            'r' => [['name' => 'dplyr', 'source' => 'cran', 'auto_attach' => true]],
+            'python' => [['name' => 'pandas', 'source' => 'pypi', 'version' => '>=2']],
+        ]]]);
+
+        $spec = fn (string $language) => DefaultsPreview::merge((new Resolver($user))->resolve(['name' => 'Survey', 'language' => $language])['envelope']['layers']);
+        $this->assertSame(['source' => 'cran', 'auto_attach' => true], $spec('r')['packages']['default_packages']['dplyr']);
+        $this->assertSame(['source' => 'pypi', 'version' => '>=2', 'auto_attach' => false], $spec('python')['packages']['default_packages']['pandas']);
+        $this->assertArrayNotHasKey('pandas', $spec('r')['packages']['default_packages']);
+
+        // A chosen blueprint brings its own
+        $chosen = DefaultsPreview::merge((new Resolver($user))->resolve(['name' => 'Survey', 'blueprint' => 'framework/course'])['envelope']['layers']);
+        $this->assertArrayNotHasKey('dplyr', $chosen['packages']['default_packages'] ?? []);
+
+        // An account with default package sets from before sees them as its lists
+        $old = User::factory()->create(['email_verified_at' => now(), 'project_defaults' => ['package_sets' => ['framework/tidyverse-analysis']]]);
+        $this->actingAs($old)->get('/settings/packages')
+            ->assertInertia(fn (Assert $page) => $page->where('values.packages.r', fn ($rows) => collect($rows)->contains('name', 'dplyr')));
     }
 }

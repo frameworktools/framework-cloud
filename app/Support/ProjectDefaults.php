@@ -31,7 +31,7 @@ class ProjectDefaults
     public const HOOKS = ['data_security', 'check_sensitive_dirs'];
 
     /**
-     * @return array{blueprint: string, package_sets: list<string>, skill_sets: list<string>, tools: array<string, bool>, settings: array{sensitive: bool, git: bool, ai: bool, hooks: list<string>, ide: string}}
+     * @return array{blueprint: string, package_sets: list<string>, skill_sets: list<string>, packages: array<string, list<array<string, mixed>>>, tools: array<string, bool>, settings: array{sensitive: bool, git: bool, ai: bool, hooks: list<string>, ide: string}}
      */
     public static function for(User $user): array
     {
@@ -42,6 +42,7 @@ class ProjectDefaults
             'blueprint' => 'framework/'.Arr::get($doc, 'defaults.project_type', self::BLUEPRINT),
             'package_sets' => array_values($own['package_sets'] ?? []),
             'skill_sets' => array_values($own['skill_sets'] ?? []),
+            'packages' => self::packages($own['packages'] ?? []),
             'tools' => ['renv' => (bool) Arr::get($doc, 'defaults.use_renv', false)] + ($own['tools'] ?? []),
             'settings' => [
                 'sensitive' => (bool) ($own['sensitive'] ?? false),
@@ -53,12 +54,53 @@ class ProjectDefaults
         ];
     }
 
+    /** The languages with a default package list: Stata has no packages. */
+    public const PACKAGE_LANGUAGES = ['r', 'python'];
+
+    /**
+     * Default package lists, one per language, as rows in the order the
+     * person put them: name, source, and for R whether scaffold() attaches it.
+     *
+     * @return array<string, list<array{name: string, source: string, auto_attach: bool, version: ?string, repo: ?string}>>
+     */
+    public static function packages(array $lists): array
+    {
+        $out = [];
+        foreach (self::PACKAGE_LANGUAGES as $language) {
+            $out[$language] = collect($lists[$language] ?? [])->filter(fn ($row) => is_array($row) && filled($row['name'] ?? null))
+                ->map(fn (array $row) => [
+                    'name' => trim((string) $row['name']),
+                    'source' => (string) ($row['source'] ?? ($language === 'python' ? 'pypi' : 'cran')),
+                    'auto_attach' => $language === 'r' && (bool) ($row['auto_attach'] ?? false),
+                    'version' => filled($row['version'] ?? null) ? trim((string) $row['version']) : null,
+                    'repo' => filled($row['repo'] ?? null) ? trim((string) $row['repo']) : null,
+                ])->unique('name')->values()->all();
+        }
+
+        return $out;
+    }
+
+    /**
+     * A package list as the layer spec's packages.default_packages map.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public static function packageLayer(array $rows): array
+    {
+        return collect($rows)->mapWithKeys(fn (array $row) => [$row['name'] => array_filter([
+            'source' => $row['source'],
+            'version' => $row['version'] ?? null,
+            'repo' => $row['source'] === 'github' ? ($row['repo'] ?? null) : null,
+            'auto_attach' => (bool) $row['auto_attach'],
+        ], fn ($value) => $value !== null)])->all();
+    }
+
     /**
      * The same defaults from the Project defaults form's values, saved or
      * not, for previewing what a new project would get.
      *
      * @param  array<string, mixed>  $values  as DefaultsController hands them to the form
-     * @return array{blueprint: string, package_sets: list<string>, skill_sets: list<string>, tools: array<string, bool>, settings: array{sensitive: bool, git: bool, ai: bool, hooks: list<string>, ide: string}}
+     * @return array{blueprint: string, package_sets: list<string>, skill_sets: list<string>, packages: array<string, list<array<string, mixed>>>, tools: array<string, bool>, settings: array{sensitive: bool, git: bool, ai: bool, hooks: list<string>, ide: string}}
      */
     public static function fromValues(array $values): array
     {
@@ -66,6 +108,7 @@ class ProjectDefaults
             'blueprint' => 'framework/'.($values['project_type'] ?? self::BLUEPRINT),
             'package_sets' => array_values(array_filter((array) ($values['package_sets'] ?? []), 'is_string')),
             'skill_sets' => array_values(array_filter((array) ($values['skill_sets'] ?? []), 'is_string')),
+            'packages' => self::packages((array) ($values['packages'] ?? [])),
             'tools' => ['renv' => (bool) ($values['use_renv'] ?? false)] + array_map('boolval', Arr::except((array) ($values['tools'] ?? []), ['renv'])),
             'settings' => [
                 'sensitive' => (bool) ($values['sensitive'] ?? false),
@@ -95,6 +138,7 @@ class ProjectDefaults
             $choices['package_sets'] = array_values(array_unique([...$defaults['package_sets'], ...($choices['package_sets'] ?? [])]));
             $choices['skill_sets'] = array_values(array_unique([...$defaults['skill_sets'], ...($choices['skill_sets'] ?? [])]));
             $choices['tools'] = ($choices['tools'] ?? []) + $defaults['tools'];
+            $choices['default_packages'] = $defaults['packages'];
             $choices['from_defaults'] = true;
         }
 

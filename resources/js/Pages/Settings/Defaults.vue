@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useForm, usePage } from '@inertiajs/vue3';
 import SectionLayout from '@/Layouts/SectionLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
@@ -8,12 +8,13 @@ import UiButton from '@/Components/UiButton.vue';
 import UiCheckbox from '@/Components/UiCheckbox.vue';
 import UiCheckboxCards from '@/Components/UiCheckboxCards.vue';
 import UiInput from '@/Components/UiInput.vue';
+import PackagesEditor from '@/Components/PackagesEditor.vue';
 import UiRadioCards from '@/Components/UiRadioCards.vue';
 import UiSwitch from '@/Components/UiSwitch.vue';
 
 // One form for all of your defaults, shown a page at a time. Moving
 // between pages keeps unsaved changes, and Save sends everything.
-const props = defineProps({ section: String, blueprints: Array, catalog: Object, values: Object });
+const props = defineProps({ section: String, blueprints: Array, catalog: Object, presets: Array, values: Object });
 
 const page = usePage();
 const saved = computed(() => page.props.flash.status === 'defaults-updated');
@@ -57,7 +58,13 @@ const editorOptions = [
     { key: 'check_sensitive_dirs', label: 'Check private folders', description: "Warns when a private data or output folder isn't in .gitignore. The commit goes ahead." },
 ];
 
-const form = useForm({ ...props.values, tools: { ...props.values.tools }, hooks: { ...props.values.hooks } });
+const form = useForm({
+    ...props.values,
+    tools: { ...props.values.tools },
+    hooks: { ...props.values.hooks },
+    packages: { r: [...(props.values.packages?.r ?? [])], python: [...(props.values.packages?.python ?? [])] },
+});
+const packageLanguage = ref(props.values.language === 'python' ? 'python' : 'r');
 
 const editors = computed({
     get: () => ({ rstudio: ['rstudio'], vscode: ['vscode'], positron: ['vscode'], both: ['rstudio', 'vscode'] })[form.ide] ?? [],
@@ -86,7 +93,10 @@ const toggle = (list, key, on) => {
     const next = form[list].filter((k) => k !== key);
     form[list] = on ? [...next, key] : next;
 };
-const save = () => form.patch('/settings', { preserveScroll: true });
+// Rows left without a name are dropped rather than refused
+const save = () => form
+    .transform((data) => ({ ...data, packages: Object.fromEntries(Object.entries(data.packages).map(([lang, rows]) => [lang, rows.filter((row) => row.name?.trim())])) }))
+    .patch('/settings', { preserveScroll: true });
 
 const link = 'text-sky-600 hover:underline dark:text-sky-400';
 const heading = 'text-sm font-semibold text-slate-900 dark:text-white';
@@ -121,23 +131,37 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
             </template>
 
             <template v-else-if="section === 'packages'">
-                <p v-if="form.language === 'stata'" class="text-sm text-slate-600 dark:text-slate-400">Stata projects don't use package sets or environments. These apply to your R and Python projects.</p>
+                <p v-if="form.language === 'stata'" class="text-sm text-slate-600 dark:text-slate-400">Stata projects don't use packages. These apply to your R and Python projects.</p>
+                <!-- One list per language; the page starts on your default language -->
+                <div class="flex w-fit rounded-md border border-slate-300 p-0.5 text-sm dark:border-slate-700" role="tablist" aria-label="Package language">
+                    <button
+                        v-for="lang in ['r', 'python']" :key="lang" type="button" role="tab" :aria-selected="packageLanguage === lang"
+                        class="rounded px-3 py-1 transition"
+                        :class="packageLanguage === lang ? 'bg-slate-200 font-medium text-slate-900 dark:bg-slate-700 dark:text-white' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'"
+                        @click="packageLanguage = lang"
+                    >{{ languageNames[lang] }} packages<span class="ml-1.5 text-xs text-slate-500">{{ form.packages[lang].length }}</span></button>
+                </div>
+
                 <section class="flex flex-col gap-4">
                     <div>
-                        <h2 :class="heading">Package sets</h2>
-                        <p class="mt-1 text-xs text-slate-500">Used when a new project doesn't start from a blueprint.</p>
+                        <h2 :class="heading">Default packages</h2>
+                        <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                            {{ packageLanguage === 'r' ? 'Installed, and attached if you choose, when scaffold() runs.' : 'Added to the project\'s pyproject.toml.' }}
+                            Used when a new project doesn't start from a blueprint.
+                        </p>
                     </div>
-                    <UiCheckbox
-                        v-for="set in catalog.package_sets" :key="set.key" :class="dim(set)"
-                        :model-value="form.package_sets.includes(set.key)" :label="set.name" :description="describe(set)"
-                        @update:model-value="(on) => toggle('package_sets', set.key, on)"
+                    <PackagesEditor
+                        :key="packageLanguage" v-model="form.packages[packageLanguage]" :language="packageLanguage"
+                        :presets="presets.filter((p) => p.language.includes(packageLanguage) && p.packages.length)"
                     />
-                    <p class="text-sm"><Link href="/package-sets" :class="link">Browse package sets</Link></p>
+                    <p v-if="Object.keys(form.errors).some((k) => k.startsWith('packages.'))" class="text-sm text-red-600">Check the package names: letters, numbers, dots, dashes, and underscores. GitHub packages are owner/repo.</p>
+                    <p class="text-sm"><Link href="/package-sets" :class="link">Manage package sets</Link></p>
                 </section>
+
                 <section class="flex max-w-xl flex-col gap-4 border-t border-slate-200 pt-8 dark:border-slate-800">
-                    <h2 :class="heading">Package environments</h2>
-                    <UiSwitch v-model="form.use_renv" :class="dim(tool('renv'))" label="renv" :description="describe(tool('renv'), 'Records the R package versions the project uses in renv.lock.')" />
-                    <UiSwitch v-if="tool('uv')" :class="dim(tool('uv'))" :model-value="!!form.tools.uv" :label="tool('uv').name" :description="describe(tool('uv'), 'Manages the Python environment in pyproject.toml and uv.lock.')" @update:model-value="(on) => setTool('uv', on)" />
+                    <h2 :class="heading">Package environment</h2>
+                    <UiSwitch v-if="packageLanguage === 'r'" v-model="form.use_renv" label="renv" description="Records the R package versions the project uses in renv.lock." />
+                    <UiSwitch v-else-if="tool('uv')" :model-value="!!form.tools.uv" :label="tool('uv').name" description="Manages the Python environment in pyproject.toml and uv.lock." @update:model-value="(on) => setTool('uv', on)" />
                 </section>
             </template>
 

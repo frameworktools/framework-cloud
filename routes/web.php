@@ -17,6 +17,7 @@ use App\Http\Controllers\Settings\AccountController;
 use App\Http\Controllers\Settings\AuthorController;
 use App\Http\Controllers\Settings\DefaultsController;
 use App\Http\Controllers\Settings\GitHubController;
+use App\Http\Controllers\Settings\PackageSearchController;
 use App\Http\Controllers\Settings\PasskeysController;
 use App\Models\User;
 use Illuminate\Support\Arr;
@@ -174,6 +175,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('settings/{section}', [DefaultsController::class, 'edit'])
         ->whereIn('section', DefaultsController::SECTIONS)->name('settings');
     Route::patch('settings', [DefaultsController::class, 'update']);
+    // Package names for the package lists
+    Route::get('packages/search', PackageSearchController::class)->middleware('throttle:120,1');
     // What a blueprint would create as the default, with the form's unsaved values
     Route::post('settings/blueprint/preview', [DefaultsController::class, 'preview'])->middleware('throttle:120,1');
 

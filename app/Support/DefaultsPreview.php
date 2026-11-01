@@ -60,6 +60,13 @@ class DefaultsPreview
             'available' => true,
             'language' => $resolved['language'],
             'tree' => ProjectTree::for($spec, $resolved['language'], $ofKind('tool')->map(fn (FacetVersion $v) => $v->facet->key)->all(), $sensitive),
+            // Every package the project starts with, and where each comes from
+            'packages' => collect($spec['packages']['default_packages'] ?? [])->map(fn ($entry, $name) => [
+                'name' => (string) $name,
+                'source' => $entry['source'] ?? null,
+                'auto_attach' => (bool) ($entry['auto_attach'] ?? false),
+                'from' => collect($resolved['pieces'])->first(fn (FacetVersion $v) => isset($v->layer['packages']['default_packages'][$name]))?->facet->name,
+            ])->values()->all(),
             'package_sets' => $ofKind('package_set')->map(fn (FacetVersion $v) => [
                 'name' => $v->facet->name, 'id' => $v->facet->id, 'packages' => $packages($v->layer), 'from' => $from($v),
             ])->all(),

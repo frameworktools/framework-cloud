@@ -37,7 +37,7 @@ const language = reactive(Object.fromEntries(props.blueprints.map((b) => [b.key,
 // What the server resolves the previews from: every default that changes a new project
 const values = computed(() => {
     const d = props.defaults;
-    return { ide: d.ide, package_sets: d.package_sets, skill_sets: d.skill_sets, tools: d.tools, use_renv: d.use_renv, sensitive: d.sensitive, use_git: d.use_git, ai_enabled: d.ai_enabled, hooks: d.hooks };
+    return { ide: d.ide, packages: d.packages, skill_sets: d.skill_sets, tools: d.tools, use_renv: d.use_renv, sensitive: d.sensitive, use_git: d.use_git, ai_enabled: d.ai_enabled, hooks: d.hooks };
 });
 const previews = reactive({});
 const loading = reactive({});
@@ -160,14 +160,11 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
                             <section>
                                 <div :class="label">Packages</div>
                                 <ul class="mt-1 flex flex-col gap-1">
-                                    <li v-for="set in previews[b.key].package_sets" :key="set.id">
-                                        <details>
-                                            <summary class="cursor-pointer">{{ set.name }} <span v-if="set.from === 'defaults'" class="text-xs text-slate-500" title="From your Project defaults">· your default</span></summary>
-                                            <div class="mt-2 pl-4 font-mono text-xs text-slate-600 dark:text-slate-400">{{ set.packages.join(', ') }}</div>
-                                        </details>
+                                    <li v-for="p in previews[b.key].packages" :key="p.name" class="flex flex-wrap items-baseline gap-x-1.5">
+                                        <span class="font-mono text-xs">{{ p.name }}</span>
+                                        <span class="text-xs text-slate-500" :title="p.from ? `From ${p.from}` : 'From your Project defaults'">{{ p.from ? `with ${p.from}` : 'your default' }}</span>
                                     </li>
-                                    <li v-for="p in previews[b.key].other_packages" :key="p.package + p.from"><span class="font-mono text-xs">{{ p.package }}</span> <span class="text-xs text-slate-500">with {{ p.from }}</span></li>
-                                    <li v-if="!previews[b.key].package_sets.length && !previews[b.key].other_packages.length" class="text-slate-500">None</li>
+                                    <li v-if="!previews[b.key].packages.length" class="text-slate-500">None</li>
                                 </ul>
                             </section>
 

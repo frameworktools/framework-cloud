@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
 use App\Models\Blueprint;
+use App\Models\Facet;
 use App\Models\Project;
+use App\Models\User;
 use App\Support\Catalog;
 use App\Support\DefaultsPreview;
 use App\Support\ProjectDefaults;
@@ -32,6 +34,15 @@ class DefaultsController extends Controller
                 ->filter(fn (Blueprint $b) => $b->latestVersion)->sortBy(fn (Blueprint $b) => array_search($b->key, self::ORDER, true))
                 ->map(fn (Blueprint $b) => self::listing($b))->values(),
             'catalog' => Catalog::for($request->user()),
+            // Package sets load their packages into a list, for each language they fit
+            'presets' => Facet::visibleTo($request->user())->where('kind', 'package_set')->with('latestVersion')
+                ->orderByRaw('user_id is not null')->orderBy('position')->orderBy('name')->get()
+                ->map(fn (Facet $set) => [
+                    'key' => $set->handle,
+                    'name' => $set->name,
+                    'language' => $set->language ?? ProjectDefaults::PACKAGE_LANGUAGES,
+                    'packages' => self::rowsFrom($set->latestVersion?->layer ?? []),
+                ])->values(),
             'values' => [
                 'language' => $request->user()->project_defaults['language'] ?? ProjectDefaults::LANGUAGE,
                 'project_type' => Arr::get($doc, 'defaults.project_type', ProjectDefaults::BLUEPRINT),
@@ -44,12 +55,50 @@ class DefaultsController extends Controller
                 'ai_canonical_file' => Arr::get($doc, 'ai.canonical_file', 'AGENTS.md'),
                 'ai_skills' => (bool) Arr::get($doc, 'ai.skills', true),
                 'package_sets' => $request->user()->project_defaults['package_sets'] ?? [],
+                'packages' => self::packageLists($request->user()),
                 'skill_sets' => $request->user()->project_defaults['skill_sets'] ?? [],
                 'tools' => (object) ($request->user()->project_defaults['tools'] ?? []),
                 'sensitive' => (bool) ($request->user()->project_defaults['sensitive'] ?? false),
                 'hooks' => (object) ($request->user()->project_defaults['hooks'] ?? []),
             ],
         ]);
+    }
+
+    /**
+     * The person's package lists. Before there were lists, default package
+     * sets stood in for them, so those sets start the lists.
+     *
+     * @return array<string, list<array<string, mixed>>>
+     */
+    private static function packageLists(User $user): array
+    {
+        $own = $user->project_defaults ?? [];
+        if (isset($own['packages']) || empty($own['package_sets'])) {
+            return ProjectDefaults::packages($own['packages'] ?? []);
+        }
+
+        $lists = [];
+        foreach (Facet::visibleTo($user)->where('kind', 'package_set')->with('latestVersion')->get() as $set) {
+            if (in_array($set->handle, $own['package_sets'], true)) {
+                foreach ($set->language ?? ProjectDefaults::PACKAGE_LANGUAGES as $language) {
+                    $lists[$language] = [...($lists[$language] ?? []), ...self::rowsFrom($set->latestVersion?->layer ?? [])];
+                }
+            }
+        }
+
+        return ProjectDefaults::packages($lists);
+    }
+
+    /** A layer's packages as list rows. */
+    private static function rowsFrom(array $layer): array
+    {
+        return collect($layer['packages']['default_packages'] ?? [])->map(fn ($entry, $name) => [
+            'name' => $name,
+            'source' => $entry['source'] ?? 'cran',
+            'auto_attach' => (bool) ($entry['auto_attach'] ?? false),
+            'version' => $entry['version'] ?? null,
+            'repo' => $entry['repo'] ?? null,
+        ])->values()->all();
     }
 
     /** The order the Blueprint page lists them in: the standard project first, Bare last. */
@@ -107,6 +156,13 @@ class DefaultsController extends Controller
             'ai_skills' => ['boolean'],
             'package_sets' => ['array'],
             'package_sets.*' => ['string', 'max:200'],
+            'packages' => ['array'],
+            'packages.*' => ['array'],
+            'packages.*.*.name' => ['required', 'string', 'max:100', 'regex:/^[A-Za-z0-9][A-Za-z0-9._-]*$/'],
+            'packages.*.*.source' => ['required', 'in:cran,bioc,github,pypi'],
+            'packages.*.*.auto_attach' => ['boolean'],
+            'packages.*.*.version' => ['nullable', 'string', 'max:50'],
+            'packages.*.*.repo' => ['nullable', 'string', 'max:200', 'regex:/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/'],
             'skill_sets' => ['array'],
             'skill_sets.*' => ['string', 'max:200'],
             'tools' => ['array'],
@@ -134,7 +190,9 @@ class DefaultsController extends Controller
         // Preferred pieces stay in the cloud; renv already lives in the synced settings
         $request->user()->forceFill(['project_defaults' => [
             'language' => $validated['language'] ?? $request->user()->project_defaults['language'] ?? ProjectDefaults::LANGUAGE,
-            'package_sets' => array_values($validated['package_sets'] ?? []),
+            // Package sets now only load packages into the lists, which hold the result
+            'package_sets' => [],
+            'packages' => ProjectDefaults::packages($validated['packages'] ?? []),
             'skill_sets' => array_values($validated['skill_sets'] ?? []),
             'tools' => array_map('boolval', Arr::except($validated['tools'] ?? [], ['renv'])),
             'sensitive' => (bool) ($validated['sensitive'] ?? false),
