@@ -14,7 +14,7 @@ import UiSwitch from '@/Components/UiSwitch.vue';
 
 // One form for all of your defaults, shown a page at a time. Moving
 // between pages keeps unsaved changes, and Save sends everything.
-const props = defineProps({ section: String, blueprints: Array, catalog: Object, presets: Array, ggplotThemes: Array, values: Object });
+const props = defineProps({ section: String, blueprints: Array, catalog: Object, presets: Array, ggplotThemes: Array, quartoChoices: Object, values: Object });
 
 const page = usePage();
 const saved = computed(() => page.props.flash.status === 'defaults-updated');
@@ -64,6 +64,7 @@ const editorOptions = [
 ];const hooks = [
     { key: 'data_security', label: 'Check for secrets', description: 'Blocks a commit that looks like it holds passwords, keys, or other secrets.' },
     { key: 'check_sensitive_dirs', label: 'Check private folders', description: "Warns when a private data or output folder isn't in .gitignore. The commit goes ahead." },
+    { key: 'check_notebook_outputs', label: 'Check notebook outputs', description: 'Blocks a commit of a Jupyter notebook that still has outputs, since outputs can hold data. Clear them first.' },
 ];
 
 const form = useForm({
@@ -71,7 +72,13 @@ const form = useForm({
     tools: { ...props.values.tools },
     hooks: { ...props.values.hooks },
     packages: { r: [...(props.values.packages?.r ?? [])], python: [...(props.values.packages?.python ?? [])] },
+    quarto: { html: { ...props.values.quarto.html }, revealjs: { ...props.values.quarto.revealjs } },
 });
+const defaultBlueprint = computed(() => props.blueprints.find((b) => b.key === form.project_type));
+// Quarto's names for themes and highlighting, shown the way the GUI showed them
+const titled = (value) => value.charAt(0).toUpperCase() + value.slice(1);
+const themeOption = (value) => ({ value, label: titled(value) });
+const highlightOption = (value) => ({ value, label: value === 'github' ? 'GitHub' : value === 'breezedark' ? 'Breeze Dark' : titled(value) });
 const packageLanguage = ref(props.values.language === 'python' ? 'python' : 'r');
 
 // The agents R, Python, and fw set projects up for, and what each one gets
@@ -268,16 +275,84 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                         : 'Jupyter notebooks with the kernel for the project\'s language: IRkernel for R, ipykernel for Python. Turn it on to use Jupyter alongside your notebook platform.'"
                     @update:model-value="(on) => setTool('jupyter', on)"
                 />
+                <p :class="note">
+                    In Python projects, save_notebook() renders a Jupyter notebook with Quarto, into the
+                    <Link href="/settings/quarto" preserve-state :class="link">render folders</Link> with the HTML settings there.
+                </p>
+                <p :class="note">
+                    Notebooks keep their outputs, which can hold data.
+                    <Link href="/settings/hooks" preserve-state :class="link">Check notebook outputs</Link> blocks a commit until they're cleared.
+                </p>
             </section>
 
-            <section v-else-if="section === 'quarto'" class="flex max-w-xl flex-col gap-5" :class="form.language === 'stata' ? 'opacity-60' : ''">
+            <template v-else-if="section === 'quarto'">
                 <p v-if="form.language === 'stata'" class="text-sm text-slate-600 dark:text-slate-400">Stata projects don't use Quarto. These apply to your R and Python projects.</p>
-                <p class="text-xs text-slate-500">Used when a new project doesn't start from a blueprint.</p>
-                <UiSwitch v-if="tool('quarto')" :model-value="!!form.tools.quarto" label="Quarto" description="Quarto notebooks and documents." @update:model-value="(on) => setTool('quarto', on)" />
-                <template v-for="key in ['quarto_manuscript', 'quarto_slides']" :key="key">
-                    <UiSwitch v-if="tool(key)" :model-value="!!form.tools[key]" :label="tool(key).name" :description="`${tool(key).description} Turns Quarto on.`" @update:model-value="(on) => setTool(key, on)" />
-                </template>
-            </section>
+                <div class="flex max-w-xl flex-col gap-8" :class="form.language === 'stata' ? 'opacity-60' : ''">
+                    <UiSwitch v-if="tool('quarto')" :model-value="!!form.tools.quarto" label="Quarto project files" description="Adds _quarto.yml with the settings below, so documents render the same way across the project. Applies when a new project doesn't start from a blueprint." @update:model-value="(on) => setTool('quarto', on)" />
+
+                    <!-- Render folders belong to the project structure; shown here for the default blueprint -->
+                    <section class="flex flex-col gap-3">
+                        <div>
+                            <h2 :class="heading">Render folders</h2>
+                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                                Where rendered documents go, from the project structure of your default blueprint, {{ defaultBlueprint?.name }}.
+                                In Python projects, Jupyter notebooks saved with save_notebook() render to the same folders.
+                            </p>
+                        </div>
+                        <ul v-if="defaultBlueprint?.render_dirs.length" class="divide-y divide-slate-200 rounded-lg border border-slate-200 font-mono text-sm dark:divide-slate-800 dark:border-slate-700">
+                            <li v-for="dir in defaultBlueprint.render_dirs" :key="dir.from" class="flex items-center gap-3 px-4 py-2.5">
+                                <span class="text-slate-900 dark:text-white">{{ dir.from }}/</span>
+                                <span class="text-slate-400" aria-label="renders to">→</span>
+                                <span class="text-slate-600 dark:text-slate-300">{{ dir.to }}/</span>
+                            </li>
+                        </ul>
+                        <p v-else :class="note">{{ defaultBlueprint?.render_dir === '.' ? 'Documents render next to their source.' : 'This structure has no render folders: documents render next to their source.' }}</p>
+                        <p class="text-sm"><Link href="/structures" :class="link">Edit project structures</Link></p>
+                    </section>
+
+                    <section class="flex flex-col gap-5">
+                        <div>
+                            <h2 :class="heading">HTML documents</h2>
+                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Notebooks and documents rendered to HTML.</p>
+                        </div>
+                        <UiSelect v-model="form.quarto.html.theme" class="max-w-56" label="Theme" :options="quartoChoices['html.theme'].map(themeOption)" />
+                        <UiSwitch v-model="form.quarto.html.embed_resources" label="Embed resources" description="Each HTML file holds its images, styles, and scripts, so it opens on its own." />
+                        <UiSwitch v-model="form.quarto.html.toc" label="Table of contents" description="A table of contents beside the document." />
+                        <UiInput v-if="form.quarto.html.toc" v-model.number="form.quarto.html.toc_depth" type="number" min="1" max="6" class="-mt-2 max-w-48" label="Table of contents depth" />
+                        <UiSwitch v-model="form.quarto.html.code_fold" label="Code folding" description="Readers can collapse and expand code blocks." />
+                        <UiSwitch v-model="form.quarto.html.code_tools" label="Code tools" description="A menu to show, hide, or download the code." />
+                        <UiSelect v-model="form.quarto.html.highlight_style" class="max-w-56" label="Syntax highlighting" :options="quartoChoices.highlight_style.map(highlightOption)" />
+                    </section>
+
+                    <section class="flex flex-col gap-5">
+                        <div>
+                            <h2 :class="heading">Slides</h2>
+                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Presentations rendered with RevealJS.</p>
+                        </div>
+                        <UiSelect v-model="form.quarto.revealjs.theme" class="max-w-56" label="Theme" :options="quartoChoices['revealjs.theme'].map(themeOption)" />
+                        <UiSwitch v-model="form.quarto.revealjs.incremental" label="Incremental bullets" description="List items appear one at a time." />
+                        <UiSwitch v-model="form.quarto.revealjs.slide_number" label="Slide numbers" description="Each slide shows its number in the corner." />
+                        <UiSwitch v-model="form.quarto.revealjs.controls" label="Navigation controls" description="Arrows for moving between slides." />
+                        <UiSwitch v-model="form.quarto.revealjs.progress" label="Progress bar" description="A bar along the bottom that shows how far along the presentation is." />
+                        <UiSwitch v-model="form.quarto.revealjs.center" label="Center slides" description="Slide content is centered vertically." />
+                        <div class="grid max-w-md gap-5 sm:grid-cols-2">
+                            <UiSelect v-model="form.quarto.revealjs.transition" label="Slide transition" :options="quartoChoices.transition.map(themeOption)" />
+                            <UiSelect v-model="form.quarto.revealjs.background_transition" label="Background transition" :options="quartoChoices.transition.map(themeOption)" />
+                        </div>
+                        <UiSelect v-model="form.quarto.revealjs.highlight_style" class="max-w-56" label="Syntax highlighting" :options="quartoChoices.highlight_style.map(highlightOption)" />
+                    </section>
+
+                    <section class="flex flex-col gap-5">
+                        <div>
+                            <h2 :class="heading">Starter documents</h2>
+                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Applies when a new project doesn't start from a blueprint.</p>
+                        </div>
+                        <template v-for="key in ['quarto_manuscript', 'quarto_slides']" :key="key">
+                            <UiSwitch v-if="tool(key)" :model-value="!!form.tools[key]" :label="tool(key).name" :description="`${tool(key).description} Turns Quarto project files on.`" @update:model-value="(on) => setTool(key, on)" />
+                        </template>
+                    </section>
+                </div>
+            </template>
         </form>
 
         <template #actions>

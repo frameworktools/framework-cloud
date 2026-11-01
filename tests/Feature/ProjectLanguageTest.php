@@ -141,7 +141,8 @@ class ProjectLanguageTest extends TestCase
             'language' => 'r',
             'scaffold' => ['ide' => 'positron'] + ProjectDefaults::SCAFFOLD,
             'ai' => ['assistants' => ['claude' => false, 'codex' => false, 'copilot' => false]],
-        ], Arr::except($layer, 'tools'));
+        ], Arr::except($layer, ['tools', 'quarto']));
+        $this->assertSame(ProjectDefaults::QUARTO['html'], $layer['quarto']['html']);
         // With the spec's tools key on, every R tool is named on or off
         $this->assertArrayHasKey('renv', $layer['tools']);
         $this->assertNotContains('uv', array_keys($layer['tools']));

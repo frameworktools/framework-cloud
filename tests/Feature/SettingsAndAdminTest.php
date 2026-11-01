@@ -318,6 +318,34 @@ class SettingsAndAdminTest extends TestCase
         $this->actingAs($user)->patch('/settings', $base + ['notebook_format' => 'word'])->assertSessionHasErrors('notebook_format');
     }
 
+    public function test_quarto_settings_save_in_r_shape_and_go_to_r_and_python_projects(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $this->actingAs($user)->get('/settings/quarto')
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('values.quarto.html.toc_depth', 3)
+                ->where('values.quarto.revealjs.transition', 'slide')
+                ->where('blueprints.0.render_dirs', fn ($dirs) => collect($dirs)->contains(['from' => 'notebooks', 'to' => 'outputs/notebooks'])));
+
+        $this->actingAs($user)->patch('/settings', [
+            'project_type' => 'project', 'notebook_format' => 'quarto', 'ide' => 'vscode',
+            'quarto' => ['html' => ['theme' => 'cosmo', 'code_fold' => true, 'toc_depth' => 2], 'revealjs' => ['transition' => 'zoom', 'theme' => 'not-a-theme']],
+        ])->assertSessionHasNoErrors();
+
+        $quarto = $user->globalSettings()->document['quarto'];
+        $this->assertSame('cosmo', $quarto['html']['theme']);
+        $this->assertTrue($quarto['html']['code_fold']);
+        $this->assertSame(2, $quarto['html']['toc_depth']);
+        $this->assertSame('zoom', $quarto['revealjs']['transition']);
+        // An unknown choice keeps R's default
+        $this->assertSame('default', $quarto['revealjs']['theme']);
+
+        $layer = fn (string $language) => last((new Resolver($user->fresh()))->resolve(['name' => 'Survey', 'language' => $language])['envelope']['layers'])['layer'];
+        $this->assertSame('cosmo', $layer('r')['quarto']['html']['theme']);
+        $this->assertSame('zoom', $layer('python')['quarto']['revealjs']['transition']);
+        $this->assertArrayNotHasKey('quarto', $layer('stata'));
+    }
+
     public function test_default_packages_go_into_new_projects_without_a_blueprint(): void
     {
         $user = User::factory()->create(['email_verified_at' => now(), 'project_defaults' => ['packages' => [

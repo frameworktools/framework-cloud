@@ -44,6 +44,7 @@ class DefaultsController extends Controller
                     'packages' => self::rowsFrom($set->latestVersion?->layer ?? []),
                 ])->values(),
             'ggplotThemes' => ProjectDefaults::GGPLOT_THEMES,
+            'quartoChoices' => ProjectDefaults::QUARTO_CHOICES,
             'values' => [
                 'language' => $request->user()->project_defaults['language'] ?? ProjectDefaults::LANGUAGE,
                 'project_type' => Arr::get($doc, 'defaults.project_type', ProjectDefaults::BLUEPRINT),
@@ -54,6 +55,7 @@ class DefaultsController extends Controller
                 ...ProjectDefaults::scaffold((array) ($doc['defaults'] ?? [])),
                 'ai_enabled' => (bool) Arr::get($doc, 'ai.enabled', true),
                 'ai_agents' => ProjectDefaults::agents(Arr::get($doc, 'ai.assistants')),
+                'quarto' => ProjectDefaults::quarto((array) ($doc['quarto'] ?? [])),
                 'ai_skills' => (bool) Arr::get($doc, 'ai.skills', true),
                 'package_sets' => $request->user()->project_defaults['package_sets'] ?? [],
                 'packages' => self::packageLists($request->user()),
@@ -123,6 +125,10 @@ class DefaultsController extends Controller
             'handle' => $blueprint->handle,
             'version' => $version->version,
             'structure' => $version->base->facet->name,
+            // Where each folder's documents render, from the project structure
+            'render_dirs' => collect($version->base->layer['render_dirs'] ?? [])
+                ->map(fn ($target, $key) => ['from' => $version->base->layer['directories'][$key] ?? $key, 'to' => $target])->values(),
+            'render_dir' => $version->base->layer['quarto']['render_dir'] ?? null,
             'languages' => array_values(array_filter(Project::LANGUAGES, fn (string $language) => ! Project::typeProblem($language, $type))),
         ];
     }
@@ -156,6 +162,9 @@ class DefaultsController extends Controller
             'ggplot_theme' => ['nullable', 'in:'.implode(',', ProjectDefaults::GGPLOT_THEMES)],
             'source_all_functions' => ['boolean'],
             'ai_enabled' => ['boolean'],
+            'quarto' => ['array'],
+            'quarto.html' => ['array'],
+            'quarto.revealjs' => ['array'],
             'ai_agents' => ['array'],
             'ai_agents.*' => ['in:'.implode(',', ProjectDefaults::AGENTS)],
             'ai_skills' => ['boolean'],
@@ -193,6 +202,8 @@ class DefaultsController extends Controller
         // Claude Code gets a CLAUDE.md that imports it.
         Arr::set($doc, 'ai.assistants', ProjectDefaults::agents($validated['ai_agents'] ?? null));
         Arr::set($doc, 'ai.canonical_file', 'AGENTS.md');
+        // In the shape R's global settings use, so R can read them too
+        Arr::set($doc, 'quarto', ProjectDefaults::quarto($validated['quarto'] ?? (array) ($doc['quarto'] ?? [])));
         Arr::set($doc, 'ai.skills', (bool) ($validated['ai_skills'] ?? true));
 
         $setting->replaceDocument($doc, client: ['device' => 'web', 'app' => 'framework.pub']);

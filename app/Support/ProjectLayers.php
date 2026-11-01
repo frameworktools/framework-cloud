@@ -51,7 +51,7 @@ class ProjectLayers
         // always goes in, so every tool can tell which one builds the project,
         // and the owner's editor files, which are a personal choice.
         $settings = ProjectDefaults::for($user)['settings'];
-        $layers[] = self::projectLayer($project->slug, $project->language ?? 'r', $layers, $settings['ide'], $settings['scaffold'], $settings['agents']);
+        $layers[] = self::projectLayer($project->slug, $project->language ?? 'r', $layers, $settings['ide'], $settings['scaffold'], $settings['agents'], $settings['quarto']);
 
         return self::envelope($user, $project->name, $layers, $version && ! $composition ? ['key' => $version->blueprint->handle, 'version' => $version->version] : null);
     }
@@ -73,7 +73,7 @@ class ProjectLayers
      * agents, and for Stata the R-only folders removed. With the spec's tools key on, it also names every tool for
      * the language as on or off, so no client has to guess.
      */
-    public static function projectLayer(string $key, string $language, array $layers, ?string $ide = null, array $scaffold = [], ?array $agents = null): array
+    public static function projectLayer(string $key, string $language, array $layers, ?string $ide = null, array $scaffold = [], ?array $agents = null, array $quarto = []): array
     {
         $layer = ['language' => $language] + ($language === 'stata' ? self::withoutRFolders($layers) : []);
         if ($ide && $language !== 'stata') {
@@ -91,6 +91,17 @@ class ProjectLayers
             // A blueprint or piece that sets it decides
             if (! collect($layers)->contains(fn (array $l) => array_key_exists($name, (array) ($l['layer']['scaffold'] ?? [])))) {
                 $layer['scaffold'][$name] = $value;
+            }
+        }
+
+        // _quarto.yml settings, each where no layer beneath sets it; Stata has no Quarto
+        if ($language !== 'stata') {
+            foreach ($quarto as $format => $settings) {
+                foreach ((array) $settings as $name => $value) {
+                    if (! collect($layers)->contains(fn (array $l) => array_key_exists($name, (array) ($l['layer']['quarto'][$format] ?? [])))) {
+                        $layer['quarto'][$format][$name] = $value;
+                    }
+                }
             }
         }
 

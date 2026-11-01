@@ -42,6 +42,41 @@ class ProjectDefaults
         'notebook_format' => 'quarto',
     ];
 
+    /**
+     * The _quarto.yml settings for HTML documents and RevealJS slides, as the
+     * Framework GUI offered them and R's global settings ship them.
+     */
+    public const QUARTO = [
+        'html' => [
+            'theme' => 'default',
+            'embed_resources' => true,
+            'toc' => true,
+            'toc_depth' => 3,
+            'code_fold' => false,
+            'code_tools' => false,
+            'highlight_style' => 'github',
+        ],
+        'revealjs' => [
+            'theme' => 'default',
+            'incremental' => false,
+            'slide_number' => true,
+            'controls' => true,
+            'progress' => true,
+            'center' => true,
+            'transition' => 'slide',
+            'background_transition' => 'fade',
+            'highlight_style' => 'github',
+        ],
+    ];
+
+    /** The choices for the Quarto settings that take one, as the GUI listed them. */
+    public const QUARTO_CHOICES = [
+        'html.theme' => ['default', 'cosmo', 'cerulean', 'flatly', 'journal', 'lumen', 'minty', 'pulse', 'sandstone', 'simplex', 'sketchy', 'slate', 'solar', 'spacelab', 'superhero', 'united', 'yeti'],
+        'revealjs.theme' => ['default', 'beige', 'black', 'blood', 'league', 'moon', 'night', 'serif', 'simple', 'sky', 'solarized', 'white'],
+        'transition' => ['none', 'fade', 'slide', 'convex', 'concave', 'zoom'],
+        'highlight_style' => ['github', 'tango', 'pygments', 'kate', 'monochrome', 'espresso', 'zenburn', 'haddock', 'breezedark'],
+    ];
+
     /** The notebook platforms: Quarto and Jupyter for R and Python, R Markdown for R. */
     public const NOTEBOOK_FORMATS = ['quarto', 'jupyter', 'rmarkdown'];
 
@@ -60,10 +95,10 @@ class ProjectDefaults
     public const AGENT_NAMES = ['claude' => 'Claude Code', 'codex' => 'Codex', 'copilot' => 'GitHub Copilot'];
 
     /** The git hooks a user can turn on for new projects, as the R package names them. */
-    public const HOOKS = ['data_security', 'check_sensitive_dirs'];
+    public const HOOKS = ['data_security', 'check_sensitive_dirs', 'check_notebook_outputs'];
 
     /**
-     * @return array{blueprint: string, package_sets: list<string>, skill_sets: list<string>, packages: array<string, list<array<string, mixed>>>, tools: array<string, bool>, settings: array{git: bool, ai: bool, hooks: list<string>, ide: string, scaffold: array<string, bool|string>, agents: list<string>}}
+     * @return array{blueprint: string, package_sets: list<string>, skill_sets: list<string>, packages: array<string, list<array<string, mixed>>>, tools: array<string, bool>, settings: array{git: bool, ai: bool, hooks: list<string>, ide: string, scaffold: array<string, bool|string>, agents: list<string>, quarto: array<string, array<string, mixed>>}}
      */
     public static function for(User $user): array
     {
@@ -83,6 +118,7 @@ class ProjectDefaults
                 'ide' => (string) Arr::get($doc, 'defaults.ide', self::IDE),
                 'scaffold' => self::scaffold((array) ($doc['defaults'] ?? [])),
                 'agents' => self::agents(Arr::get($doc, 'ai.assistants')),
+                'quarto' => self::quarto((array) ($doc['quarto'] ?? [])),
             ],
         ];
     }
@@ -116,6 +152,29 @@ class ProjectDefaults
     public static function agents(mixed $agents): array
     {
         return is_array($agents) ? array_values(array_intersect(self::AGENTS, $agents)) : self::AGENTS_DEFAULT;
+    }
+
+    /**
+     * The Quarto settings from the synced document or the form, each one
+     * checked against its kind and choices, with R's defaults for the rest.
+     *
+     * @param  array<string, mixed>  $quarto
+     * @return array{html: array<string, mixed>, revealjs: array<string, mixed>}
+     */
+    public static function quarto(array $quarto): array
+    {
+        $choices = fn (string $format, string $key) => self::QUARTO_CHOICES["{$format}.{$key}"]
+            ?? self::QUARTO_CHOICES[str_ends_with($key, 'transition') ? 'transition' : $key] ?? null;
+
+        return collect(self::QUARTO)->map(fn (array $defaults, string $format) => collect($defaults)->map(function ($default, string $key) use ($quarto, $format, $choices) {
+            $value = $quarto[$format][$key] ?? null;
+
+            return match (true) {
+                is_bool($default) => is_bool($value) ? $value : $default,
+                is_int($default) => is_numeric($value) && (int) $value >= 1 && (int) $value <= 6 ? (int) $value : $default,
+                default => in_array($value, $choices($format, $key) ?? [], true) ? $value : $default,
+            };
+        })->all())->all();
     }
 
     /** The languages with a default package list: Stata has no packages. */
@@ -187,7 +246,7 @@ class ProjectDefaults
      * not, for previewing what a new project would get.
      *
      * @param  array<string, mixed>  $values  as DefaultsController hands them to the form
-     * @return array{blueprint: string, package_sets: list<string>, skill_sets: list<string>, packages: array<string, list<array<string, mixed>>>, tools: array<string, bool>, settings: array{git: bool, ai: bool, hooks: list<string>, ide: string, scaffold: array<string, bool|string>, agents: list<string>}}
+     * @return array{blueprint: string, package_sets: list<string>, skill_sets: list<string>, packages: array<string, list<array<string, mixed>>>, tools: array<string, bool>, settings: array{git: bool, ai: bool, hooks: list<string>, ide: string, scaffold: array<string, bool|string>, agents: list<string>, quarto: array<string, array<string, mixed>>}}
      */
     public static function fromValues(array $values): array
     {
@@ -204,6 +263,7 @@ class ProjectDefaults
                 'ide' => (string) ($values['ide'] ?? self::IDE),
                 'scaffold' => self::scaffold($values),
                 'agents' => self::agents($values['ai_agents'] ?? null),
+                'quarto' => self::quarto((array) ($values['quarto'] ?? [])),
             ],
         ];
     }
