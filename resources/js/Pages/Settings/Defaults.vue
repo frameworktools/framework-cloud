@@ -5,7 +5,6 @@ import SectionLayout from '@/Layouts/SectionLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import DefaultBlueprintList from '@/Components/DefaultBlueprintList.vue';
 import UiButton from '@/Components/UiButton.vue';
-import UiCheckbox from '@/Components/UiCheckbox.vue';
 import UiCheckboxCards from '@/Components/UiCheckboxCards.vue';
 import UiInput from '@/Components/UiInput.vue';
 import PackagesEditor from '@/Components/PackagesEditor.vue';
@@ -209,15 +208,14 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                     <div class="max-w-xl">
                         <UiSwitch v-model="form.ai_skills" :disabled="!form.ai_enabled" label="Install Framework skills" description="Adds instructions for working in a Framework project that agents load when they need them." />
                     </div>
-                    <section class="flex flex-col gap-4">
+                    <section class="flex flex-col gap-3">
                         <div>
                             <h2 :class="heading">Skill sets</h2>
-                            <p class="mt-1 text-xs text-slate-500">Used when a new project doesn't start from a blueprint.</p>
+                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Used when a new project doesn't start from a blueprint.</p>
                         </div>
-                        <UiCheckbox
-                            v-for="set in catalog.skill_sets" :key="set.key" :disabled="!form.ai_enabled" :class="form.ai_enabled ? dim(set) : ''"
-                            :model-value="form.skill_sets.includes(set.key)" :label="set.name" :description="describe(set)"
-                            @update:model-value="(on) => toggle('skill_sets', set.key, on)"
+                        <UiCheckboxCards
+                            v-model="form.skill_sets" legend="Skill sets" hide-legend
+                            :options="catalog.skill_sets.map((set) => ({ value: set.key, label: set.name, description: describe(set), dim: !fits(set) }))"
                         />
                         <p class="text-sm">
                             <Link href="/skill-sets" :class="link">Manage skill sets</Link> ·
