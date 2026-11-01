@@ -12,10 +12,6 @@ return [
     */
     'spec_tools' => (bool) env('FW_SPEC_TOOLS', false),
 
-    // Send ai.context_file (CLAUDE.md for people who use only Claude Code)
-    // once R, Python, and fw read it
-    'spec_context_file' => (bool) env('FW_SPEC_CONTEXT_FILE', false),
-
     /*
     |--------------------------------------------------------------------------
     | Documents storage

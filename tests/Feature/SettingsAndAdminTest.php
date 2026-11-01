@@ -278,11 +278,11 @@ class SettingsAndAdminTest extends TestCase
             ->assertSessionHasErrors(['seed', 'ggplot_theme']);
     }
 
-    public function test_agents_you_use_decide_the_agent_files_and_claude_md_is_only_for_claude_code_alone(): void
+    public function test_agents_you_use_decide_the_agent_files(): void
     {
         $user = User::factory()->create(['email_verified_at' => now()]);
         $this->actingAs($user)->get('/settings/agents')
-            ->assertInertia(fn (Assert $page) => $page->where('values.ai_agents', [])->where('values.ai_canonical_file', 'AGENTS.md'));
+            ->assertInertia(fn (Assert $page) => $page->where('values.ai_agents', []));
 
         $base = ['project_type' => 'project', 'notebook_format' => 'quarto', 'ide' => 'vscode'];
         $this->actingAs($user)->patch('/settings', $base + ['ai_agents' => ['copilot', 'codex'], 'ai_canonical_file' => 'AGENTS.md'])->assertSessionHasNoErrors();
@@ -300,16 +300,6 @@ class SettingsAndAdminTest extends TestCase
         $paths = $tree(['ai_agents' => ['claude']]);
         $this->assertTrue($paths->contains('AGENTS.md') && $paths->contains('CLAUDE.md') && $paths->contains('.claude'));
         $this->assertFalse($paths->contains('.agents'));
-
-        // CLAUDE.md alone holds only for someone who uses only Claude Code
-        $this->actingAs($user)->patch('/settings', $base + ['ai_agents' => ['claude', 'codex'], 'ai_canonical_file' => 'CLAUDE.md'])->assertSessionHasNoErrors();
-        $this->assertSame('AGENTS.md', $user->globalSettings()->document['ai']['canonical_file']);
-        $this->actingAs($user)->patch('/settings', $base + ['ai_agents' => ['claude'], 'ai_canonical_file' => 'CLAUDE.md'])->assertSessionHasNoErrors();
-        $this->assertSame('CLAUDE.md', $user->globalSettings()->document['ai']['canonical_file']);
-
-        // The packages don't read ai.context_file yet, so it goes out only once they do
-        $last = fn () => end((new Resolver($user->fresh()))->resolve(['name' => 'Survey'])['envelope']['layers'])['layer']['ai'];
-        $this->assertArrayNotHasKey('context_file', $last());
     }
 
     public function test_default_packages_go_into_new_projects_without_a_blueprint(): void

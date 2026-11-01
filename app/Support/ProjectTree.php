@@ -156,8 +156,7 @@ class ProjectTree
     /** What an agent folder holds, for its tooltip. */
     /**
      * The context file and each agent's own files, as R, Python, and fw write
-     * them: AGENTS.md, a CLAUDE.md for Claude Code that points to it (or holds
-     * everything, for someone who uses only Claude Code), Copilot's
+     * them: AGENTS.md, a CLAUDE.md for Claude Code that imports it, Copilot's
      * instructions, and the skills in .claude/ for Claude Code and .agents/
      * for the others. Agent folders show alone, with what's inside in their tooltips.
      *
@@ -167,15 +166,9 @@ class ProjectTree
     {
         $agents = array_values(array_intersect(ProjectDefaults::AGENTS, array_keys(array_filter((array) ($spec['ai']['assistants'] ?? [])))));
         $claude = in_array('claude', $agents, true);
-        $claudeOnly = $agents === ['claude'] && ($spec['ai']['context_file'] ?? 'AGENTS.md') === 'CLAUDE.md';
-
-        if ($claudeOnly) {
-            $add('CLAUDE.md', 'file', 'the instructions for Claude Code');
-        } else {
-            $add('AGENTS.md', 'file', 'the instructions agents read');
-            if ($claude) {
-                $add('CLAUDE.md', 'file', 'points Claude Code to AGENTS.md');
-            }
+        $add('AGENTS.md', 'file', 'the instructions agents read');
+        if ($claude) {
+            $add('CLAUDE.md', 'file', 'imports AGENTS.md for Claude Code');
         }
         if (in_array('copilot', $agents, true)) {
             $add('.github', 'dir', 'copilot-instructions.md, which points Copilot to AGENTS.md');

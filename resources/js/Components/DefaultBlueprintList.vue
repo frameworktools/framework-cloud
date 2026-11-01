@@ -37,7 +37,7 @@ const language = reactive(Object.fromEntries(props.blueprints.map((b) => [b.key,
 // What the server resolves the previews from: every default that changes a new project
 const values = computed(() => {
     const d = props.defaults;
-    return { ide: d.ide, packages: d.packages, skill_sets: d.skill_sets, tools: d.tools, use_renv: d.use_renv, sensitive: d.sensitive, use_git: d.use_git, ai_enabled: d.ai_enabled, ai_agents: d.ai_agents, ai_canonical_file: d.ai_canonical_file, hooks: d.hooks };
+    return { ide: d.ide, packages: d.packages, skill_sets: d.skill_sets, tools: d.tools, use_renv: d.use_renv, sensitive: d.sensitive, use_git: d.use_git, ai_enabled: d.ai_enabled, ai_agents: d.ai_agents, hooks: d.hooks };
 });
 const previews = reactive({});
 const loading = reactive({});

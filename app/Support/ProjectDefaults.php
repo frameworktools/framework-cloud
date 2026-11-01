@@ -59,7 +59,7 @@ class ProjectDefaults
     public const HOOKS = ['data_security', 'check_sensitive_dirs'];
 
     /**
-     * @return array{blueprint: string, package_sets: list<string>, skill_sets: list<string>, packages: array<string, list<array<string, mixed>>>, tools: array<string, bool>, settings: array{sensitive: bool, git: bool, ai: bool, hooks: list<string>, ide: string, scaffold: array<string, bool|string>, agents: list<string>, context_file: string}}
+     * @return array{blueprint: string, package_sets: list<string>, skill_sets: list<string>, packages: array<string, list<array<string, mixed>>>, tools: array<string, bool>, settings: array{sensitive: bool, git: bool, ai: bool, hooks: list<string>, ide: string, scaffold: array<string, bool|string>, agents: list<string>}}
      */
     public static function for(User $user): array
     {
@@ -79,8 +79,7 @@ class ProjectDefaults
                 'hooks' => array_keys(array_filter(Arr::only($own['hooks'] ?? [], self::HOOKS))),
                 'ide' => (string) Arr::get($doc, 'defaults.ide', self::IDE),
                 'scaffold' => self::scaffold((array) ($doc['defaults'] ?? [])),
-                'agents' => $agents = self::agents(Arr::get($doc, 'ai.assistants')),
-                'context_file' => self::contextFile(Arr::get($doc, 'ai.canonical_file'), $agents),
+                'agents' => self::agents(Arr::get($doc, 'ai.assistants')),
             ],
         ];
     }
@@ -113,17 +112,6 @@ class ProjectDefaults
     public static function agents(mixed $agents): array
     {
         return is_array($agents) ? array_values(array_intersect(self::AGENTS, $agents)) : self::AGENTS_DEFAULT;
-    }
-
-    /**
-     * The file agents read first. AGENTS.md, which most agents read, unless
-     * the person uses only Claude Code and chose CLAUDE.md.
-     *
-     * @param  list<string>  $agents
-     */
-    public static function contextFile(mixed $file, array $agents): string
-    {
-        return $file === 'CLAUDE.md' && $agents === ['claude'] ? 'CLAUDE.md' : 'AGENTS.md';
     }
 
     /** The languages with a default package list: Stata has no packages. */
@@ -195,7 +183,7 @@ class ProjectDefaults
      * not, for previewing what a new project would get.
      *
      * @param  array<string, mixed>  $values  as DefaultsController hands them to the form
-     * @return array{blueprint: string, package_sets: list<string>, skill_sets: list<string>, packages: array<string, list<array<string, mixed>>>, tools: array<string, bool>, settings: array{sensitive: bool, git: bool, ai: bool, hooks: list<string>, ide: string, scaffold: array<string, bool|string>, agents: list<string>, context_file: string}}
+     * @return array{blueprint: string, package_sets: list<string>, skill_sets: list<string>, packages: array<string, list<array<string, mixed>>>, tools: array<string, bool>, settings: array{sensitive: bool, git: bool, ai: bool, hooks: list<string>, ide: string, scaffold: array<string, bool|string>, agents: list<string>}}
      */
     public static function fromValues(array $values): array
     {
@@ -212,8 +200,7 @@ class ProjectDefaults
                 'hooks' => array_keys(array_filter(Arr::only((array) ($values['hooks'] ?? []), self::HOOKS))),
                 'ide' => (string) ($values['ide'] ?? self::IDE),
                 'scaffold' => self::scaffold($values),
-                'agents' => $agents = self::agents($values['ai_agents'] ?? null),
-                'context_file' => self::contextFile($values['ai_canonical_file'] ?? null, $agents),
+                'agents' => self::agents($values['ai_agents'] ?? null),
             ],
         ];
     }

@@ -53,8 +53,7 @@ class DefaultsController extends Controller
                 'use_renv' => (bool) Arr::get($doc, 'defaults.use_renv', false),
                 ...ProjectDefaults::scaffold((array) ($doc['defaults'] ?? [])),
                 'ai_enabled' => (bool) Arr::get($doc, 'ai.enabled', true),
-                'ai_agents' => $agents = ProjectDefaults::agents(Arr::get($doc, 'ai.assistants')),
-                'ai_canonical_file' => ProjectDefaults::contextFile(Arr::get($doc, 'ai.canonical_file'), $agents),
+                'ai_agents' => ProjectDefaults::agents(Arr::get($doc, 'ai.assistants')),
                 'ai_skills' => (bool) Arr::get($doc, 'ai.skills', true),
                 'package_sets' => $request->user()->project_defaults['package_sets'] ?? [],
                 'packages' => self::packageLists($request->user()),
@@ -160,7 +159,6 @@ class DefaultsController extends Controller
             'ai_enabled' => ['boolean'],
             'ai_agents' => ['array'],
             'ai_agents.*' => ['in:'.implode(',', ProjectDefaults::AGENTS)],
-            'ai_canonical_file' => ['required', 'in:AGENTS.md,CLAUDE.md'],
             'ai_skills' => ['boolean'],
             'package_sets' => ['array'],
             'package_sets.*' => ['string', 'max:200'],
@@ -193,10 +191,10 @@ class DefaultsController extends Controller
             Arr::set($doc, "defaults.{$name}", $value);
         }
         Arr::set($doc, 'ai.enabled', (bool) ($validated['ai_enabled'] ?? true));
-        // R reads the agents as a list; CLAUDE.md only for someone who uses only Claude Code
-        $agents = ProjectDefaults::agents($validated['ai_agents'] ?? null);
-        Arr::set($doc, 'ai.assistants', $agents);
-        Arr::set($doc, 'ai.canonical_file', ProjectDefaults::contextFile($validated['ai_canonical_file'], $agents));
+        // R reads the agents as a list. AGENTS.md holds the instructions, and
+        // Claude Code gets a CLAUDE.md that imports it.
+        Arr::set($doc, 'ai.assistants', ProjectDefaults::agents($validated['ai_agents'] ?? null));
+        Arr::set($doc, 'ai.canonical_file', 'AGENTS.md');
         Arr::set($doc, 'ai.skills', (bool) ($validated['ai_skills'] ?? true));
 
         $setting->replaceDocument($doc, client: ['device' => 'web', 'app' => 'framework.pub']);

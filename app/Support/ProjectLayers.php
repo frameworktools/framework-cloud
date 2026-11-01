@@ -51,7 +51,7 @@ class ProjectLayers
         // always goes in, so every tool can tell which one builds the project,
         // and the owner's editor files, which are a personal choice.
         $settings = ProjectDefaults::for($user)['settings'];
-        $layers[] = self::projectLayer($project->slug, $project->language ?? 'r', $layers, $settings['ide'], $settings['scaffold'], $settings['agents'], $settings['context_file']);
+        $layers[] = self::projectLayer($project->slug, $project->language ?? 'r', $layers, $settings['ide'], $settings['scaffold'], $settings['agents']);
 
         return self::envelope($user, $project->name, $layers, $version && ! $composition ? ['key' => $version->blueprint->handle, 'version' => $version->version] : null);
     }
@@ -73,7 +73,7 @@ class ProjectLayers
      * agents, and for Stata the R-only folders removed. With the spec's tools key on, it also names every tool for
      * the language as on or off, so no client has to guess.
      */
-    public static function projectLayer(string $key, string $language, array $layers, ?string $ide = null, array $scaffold = [], ?array $agents = null, string $contextFile = 'AGENTS.md'): array
+    public static function projectLayer(string $key, string $language, array $layers, ?string $ide = null, array $scaffold = [], ?array $agents = null): array
     {
         $layer = ['language' => $language] + ($language === 'stata' ? self::withoutRFolders($layers) : []);
         if ($ide && $language !== 'stata') {
@@ -94,10 +94,6 @@ class ProjectLayers
         // The agents someone works with are theirs, like their editor: each one in or out
         if ($agents !== null) {
             $layer['ai']['assistants'] = array_combine(ProjectDefaults::AGENTS, array_map(fn (string $a) => in_array($a, $agents, true), ProjectDefaults::AGENTS));
-            // CLAUDE.md as the context file waits for the packages to read the key
-            if ($contextFile === 'CLAUDE.md' && config('framework.spec_context_file')) {
-                $layer['ai']['context_file'] = 'CLAUDE.md';
-            }
         }
 
         if (config('framework.spec_tools') && $language !== 'stata') {

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import { useForm, usePage } from '@inertiajs/vue3';
 import SectionLayout from '@/Layouts/SectionLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
@@ -69,30 +69,10 @@ const packageLanguage = ref(props.values.language === 'python' ? 'python' : 'r')
 
 // The agents R, Python, and fw set projects up for, and what each one gets
 const agentOptions = [
-    { value: 'claude', label: 'Claude Code', description: 'Adds CLAUDE.md, and skills in .claude/skills.' },
+    { value: 'claude', label: 'Claude Code', description: 'Adds a CLAUDE.md that imports AGENTS.md, and skills in .claude/skills.' },
     { value: 'codex', label: 'Codex', description: 'Reads AGENTS.md, and skills in .agents/skills.' },
     { value: 'copilot', label: 'GitHub Copilot', description: 'Adds .github/copilot-instructions.md, and skills in .agents/skills.' },
 ];
-// CLAUDE.md alone suits only someone who uses Claude Code and nothing else
-const claudeOnly = computed(() => form.ai_agents.length === 1 && form.ai_agents[0] === 'claude');
-const contextOptions = computed(() => [
-    {
-        value: 'AGENTS.md', label: 'AGENTS.md',
-        description: form.ai_agents.includes('claude')
-            ? 'The shared file most agents read. Claude Code gets a one-line CLAUDE.md that points to it.'
-            : 'The shared file most agents read.',
-    },
-    {
-        value: 'CLAUDE.md', label: 'CLAUDE.md', disabled: !claudeOnly.value,
-        description: claudeOnly.value
-            ? 'For Claude Code alone: the instructions go straight into CLAUDE.md, with no AGENTS.md.'
-            : 'Only when Claude Code is the one agent you use, since other agents don\'t read CLAUDE.md.',
-    },
-]);
-// Choosing another agent moves the context file back to AGENTS.md, which they all read
-watch(claudeOnly, (only) => {
-    if (!only) form.ai_canonical_file = 'AGENTS.md';
-});
 
 const editors = computed({
     get: () => ({ rstudio: ['rstudio'], vscode: ['vscode'], positron: ['vscode'], both: ['rstudio', 'vscode'] })[form.ide] ?? [],
@@ -224,15 +204,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                             <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Select every agent you work with. Each one gets the files it reads.</p>
                         </div>
                         <UiCheckboxCards v-model="form.ai_agents" legend="Agents you use" hide-legend :options="agentOptions" />
-                        <p class="max-w-md text-xs text-slate-500">Other agents that read AGENTS.md use it with no extra files.</p>
-                    </section>
-                    <section class="flex flex-col gap-3">
-                        <div>
-                            <h2 :class="heading">Context file</h2>
-                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">The file with the project's instructions, which agents read first.</p>
-                        </div>
-                        <UiRadioCards v-model="form.ai_canonical_file" name="ai_canonical_file" legend="Context file" hide-legend :options="contextOptions" stacked />
-                        <p v-if="form.errors.ai_canonical_file" class="text-sm text-red-600">{{ form.errors.ai_canonical_file }}</p>
+                        <p class="max-w-md text-xs text-slate-500">The instructions go in AGENTS.md, which most agents read. Claude Code's CLAUDE.md imports it, and other agents that read AGENTS.md need no extra files.</p>
                     </section>
                     <div class="max-w-xl">
                         <UiSwitch v-model="form.ai_skills" :disabled="!form.ai_enabled" label="Install Framework skills" description="Adds instructions for working in a Framework project that agents load when they need them." />
