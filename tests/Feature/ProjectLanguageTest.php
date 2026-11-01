@@ -10,6 +10,7 @@ use App\Support\ProjectDefaults;
 use App\Support\ProjectLayers;
 use Database\Seeders\BlueprintSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Arr;
 use Laravel\Sanctum\PersonalAccessToken;
 use Tests\TestCase;
 
@@ -135,10 +136,14 @@ class ProjectLanguageTest extends TestCase
 
         // R projects keep them, and get the owner's editor files and scaffold() settings
         $project->update(['language' => 'r']);
+        $layer = end(ProjectLayers::for($project->fresh())['layers'])['layer'];
         $this->assertSame([
             'language' => 'r',
             'scaffold' => ['ide' => 'positron'] + ProjectDefaults::SCAFFOLD,
             'ai' => ['assistants' => ['claude' => false, 'codex' => false, 'copilot' => false]],
-        ], end(ProjectLayers::for($project->fresh())['layers'])['layer']);
+        ], Arr::except($layer, 'tools'));
+        // With the spec's tools key on, every R tool is named on or off
+        $this->assertArrayHasKey('renv', $layer['tools']);
+        $this->assertNotContains('uv', array_keys($layer['tools']));
     }
 }

@@ -6,11 +6,11 @@ return [
 
     /*
     | The spec's tools, settings_layout, and core_files keys (framework
-    | e08db38). Clients older than that schema reject unknown keys: fw 0.2
-    | and the R commit GitHub scaffolding pins. Turn this on once fw 0.3 is
-    | released and GITHUB_FW_VERSION and GITHUB_FRAMEWORK_SHA point past it.
+    | e08db38). fw 0.3 and the R commit GitHub scaffolding pins read them.
+    | Clients older than that schema, such as fw 0.2, reject unknown keys:
+    | FW_SPEC_TOOLS=false keeps them out for a server that still runs one.
     */
-    'spec_tools' => (bool) env('FW_SPEC_TOOLS', false),
+    'spec_tools' => (bool) env('FW_SPEC_TOOLS', true),
 
     /*
     |--------------------------------------------------------------------------
