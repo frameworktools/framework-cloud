@@ -40,7 +40,7 @@ class HandleInertiaRequests extends Middleware
             // Sidebar groups: main (no section), Framework, Agents, and the
             // utility items (You) at the bottom. Packages may append items here.
             'nav' => array_values(array_filter([
-                ['label' => 'Project defaults', 'href' => '/settings/basics', 'match' => '/settings'],
+                ['label' => 'Project defaults', 'href' => '/settings/blueprint', 'match' => '/settings'],
                 ['label' => 'Published documents', 'href' => '/published'],
                 ['label' => 'Blueprints', 'href' => '/blueprints', 'section' => 'Framework'],
                 ['label' => 'Project structures', 'href' => '/structures', 'section' => 'Framework'],

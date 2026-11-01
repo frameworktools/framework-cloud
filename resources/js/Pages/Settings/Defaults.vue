@@ -4,13 +4,13 @@ import { useForm, usePage } from '@inertiajs/vue3';
 import SectionLayout from '@/Layouts/SectionLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import UiButton from '@/Components/UiButton.vue';
+import UiCheckbox from '@/Components/UiCheckbox.vue';
 import UiInput from '@/Components/UiInput.vue';
-import UiSelect from '@/Components/UiSelect.vue';
+import UiRadioCards from '@/Components/UiRadioCards.vue';
 import UiSwitch from '@/Components/UiSwitch.vue';
-import UiPanel from '@/Components/UiPanel.vue';
 
-// One form for all of your defaults, shown a section at a time. Moving
-// between sections keeps unsaved changes, and Save sends everything.
+// One form for all of your defaults, shown a page at a time. Moving
+// between pages keeps unsaved changes, and Save sends everything.
 const props = defineProps({ section: String, revision: Number, blueprints: Array, catalog: Object, values: Object });
 
 const page = usePage();
@@ -18,23 +18,23 @@ const saved = computed(() => page.props.flash.status === 'defaults-updated');
 
 const sections = [
     { heading: 'New projects' },
-    { key: 'basics', label: 'Blueprint & editor', description: "What a new project starts with when you don't choose a blueprint." },
-    { key: 'packages', label: 'Packages', description: "Packages new projects install when you don't choose a blueprint. A blueprint brings its own." },
-    { key: 'scaffold', label: 'Scaffold', description: 'What happens when you run scaffold().' },
-    { key: 'git', label: 'Git', description: 'Version control for new projects.' },
-    { key: 'agents', label: 'Agents', description: 'What new projects give coding agents such as Claude Code and Codex.' },
-    { heading: 'Data & connections' },
-    { key: 'data', label: 'Sensitive data', description: 'How new projects keep private data apart.' },
-    { heading: 'Checks' },
-    { key: 'hooks', label: 'Git hooks', description: 'Checks that run before each commit.' },
+    { key: 'blueprint', label: 'Blueprint' },
+    { key: 'editor', label: 'Editor' },
+    { key: 'packages', label: 'Packages' },
+    { key: 'scaffold', label: 'Scaffold' },
+    { key: 'git', label: 'Git' },
+    { key: 'agents', label: 'Agents' },
+    { heading: 'Data safety' },
+    { key: 'data', label: 'Sensitive data' },
+    { key: 'hooks', label: 'Git hooks' },
     { heading: 'Documents' },
-    { key: 'notebooks', label: 'Notebooks', description: 'The notebooks new projects use.' },
-    { key: 'quarto', label: 'Quarto', description: 'Quarto documents, manuscripts, and slides.' },
+    { key: 'notebooks', label: 'Notebooks' },
+    { key: 'quarto', label: 'Quarto' },
 ];
 const items = sections.map((s) => (s.heading ? s : { label: s.label, href: `/settings/${s.key}`, preserveState: true }));
 const current = computed(() => sections.find((s) => s.key === props.section));
 
-const blueprintOptions = computed(() => props.blueprints.map((b) => ({ value: b.key, label: b.name })));
+const blueprintOptions = computed(() => props.blueprints.map((b) => ({ value: b.key, label: b.name, description: b.description })));
 const formatOptions = [
     { value: 'quarto', label: 'Quarto' },
     { value: 'rmarkdown', label: 'R Markdown' },
@@ -47,14 +47,15 @@ const ideOptions = [
     { value: 'none', label: 'None' },
 ];
 const hooks = [
-    { key: 'data_security', label: 'Check for secrets', description: 'Stops a commit that looks like it holds passwords, keys, or other secrets.' },
-    { key: 'check_sensitive_dirs', label: 'Warn about private folders git would commit', description: "Warns when a private data or output folder isn't in .gitignore." },
+    { key: 'data_security', label: 'Check for secrets', description: 'Blocks a commit that looks like it holds passwords, keys, or other secrets.' },
+    { key: 'check_sensitive_dirs', label: 'Check private folders', description: "Warns when a private data or output folder isn't in .gitignore. The commit goes ahead." },
 ];
 
 const form = useForm({ ...props.values, tools: { ...props.values.tools }, hooks: { ...props.values.hooks } });
 
 const tool = (key) => props.catalog.tools.find((t) => t.key === key);
-const languageNote = (piece) => (piece?.language?.length === 1 ? ` ${piece.language[0] === 'r' ? 'R' : 'Python'} projects only.` : '');
+const only = (piece) => (piece?.language?.length === 1 ? (piece.language[0] === 'r' ? 'R only.' : 'Python only.') : '');
+const describe = (piece, text = piece?.description) => [text, only(piece)].filter(Boolean).join(' ');
 const setTool = (key, on) => {
     form.tools = { ...form.tools, [key]: on };
     // Turning a tool on turns on what it needs; turning one off turns off what needs it
@@ -66,103 +67,144 @@ const toggle = (list, key, on) => {
     form[list] = on ? [...next, key] : next;
 };
 const save = () => form.patch('/settings', { preserveScroll: true });
+
+const link = 'text-sky-600 hover:underline dark:text-sky-400';
+const heading = 'text-sm font-semibold text-slate-900 dark:text-white';
+const note = 'text-sm text-slate-600 dark:text-slate-400';
 </script>
 
 <template>
     <Head :title="`${current.label} · Project defaults`" />
 
     <SectionLayout heading="Project defaults" :items="items">
-        <PageHeader :title="current.label" :description="current.description" />
-        <p class="mt-2 text-xs text-slate-500">Your defaults are saved to your account and synced to every computer where you've run cloud_login() in R or Python. Revision {{ revision }}.</p>
+        <PageHeader :title="current.label" />
 
-        <form id="settings-form" class="mt-8 flex flex-col gap-8" @submit.prevent="save">
-            <UiPanel v-if="section === 'basics'" title="New projects">
-                <UiSelect v-model="form.project_type" label="Default blueprint" :options="blueprintOptions" :error="form.errors.project_type" />
-                <UiSelect v-model="form.ide" label="Editor" :options="ideOptions" />
-            </UiPanel>
+        <details class="group mt-3 text-sm text-slate-600 dark:text-slate-400">
+            <summary class="w-fit cursor-pointer select-none text-slate-500 hover:text-slate-800 dark:hover:text-slate-200">About project defaults</summary>
+            <div class="mt-2 flex max-w-2xl flex-col gap-2 border-l-2 border-slate-200 pl-4 dark:border-slate-700">
+                <p>
+                    A new project that doesn't start from a blueprint gets your default blueprint, package sets, package environments, targets, Jupyter, Quarto, and skill sets.
+                    A blueprint you choose brings its own instead.
+                </p>
+                <p>Your other defaults apply to every new project unless its blueprint sets the same thing. Sensitive data applies even under a blueprint that isn't sensitive.</p>
+                <p>Defaults are saved to your account and synced to every computer where you've run cloud_login() in R or Python. Revision {{ revision }}.</p>
+            </div>
+        </details>
+
+        <form id="settings-form" class="mt-8 flex max-w-3xl flex-col gap-8" @submit.prevent="save">
+            <template v-if="section === 'blueprint'">
+                <UiRadioCards v-model="form.project_type" name="project_type" legend="Default blueprint" :options="blueprintOptions" columns="sm:grid-cols-2 xl:grid-cols-3" />
+                <p v-if="form.errors.project_type" class="-mt-6 text-sm text-red-600">{{ form.errors.project_type }}</p>
+            </template>
+
+            <UiRadioCards v-else-if="section === 'editor'" v-model="form.ide" name="ide" legend="Editor" hide-legend :options="ideOptions" columns="grid-cols-2 sm:grid-cols-3" />
 
             <template v-else-if="section === 'packages'">
-                <UiPanel title="Package sets">
-                    <UiSwitch
+                <section class="flex flex-col gap-4">
+                    <div>
+                        <h2 :class="heading">Package sets</h2>
+                        <p class="mt-1 text-xs text-slate-500">Used when a new project doesn't start from a blueprint.</p>
+                    </div>
+                    <UiCheckbox
                         v-for="set in catalog.package_sets" :key="set.key"
-                        :model-value="form.package_sets.includes(set.key)" :label="set.name" :description="set.description + languageNote(set)"
+                        :model-value="form.package_sets.includes(set.key)" :label="set.name" :description="describe(set)"
                         @update:model-value="(on) => toggle('package_sets', set.key, on)"
                     />
-                    <p class="text-sm text-slate-500"><Link href="/package-sets" class="text-sky-600 hover:underline dark:text-sky-400">See all package sets</Link></p>
-                </UiPanel>
-                <UiPanel title="Environments">
-                    <UiSwitch v-model="form.use_renv" label="renv" description="Records the project's R packages in a lockfile. R projects only." />
-                    <UiSwitch v-if="tool('uv')" :model-value="!!form.tools.uv" :label="tool('uv').name" :description="tool('uv').description + languageNote(tool('uv'))" @update:model-value="(on) => setTool('uv', on)" />
-                </UiPanel>
+                    <p class="text-sm"><Link href="/package-sets" :class="link">Browse package sets</Link></p>
+                </section>
+                <section class="flex max-w-xl flex-col gap-4 border-t border-slate-200 pt-8 dark:border-slate-800">
+                    <h2 :class="heading">Package environments</h2>
+                    <UiSwitch v-model="form.use_renv" label="renv" description="Records the R package versions the project uses in renv.lock. R only." />
+                    <UiSwitch v-if="tool('uv')" :model-value="!!form.tools.uv" :label="tool('uv').name" description="Manages the Python environment in pyproject.toml and uv.lock. Python only." @update:model-value="(on) => setTool('uv', on)" />
+                </section>
             </template>
 
-            <UiPanel v-else-if="section === 'scaffold'" title="When scaffold() runs">
-                <UiSwitch v-model="form.seed_on_scaffold" label="Set a random seed" description="Makes random results the same each run." />
-                <UiSwitch v-if="tool('targets')" :model-value="!!form.tools.targets" :label="tool('targets').name" :description="tool('targets').description + languageNote(tool('targets'))" @update:model-value="(on) => setTool('targets', on)" />
-            </UiPanel>
+            <section v-else-if="section === 'scaffold'" class="flex max-w-xl flex-col gap-5">
+                <UiSwitch v-model="form.seed_on_scaffold" label="Set a random seed" description="scaffold() sets a seed, so random results repeat from run to run." />
+                <UiSwitch v-if="tool('targets')" :model-value="!!form.tools.targets" :label="tool('targets').name" :description="describe(tool('targets'))" @update:model-value="(on) => setTool('targets', on)" />
+            </section>
 
-            <UiPanel v-else-if="section === 'git'" title="Git">
-                <UiSwitch v-model="form.use_git" label="Set up git" description="Makes each new project a git repository." />
-            </UiPanel>
+            <section v-else-if="section === 'git'" class="flex max-w-xl flex-col gap-5">
+                <UiSwitch v-model="form.use_git" label="Set up Git" description="Makes each new project a git repository." />
+                <p :class="note"><Link href="/settings/hooks" preserve-state :class="link">Git hooks</Link> can check each commit for secrets and private folders.</p>
+            </section>
 
             <template v-else-if="section === 'agents'">
-                <UiPanel title="Agents">
-                    <UiSwitch v-model="form.ai_enabled" label="Set new projects up for agents" description="Adds a context file that tells agents how the project works. Turn off for no agent files at all." />
-                    <UiInput v-model="form.ai_canonical_file" label="Context file" :error="form.errors.ai_canonical_file" />
-                    <UiSwitch v-model="form.ai_skills" label="Install Framework skills" />
-                </UiPanel>
-                <UiPanel title="Skill sets" description="Added to new projects that don't start from a blueprint.">
-                    <UiSwitch
-                        v-for="set in catalog.skill_sets" :key="set.key"
-                        :model-value="form.skill_sets.includes(set.key)" :label="set.name" :description="set.description + languageNote(set)"
-                        @update:model-value="(on) => toggle('skill_sets', set.key, on)"
-                    />
-                    <p class="text-sm text-slate-500">
-                        <Link href="/skill-sets" class="text-sky-600 hover:underline dark:text-sky-400">Manage skill sets</Link> ·
-                        <Link href="/skills" class="text-sky-600 hover:underline dark:text-sky-400">Manage skills</Link>
-                    </p>
-                </UiPanel>
+                <section class="flex max-w-xl flex-col gap-5">
+                    <UiSwitch v-model="form.ai_enabled" label="Set new projects up for agents" description="Adds a context file that tells coding agents such as Claude Code and Codex how the project works. Off adds no agent files." />
+                </section>
+                <fieldset :disabled="!form.ai_enabled" class="flex flex-col gap-6 border-l-2 border-slate-200 pl-5 dark:border-slate-700">
+                    <p v-if="!form.ai_enabled" class="text-xs text-slate-500">Agent setup is off, so these don't apply. They're kept for when you turn it back on.</p>
+                    <div class="w-full max-w-xs" :class="form.ai_enabled ? '' : 'opacity-50'">
+                        <UiInput v-model="form.ai_canonical_file" label="Context file" :error="form.errors.ai_canonical_file" />
+                        <p class="mt-1.5 text-xs text-slate-500">The file agents read first, such as AGENTS.md or CLAUDE.md.</p>
+                    </div>
+                    <div class="max-w-xl">
+                        <UiSwitch v-model="form.ai_skills" :disabled="!form.ai_enabled" label="Install Framework skills" description="Adds instructions for working in a Framework project that agents load when they need them." />
+                    </div>
+                    <section class="flex flex-col gap-4">
+                        <div>
+                            <h2 :class="heading">Skill sets</h2>
+                            <p class="mt-1 text-xs text-slate-500">Used when a new project doesn't start from a blueprint.</p>
+                        </div>
+                        <UiCheckbox
+                            v-for="set in catalog.skill_sets" :key="set.key" :disabled="!form.ai_enabled"
+                            :model-value="form.skill_sets.includes(set.key)" :label="set.name" :description="describe(set)"
+                            @update:model-value="(on) => toggle('skill_sets', set.key, on)"
+                        />
+                        <p class="text-sm">
+                            <Link href="/skill-sets" :class="link">Manage skill sets</Link> ·
+                            <Link href="/skills" :class="link">Manage skills</Link>
+                        </p>
+                    </section>
+                </fieldset>
             </template>
 
-            <UiPanel v-else-if="section === 'data'" title="Sensitive data">
+            <section v-else-if="section === 'data'" class="flex max-w-xl flex-col gap-5">
                 <UiSwitch
                     v-model="form.sensitive" label="Treat new projects as sensitive"
-                    description="Splits data and outputs into private and public folders and keeps private files out of git, even under a blueprint that doesn't. Sensitive projects on GitHub must be private repositories."
+                    description="Splits data and outputs into private and public folders and keeps the private ones out of git, even under a blueprint that isn't sensitive. Sensitive projects on GitHub must be private repositories."
                 />
-                <p class="text-sm text-slate-600 dark:text-slate-400">
-                    Every project warns before it uploads or publishes a file whose path contains "private", whether or not it is sensitive.
-                    <Link href="/settings/hooks" preserve-state class="text-sky-600 hover:underline dark:text-sky-400">Git hooks</Link> can also check commits for secrets and for private folders git would commit.
+                <p :class="note">
+                    Every project, sensitive or not, warns before it uploads or publishes a file whose path contains "private".
+                    <Link href="/settings/hooks" preserve-state :class="link">Git hooks</Link> can also check commits.
                 </p>
-            </UiPanel>
+            </section>
 
-            <UiPanel v-else-if="section === 'hooks'" title="Before each commit" description="For R projects for now. They need git, so they're skipped when git is off.">
+            <section v-else-if="section === 'hooks'" class="flex max-w-xl flex-col gap-5">
+                <p class="text-xs text-slate-500">R projects only; requires Git.</p>
                 <UiSwitch
                     v-for="hook in hooks" :key="hook.key"
                     :model-value="!!form.hooks[hook.key]" :label="hook.label" :description="hook.description"
                     @update:model-value="(on) => (form.hooks = { ...form.hooks, [hook.key]: on })"
                 />
-                <p class="text-sm text-slate-600 dark:text-slate-400">
-                    Which folders count as private comes from <Link href="/settings/data" preserve-state class="text-sky-600 hover:underline dark:text-sky-400">Sensitive data</Link>.
-                </p>
-            </UiPanel>
+                <p :class="note">Which folders count as private comes from <Link href="/settings/data" preserve-state :class="link">Sensitive data</Link>.</p>
+            </section>
 
-            <UiPanel v-else-if="section === 'notebooks'" title="Notebooks">
-                <UiSelect v-model="form.notebook_format" label="Notebook format" :options="formatOptions" />
-                <UiSwitch v-if="tool('jupyter')" :model-value="!!form.tools.jupyter" :label="tool('jupyter').name" :description="tool('jupyter').description" @update:model-value="(on) => setTool('jupyter', on)" />
-            </UiPanel>
+            <template v-else-if="section === 'notebooks'">
+                <UiRadioCards v-model="form.notebook_format" name="notebook_format" legend="Notebook format" :options="formatOptions" columns="grid-cols-2 max-w-md" />
+                <section v-if="tool('jupyter')" class="max-w-xl border-t border-slate-200 pt-8 dark:border-slate-800">
+                    <UiSwitch :model-value="!!form.tools.jupyter" label="Also add Jupyter" description="Jupyter notebooks with the kernel for the project's language: IRkernel for R, ipykernel for Python." @update:model-value="(on) => setTool('jupyter', on)" />
+                </section>
+            </template>
 
-            <UiPanel v-else-if="section === 'quarto'" title="Quarto" description="Used when you don't choose a blueprint. A blueprint brings its own.">
-                <template v-for="key in ['quarto', 'quarto_manuscript', 'quarto_slides']" :key="key">
-                    <UiSwitch v-if="tool(key)" :model-value="!!form.tools[key]" :label="tool(key).name" :description="tool(key).description" @update:model-value="(on) => setTool(key, on)" />
-                </template>
-            </UiPanel>
+            <section v-else-if="section === 'quarto'" class="flex max-w-xl flex-col gap-5">
+                <p class="text-xs text-slate-500">Used when a new project doesn't start from a blueprint.</p>
+                <UiSwitch v-if="tool('quarto')" :model-value="!!form.tools.quarto" label="Quarto" description="Quarto notebooks and documents." @update:model-value="(on) => setTool('quarto', on)" />
+                <div class="flex flex-col gap-5 border-l-2 border-slate-200 pl-5 dark:border-slate-700">
+                    <p class="text-xs text-slate-500">These need Quarto. Turning one on turns Quarto on, and turning Quarto off turns them off.</p>
+                    <template v-for="key in ['quarto_manuscript', 'quarto_slides']" :key="key">
+                        <UiSwitch v-if="tool(key)" :model-value="!!form.tools[key]" :label="tool(key).name" :description="tool(key).description" @update:model-value="(on) => setTool(key, on)" />
+                    </template>
+                </div>
+            </section>
         </form>
 
         <template #actions>
             <UiButton save-shortcut type="submit" form="settings-form" class="w-full" :disabled="form.processing">
                 {{ form.processing ? 'Saving…' : 'Save changes' }}
             </UiButton>
-            <p v-if="form.isDirty" class="text-center text-xs text-amber-600">Unsaved changes across Project defaults</p>
+            <p v-if="form.isDirty" class="text-center text-xs text-amber-600">Unsaved changes. Save covers every Project defaults page.</p>
             <p v-else-if="saved" class="text-center text-xs text-slate-500">Saved.</p>
         </template>
     </SectionLayout>

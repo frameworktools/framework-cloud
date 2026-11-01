@@ -26,11 +26,11 @@ pieces, and you can make your own of each.
 **Project defaults** sets what a new project starts with. Its pages are
 grouped by subject:
 
-- **New projects.** The default blueprint and editor, package sets and renv
+- **New projects.** The default blueprint, the editor, package sets and renv
   or uv, what `scaffold()` does, git, and agent files with preferred skill
   sets.
-- **Data & connections.** Whether new projects hold sensitive data.
-- **Checks.** Git hooks that run before each commit.
+- **Data safety.** Whether new projects hold sensitive data, and the git
+  hooks that run before each commit.
 - **Documents.** The notebook format, Jupyter, and Quarto.
 
 The pages share one form, so changes on several pages are saved together.

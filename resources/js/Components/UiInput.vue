@@ -1,4 +1,6 @@
 <script setup>
+import { useId } from 'vue';
+
 defineProps({
     label: String,
     description: String,
@@ -10,15 +12,17 @@ defineProps({
     autofocus: Boolean,
 });
 
+const id = useId();
 const model = defineModel({ type: [String, Number], default: '' });
 </script>
 
 <template>
     <div class="flex flex-col gap-1.5">
-        <label v-if="label" class="text-sm font-medium text-slate-800 dark:text-slate-200">
+        <label v-if="label" :for="id" class="text-sm font-medium text-slate-800 dark:text-slate-200">
             {{ label }}
         </label>
         <input
+            :id="id"
             v-model="model"
             :type="type"
             :placeholder="placeholder"

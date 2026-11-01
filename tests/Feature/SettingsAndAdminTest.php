@@ -26,7 +26,7 @@ class SettingsAndAdminTest extends TestCase
     {
         $user = User::factory()->create(['email_verified_at' => now()]);
 
-        $this->actingAs($user)->get('/settings/basics')
+        $this->actingAs($user)->get('/settings/blueprint')
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Settings/Defaults')
                 ->where('revision', 0));

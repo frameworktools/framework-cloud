@@ -15,7 +15,7 @@ use Inertia\Response;
 class DefaultsController extends Controller
 {
     /** The settings pages, in sidebar order. They share one form. */
-    public const SECTIONS = ['basics', 'packages', 'scaffold', 'git', 'agents', 'data', 'hooks', 'notebooks', 'quarto'];
+    public const SECTIONS = ['blueprint', 'editor', 'packages', 'scaffold', 'git', 'agents', 'data', 'hooks', 'notebooks', 'quarto'];
 
     public function edit(Request $request, string $section): Response
     {
@@ -25,7 +25,7 @@ class DefaultsController extends Controller
         return Inertia::render('Settings/Defaults', [
             'section' => $section,
             'revision' => $setting->revision,
-            'blueprints' => Blueprint::systemTypes()->get(['key', 'name']),
+            'blueprints' => Blueprint::systemTypes()->get(['key', 'name', 'description']),
             'catalog' => Catalog::for($request->user()),
             'values' => [
                 'project_type' => Arr::get($doc, 'defaults.project_type', 'bare'),
