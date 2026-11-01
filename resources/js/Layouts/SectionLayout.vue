@@ -85,7 +85,7 @@ const itemClass = (item) => [
                         <nav class="flex gap-1 max-lg:-mx-1 max-lg:overflow-x-auto lg:flex-col lg:gap-0.5">
                             <div v-if="group" class="mb-1 mt-2 text-xs font-medium uppercase tracking-wider text-slate-500 max-lg:hidden">{{ group }}</div>
                             <template v-for="item in items" :key="item.href ?? item.anchor ?? item.heading">
-                                <div v-if="item.heading" class="mb-1 mt-4 text-xs font-semibold uppercase tracking-wider text-slate-500 first:mt-1 max-lg:hidden dark:text-slate-400">{{ item.heading }}</div>
+                                <div v-if="item.heading" class="mb-1 mt-4 text-xs font-semibold uppercase tracking-wider text-slate-500 first:mt-5 max-lg:hidden dark:text-slate-400">{{ item.heading }}</div>
                                 <Link
                                     v-else-if="item.href" :href="item.href" :preserve-state="!!item.preserveState" :preserve-scroll="!!item.preserveState"
                                     class="flex shrink-0 items-center justify-between gap-2 rounded-md px-3 py-2 text-sm transition lg:-mx-3" :class="itemClass(item)"

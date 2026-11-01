@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { useForm, usePage } from '@inertiajs/vue3';
 import SectionLayout from '@/Layouts/SectionLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
+import DefaultBlueprintList from '@/Components/DefaultBlueprintList.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiCheckbox from '@/Components/UiCheckbox.vue';
 import UiInput from '@/Components/UiInput.vue';
@@ -11,7 +12,7 @@ import UiSwitch from '@/Components/UiSwitch.vue';
 
 // One form for all of your defaults, shown a page at a time. Moving
 // between pages keeps unsaved changes, and Save sends everything.
-const props = defineProps({ section: String, revision: Number, blueprints: Array, catalog: Object, values: Object });
+const props = defineProps({ section: String, blueprints: Array, catalog: Object, values: Object });
 
 const page = usePage();
 const saved = computed(() => page.props.flash.status === 'defaults-updated');
@@ -34,7 +35,6 @@ const sections = [
 const items = sections.map((s) => (s.heading ? s : { label: s.label, href: `/settings/${s.key}`, preserveState: true }));
 const current = computed(() => sections.find((s) => s.key === props.section));
 
-const blueprintOptions = computed(() => props.blueprints.map((b) => ({ value: b.key, label: b.name, description: b.description })));
 const formatOptions = [
     { value: 'quarto', label: 'Quarto' },
     { value: 'rmarkdown', label: 'R Markdown' },
@@ -77,23 +77,26 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
     <Head :title="`${current.label} · Project defaults`" />
 
     <SectionLayout heading="Project defaults" :items="items">
-        <PageHeader :title="current.label" />
+        <PageHeader :title="current.label" description="These defaults are used when you create a project." />
 
-        <details class="group mt-3 text-sm text-slate-600 dark:text-slate-400">
-            <summary class="w-fit cursor-pointer select-none text-slate-500 hover:text-slate-800 dark:hover:text-slate-200">About project defaults</summary>
+        <details class="mt-3 text-sm text-slate-600 dark:text-slate-400">
+            <summary class="w-fit cursor-pointer select-none text-slate-500 hover:text-slate-800 dark:hover:text-slate-200">How defaults apply</summary>
             <div class="mt-2 flex max-w-2xl flex-col gap-2 border-l-2 border-slate-200 pl-4 dark:border-slate-700">
                 <p>
-                    A new project that doesn't start from a blueprint gets your default blueprint, package sets, package environments, targets, Jupyter, Quarto, and skill sets.
-                    A blueprint you choose brings its own instead.
+                    Choosing a blueprint for a new project replaces your default blueprint, package sets, skill sets, and tools, including ones the blueprint doesn't include.
+                    Your other defaults still apply where the blueprint doesn't set them.
                 </p>
-                <p>Your other defaults apply to every new project unless its blueprint sets the same thing. Sensitive data applies even under a blueprint that isn't sensitive.</p>
-                <p>Defaults are saved to your account and synced to every computer where you've run cloud_login() in R or Python. Revision {{ revision }}.</p>
+                <p>Sensitive data protection stays on when enabled here, unless a blueprint you choose turns it off.</p>
+                <p>
+                    Your default blueprint, editor, notebook format, Git, renv, scaffold, and agent settings sync to computers connected to your account.
+                    The rest stay in your account and apply when Framework Cloud sets up a project.
+                </p>
             </div>
         </details>
 
         <form id="settings-form" class="mt-8 flex max-w-3xl flex-col gap-8" @submit.prevent="save">
             <template v-if="section === 'blueprint'">
-                <UiRadioCards v-model="form.project_type" name="project_type" legend="Default blueprint" :options="blueprintOptions" columns="sm:grid-cols-2 xl:grid-cols-3" />
+                <DefaultBlueprintList v-model="form.project_type" :blueprints="blueprints" :defaults="form" />
                 <p v-if="form.errors.project_type" class="-mt-6 text-sm text-red-600">{{ form.errors.project_type }}</p>
             </template>
 

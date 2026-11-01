@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
 use App\Models\Blueprint;
+use App\Models\FacetVersion;
+use App\Models\Skill;
 use App\Support\Catalog;
 use App\Support\ProjectDefaults;
 use Illuminate\Http\RedirectResponse;
@@ -25,7 +27,8 @@ class DefaultsController extends Controller
         return Inertia::render('Settings/Defaults', [
             'section' => $section,
             'revision' => $setting->revision,
-            'blueprints' => Blueprint::systemTypes()->get(['key', 'name', 'description']),
+            'blueprints' => Blueprint::systemTypes()->with('latestVersion.base.facet', 'latestVersion.facetVersions.facet')->get()
+                ->filter(fn (Blueprint $b) => $b->latestVersion)->map(fn (Blueprint $b) => self::details($b))->values(),
             'catalog' => Catalog::for($request->user()),
             'values' => [
                 'project_type' => Arr::get($doc, 'defaults.project_type', 'bare'),
@@ -44,6 +47,57 @@ class DefaultsController extends Controller
                 'hooks' => (object) ($request->user()->project_defaults['hooks'] ?? []),
             ],
         ]);
+    }
+
+    /**
+     * What a blueprint sets up, read from its latest version: the structure's
+     * folders, its pieces, and the settings it sets itself. A setting it
+     * leaves out is null, which means the person's own default applies.
+     *
+     * @return array<string, mixed>
+     */
+    private static function details(Blueprint $blueprint): array
+    {
+        $version = $blueprint->latestVersion;
+        $layer = $version->layer ?? [];
+        $structure = $version->base->layer ?? [];
+        $pieces = $version->facetVersions;
+        $ofKind = fn (string $kind) => $pieces->filter(fn (FacetVersion $v) => $v->facet->kind === $kind)->values();
+        $skillName = fn (string $key) => Skill::whereNull('user_id')->where('key', $key)->value('name') ?? $key;
+
+        // Folders and files from the structure, without the project root itself
+        $paths = collect([...array_values($structure['directories'] ?? []), ...array_values($structure['render_dirs'] ?? [])])
+            ->filter(fn ($path) => is_string($path) && $path !== '.' && $path !== '')->unique()->sort()->values();
+
+        $packages = fn (?array $pieceLayer) => array_keys($pieceLayer['packages']['default_packages'] ?? []);
+
+        return [
+            'key' => $blueprint->key,
+            'id' => $blueprint->id,
+            'name' => $blueprint->name,
+            'description' => $blueprint->description,
+            'handle' => $blueprint->handle,
+            'version' => $version->version,
+            'structure' => ['name' => $version->base->facet->name, 'paths' => $paths->all()],
+            'tools' => $ofKind('tool')->map(fn (FacetVersion $v) => ['name' => $v->facet->name, 'language' => $v->facet->language])->all(),
+            'package_sets' => $ofKind('package_set')->map(fn (FacetVersion $v) => [
+                'name' => $v->facet->name, 'id' => $v->facet->id, 'packages' => $packages($v->layer),
+            ])->all(),
+            // Packages that come with other pieces, such as ggplot2 with its skill set
+            'other_packages' => $pieces->reject(fn (FacetVersion $v) => $v->facet->kind === 'package_set')
+                ->flatMap(fn (FacetVersion $v) => array_map(fn ($package) => ['package' => $package, 'from' => $v->facet->name], $packages($v->layer)))->values()->all(),
+            'skill_sets' => $ofKind('skill_set')->map(fn (FacetVersion $v) => [
+                'name' => $v->facet->name, 'id' => $v->facet->id, 'skills' => array_map($skillName, array_keys($v->layer['skills'] ?? [])),
+            ])->all(),
+            'skills' => array_map($skillName, array_keys($layer['skills'] ?? [])),
+            'settings' => [
+                'sensitive' => $layer['security']['sensitive'] ?? $structure['security']['sensitive'] ?? null,
+                'sensitive_from' => isset($layer['security']['sensitive']) ? 'blueprint' : (isset($structure['security']['sensitive']) ? 'structure' : null),
+                'git' => $layer['git']['use_git'] ?? null,
+                'ai' => $layer['ai']['enabled'] ?? null,
+                'hooks' => $layer['git']['hooks'] ?? null,
+            ],
+        ];
     }
 
     public function update(Request $request): RedirectResponse

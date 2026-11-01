@@ -29,7 +29,14 @@ class SettingsAndAdminTest extends TestCase
         $this->actingAs($user)->get('/settings/blueprint')
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Settings/Defaults')
-                ->where('revision', 0));
+                ->where('revision', 0)
+                // Blueprint details: what each one sets, and null where the person's default applies
+                ->where('blueprints.1.key', 'project')
+                ->where('blueprints.1.settings.sensitive', null)
+                ->where('blueprints.1.skill_sets.0.name', 'Framework basics')
+                ->where('blueprints.2.settings.sensitive', true)
+                ->where('blueprints.2.settings.sensitive_from', 'structure')
+                ->where('blueprints.2.structure.paths', fn ($paths) => collect($paths)->contains('inputs/private/raw')));
 
         $this->actingAs($user)
             ->patch('/settings', [

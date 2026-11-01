@@ -2,7 +2,7 @@
   "project": {
     "key": "project",
     "name": "Standard Project Structure",
-    "description": "Full-featured with organized data, work, and output directories",
+    "description": "Folders for raw, intermediate, and final inputs; scripts, functions, and notebooks; and outputs for models, tables, figures, and reports.",
     "structure": {
       "directories": {
         "functions": "functions",
@@ -37,7 +37,7 @@
   "project_sensitive": {
     "key": "project_sensitive",
     "name": "Privacy Sensitive Project Structure",
-    "description": "Enhanced privacy controls for sensitive data with dedicated private/public flows",
+    "description": "The standard folders with inputs and outputs split into private and public. Marks the project sensitive.",
     "structure": {
       "directories": {
         "functions": "functions",
@@ -80,7 +80,7 @@
   "presentation": {
     "key": "presentation",
     "name": "Presentation Structure",
-    "description": "Minimal structure for slides and presentations",
+    "description": "One presentation.qmd rendered as slides, with data, scripts, functions, and outputs folders.",
     "structure": {
       "directories": {
         "presentation_source": "presentation.qmd",
@@ -106,7 +106,7 @@
   "course": {
     "key": "course",
     "name": "Course Structure",
-    "description": "Simplified structure for teaching materials with modules and assignments",
+    "description": "Folders for slides, modules, assignments, readings, and course documents. All but readings render into rendered/.",
     "structure": {
       "directories": {
         "data": "data",
@@ -139,7 +139,7 @@
   "bare": {
     "key": "bare",
     "name": "Bare",
-    "description": "Nearly empty: settings.yml, an RStudio project file, and git.",
+    "description": "No folders, only the settings.yml every Framework project has.",
     "structure": {
       "directories": {},
       "render_dirs": {},
