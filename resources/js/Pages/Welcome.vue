@@ -49,7 +49,7 @@ watch([() => form.language, () => form.project_type], ([language], [previous]) =
 }, { immediate: true });
 
 const steps = computed(() => [
-    { key: 'language', title: 'Which language do you work in most?' },
+    { key: 'language', title: 'Which environment do you work in most?' },
     { key: 'project', title: 'What kind of project do you usually start?' },
     ...(form.language === 'stata' ? [] : [
         { key: 'workflow', title: 'How do you write notebooks?' },
@@ -76,7 +76,7 @@ const workflowOptions = computed(() => workflowsFor(blueprint.value).map((w) => 
     label: workflowNames[w],
     description: {
         quarto: 'Quarto notebooks (.qmd) that render to HTML, PDF, and Word.',
-        jupyter: 'Jupyter notebooks (.ipynb) with the kernel for your language. Quarto stays available to render and publish them.',
+        jupyter: 'Jupyter notebooks (.ipynb) with the kernel for your environment. Quarto stays available to render and publish them.',
         scripts: 'No notebooks. Your analysis lives in scripts.',
     }[w],
 })));
@@ -115,7 +115,7 @@ const previewValues = computed(() => ({
     ai_agents: form.ai ? form.agents : props.values.ai_agents,
 }));
 const answers = computed(() => [
-    { key: 'language', label: 'Language', value: languageNames[form.language] },
+    { key: 'language', label: 'Environment', value: languageNames[form.language] },
     { key: 'project', label: 'Project type', value: blueprint.value?.name },
     ...(form.language === 'stata' ? [] : [
         { key: 'workflow', label: 'Workflow', value: workflowNames[form.workflow] },
@@ -144,9 +144,6 @@ const heading = 'text-sm font-semibold text-slate-900 dark:text-white';
                         You can change any of them later in Project defaults.
                     </p>
                 </div>
-                <button type="button" class="shrink-0 text-sm text-slate-500 hover:text-slate-900 hover:underline dark:hover:text-white" @click="skip">
-                    {{ again ? 'Cancel' : 'Skip setup' }}
-                </button>
             </div>
 
             <!-- One question at a time -->
@@ -203,8 +200,11 @@ const heading = 'text-sm font-semibold text-slate-900 dark:text-white';
             <div class="flex items-center justify-between border-t border-slate-200 pt-6 dark:border-slate-800">
                 <UiButton v-if="index > 0" variant="outline" @click="back">Back</UiButton>
                 <span v-else />
-                <UiButton v-if="step.key !== 'summary'" @click="next">Continue</UiButton>
-                <UiButton v-else :disabled="form.processing" @click="save">{{ form.processing ? 'Saving…' : 'Save my defaults' }}</UiButton>
+                <div class="flex items-center gap-3">
+                    <UiButton variant="outline" @click="skip">{{ again ? 'Cancel' : 'Skip setup' }}</UiButton>
+                    <UiButton v-if="step.key !== 'summary'" @click="next">Continue</UiButton>
+                    <UiButton v-else :disabled="form.processing" @click="save">{{ form.processing ? 'Saving…' : 'Save my defaults' }}</UiButton>
+                </div>
             </div>
         </div>
     </AppLayout>
