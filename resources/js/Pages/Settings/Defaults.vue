@@ -94,6 +94,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                 <a href="/docs/projects-and-blueprints#how-defaults-apply" class="text-sm text-slate-500 hover:text-slate-900 hover:underline dark:hover:text-white">Documentation</a>
             </template>
         </PageHeader>
+        <PageHeader v-else-if="section === 'language'" :title="current.label" description="Choose your default statistical programming environment for new projects." />
         <PageHeader v-else :title="current.label" />
 
         <form id="settings-form" class="mt-8 flex max-w-3xl flex-col gap-8" @submit.prevent="save">
