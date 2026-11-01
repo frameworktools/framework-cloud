@@ -20,7 +20,7 @@ use Inertia\Response;
 class DefaultsController extends Controller
 {
     /** The settings pages, in sidebar order. They share one form. */
-    public const SECTIONS = ['language', 'blueprint', 'editor', 'packages', 'scaffold', 'git', 'hooks', 'agents', 'notebooks', 'quarto'];
+    public const SECTIONS = ['language', 'blueprint', 'editor', 'packages', 'scaffold', 'git', 'hooks', 'agents', 'notebooks', 'quarto', 'jupyter'];
 
     public function edit(Request $request, string $section): Response
     {
@@ -146,7 +146,7 @@ class DefaultsController extends Controller
         $validated = $request->validate([
             'language' => ['sometimes', 'in:r,python,stata'],
             'project_type' => ['required', 'exists:blueprints,key'],
-            'notebook_format' => ['required', 'in:quarto,rmarkdown'],
+            'notebook_format' => ['required', 'in:'.implode(',', ProjectDefaults::NOTEBOOK_FORMATS)],
             'ide' => ['required', 'in:positron,vscode,rstudio,both,none'],
             'use_git' => ['boolean'],
             'use_renv' => ['boolean'],
@@ -204,7 +204,8 @@ class DefaultsController extends Controller
             'package_sets' => [],
             'packages' => ProjectDefaults::packages($validated['packages'] ?? []),
             'skill_sets' => array_values($validated['skill_sets'] ?? []),
-            'tools' => array_map('boolval', Arr::except($validated['tools'] ?? [], ['renv'])),
+            // Jupyter notebooks need the Jupyter tool's kernel
+            'tools' => ($validated['notebook_format'] === 'jupyter' ? ['jupyter' => true] : []) + array_map('boolval', Arr::except($validated['tools'] ?? [], ['renv'])),
             'hooks' => array_map('boolval', Arr::only($validated['hooks'] ?? [], ProjectDefaults::HOOKS)),
         ]])->save();
 

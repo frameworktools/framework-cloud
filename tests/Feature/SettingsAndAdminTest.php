@@ -266,9 +266,9 @@ class SettingsAndAdminTest extends TestCase
         $this->assertFalse($defaults['source_all_functions']);
 
         $scaffold = fn (string $language) => last((new Resolver($user->fresh()))->resolve(['name' => 'Survey', 'language' => $language])['envelope']['layers'])['layer']['scaffold'] ?? [];
-        $this->assertSame(['ide' => 'vscode', 'seed_on_scaffold' => true, 'seed' => '20241107', 'set_theme_on_scaffold' => true, 'ggplot_theme' => 'theme_bw', 'source_all_functions' => false], $scaffold('r'));
+        $this->assertSame(['ide' => 'vscode', 'seed_on_scaffold' => true, 'seed' => '20241107', 'set_theme_on_scaffold' => true, 'ggplot_theme' => 'theme_bw', 'source_all_functions' => false, 'notebook_format' => 'quarto'], $scaffold('r'));
         // Python seeds and puts functions/ on the import path; the theme is R's
-        $this->assertSame(['ide' => 'vscode', 'seed_on_scaffold' => true, 'seed' => '20241107', 'source_all_functions' => false], $scaffold('python'));
+        $this->assertSame(['ide' => 'vscode', 'seed_on_scaffold' => true, 'seed' => '20241107', 'source_all_functions' => false, 'notebook_format' => 'quarto'], $scaffold('python'));
         $this->assertSame([], $scaffold('stata'));
 
         $this->actingAs($user)->patch('/settings', $base + ['seed' => 'abc', 'ggplot_theme' => 'theme_neon'])
@@ -297,6 +297,25 @@ class SettingsAndAdminTest extends TestCase
         $paths = $tree(['ai_agents' => ['claude']]);
         $this->assertTrue($paths->contains('AGENTS.md') && $paths->contains('CLAUDE.md') && $paths->contains('.claude'));
         $this->assertFalse($paths->contains('.agents'));
+    }
+
+    public function test_the_notebook_platform_goes_to_each_language_that_reads_it_and_jupyter_turns_its_tool_on(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $base = ['project_type' => 'project', 'ide' => 'vscode', 'ai_canonical_file' => 'AGENTS.md'];
+        $format = fn (string $language) => last((new Resolver($user->fresh()))->resolve(['name' => 'Survey', 'language' => $language])['envelope']['layers'])['layer']['scaffold']['notebook_format'] ?? null;
+
+        $this->actingAs($user)->patch('/settings', $base + ['notebook_format' => 'jupyter', 'tools' => ['jupyter' => false]])->assertSessionHasNoErrors();
+        $this->assertTrue($user->fresh()->project_defaults['tools']['jupyter']);
+        $this->assertSame('jupyter', $format('python'));
+        // R's spec doesn't take jupyter yet
+        $this->assertNull($format('r'));
+
+        $this->actingAs($user)->patch('/settings', $base + ['notebook_format' => 'rmarkdown'])->assertSessionHasNoErrors();
+        $this->assertSame('rmarkdown', $format('r'));
+        $this->assertNull($format('python'));
+
+        $this->actingAs($user)->patch('/settings', $base + ['notebook_format' => 'word'])->assertSessionHasErrors('notebook_format');
     }
 
     public function test_default_packages_go_into_new_projects_without_a_blueprint(): void

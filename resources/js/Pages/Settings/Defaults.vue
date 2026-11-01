@@ -29,9 +29,10 @@ const sections = [
     { key: 'git', label: 'Git' },
     { key: 'hooks', label: 'Data safety hooks' },
     { key: 'agents', label: 'Agents' },
-    { heading: 'Documents' },
-    { key: 'notebooks', label: 'Notebooks' },
+    { heading: 'Notebooks' },
+    { key: 'notebooks', label: 'Preferences', title: 'Notebook preferences' },
     { key: 'quarto', label: 'Quarto' },
+    { key: 'jupyter', label: 'Jupyter' },
 ];
 const items = sections.map((s) => (s.heading ? s : { label: s.label, href: `/settings/${s.key}`, preserveState: true }));
 const current = computed(() => sections.find((s) => s.key === props.section));
@@ -42,10 +43,19 @@ const languageOptions = [
     { value: 'python', label: 'Python', description: 'Use the Python programming language.' },
     { value: 'stata', label: 'Stata', description: 'Scaffolding only: folders, master.do, settings.do with path globals, starter do-files, Git, and agent files. Framework doesn\'t install or manage Stata packages.' },
 ];
+// The notebook new projects make by default. Jupyter needs its kernel, so choosing it turns the Jupyter tool on.
 const formatOptions = computed(() => [
-    { value: 'quarto', label: 'Quarto' },
-    { value: 'rmarkdown', label: 'R Markdown', description: form.language === 'r' ? null : `Not used in ${languageNames[form.language]} projects.` },
+    { value: 'quarto', label: 'Quarto', description: 'Quarto notebooks (.qmd) that render to HTML, PDF, and Word.' },
+    { value: 'jupyter', label: 'Jupyter', description: 'Jupyter notebooks (.ipynb), with the kernel for the project\'s language.' },
+    { value: 'rmarkdown', label: 'R Markdown', description: form.language === 'r' || form.language === 'stata' ? 'R Markdown notebooks (.Rmd). R only.' : `R Markdown notebooks (.Rmd). Not used in ${languageNames[form.language]} projects.` },
 ]);
+const notebookFormat = computed({
+    get: () => form.notebook_format,
+    set: (format) => {
+        form.notebook_format = format;
+        if (format === 'jupyter') setTool('jupyter', true);
+    },
+});
 // Editor files: RStudio's .Rproj and VS Code and Positron's .code-workspace,
 // saved as the one value R and Python read (positron means vscode)
 const editorOptions = [
@@ -112,7 +122,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
 </script>
 
 <template>
-    <Head :title="`${current.label} · Project defaults`" />
+    <Head :title="`${current.title ?? current.label} · Project defaults`" />
 
     <SectionLayout heading="Project defaults" :items="items" narrow :dirty="form.isDirty">
         <PageHeader v-if="section === 'blueprint'" :title="current.label" description="Select a default Blueprint for new projects.">
@@ -124,6 +134,12 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
         <PageHeader v-else-if="section === 'packages'" :title="current.label" description="Choose default packages for new projects." />
         <PageHeader v-else-if="section === 'editor'" :title="current.label" description="Select the editors/IDEs you typically use." />
         <PageHeader v-else-if="section === 'language'" :title="current.label" description="Choose your default statistical programming environment for new projects." />
+        <PageHeader v-else-if="section === 'scaffold'" :title="current.label" description="Configure behaviors triggered by scaffold()." />
+        <PageHeader v-else-if="section === 'hooks'" :title="current.label" description="Configure Git hooks for data safety protections." />
+        <PageHeader v-else-if="section === 'agents'" :title="current.label" description="Configure project setup for AI agents." />
+        <PageHeader v-else-if="section === 'notebooks'" :title="current.title" description="Configure preferred scientific notebook platform." />
+        <PageHeader v-else-if="section === 'quarto'" :title="current.label" description="Configure Quarto for new projects." />
+        <PageHeader v-else-if="section === 'jupyter'" :title="current.label" description="Configure Jupyter for new projects." />
         <PageHeader v-else :title="current.label" />
 
         <form id="settings-form" class="mt-8 flex max-w-3xl flex-col gap-8" @submit.prevent="save">
@@ -238,22 +254,29 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
 
             <template v-else-if="section === 'notebooks'">
                 <p v-if="form.language === 'stata'" class="text-sm text-slate-600 dark:text-slate-400">Stata projects don't get notebooks. These apply to your R and Python projects.</p>
-                <UiRadioCards v-model="form.notebook_format" name="notebook_format" legend="Notebook format" :options="formatOptions" columns="grid-cols-2 max-w-md" />
-                <section v-if="tool('jupyter')" class="max-w-xl border-t border-slate-200 pt-8 dark:border-slate-800">
-                    <UiSwitch :model-value="!!form.tools.jupyter" :class="dim(tool('jupyter'))" label="Also add Jupyter" :description="describe(tool('jupyter'), 'Jupyter notebooks with the kernel for the project\'s language: IRkernel for R, ipykernel for Python.')" @update:model-value="(on) => setTool('jupyter', on)" />
-                </section>
+                <UiRadioCards v-model="notebookFormat" name="notebook_format" legend="Notebook platform" hide-legend :options="formatOptions" stacked />
+                <p v-if="form.errors.notebook_format" class="text-sm text-red-600">{{ form.errors.notebook_format }}</p>
             </template>
+
+            <section v-else-if="section === 'jupyter'" class="flex max-w-xl flex-col gap-5" :class="form.language === 'stata' ? 'opacity-60' : ''">
+                <p v-if="form.language === 'stata'" class="text-sm text-slate-600 dark:text-slate-400">Stata projects don't use Jupyter. These apply to your R and Python projects.</p>
+                <UiSwitch
+                    v-if="tool('jupyter')" :model-value="!!form.tools.jupyter" label="Jupyter"
+                    :disabled="form.notebook_format === 'jupyter'"
+                    :description="form.notebook_format === 'jupyter'
+                        ? 'Jupyter notebooks with the kernel for the project\'s language: IRkernel for R, ipykernel for Python. On while Jupyter is your notebook platform.'
+                        : 'Jupyter notebooks with the kernel for the project\'s language: IRkernel for R, ipykernel for Python. Turn it on to use Jupyter alongside your notebook platform.'"
+                    @update:model-value="(on) => setTool('jupyter', on)"
+                />
+            </section>
 
             <section v-else-if="section === 'quarto'" class="flex max-w-xl flex-col gap-5" :class="form.language === 'stata' ? 'opacity-60' : ''">
                 <p v-if="form.language === 'stata'" class="text-sm text-slate-600 dark:text-slate-400">Stata projects don't use Quarto. These apply to your R and Python projects.</p>
                 <p class="text-xs text-slate-500">Used when a new project doesn't start from a blueprint.</p>
                 <UiSwitch v-if="tool('quarto')" :model-value="!!form.tools.quarto" label="Quarto" description="Quarto notebooks and documents." @update:model-value="(on) => setTool('quarto', on)" />
-                <div class="flex flex-col gap-5 border-l-2 border-slate-200 pl-5 dark:border-slate-700">
-                    <p class="text-xs text-slate-500">These need Quarto. Turning one on turns Quarto on, and turning Quarto off turns them off.</p>
-                    <template v-for="key in ['quarto_manuscript', 'quarto_slides']" :key="key">
-                        <UiSwitch v-if="tool(key)" :model-value="!!form.tools[key]" :label="tool(key).name" :description="tool(key).description" @update:model-value="(on) => setTool(key, on)" />
-                    </template>
-                </div>
+                <template v-for="key in ['quarto_manuscript', 'quarto_slides']" :key="key">
+                    <UiSwitch v-if="tool(key)" :model-value="!!form.tools[key]" :label="tool(key).name" :description="`${tool(key).description} Turns Quarto on.`" @update:model-value="(on) => setTool(key, on)" />
+                </template>
             </section>
         </form>
 

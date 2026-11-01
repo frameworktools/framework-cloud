@@ -81,9 +81,12 @@ class ProjectLayers
         }
         $keys = match ($language) {
             'r' => array_keys(ProjectDefaults::SCAFFOLD),
-            'python' => ['seed_on_scaffold', 'seed', 'source_all_functions'],
+            'python' => ['seed_on_scaffold', 'seed', 'source_all_functions', 'notebook_format'],
             default => [],
         };
+        // R Markdown is R's alone; R's spec takes jupyter once the framework package accepts it
+        $scaffold = array_filter($scaffold, fn ($value, $name) => $name !== 'notebook_format'
+            || ! ($value === 'rmarkdown' && $language !== 'r') && ! ($value === 'jupyter' && $language === 'r'), ARRAY_FILTER_USE_BOTH);
         foreach (Arr::only($scaffold, $keys) as $name => $value) {
             // A blueprint or piece that sets it decides
             if (! collect($layers)->contains(fn (array $l) => array_key_exists($name, (array) ($l['layer']['scaffold'] ?? [])))) {

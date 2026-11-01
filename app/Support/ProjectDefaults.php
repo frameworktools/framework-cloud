@@ -39,7 +39,11 @@ class ProjectDefaults
         'set_theme_on_scaffold' => false,
         'ggplot_theme' => 'theme_minimal',
         'source_all_functions' => true,
+        'notebook_format' => 'quarto',
     ];
+
+    /** The notebook platforms: Quarto and Jupyter for R and Python, R Markdown for R. */
+    public const NOTEBOOK_FORMATS = ['quarto', 'jupyter', 'rmarkdown'];
 
     /** The ggplot2 themes the Scaffold page offers. */
     public const GGPLOT_THEMES = ['theme_minimal', 'theme_bw', 'theme_classic', 'theme_light', 'theme_gray', 'theme_linedraw', 'theme_dark', 'theme_void'];
@@ -100,6 +104,7 @@ class ProjectDefaults
             'set_theme_on_scaffold' => (bool) ($values['set_theme_on_scaffold'] ?? self::SCAFFOLD['set_theme_on_scaffold']),
             'ggplot_theme' => in_array($theme, self::GGPLOT_THEMES, true) ? $theme : self::SCAFFOLD['ggplot_theme'],
             'source_all_functions' => (bool) ($values['source_all_functions'] ?? self::SCAFFOLD['source_all_functions']),
+            'notebook_format' => in_array($values['notebook_format'] ?? null, self::NOTEBOOK_FORMATS, true) ? $values['notebook_format'] : self::SCAFFOLD['notebook_format'],
         ];
     }
 
