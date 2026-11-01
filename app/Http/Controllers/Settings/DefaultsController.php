@@ -36,7 +36,7 @@ class DefaultsController extends Controller
                 'language' => $request->user()->project_defaults['language'] ?? ProjectDefaults::LANGUAGE,
                 'project_type' => Arr::get($doc, 'defaults.project_type', ProjectDefaults::BLUEPRINT),
                 'notebook_format' => Arr::get($doc, 'defaults.notebook_format', 'quarto'),
-                'ide' => Arr::get($doc, 'defaults.ide', 'positron'),
+                'ide' => Arr::get($doc, 'defaults.ide', ProjectDefaults::IDE),
                 'use_git' => (bool) Arr::get($doc, 'defaults.use_git', true),
                 'use_renv' => (bool) Arr::get($doc, 'defaults.use_renv', false),
                 'seed_on_scaffold' => (bool) Arr::get($doc, 'defaults.seed_on_scaffold', true),

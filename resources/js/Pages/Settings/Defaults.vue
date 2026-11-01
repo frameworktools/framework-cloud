@@ -6,6 +6,7 @@ import PageHeader from '@/Components/PageHeader.vue';
 import DefaultBlueprintList from '@/Components/DefaultBlueprintList.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiCheckbox from '@/Components/UiCheckbox.vue';
+import UiCheckboxCards from '@/Components/UiCheckboxCards.vue';
 import UiInput from '@/Components/UiInput.vue';
 import UiRadioCards from '@/Components/UiRadioCards.vue';
 import UiSwitch from '@/Components/UiSwitch.vue';
@@ -21,7 +22,7 @@ const sections = [
     { heading: 'New projects' },
     { key: 'language', label: 'Language' },
     { key: 'blueprint', label: 'Blueprint' },
-    { key: 'editor', label: 'Editor' },
+    { key: 'editor', label: 'Editor support' },
     { key: 'packages', label: 'Packages' },
     { key: 'scaffold', label: 'Scaffold' },
     { key: 'git', label: 'Git' },
@@ -46,19 +47,26 @@ const formatOptions = computed(() => [
     { value: 'quarto', label: 'Quarto' },
     { value: 'rmarkdown', label: 'R Markdown', description: form.language === 'r' ? null : `Not used in ${languageNames[form.language]} projects.` },
 ]);
-const ideOptions = [
-    { value: 'positron', label: 'Positron' },
-    { value: 'vscode', label: 'VS Code' },
-    { value: 'rstudio', label: 'RStudio' },
-    { value: 'both', label: 'RStudio + VS Code' },
-    { value: 'none', label: 'None' },
-];
-const hooks = [
+// Editor files: RStudio's .Rproj and VS Code and Positron's .code-workspace,
+// saved as the one value R and Python read (positron means vscode)
+const editorOptions = [
+    { value: 'rstudio', label: 'RStudio', description: 'Adds an .Rproj file.' },
+    { value: 'vscode', label: 'VS Code and Positron', description: 'Adds a .code-workspace file.' },
+];const hooks = [
     { key: 'data_security', label: 'Check for secrets', description: 'Blocks a commit that looks like it holds passwords, keys, or other secrets.' },
     { key: 'check_sensitive_dirs', label: 'Check private folders', description: "Warns when a private data or output folder isn't in .gitignore. The commit goes ahead." },
 ];
 
 const form = useForm({ ...props.values, tools: { ...props.values.tools }, hooks: { ...props.values.hooks } });
+
+const editors = computed({
+    get: () => ({ rstudio: ['rstudio'], vscode: ['vscode'], positron: ['vscode'], both: ['rstudio', 'vscode'] })[form.ide] ?? [],
+    set: (list) => {
+        const rstudio = list.includes('rstudio');
+        const vscode = list.includes('vscode');
+        form.ide = rstudio && vscode ? 'both' : rstudio ? 'rstudio' : vscode ? 'vscode' : 'none';
+    },
+});
 
 const tool = (key) => props.catalog.tools.find((t) => t.key === key);
 const only = (piece) => (piece?.language?.length === 1 ? (piece.language[0] === 'r' ? 'R only.' : 'Python only.') : '');
@@ -95,6 +103,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                 <a href="/docs/projects-and-blueprints#how-defaults-apply" class="ml-3 text-sm text-slate-500 hover:text-slate-900 hover:underline dark:hover:text-white">Documentation</a>
             </template>
         </PageHeader>
+        <PageHeader v-else-if="section === 'editor'" :title="current.label" description="Pick which editors you typically use." />
         <PageHeader v-else-if="section === 'language'" :title="current.label" description="Choose your default statistical programming environment for new projects." />
         <PageHeader v-else :title="current.label" />
 
@@ -108,7 +117,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
 
             <template v-else-if="section === 'editor'">
                 <p v-if="form.language === 'stata'" class="text-sm text-slate-600 dark:text-slate-400">Stata projects don't get editor files. These apply to your R and Python projects.</p>
-                <UiRadioCards v-model="form.ide" name="ide" legend="Editor" hide-legend :options="ideOptions" columns="grid-cols-2 sm:grid-cols-3" />
+                <UiCheckboxCards v-model="editors" legend="Editor support" hide-legend :options="editorOptions" />
             </template>
 
             <template v-else-if="section === 'packages'">

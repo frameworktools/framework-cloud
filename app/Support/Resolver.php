@@ -130,7 +130,7 @@ class Resolver
             ...collect($pieces)->flatMap(fn (FacetVersion $v) => ProjectLayers::entries($v, $language))->all(),
             ['kind' => 'blueprint', 'key' => $this->blueprint?->blueprint->handle ?? 'choices', 'layer' => $this->settings],
         ];
-        $layers[] = ProjectLayers::projectLayer(str((string) ($choices['name'] ?? 'project'))->slug()->value() ?: 'project', $language, $layers);
+        $layers[] = ProjectLayers::projectLayer(str((string) ($choices['name'] ?? 'project'))->slug()->value() ?: 'project', $language, $layers, $choices['default_settings']['ide'] ?? null);
 
         if ($problems = Layer::envelopeProblems(['spec_version' => 1, 'name' => (string) ($choices['name'] ?? 'project'), 'layers' => $layers])) {
             throw ValidationException::withMessages(['settings' => implode("\n", $problems)]);

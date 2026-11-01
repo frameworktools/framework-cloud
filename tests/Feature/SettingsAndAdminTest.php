@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Support\Layer;
 use App\Support\ProjectDefaults;
 use App\Support\ProjectLayers;
+use App\Support\Resolver;
 use Database\Seeders\BlueprintSeeder;
 use Database\Seeders\ProductionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -210,5 +211,27 @@ class SettingsAndAdminTest extends TestCase
 
         $this->actingAs($user)->patch('/settings', ['language' => 'fortran', 'project_type' => 'project', 'notebook_format' => 'quarto', 'ide' => 'positron', 'ai_canonical_file' => 'AGENTS.md'])
             ->assertSessionHasErrors('language');
+    }
+
+    public function test_editor_support_decides_the_editor_files_and_goes_in_the_project_layer(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $paths = fn (string $ide) => collect($this->actingAs($user)->postJson('/settings/blueprint/preview', [
+            'blueprint' => 'project', 'language' => 'r', 'values' => ['ide' => $ide],
+        ])->json('tree'))->pluck('path');
+
+        $this->assertTrue($paths('rstudio')->contains('project.Rproj'));
+        $this->assertFalse($paths('rstudio')->contains('project.code-workspace'));
+        $this->assertTrue($paths('vscode')->contains('project.code-workspace'));
+        $this->assertFalse($paths('vscode')->contains('project.Rproj'));
+        $this->assertTrue($paths('both')->contains('project.Rproj') && $paths('both')->contains('project.code-workspace'));
+        $this->assertFalse($paths('none')->contains('project.Rproj') || $paths('none')->contains('project.code-workspace'));
+
+        $setting = $user->globalSettings();
+        $doc = $setting->document;
+        $doc['defaults']['ide'] = 'both';
+        $setting->replaceDocument($doc);
+        $layers = (new Resolver($user->fresh()))->resolve(['name' => 'Survey'])['envelope']['layers'];
+        $this->assertSame('both', end($layers)['layer']['scaffold']['ide']);
     }
 }

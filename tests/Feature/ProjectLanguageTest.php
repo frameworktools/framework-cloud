@@ -132,8 +132,8 @@ class ProjectLanguageTest extends TestCase
         $this->assertSame(['notebooks' => null], $top['render_dirs']);
         $this->assertSame([], Layer::envelopeProblems($envelope));
 
-        // R projects keep them
+        // R projects keep them, and get the owner's editor files
         $project->update(['language' => 'r']);
-        $this->assertSame(['language' => 'r'], end(ProjectLayers::for($project->fresh())['layers'])['layer']);
+        $this->assertSame(['language' => 'r', 'scaffold' => ['ide' => 'positron']], end(ProjectLayers::for($project->fresh())['layers'])['layer']);
     }
 }

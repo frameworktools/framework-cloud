@@ -20,11 +20,18 @@ class ProjectDefaults
     /** The language the Project defaults pages start from when the person hasn't picked one. */
     public const LANGUAGE = 'r';
 
+    /**
+     * Editor files for an account that never chose: VS Code and Positron's
+     * .code-workspace. Saved as rstudio, vscode, both, or none; older
+     * accounts may hold positron, which means the same as vscode.
+     */
+    public const IDE = 'vscode';
+
     /** The git hooks a user can turn on for new projects, as the R package names them. */
     public const HOOKS = ['data_security', 'check_sensitive_dirs'];
 
     /**
-     * @return array{blueprint: string, package_sets: list<string>, skill_sets: list<string>, tools: array<string, bool>, settings: array{sensitive: bool, git: bool, ai: bool, hooks: list<string>}}
+     * @return array{blueprint: string, package_sets: list<string>, skill_sets: list<string>, tools: array<string, bool>, settings: array{sensitive: bool, git: bool, ai: bool, hooks: list<string>, ide: string}}
      */
     public static function for(User $user): array
     {
@@ -41,6 +48,7 @@ class ProjectDefaults
                 'git' => (bool) Arr::get($doc, 'defaults.use_git', true),
                 'ai' => (bool) Arr::get($doc, 'ai.enabled', true),
                 'hooks' => array_keys(array_filter(Arr::only($own['hooks'] ?? [], self::HOOKS))),
+                'ide' => (string) Arr::get($doc, 'defaults.ide', self::IDE),
             ],
         ];
     }
@@ -50,7 +58,7 @@ class ProjectDefaults
      * not, for previewing what a new project would get.
      *
      * @param  array<string, mixed>  $values  as DefaultsController hands them to the form
-     * @return array{blueprint: string, package_sets: list<string>, skill_sets: list<string>, tools: array<string, bool>, settings: array{sensitive: bool, git: bool, ai: bool, hooks: list<string>}}
+     * @return array{blueprint: string, package_sets: list<string>, skill_sets: list<string>, tools: array<string, bool>, settings: array{sensitive: bool, git: bool, ai: bool, hooks: list<string>, ide: string}}
      */
     public static function fromValues(array $values): array
     {
@@ -64,6 +72,7 @@ class ProjectDefaults
                 'git' => (bool) ($values['use_git'] ?? true),
                 'ai' => (bool) ($values['ai_enabled'] ?? true),
                 'hooks' => array_keys(array_filter(Arr::only((array) ($values['hooks'] ?? []), self::HOOKS))),
+                'ide' => (string) ($values['ide'] ?? self::IDE),
             ],
         ];
     }

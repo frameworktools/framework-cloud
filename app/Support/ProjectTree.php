@@ -41,6 +41,11 @@ class ProjectTree
         $git = (bool) ($spec['git']['use_git'] ?? true);
         $agents = (bool) ($spec['ai']['enabled'] ?? true);
         $skills = array_keys((array) ($spec['skills'] ?? []));
+        // Editor files follow scaffold.ide: .Rproj for RStudio, .code-workspace for VS Code and Positron
+        // (the cloud always sends it; without it, R writes just the .Rproj, as it always did)
+        $ide = (string) ($spec['scaffold']['ide'] ?? 'rstudio');
+        $rstudio = in_array($ide, ['rstudio', 'both'], true);
+        $vscode = in_array($ide, ['vscode', 'positron', 'both'], true);
 
         if ($language === 'stata') {
             // fw makes every folder now, outputs included, and ignores render folders
@@ -96,7 +101,9 @@ class ProjectTree
             $add('.gitignore', 'file');
 
             if ($language === 'r') {
-                $add('project.Rproj', 'file', null, 'named after the project');
+                if ($rstudio) {
+                    $add('project.Rproj', 'file', null, 'named after the project');
+                }
             } else {
                 $add('pyproject.toml', 'file');
             }
@@ -107,7 +114,9 @@ class ProjectTree
                 if ($language === 'python') {
                     $add('framework.db', 'file');
                 }
-                $add('project.code-workspace', 'file', null, 'with VS Code or Positron');
+                if ($vscode) {
+                    $add('project.code-workspace', 'file', null, 'named after the project');
+                }
             }
 
             // Quarto follows R's own default for the type until the cloud names tools to clients
