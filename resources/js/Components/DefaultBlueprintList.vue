@@ -12,6 +12,7 @@ import { ChevronRightIcon } from '@heroicons/vue/20/solid';
 const props = defineProps({
     blueprints: { type: Array, required: true },
     defaults: { type: Object, required: true }, // the Project defaults form
+    language: { type: String, required: true }, // the language the page is set to
 });
 const model = defineModel({ type: String });
 const page = usePage();
@@ -28,11 +29,11 @@ const toggleOpen = (key) => {
     open.value = next;
 };
 
-// Previews start in your default language, where the blueprint has it.
-// Switching one is only for looking: it doesn't change the default.
+// Previews are for the page's language; a blueprint without it can't be chosen for it
 const languageNames = { r: 'R', python: 'Python', stata: 'Stata' };
-const startLanguage = (b) => (b.languages.includes(props.defaults.language) ? props.defaults.language : 'r');
-const language = reactive(Object.fromEntries(props.blueprints.map((b) => [b.key, startLanguage(b)])));
+const supports = (b) => b.languages.includes(props.language);
+const workflowNames = { quarto: 'Quarto', jupyter: 'Jupyter', scripts: 'Scripts only' };
+const workflowsFor = (b) => b.workflows.filter((w) => props.language !== 'stata' || w === 'scripts');
 
 // What the server resolves the previews from: every default that changes a new project
 const values = computed(() => {
@@ -42,7 +43,7 @@ const values = computed(() => {
 const previews = reactive({});
 const loading = reactive({});
 const load = async (key) => {
-    const lang = language[key];
+    const lang = props.language;
     const id = `${key}:${lang}:${JSON.stringify(values.value)}`;
     if (previews[key]?.id === id) return;
     loading[key] = true;
@@ -54,13 +55,13 @@ const load = async (key) => {
         });
         const data = response.ok ? await response.json() : { available: false, problem: "The preview couldn't be loaded." };
         // A later request may have finished first
-        if (`${key}:${language[key]}:${JSON.stringify(values.value)}` === id) previews[key] = { id, ...data };
+        if (`${key}:${props.language}:${JSON.stringify(values.value)}` === id) previews[key] = { id, ...data };
     } finally {
         loading[key] = false;
     }
 };
 let timer = null;
-watch([open, () => ({ ...language }), values], () => {
+watch([open, () => props.language, values], () => {
     clearTimeout(timer);
     timer = setTimeout(() => open.value.forEach(load), 150);
 }, { immediate: true, deep: true });
@@ -112,11 +113,15 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
                 <!-- The chosen row's accent: a thin bar at its left edge -->
                 <span v-if="model === b.key" class="absolute inset-y-0 left-0 w-0.5 bg-sky-600" aria-hidden="true" />
                 <div class="flex items-start gap-3 px-4 py-3">
-                    <label class="flex min-w-0 flex-1 cursor-pointer items-start gap-3">
-                        <input v-model="model" type="radio" name="project_type" :value="b.key" class="mt-0.5 size-4 shrink-0 accent-sky-600">
+                    <label class="flex min-w-0 flex-1 items-start gap-3" :class="supports(b) ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'">
+                        <input v-model="model" type="radio" name="project_type" :value="b.key" :disabled="!supports(b) && model !== b.key" class="mt-0.5 size-4 shrink-0 accent-sky-600">
                         <span class="flex min-w-0 flex-col gap-0.5">
                             <span class="text-sm font-medium text-slate-900 dark:text-white">{{ b.name }}</span>
                             <span class="text-sm text-slate-600 dark:text-slate-400">{{ b.description }}</span>
+                            <span class="mt-0.5 text-xs text-slate-500">
+                                <template v-if="supports(b)">Workflows: {{ workflowsFor(b).map((w) => workflowNames[w]).join(', ') }}</template>
+                                <template v-else>Not available for {{ languageNames[language] }}. New {{ languageNames[language] }} projects use the standard project instead.</template>
+                            </span>
                         </span>
                     </label>
                     <button
@@ -131,17 +136,10 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
 
                 <div v-if="open.has(b.key)" :id="`blueprint-${b.key}`" class="px-4 pb-4 sm:pl-11">
                     <div class="grid gap-x-8 gap-y-5 border-t border-slate-200 pt-4 xl:grid-cols-[minmax(0,1fr)_16rem] dark:border-slate-800">
-                        <!-- The language the whole preview is for: folders, packages, skills, and tools all follow it -->
-                        <div class="flex w-fit rounded-md border border-slate-300 bg-white p-0.5 text-xs xl:col-span-2 dark:border-slate-700 dark:bg-slate-950" role="group" :aria-label="`Preview language for ${b.name}`">
-                            <button
-                                v-for="lang in ['r', 'python', 'stata']" :key="lang" type="button"
-                                :disabled="!b.languages.includes(lang)" :aria-pressed="language[b.key] === lang"
-                                :title="b.languages.includes(lang) ? `Preview as a ${languageNames[lang]} project` : `Not available for ${languageNames[lang]}`"
-                                class="rounded px-2 py-0.5 transition disabled:cursor-not-allowed disabled:opacity-40"
-                                :class="language[b.key] === lang ? 'bg-slate-200 font-medium text-slate-900 dark:bg-slate-700 dark:text-white' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'"
-                                @click="language[b.key] = lang"
-                            >{{ languageNames[lang] }}</button>
-                        </div>
+                        <!-- What the resolver set aside, such as a workflow the blueprint doesn't support -->
+                        <ul v-if="previews[b.key]?.notices?.length" class="flex flex-col gap-1 text-sm text-amber-800 xl:col-span-2 dark:text-amber-300">
+                            <li v-for="n in previews[b.key].notices" :key="n">{{ n }}</li>
+                        </ul>
 
                         <!-- The project's folders and files -->
                         <div class="min-w-0">

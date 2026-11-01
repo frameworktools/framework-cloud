@@ -131,7 +131,9 @@ class DefaultsController extends Controller
             'render_dirs' => collect($version->base->layer['render_dirs'] ?? [])
                 ->map(fn ($target, $key) => ['from' => $version->base->layer['directories'][$key] ?? $key, 'to' => $target])->values(),
             'render_dir' => $version->base->layer['quarto']['render_dir'] ?? null,
-            'languages' => array_values(array_filter(Project::LANGUAGES, fn (string $language) => ! Project::typeProblem($language, $type))),
+            'languages' => array_values(array_filter($version->languages ?: Project::LANGUAGES, fn (string $language) => ! Project::typeProblem($language, $type))),
+            // The workflows it supports; none listed means every one the language has
+            'workflows' => $version->workflows ?: ProjectDefaults::WORKFLOW_KEYS,
         ];
     }
 

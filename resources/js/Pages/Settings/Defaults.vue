@@ -168,8 +168,31 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
             <UiRadioCards v-if="section === 'language'" v-model="form.language" name="language" legend="Language" hide-legend :options="languageOptions" stacked />
 
             <template v-else-if="section === 'blueprint'">
-                <DefaultBlueprintList v-model="form.project_type" :blueprints="blueprints" :defaults="form" />
-                <p v-if="form.errors.project_type" class="-mt-6 text-sm text-red-600">{{ form.errors.project_type }}</p>
+                <!-- Language, then the workflows it has, then the structures: the same order as guided setup -->
+                <section class="flex flex-col gap-3">
+                    <h2 :class="heading">Language</h2>
+                    <div class="flex w-fit rounded-md border border-slate-300 p-0.5 text-sm dark:border-slate-700" role="radiogroup" aria-label="Default language">
+                        <button
+                            v-for="lang in ['r', 'python', 'stata']" :key="lang" type="button" role="radio" :aria-checked="form.language === lang"
+                            class="rounded px-3 py-1 transition focus-visible:outline-2 focus-visible:outline-sky-500"
+                            :class="form.language === lang ? 'bg-slate-200 font-medium text-slate-900 dark:bg-slate-700 dark:text-white' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'"
+                            @click="form.language = lang"
+                        >{{ languageNames[lang] }}</button>
+                    </div>
+                </section>
+                <section class="flex flex-col gap-3">
+                    <div>
+                        <h2 :class="heading">Workflow</h2>
+                        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">How new {{ languageNames[form.language] }} projects write notebooks.</p>
+                    </div>
+                    <p v-if="form.language === 'stata'" :class="note">Scripts only: do-files, with master.do running them in order.</p>
+                    <UiRadioCards v-else v-model="form.workflows[form.language]" :name="`blueprint_workflow_${form.language}`" legend="Workflow" hide-legend :options="workflowOptions" columns="sm:grid-cols-3" />
+                </section>
+                <section class="flex flex-col gap-3">
+                    <h2 :class="heading">Project structure</h2>
+                    <DefaultBlueprintList v-model="form.project_type" :blueprints="blueprints" :defaults="form" :language="form.language" />
+                    <p v-if="form.errors.project_type" class="text-sm text-red-600">{{ form.errors.project_type }}</p>
+                </section>
             </template>
 
             <template v-else-if="section === 'editor'">

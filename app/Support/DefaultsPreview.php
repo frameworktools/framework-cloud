@@ -60,6 +60,8 @@ class DefaultsPreview
         return [
             'available' => true,
             'language' => $resolved['language'],
+            'workflow' => $resolved['workflow'],
+            'notices' => $resolved['notices'],
             'tree' => ProjectTree::for($spec, $resolved['language'], $ofKind('tool')->map(fn (FacetVersion $v) => $v->facet->key)->all(), $sensitive),
             // Every package the project starts with, and where each comes from
             'packages' => collect($spec['packages']['default_packages'] ?? [])->map(fn ($entry, $name) => [
