@@ -38,25 +38,27 @@ const created = (date) => new Date(date).toLocaleDateString(undefined, { year: '
 
     <AppLayout bleed>
         <!-- Full width beside the sidebar, so the grid can fit three tiles on a laptop -->
-        <div class="@container px-6 py-8 lg:px-12">
+        <div class="@container px-6 py-10 lg:px-12 xl:px-16">
             <PageHeader title="Projects">
                 <template #actions>
-                    <div v-if="projects.length" class="flex rounded-md border border-slate-300 p-0.5 dark:border-slate-700" role="group" aria-label="View">
-                        <button
-                            v-for="option in [{ key: 'tiles', label: 'Tiles', icon: Squares2X2Icon }, { key: 'list', label: 'List', icon: ListBulletIcon }]" :key="option.key"
-                            type="button" :aria-pressed="view === option.key" :aria-label="option.label" :title="option.label"
-                            class="inline-flex items-center rounded p-1.5 transition"
-                            :class="view === option.key ? 'bg-slate-200 text-slate-900 dark:bg-slate-700 dark:text-white' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200'"
-                            @click="view = option.key"
-                        >
-                            <component :is="option.icon" class="size-5" />
-                        </button>
-                    </div>
                     <Link href="/projects/create"><UiButton><PlusIcon class="size-4" />New project</UiButton></Link>
                 </template>
             </PageHeader>
 
-            <div v-if="projects.length && view === 'tiles'" class="mt-8 grid grid-cols-1 gap-5 @2xl:grid-cols-2 @4xl:grid-cols-3">
+            <!-- How the projects are shown: its own row, apart from New project -->
+            <div v-if="projects.length" class="mt-6 ml-auto flex w-fit rounded-md border border-slate-300 p-0.5 dark:border-slate-700" role="group" aria-label="View">
+                <button
+                    v-for="option in [{ key: 'tiles', label: 'Tiles', icon: Squares2X2Icon }, { key: 'list', label: 'List', icon: ListBulletIcon }]" :key="option.key"
+                    type="button" :aria-pressed="view === option.key" :aria-label="option.label" :title="option.label"
+                    class="inline-flex items-center rounded p-1.5 transition"
+                    :class="view === option.key ? 'bg-slate-200 text-slate-900 dark:bg-slate-700 dark:text-white' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200'"
+                    @click="view = option.key"
+                >
+                    <component :is="option.icon" class="size-5" />
+                </button>
+            </div>
+
+            <div v-if="projects.length && view === 'tiles'" class="mt-3 grid grid-cols-1 gap-5 @2xl:grid-cols-2 @4xl:grid-cols-3">
                 <div
                     v-for="project in projects" :key="project.id"
                     class="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-300 hover:shadow-xl hover:shadow-slate-900/5 dark:border-slate-800 dark:bg-slate-900 dark:hover:shadow-sky-500/5"
@@ -92,7 +94,7 @@ const created = (date) => new Date(date).toLocaleDateString(undefined, { year: '
                 </div>
             </div>
 
-            <div v-else-if="projects.length" class="mt-6 flex flex-col divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
+            <div v-else-if="projects.length" class="mt-3 flex flex-col divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
                 <Link
                     v-for="project in projects" :key="project.id" :href="`/projects/${project.slug}`"
                     class="flex flex-col gap-3 px-5 py-4 transition hover:bg-slate-50 sm:flex-row sm:items-center sm:gap-4 dark:hover:bg-slate-800/50"
