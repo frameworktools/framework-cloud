@@ -184,7 +184,7 @@ const heading = 'text-sm font-semibold text-slate-900 dark:text-white';
 
                 <div v-else-if="step.key === 'project'" class="flex flex-col gap-3">
                     <p class="text-sm text-slate-600 dark:text-slate-400">These recommended structures organize your files from a small analysis to a larger project. Choose a default here; you can use a different structure for each project.</p>
-                    <p class="text-sm text-slate-500 dark:text-slate-400">Prefer your own arrangement? Choose Bare, or <Link href="/structures/create" class="text-sky-600 hover:underline dark:text-sky-400" @click="remember">create a custom project structure</Link>.</p>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">Prefer your own arrangement? Choose Bare. You can later <Link href="/structures/create" class="text-sky-600 hover:underline dark:text-sky-400" @click="remember">create a custom project structure</Link>.</p>
                     <!-- The chosen type's folders beside the choices -->
                     <div class="grid gap-8 lg:grid-cols-[minmax(0,28rem)_minmax(0,1fr)]">
                         <UiRadioCards v-model="form.project_type" name="project_type" :legend="step.title" hide-legend :options="projectOptions" stacked />
