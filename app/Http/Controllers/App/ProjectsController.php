@@ -149,6 +149,11 @@ class ProjectsController extends Controller
             'catalog' => fn () => Catalog::for($user),
             'defaults' => $defaults,
             'selected' => $request->integer('blueprint') ?: null,
+            // A language and workflow to start with, as the Blueprints page passes them
+            'start' => [
+                'language' => in_array($request->query('language'), Project::LANGUAGES, true) ? $request->query('language') : null,
+                'workflow' => in_array($request->query('workflow'), ProjectDefaults::WORKFLOW_KEYS, true) ? $request->query('workflow') : null,
+            ],
             'github' => [
                 'enabled' => Scaffolder::enabled(),
                 'login' => $account?->login,
@@ -170,6 +175,7 @@ class ProjectsController extends Controller
             'name' => ['required', 'string', 'max:100'],
             'blueprint_id' => ['required', 'integer'],
             'language' => ['nullable', Rule::in(Project::LANGUAGES)],
+            'workflow' => ['nullable', Rule::in(ProjectDefaults::WORKFLOW_KEYS)],
             'description' => ['nullable', 'string', 'max:500'],
             'customized' => ['boolean'],
             'structure' => ['required_if_accepted:customized', 'nullable', 'string', 'max:200'],
@@ -244,6 +250,7 @@ class ProjectsController extends Controller
             'blueprint_id' => ['required', 'integer'],
             'name' => ['nullable', 'string', 'max:100'],
             'language' => ['nullable', Rule::in(Project::LANGUAGES)],
+            'workflow' => ['nullable', Rule::in(ProjectDefaults::WORKFLOW_KEYS)],
             'customized' => ['boolean'],
             'structure' => ['nullable', 'string', 'max:200'],
             'tools' => ['nullable', 'array'],
@@ -281,8 +288,8 @@ class ProjectsController extends Controller
     private static function choicesFrom(array $validated, Blueprint $blueprint): array
     {
         return ($validated['customized'] ?? false)
-            ? ['from' => $blueprint->handle] + Arr::only($validated, ['name', 'language', 'structure', 'tools', 'package_sets', 'skill_sets', 'skills', 'settings'])
-            : ['blueprint' => $blueprint->handle] + Arr::only($validated, ['name', 'language']);
+            ? ['from' => $blueprint->handle] + Arr::only($validated, ['name', 'language', 'workflow', 'structure', 'tools', 'package_sets', 'skill_sets', 'skills', 'settings'])
+            : ['blueprint' => $blueprint->handle] + Arr::only($validated, ['name', 'language', 'workflow']);
     }
 
     /** Ask GitHub how the scaffold run went, in case a webhook was missed. */

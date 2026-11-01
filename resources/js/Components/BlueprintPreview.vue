@@ -14,9 +14,11 @@ import { agentSummary } from '@/agents.js';
 const props = defineProps({
     blueprint: { type: Object, required: true }, // { key, handle, version, id }
     language: { type: String, required: true },
-    values: { type: Object, required: true }, // the defaults to resolve with
+    values: { type: Object, default: () => ({}) }, // the defaults to resolve with
     // Only the folder tree, without the summary beside it
     treeOnly: Boolean,
+    // Where to resolve it instead, as { url, body }: the Blueprints page resolves with saved defaults
+    source: Object,
 });
 const page = usePage();
 
@@ -27,10 +29,10 @@ const load = async () => {
     const id = ++request;
     loading.value = true;
     try {
-        const response = await fetch('/settings/blueprint/preview', {
+        const response = await fetch(props.source?.url ?? '/settings/blueprint/preview', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': page.props.csrf, 'X-Requested-With': 'XMLHttpRequest' },
-            body: JSON.stringify({ blueprint: props.blueprint.key, language: props.language, values: props.values }),
+            body: JSON.stringify(props.source?.body ?? { blueprint: props.blueprint.key, language: props.language, values: props.values }),
         });
         const data = response.ok ? await response.json() : { available: false, problem: "The preview couldn't be loaded." };
         // A later request may have finished first
@@ -40,7 +42,7 @@ const load = async () => {
     }
 };
 let timer = null;
-watch([() => props.blueprint.key, () => props.language, () => JSON.stringify(props.values)], () => {
+watch([() => props.blueprint.key, () => props.language, () => JSON.stringify(props.values), () => JSON.stringify(props.source ?? null)], () => {
     clearTimeout(timer);
     timer = setTimeout(load, 150);
 }, { immediate: true });

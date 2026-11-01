@@ -61,5 +61,4 @@ class SelfHostSeamsTest extends TestCase
         $this->assertNotNull($user);
         $this->assertNull($user->password);
     }
-
 }

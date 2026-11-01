@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Support\DefaultSettings;
+use Database\Factories\SettingFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Setting extends Model
 {
-    /** @use HasFactory<\Database\Factories\SettingFactory> */
+    /** @use HasFactory<SettingFactory> */
     use HasFactory;
 
     public const KIND_GLOBAL = 'global';

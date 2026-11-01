@@ -29,8 +29,9 @@ class PiecesTest extends TestCase
 
         $this->withToken($token)->getJson('/api/v2/structures')->assertOk()
             ->assertJsonCount(5, 'structures')
-            ->assertJsonPath('structures.0.key', 'framework/bare')
-            ->assertJsonPath('structures.0.type', 'bare');
+            ->assertJsonPath('structures.0.key', 'framework/project')
+            ->assertJsonPath('structures.4.key', 'framework/bare')
+            ->assertJsonPath('structures.4.type', 'bare');
 
         $tools = collect($this->withToken($token)->getJson('/api/v2/tools')->assertOk()->json('tools'));
         $this->assertSame(['framework/quarto', 'framework/quarto_manuscript', 'framework/quarto_slides', 'framework/jupyter', 'framework/targets', 'framework/renv', 'framework/uv'], $tools->pluck('key')->all());
@@ -49,11 +50,11 @@ class PiecesTest extends TestCase
         $this->withToken($token)->getJson('/api/v2/skills')->assertOk()->assertJsonCount(7, 'skills');
 
         $this->withToken($token)->getJson('/api/v2/blueprints')->assertOk()
-            ->assertJsonPath('blueprints.1.structure', 'framework/project')
-            ->assertJsonPath('blueprints.1.tools', ['uv'])
-            ->assertJsonPath('blueprints.1.workflows', ['quarto', 'jupyter', 'scripts'])
-            ->assertJsonPath('blueprints.3.workflows', ['quarto'])
-            ->assertJsonPath('blueprints.1.skill_sets', ['framework/framework', 'framework/ggplot2']);
+            ->assertJsonPath('blueprints.0.structure', 'framework/project')
+            ->assertJsonPath('blueprints.0.tools', ['uv'])
+            ->assertJsonPath('blueprints.0.workflows', ['quarto', 'jupyter', 'scripts'])
+            ->assertJsonPath('blueprints.2.workflows', ['quarto'])
+            ->assertJsonPath('blueprints.0.skill_sets', ['framework/framework', 'framework/ggplot2']);
     }
 
     public function test_resolving_a_blueprint_unchanged_matches_a_project_made_from_it(): void

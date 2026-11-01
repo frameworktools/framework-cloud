@@ -100,6 +100,7 @@ class Catalog
             // What it supports; none listed means everything
             'languages' => $version->languages ?: Project::LANGUAGES,
             'workflows' => $version->workflows ?: ProjectDefaults::WORKFLOW_KEYS,
+            'default_workflow' => (object) ($version->default_workflow ?? []),
         ];
     }
 }

@@ -64,7 +64,7 @@ const previewWorkflow = ref(null);
 const workflowChoices = computed(() => form.workflows.filter((w) => fits(w, form.language)));
 watch(workflowChoices, (choices) => {
     if (!choices.includes(previewWorkflow.value)) {
-        const usual = { r: 'quarto', python: 'jupyter', stata: 'scripts' }[form.language];
+        const usual = props.start?.default_workflow?.[form.language] ?? { r: 'quarto', python: 'jupyter', stata: 'scripts' }[form.language];
         previewWorkflow.value = choices.includes(usual) ? usual : (choices[0] ?? null);
     }
 }, { immediate: true });

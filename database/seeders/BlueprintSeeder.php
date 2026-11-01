@@ -7,6 +7,7 @@ use App\Models\Blueprint;
 use App\Models\Facet;
 use App\Models\Skill;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\File;
 
 /**
@@ -33,6 +34,15 @@ class BlueprintSeeder extends Seeder
             ->mapWithKeys(fn (array $w, string $id) => ["workflow-{$id}" => $w + ['category' => $id]])->all());
         $this->seedBlueprints($mastersDir);
     }
+
+    /** Short names for Framework's blueprints, as the catalog lists them */
+    private const BLUEPRINT_NAMES = [
+        'project' => 'Standard',
+        'project_sensitive' => 'Privacy sensitive',
+        'presentation' => 'Presentation',
+        'course' => 'Course',
+        'bare' => 'Bare',
+    ];
 
     /**
      * What each system blueprint supports. Presentation and Course are built
@@ -130,9 +140,9 @@ class BlueprintSeeder extends Seeder
     {
         $definitions = $this->json("$mastersDir/blueprints.json");
 
-        // Bare (no blueprint) leads: it's the default; the rest are opinionated offerings
+        // Bare is the least opinionated, so it comes last
         if (isset($definitions['bare'])) {
-            $definitions = ['bare' => $definitions['bare']] + $definitions;
+            $definitions = Arr::except($definitions, 'bare') + ['bare' => $definitions['bare']];
         }
 
         $latest = fn (string $key) => Facet::whereNull('user_id')->where('key', $key)->firstOrFail()->latestVersion;
@@ -175,7 +185,8 @@ class BlueprintSeeder extends Seeder
             // workflow brings Quarto or Jupyter, so the blueprint doesn't.
             $pieces = collect(['uv'])->concat($sets)->map($latest);
 
-            $blueprint = Blueprint::updateOrCreate(['user_id' => null, 'key' => $key], $attributes + ['is_system' => true]);
+            // A blueprint goes by a short name; its structure keeps the full one
+            $blueprint = Blueprint::updateOrCreate(['user_id' => null, 'key' => $key], ['name' => self::BLUEPRINT_NAMES[$key] ?? $definition['name']] + $attributes + ['is_system' => true]);
             $blueprint->publish(
                 $structureVersion,
                 $pieces->pluck('id')->all(),

@@ -14,9 +14,9 @@ import ChoicesEditor from '@/Components/ChoicesEditor.vue';
 import ProjectTreeView from '@/Components/ProjectTreeView.vue';
 import UiModal from '@/Components/UiModal.vue';
 import { agentSummary, fromChoices, NAMED, toChoices } from '@/agents.js';
-import { group, groups, languageOptions, stataTypes } from '@/library.js';
+import { group, groups, languageNames, languageOptions } from '@/library.js';
 
-const props = defineProps({ blueprints: Array, catalog: Object, defaults: Object, selected: Number, github: Object });
+const props = defineProps({ blueprints: Array, catalog: Object, defaults: Object, selected: Number, start: Object, github: Object });
 
 const page = usePage();
 const bare = props.blueprints.find((b) => b.handle === props.defaults.blueprint) ?? props.blueprints.find((b) => b.handle === 'framework/bare');
@@ -27,6 +27,8 @@ const form = useForm({
     blueprint_id: props.selected ?? bare?.id ?? props.blueprints[0]?.id,
     description: '',
     language: 'r',
+    // Empty uses your default workflow for the language
+    workflow: props.start?.workflow ?? '',
     destination: 'local',
     github: { owner: props.github.owners?.[0]?.login ?? null, name: '', private: true, nameEdited: false },
     // Changing pieces starts from the chosen blueprint's choices
@@ -53,6 +55,7 @@ const blueprint = computed(() => props.blueprints.find((b) => b.id === form.blue
 const choicePayload = (data) => ({
     blueprint_id: data.blueprint_id,
     language: data.language,
+    workflow: data.workflow || undefined,
     name: data.name || undefined,
     ...(data.customized ? {
         customized: true,
@@ -145,11 +148,24 @@ const repoName = computed(() => (form.github.nameEdited ? form.github.name : slu
 const editRepoName = (value) => { form.github.name = value; form.github.nameEdited = true; };
 const ownerOptions = computed(() => (props.github.owners ?? []).map((o) => ({ value: o.login, label: o.login })));
 watch(sensitive, (value) => { if (value) form.github.private = true; });
-// A blueprint's language is the default for projects made from it
-watch(blueprint, (value) => { form.language = value?.language ?? 'r'; }, { immediate: true });
+// A blueprint's language is the default for projects made from it, unless the page was opened with one
+watch(blueprint, (value, old) => {
+    form.language = (old === undefined && props.start?.language) || value?.language || 'r';
+}, { immediate: true });
 const stata = computed(() => form.language === 'stata');
-const stataAllowed = computed(() => stataTypes.includes(blueprint.value?.type ?? 'bare'));
-const languages = computed(() => languageOptions.filter((o) => o.value !== 'stata' || stataAllowed.value));
+// What the blueprint supports, from its own metadata
+const supported = computed(() => blueprint.value?.choices?.languages ?? ['r', 'python', 'stata']);
+const stataAllowed = computed(() => supported.value.includes('stata'));
+const languages = computed(() => languageOptions.filter((o) => supported.value.includes(o.value)));
+const workflowNames = { quarto: 'Quarto', jupyter: 'Jupyter', scripts: 'Scripts only' };
+const workflows = computed(() => (blueprint.value?.choices?.workflows ?? Object.keys(workflowNames))
+    .filter((w) => form.language !== 'stata' || w === 'scripts'));
+const workflowOptions = computed(() => [
+    { value: '', label: 'Your default' },
+    ...workflows.value.map((w) => ({ value: w, label: workflowNames[w] })),
+]);
+// A workflow the blueprint or language can't take goes back to your default
+watch(workflows, (list) => { if (form.workflow && !list.includes(form.workflow)) form.workflow = ''; }, { immediate: true });
 
 const onGitHub = computed(() => form.destination === 'github');
 const create = () => form
@@ -274,11 +290,15 @@ const items = computed(() => [
                 <div>
                     <UiSelect v-model="form.language" label="Language" :options="languages" :error="form.errors.language" />
                     <p v-if="!stataAllowed" class="mt-1.5 text-xs text-slate-500">
-                        Stata projects can use the standard, privacy-sensitive, or bare structure. This blueprint uses another one.
+                        This blueprint doesn't support Stata.
                     </p>
                     <p v-else-if="stata" class="mt-1.5 text-xs text-slate-500">
                         Framework creates the project's folders, files, and Git setup for Stata. It has no Stata commands for the analysis itself.
                     </p>
+                </div>
+                <div v-if="!stata">
+                    <UiSelect v-model="form.workflow" label="Notebook workflow" :options="workflowOptions" :error="form.errors.workflow" />
+                    <p v-if="!form.workflow && current?.workflow" class="mt-1.5 text-xs text-slate-500">Your default for {{ languageNames[form.language] }} here is {{ current.workflow.name }}.</p>
                 </div>
             </UiPanel>
 

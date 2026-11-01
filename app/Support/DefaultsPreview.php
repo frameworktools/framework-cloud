@@ -38,6 +38,34 @@ class DefaultsPreview
             return ['available' => false, 'problem' => collect($e->errors())->flatten()->first()];
         }
 
+        return self::describe($resolved, $blueprint, $values);
+    }
+
+    /**
+     * What a project from any blueprint the person can see gets, for one
+     * language and workflow, with their saved defaults: the same resolution
+     * New project makes with that blueprint, language, and workflow.
+     *
+     * @return array<string, mixed>
+     */
+    public static function forBlueprint(User $user, Blueprint $blueprint, string $language, ?string $workflow): array
+    {
+        try {
+            $resolved = (new Resolver($user))->resolve(['name' => 'project', 'blueprint' => $blueprint->handle, 'language' => $language, 'workflow' => $workflow]);
+        } catch (ValidationException $e) {
+            return ['available' => false, 'problem' => collect($e->errors())->flatten()->first()];
+        }
+
+        return self::describe($resolved, $blueprint, ['ai_other' => (bool) ($user->project_defaults['ai_other'] ?? false)]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $resolved  from Resolver::resolve()
+     * @param  array<string, mixed>  $values
+     * @return array<string, mixed>
+     */
+    private static function describe(array $resolved, Blueprint $blueprint, array $values): array
+    {
         $layers = $resolved['envelope']['layers'];
         // R starts every project with Framework's own package list, beneath the layers
         $spec = self::merge($resolved['language'] === 'r'

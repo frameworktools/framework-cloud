@@ -1,91 +1,201 @@
 <script setup>
-import { computed, reactive } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { computed, reactive, ref, watch } from 'vue';
+import { router, usePage } from '@inertiajs/vue3';
+import { ChevronRightIcon } from '@heroicons/vue/20/solid';
+import { PlusIcon } from '@heroicons/vue/24/outline';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import UiButton from '@/Components/UiButton.vue';
-import UiCard from '@/Components/UiCard.vue';
-import UiBadge from '@/Components/UiBadge.vue';
-import EmptyState from '@/Components/EmptyState.vue';
+import UiCallout from '@/Components/UiCallout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
-import { ChevronRightIcon, PlusIcon, Squares2X2Icon } from '@heroicons/vue/24/outline';
-import BlueprintContents from '@/Components/BlueprintContents.vue';
-import { group, groups } from '@/library.js';
+import BlueprintPreview from '@/Components/BlueprintPreview.vue';
+import { group, groups, languageNames } from '@/library.js';
 
-const props = defineProps({ blueprints: Array });
+const props = defineProps({
+    blueprints: Array, // each with languages, workflows, and combinations: language → workflows it supports
+    language: String, // the saved language
+    workflows: Object, // each language's preferred workflow
+    default_blueprint: String,
+});
+const page = usePage();
 
-const sections = computed(() =>
-    groups
-        .map((g) => ({ ...g, rows: props.blueprints.filter((b) => group(b) === g.key) }))
-        .filter((g) => g.rows.length || g.key === 'mine'),
-);
+const workflowNames = { quarto: 'Quarto', jupyter: 'Jupyter', scripts: 'Scripts only' };
+const workflowKeys = Object.keys(workflowNames);
+const fits = (workflow, language) => language !== 'stata' || workflow === 'scripts';
 
+// What's being browsed. It starts at the saved language and its workflow, or
+// at what the address names, and never changes a saved default.
+const query = new URLSearchParams(typeof window === 'undefined' ? '' : window.location.search);
+const language = ref(languageNames[query.get('language')] ? query.get('language') : props.language);
+const workflow = ref(null);
+const preferred = (lang) => (fits(props.workflows?.[lang], lang) ? props.workflows[lang] : workflowKeys.find((w) => fits(w, lang)));
+workflow.value = fits(query.get('workflow'), language.value) && workflowNames[query.get('workflow')] ? query.get('workflow') : preferred(language.value);
+const chooseLanguage = (lang) => {
+    language.value = lang;
+    workflow.value = preferred(lang);
+};
+watch([language, workflow], () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('language', language.value);
+    url.searchParams.set('workflow', workflow.value);
+    window.history.replaceState(window.history.state, '', url);
+});
+const workflowChoices = computed(() => workflowKeys.filter((w) => fits(w, language.value)));
+
+const matches = (b, lang = language.value, wf = workflow.value) => (b.combinations[lang] ?? []).includes(wf);
+
+// From Framework and Yours always show; Shared by others only when there are some
+const sections = computed(() => groups
+    .map((g) => {
+        const all = props.blueprints.filter((b) => group(b) === g.key);
+        return { ...g, all, rows: all.filter((b) => matches(b)) };
+    })
+    .filter((g) => g.all.length || g.key !== 'community'));
+
+// Other combinations with something to show, for a section with no match
+const elsewhere = (section) => Object.keys(languageNames)
+    .flatMap((lang) => workflowKeys.filter((wf) => fits(wf, lang)).map((wf) => ({ lang, wf })))
+    .filter(({ lang, wf }) => !(lang === language.value && wf === workflow.value))
+    .map((c) => ({ ...c, count: section.all.filter((b) => matches(b, c.lang, c.wf)).length }))
+    .filter((c) => c.count)
+    // The browsed language first
+    .sort((a, b) => (b.lang === language.value) - (a.lang === language.value));
+const browse = ({ lang, wf }) => {
+    language.value = lang;
+    workflow.value = wf;
+};
+
+const supportLine = (b) => {
+    const langs = b.languages.map((l) => languageNames[l]).join(', ');
+    const wfs = b.workflows.filter((w) => b.languages.some((l) => fits(w, l))).map((w) => workflowNames[w]).join(', ');
+    return `Languages: ${langs} · Workflows: ${wfs}`;
+};
+
+// Details open on their own; several can be open to compare
 const open = reactive(new Set());
 const toggle = (id) => (open.has(id) ? open.delete(id) : open.add(id));
+const source = (b) => ({ url: `/blueprints/${b.id}/preview`, body: { language: language.value, workflow: workflow.value } });
 
-const fork = (id) => router.post(`/blueprints/${id}/fork`);
+const isDefault = (b) => b.handle === props.default_blueprint && props.workflows?.[language.value] === workflow.value;
+const lastDefault = ref(null);
+const setDefault = (b) => {
+    lastDefault.value = { name: b.name, language: language.value, workflow: workflow.value };
+    router.post(`/blueprints/${b.id}/default`, { language: language.value, workflow: workflow.value }, { preserveScroll: true, preserveState: true });
+};
+const savedDefault = computed(() => page.props.flash.status === 'blueprint-default' && lastDefault.value);
+
+const newProject = (b) => `/projects/create?${new URLSearchParams({ blueprint: b.id, language: language.value, workflow: workflow.value })}`;
+const fork = (b) => router.post(`/blueprints/${b.id}/fork`, { language: language.value, workflow: workflow.value });
+
+const tab = (on) => on
+    ? 'border-sky-600 text-sky-700 dark:border-sky-400 dark:text-sky-300'
+    : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-800 dark:text-slate-400 dark:hover:border-slate-600 dark:hover:text-slate-200';
+const pill = (on) => on
+    ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200 dark:bg-slate-800 dark:text-white dark:ring-slate-700'
+    : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white';
 </script>
 
 <template>
     <Head title="Blueprints" />
 
     <AppLayout>
-        <div class="flex flex-col gap-10">
-            <PageHeader title="Blueprints">
-                <template #description>
-                    A blueprint is a saved set of choices for new projects: a project structure, tools,
-                    package sets, skills, and settings. Start one from scratch, or copy someone else's and change it.
-                </template>
+        <div class="flex flex-col gap-8">
+            <PageHeader title="Blueprints" description="Starting points for your next project." small>
                 <template #actions>
                     <Link href="/blueprints/create"><UiButton><PlusIcon class="size-4" />New blueprint</UiButton></Link>
                 </template>
             </PageHeader>
 
-            <section v-for="section in sections" :key="section.key" class="flex flex-col gap-4">
+            <UiCallout v-if="savedDefault" variant="success">
+                {{ savedDefault.name }} is your default blueprint, and new {{ languageNames[savedDefault.language] }} projects use {{ workflowNames[savedDefault.workflow] }}.
+                <Link href="/settings/blueprint" class="font-medium underline">Project defaults</Link>
+            </UiCallout>
+
+            <!-- What to browse: a language, then a workflow it has -->
+            <div class="flex flex-col gap-4">
+                <div role="tablist" aria-label="Language" class="flex gap-6 border-b border-slate-200 dark:border-slate-800">
+                    <button
+                        v-for="(name, key) in languageNames" :key="key" type="button" role="tab" :aria-selected="language === key"
+                        class="-mb-px border-b-2 px-1 pb-2.5 text-sm font-medium transition" :class="tab(language === key)"
+                        @click="chooseLanguage(key)"
+                    >
+                        {{ name }}
+                    </button>
+                </div>
+                <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+                    <div role="radiogroup" aria-label="Notebook workflow" class="inline-flex gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-900">
+                        <button
+                            v-for="wf in workflowChoices" :key="wf" type="button" role="radio" :aria-checked="workflow === wf"
+                            class="rounded-md px-3 py-1 text-sm font-medium transition" :class="pill(workflow === wf)"
+                            @click="workflow = wf"
+                        >
+                            {{ workflowNames[wf] }}
+                        </button>
+                    </div>
+                    <p v-if="language === 'stata'" class="max-w-xl text-xs text-slate-500 dark:text-slate-400">
+                        Stata projects use scripts. Framework creates the folders, files, and Git setup. It doesn't manage Stata packages.
+                    </p>
+                </div>
+            </div>
+
+            <section v-for="section in sections" :key="section.key" class="flex flex-col gap-3">
                 <h2 class="flex items-baseline gap-2 text-lg font-semibold text-slate-900 dark:text-white">
                     {{ section.label }}
                     <span v-if="section.rows.length" class="text-sm font-normal text-slate-500 dark:text-slate-400">{{ section.rows.length }}</span>
                 </h2>
 
-                <EmptyState v-if="!section.rows.length" compact :icon="Squares2X2Icon" title="You haven't made a blueprint yet.">
-                    <template #actions>
-                        <Link href="/blueprints/create"><UiButton size="sm" variant="outline"><PlusIcon class="size-3.5" />New blueprint</UiButton></Link>
-                    </template>
-                </EmptyState>
+                <!-- Nothing in the collection at all -->
+                <p v-if="!section.all.length" class="text-sm text-slate-500 dark:text-slate-400">
+                    You haven't made a blueprint yet.
+                    <Link href="/blueprints/create" class="font-medium text-sky-600 hover:underline dark:text-sky-400">New blueprint</Link>
+                </p>
 
-                <div v-else class="flex flex-col gap-3">
-                    <UiCard v-for="blueprint in section.rows" :key="blueprint.id" hover :padded="false">
-                        <div class="flex flex-col gap-4 p-5 sm:flex-row sm:items-start sm:gap-3">
-                            <button
-                                type="button" class="flex min-w-0 flex-1 items-start gap-3 text-left"
-                                :aria-expanded="open.has(blueprint.id)"
-                                @click="toggle(blueprint.id)"
-                            >
-                                <ChevronRightIcon
-                                    class="mt-1 size-4 shrink-0 text-slate-400 transition-transform" :class="open.has(blueprint.id) ? 'rotate-90' : ''"
-                                    aria-hidden="true"
-                                />
-                                <span class="flex min-w-0 flex-col gap-1.5">
-                                    <span class="flex flex-wrap items-center gap-2">
-                                        <span class="text-base font-semibold text-slate-900 dark:text-white">{{ blueprint.name }}</span>
-                                        <span class="font-mono text-xs text-slate-500 dark:text-slate-400">{{ blueprint.handle }} · v{{ blueprint.version }}</span>
-                                    </span>
-                                    <span v-if="blueprint.description" class="text-sm text-slate-600 dark:text-slate-400">{{ blueprint.description }}</span>
-                                    <span v-if="blueprint.facets.length" class="flex flex-wrap gap-1.5">
-                                        <UiBadge v-for="facet in blueprint.facets" :key="facet" variant="sky">+ {{ facet }}</UiBadge>
-                                    </span>
-                                </span>
-                            </button>
-                            <div class="flex shrink-0 gap-2">
-                                <Link :href="`/projects/create?blueprint=${blueprint.id}`"><UiButton size="sm">Use</UiButton></Link>
-                                <Link v-if="blueprint.editable" :href="`/blueprints/${blueprint.id}/edit`"><UiButton size="sm" variant="outline">Edit</UiButton></Link>
-                                <UiButton v-else size="sm" variant="outline" @click="fork(blueprint.id)">Copy and edit</UiButton>
+                <!-- Some, but none for this language and workflow -->
+                <div v-else-if="!section.rows.length" class="rounded-lg border border-dashed border-slate-300 px-4 py-4 text-sm dark:border-slate-700">
+                    <p class="text-slate-700 dark:text-slate-300">No matching blueprints for {{ languageNames[language] }} with {{ workflowNames[workflow] }}.</p>
+                    <div class="mt-2 flex flex-wrap items-center gap-2">
+                        <span class="text-xs text-slate-500">Try</span>
+                        <button
+                            v-for="c in elsewhere(section)" :key="`${c.lang}-${c.wf}`" type="button"
+                            class="rounded-full border border-slate-300 px-2.5 py-0.5 text-xs text-slate-700 hover:border-sky-500 hover:text-sky-700 dark:border-slate-600 dark:text-slate-300 dark:hover:text-sky-300"
+                            @click="browse(c)"
+                        >
+                            {{ languageNames[c.lang] }}, {{ workflowNames[c.wf] }} ({{ c.count }})
+                        </button>
+                    </div>
+                </div>
+
+                <div v-else class="divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
+                    <div v-for="b in section.rows" :key="b.id">
+                        <div class="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-start sm:px-5">
+                            <div class="min-w-0 flex-1">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="font-semibold text-slate-900 dark:text-white">{{ b.name }}</span>
+                                    <span v-if="isDefault(b)" class="rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700 ring-1 ring-sky-200 dark:bg-sky-950/50 dark:text-sky-300 dark:ring-sky-800">Your default</span>
+                                </div>
+                                <p v-if="b.description" class="mt-0.5 line-clamp-2 text-sm text-slate-600 dark:text-slate-400">{{ b.description }}</p>
+                                <p class="mt-1 text-xs text-slate-500">{{ supportLine(b) }}</p>
+                            </div>
+                            <div class="flex shrink-0 flex-wrap items-center gap-2">
+                                <Link :href="newProject(b)"><UiButton size="sm">New project</UiButton></Link>
+                                <UiButton v-if="b.can_be_default && !isDefault(b)" size="sm" variant="outline" @click="setDefault(b)">Set as default</UiButton>
+                                <Link v-if="b.editable" :href="`/blueprints/${b.id}/edit`"><UiButton size="sm" variant="ghost">Edit</UiButton></Link>
+                                <UiButton v-else size="sm" variant="ghost" @click="fork(b)">Copy and edit</UiButton>
                             </div>
                         </div>
-                        <div v-if="open.has(blueprint.id) && blueprint.fragments" class="border-t border-slate-100 px-5 py-4 sm:pl-12 dark:border-slate-800">
-                            <BlueprintContents :version="blueprint.fragments" />
-                            <Link :href="`/blueprints/${blueprint.id}`" class="mt-4 inline-block text-sm font-medium text-sky-600 hover:underline dark:text-sky-400">Full details and versions</Link>
+                        <div class="px-4 pb-3 sm:px-5" :class="open.has(b.id) ? '' : '-mt-2'">
+                            <button
+                                type="button" :aria-expanded="open.has(b.id)" :aria-controls="`blueprint-${b.id}`"
+                                class="-ml-1.5 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-2 focus-visible:outline-sky-500 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                                @click="toggle(b.id)"
+                            >
+                                <ChevronRightIcon class="size-4 transition-transform" :class="open.has(b.id) ? 'rotate-90' : ''" />
+                                Details for {{ languageNames[language] }} with {{ workflowNames[workflow] }}
+                            </button>
+                            <div v-if="open.has(b.id)" :id="`blueprint-${b.id}`" class="mt-3">
+                                <BlueprintPreview :blueprint="b" :language="language" :source="source(b)" />
+                            </div>
                         </div>
-                    </UiCard>
+                    </div>
                 </div>
             </section>
         </div>

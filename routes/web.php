@@ -136,6 +136,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('skills/{skill}/publish', [GitHubLibraryController::class, 'publishSkill'])->middleware('throttle:20,1');
     Route::post('facets/{facet}/publish', [GitHubLibraryController::class, 'publishFacet'])->middleware('throttle:20,1');
     Route::post('blueprints/preview', [BlueprintsController::class, 'preview'])->name('blueprints.preview');
+    Route::post('blueprints/{blueprint}/preview', [BlueprintsController::class, 'previewBlueprint'])->middleware('throttle:120,1')->name('blueprints.preview-one');
+    Route::post('blueprints/{blueprint}/default', [BlueprintsController::class, 'makeDefault'])->name('blueprints.default');
     Route::resource('blueprints', BlueprintsController::class);
     Route::resource('skills', SkillsController::class)->except('show');
 
