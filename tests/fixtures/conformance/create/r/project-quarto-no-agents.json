@@ -235,6 +235,6 @@
     }
   },
   "expected": {
-    "paths": [".env", ".framework/", ".framework/spec.json", ".gitignore", "_quarto.yml", "docs/", "docs/_quarto.yml", "fixture-study.code-workspace", "functions/", "inputs/", "inputs/final/", "inputs/intermediate/", "inputs/raw/", "logs/", "notebooks/", "notebooks/_quarto.yml", "outputs/", "outputs/notebooks/", "scaffold.R", "scratch/", "scripts/", "settings.yml", "settings/", "settings/ai.yml", "settings/author.yml", "settings/connections.yml", "settings/data.yml", "settings/git.yml", "settings/packages.yml", "settings/quarto.yml", "settings/scaffold.yml"]
+    "paths": [".env", ".framework/", ".framework/spec.json", ".gitignore", "_quarto.yml", "docs/", "fixture-study.code-workspace", "functions/", "inputs/", "inputs/final/", "inputs/intermediate/", "inputs/raw/", "logs/", "notebooks/", "outputs/", "outputs/notebooks/", "scaffold.R", "scratch/", "scripts/", "settings.yml", "settings/", "settings/ai.yml", "settings/author.yml", "settings/connections.yml", "settings/data.yml", "settings/git.yml", "settings/packages.yml", "settings/quarto.yml", "settings/scaffold.yml"]
   }
 }

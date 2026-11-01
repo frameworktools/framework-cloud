@@ -189,21 +189,18 @@
       "CLAUDE.md",
       "_quarto.yml",
       "assignments/",
-      "assignments/_quarto.yml",
       "cache/",
       "course_docs/",
-      "course_docs/_quarto.yml",
       "data/",
       "fixture-study.code-workspace",
       "framework.db",
       "modules/",
-      "modules/_quarto.yml",
       "pyproject.toml",
       "readings/",
       "scaffold.py",
       "settings.yml",
       "slides/",
-      "slides/_quarto.yml"
+      "slides/_metadata.yml"
     ]
   }
 }

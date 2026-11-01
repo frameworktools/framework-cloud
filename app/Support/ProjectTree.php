@@ -118,14 +118,22 @@ class ProjectTree
 
             // Quarto follows R's own default for the type until the cloud names tools to clients
             $quarto = config('framework.spec_tools') ? in_array('quarto', $tools, true) : $type !== 'bare';
-            // Without core files (Bare) there's no _quarto.yml
+            // Without core files (Bare) there's no _quarto.yml. One Quarto
+            // project at the root holds the shared settings, as R and Python
+            // write it: a folder rendering to <output-dir>/<folder> needs no
+            // file, a folder with its own format (slides) gets a _metadata.yml,
+            // and a folder rendering elsewhere keeps its own _quarto.yml.
             if ($quarto && $core) {
-                $add('_quarto.yml', 'file');
-                foreach (array_keys($renderDirs) as $key) {
+                $add('_quarto.yml', 'file', 'the shared Quarto settings');
+                // Each rendered folder exists, with a file only where it needs one
+                foreach ($renderDirs as $key => $target) {
                     $source = $directories[$key] ?? $key;
-                    if (! self::isFile($source)) {
-                        $add("{$source}/_quarto.yml", 'file');
+                    if (is_string($source) && $source !== '' && ! self::isFile($source)) {
+                        $add($source, 'dir');
                     }
+                }
+                foreach (self::quartoFolders($type, $directories, $renderDirs) as [$path, $note]) {
+                    $add($path, 'file', $note);
                 }
             }
 
@@ -182,6 +190,47 @@ class ProjectTree
         if ($skills && (! $agents || array_diff($agents, ['claude']))) {
             $add('.agents', 'dir', self::inside($skills, false));
         }
+    }
+
+    /**
+     * Quarto files beneath the root, as quarto_generate_all() decides: the
+     * output folder is the parent most render targets share, and only folders
+     * that don't fit it, or need another format, get a file.
+     *
+     * @return list<array{0: string, 1: string}>
+     */
+    private static function quartoFolders(string $type, array $directories, array $renderDirs): array
+    {
+        $pairs = [];
+        foreach ($renderDirs as $key => $target) {
+            $source = $directories[$key] ?? $key;
+            if (! is_string($target) || $target === '' || ! is_string($source) || $source === '' || self::isFile($source)) {
+                continue;
+            }
+            $parent = match (true) {
+                $target === $source => '.',
+                str_ends_with($target, "/{$source}") => substr($target, 0, -strlen($source) - 1),
+                default => null,
+            };
+            $pairs[$key] = [$source, $parent];
+        }
+
+        $counts = array_count_values(array_filter(array_column($pairs, 1), 'is_string'));
+        arsort($counts);
+        $outputDir = array_key_first($counts) ?? '.';
+        $rootFormat = $type === 'presentation' ? 'revealjs' : 'html';
+
+        $files = [];
+        foreach ($pairs as $key => [$source, $parent]) {
+            $format = preg_match('/slides?/i', (string) $key) ? 'revealjs' : 'html';
+            if ($parent !== $outputDir) {
+                $files[] = ["{$source}/_quarto.yml", 'its own Quarto project, for its own output folder'];
+            } elseif ($format !== $rootFormat) {
+                $files[] = ["{$source}/_metadata.yml", "renders as {$format}, with the root's other settings"];
+            }
+        }
+
+        return $files;
     }
 
     private static function inside(array $skills, bool $settings): string
