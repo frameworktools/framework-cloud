@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\ProjectPullController;
 use App\Http\Controllers\Api\V1\ProjectsController;
 use App\Http\Controllers\Api\V1\SettingsController;
 use App\Http\Controllers\Api\V2\PiecesController;
+use App\Http\Controllers\Api\V2\StructuresController;
 use App\Http\Controllers\MetricsController;
 use App\Http\Middleware\VerifyMetricsToken;
 use Illuminate\Support\Facades\Route;
@@ -57,6 +58,7 @@ Route::prefix('v2')->middleware('auth:sanctum')->group(function () {
     foreach (['structures' => 'structure', 'tools' => 'tool', 'package-sets' => 'package_set', 'skill-sets' => 'skill_set'] as $path => $kind) {
         Route::get("/{$path}", [PiecesController::class, 'index'])->defaults('kind', $kind);
     }
+    Route::post('/structures', [StructuresController::class, 'store']);
     Route::get('/skills', [PiecesController::class, 'skills']);
     Route::get('/defaults', [PiecesController::class, 'defaults']);
     Route::post('/resolve', [PiecesController::class, 'resolve'])->middleware('throttle:60,1');

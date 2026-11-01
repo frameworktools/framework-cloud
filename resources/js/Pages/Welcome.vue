@@ -94,7 +94,7 @@ const structureNotes = {
     bare: 'Start with the essential Framework settings and organize your own folders.',
 };
 const projectOptions = computed(() => props.blueprints.filter(supported).map((b) => ({
-    value: b.key, label: b.name, description: structureNotes[b.key] ?? b.description, badge: b.key === 'project' ? 'Recommended' : null,
+    value: b.key, label: b.name, description: structureNotes[b.key] ?? b.description,
 })));
 const workflowOptions = computed(() => workflowsFor(blueprint.value).map((w) => ({
     value: w,
