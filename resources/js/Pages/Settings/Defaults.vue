@@ -15,6 +15,7 @@ import UiToggle from '@/Components/UiToggle.vue';
 import SettingGroup from '@/Components/SettingGroup.vue';
 import SettingRow from '@/Components/SettingRow.vue';
 import ThemeSwatch from '@/Components/ThemeSwatch.vue';
+import { agentOptions, fromChoices, pick, toChoices } from '@/agents.js';
 
 // One form for all of your defaults, shown a page at a time. Moving
 // between pages keeps unsaved changes, and Save sends everything.
@@ -137,12 +138,16 @@ const quartoTabKey = (event, i) => {
 };
 const packageLanguage = ref(props.values.language === 'python' ? 'python' : 'r');
 
-// The agents R, Python, and fw set projects up for; what each adds is under the list
-const agentOptions = [
-    { value: 'claude', label: 'Claude Code' },
-    { value: 'codex', label: 'Codex' },
-    { value: 'copilot', label: 'GitHub Copilot' },
-];
+// The same agent choices as guided setup, saved as setup on or off plus the
+// named agents; None keeps the saved agents for when setup is back on
+const agentChoices = computed({
+    get: () => toChoices(form.ai_enabled, form.ai_agents),
+    set: (picked) => {
+        const next = fromChoices(pick(toChoices(form.ai_enabled, form.ai_agents), picked));
+        form.ai_enabled = next.enabled;
+        if (next.enabled) form.ai_agents = next.agents;
+    },
+});
 // Which languages' workflows already bring a tool, so its switch says what it adds beyond them
 const workflowBrings = (key) => ['r', 'python'].filter((l) => (key === 'jupyter' ? form.workflows[l] === 'jupyter' : ['quarto', 'jupyter'].includes(form.workflows[l])));
 const listLanguages = (langs) => langs.map((l) => languageNames[l]).join(' and ');
@@ -223,6 +228,11 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                             Defaults: <Link href="/settings/language" preserve-state :class="link">language</Link> ·
                             <Link href="/settings/notebooks" preserve-state :class="link">notebook workflow</Link>
                         </span>
+                        <!-- Jupyter beyond the workflow comes from the Jupyter defaults, shown as it resolves -->
+                        <span v-if="previewLanguage !== 'stata'" class="text-slate-500">
+                            Jupyter: {{ previewWorkflow === 'jupyter' ? 'included by the workflow' : form.tools.jupyter ? 'added by your Jupyter default' : 'not added' }}
+                            · <Link href="/settings/jupyter" preserve-state :class="link">Jupyter defaults</Link>
+                        </span>
                     </div>
                 </DefaultBlueprintList>
                 <p v-if="form.errors.project_type" class="text-sm text-red-600">{{ form.errors.project_type }}</p>
@@ -284,38 +294,34 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
             </section>
 
             <template v-else-if="section === 'agents'">
-                <section class="flex max-w-xl flex-col gap-5">
-                    <UiSwitch v-model="form.ai_enabled" label="Set up projects for coding agents" description="Adds AGENTS.md with the project's instructions. Off adds no agent files." />
+                <section class="flex flex-col gap-3">
+                    <h2 :class="heading">Which coding agents do you use?</h2>
+                    <UiCheckboxCards v-model="agentChoices" legend="Coding agents" hide-legend :options="agentOptions(agentChoices)" />
+                    <details class="max-w-md text-sm text-slate-600 dark:text-slate-400">
+                        <summary class="cursor-pointer text-sky-700 hover:underline dark:text-sky-400">What each one adds</summary>
+                        <ul class="mt-2 flex list-disc flex-col gap-1 pl-5">
+                            <li>Every choice except None adds AGENTS.md, the project's instructions, and the skills below.</li>
+                            <li>Claude Code: a CLAUDE.md that imports AGENTS.md, with skills in .claude/skills.</li>
+                            <li>Codex: skills in .agents/skills.</li>
+                            <li>GitHub Copilot: .github/copilot-instructions.md, with skills in .agents/skills.</li>
+                        </ul>
+                    </details>
                 </section>
-                <!-- Kept as they are while setup is off, for when it's back on -->
-                <fieldset :disabled="!form.ai_enabled" class="flex flex-col gap-8" :class="form.ai_enabled ? '' : 'opacity-60'">
-                    <section class="flex flex-col gap-3">
-                        <h2 :class="heading">Agents you use</h2>
-                        <UiCheckboxCards v-model="form.ai_agents" legend="Agents you use" hide-legend :options="agentOptions" />
-                        <details class="max-w-md text-sm text-slate-600 dark:text-slate-400">
-                            <summary class="cursor-pointer text-sky-700 hover:underline dark:text-sky-400">What each one adds</summary>
-                            <ul class="mt-2 flex list-disc flex-col gap-1 pl-5">
-                                <li>Claude Code: a CLAUDE.md that imports AGENTS.md, with skills in .claude/skills.</li>
-                                <li>Codex: skills in .agents/skills.</li>
-                                <li>GitHub Copilot: .github/copilot-instructions.md, with skills in .agents/skills.</li>
-                                <li>Any other agent that reads AGENTS.md needs nothing more.</li>
-                            </ul>
-                        </details>
-                    </section>
-                    <section class="flex flex-col gap-4">
-                        <h2 :class="heading">Skills</h2>
-                        <div class="max-w-xl">
-                            <UiSwitch v-model="form.ai_skills" :disabled="!form.ai_enabled" label="Framework skills" description="Instructions for working in a Framework project, which agents load when they need them." />
-                        </div>
-                        <UiCheckboxCards
-                            v-model="form.skill_sets" legend="Skill sets" hide-legend
-                            :options="catalog.skill_sets.map((set) => ({ value: set.key, label: set.name, description: describe(set), dim: !fits(set) }))"
-                        />
-                        <p class="text-sm">
-                            <Link href="/skill-sets" :class="link">Manage skill sets</Link> ·
-                            <Link href="/skills" :class="link">Manage skills</Link>
-                        </p>
-                    </section>
+                <!-- Kept as they are with None, for when an agent is chosen again -->
+                <fieldset :disabled="!form.ai_enabled" class="flex flex-col gap-4" :class="form.ai_enabled ? '' : 'opacity-60'">
+                    <h2 :class="heading">Skills</h2>
+                    <p v-if="!form.ai_enabled" class="text-xs text-slate-500">With None, projects get no skills. These are kept for when you choose an agent.</p>
+                    <div class="max-w-xl">
+                        <UiSwitch v-model="form.ai_skills" :disabled="!form.ai_enabled" label="Framework skills" description="Instructions for working in a Framework project, which agents load when they need them." />
+                    </div>
+                    <UiCheckboxCards
+                        v-model="form.skill_sets" legend="Skill sets" hide-legend
+                        :options="catalog.skill_sets.map((set) => ({ value: set.key, label: set.name, description: describe(set), dim: !fits(set) }))"
+                    />
+                    <p class="text-sm">
+                        <Link href="/skill-sets" :class="link">Manage skill sets</Link> ·
+                        <Link href="/skills" :class="link">Manage skills</Link>
+                    </p>
                 </fieldset>
             </template>
 
@@ -358,8 +364,8 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                     @update:model-value="(on) => setTool('jupyter', on)"
                 />
                 <p :class="note">
-                    <template v-if="workflowBrings('jupyter').length">{{ listLanguages(workflowBrings('jupyter')) }} projects always include Jupyter, since it's their <Link href="/settings/notebooks" preserve-state :class="link">notebook workflow</Link>.</template>
-                    <template v-else>Projects with the Jupyter <Link href="/settings/notebooks" preserve-state :class="link">notebook workflow</Link> always include it.</template>
+                    Projects with the Jupyter <Link href="/settings/notebooks" preserve-state :class="link">notebook workflow</Link> always include it<template v-if="workflowBrings('jupyter').length">, which is your default for {{ listLanguages(workflowBrings('jupyter')) }}</template>.
+                    A project with another workflow, chosen for it or set by its blueprint, gets Jupyter only with this on.
                     Stata projects don't use Jupyter.
                 </p>
                 <p :class="note">
@@ -471,7 +477,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                     </div>
 
                     <div v-show="quartoTab === 'setup'" id="quarto-panel-setup" role="tabpanel" aria-labelledby="quarto-tab-setup" tabindex="0" class="flex flex-col gap-6 focus-visible:outline-none">
-                        <SettingGroup title="Project files" :description="workflowBrings('quarto').length ? `Quarto and Jupyter workflows always include Quarto, so ${listLanguages(workflowBrings('quarto'))} projects get it. Your HTML and Slides settings go into _quarto.yml.` : 'Quarto and Jupyter workflows always include Quarto. Your HTML and Slides settings go into _quarto.yml.'">
+                        <SettingGroup title="Project files" description="Projects with the Quarto, R Markdown, or Jupyter workflow always include Quarto. Your HTML and Slides settings go into _quarto.yml.">
                             <SettingRow v-if="tool('quarto')" v-slot="{ id, labelledby, describedby }" label="Add Quarto to Scripts-only projects" description="Adds _quarto.yml, so documents render with your settings.">
                                 <UiToggle :id="id" :model-value="!!form.tools.quarto" :aria-labelledby="labelledby" :aria-describedby="describedby" @update:model-value="(on) => setTool('quarto', on)" />
                             </SettingRow>

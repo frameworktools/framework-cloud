@@ -67,7 +67,17 @@ Settings combine in one order, highest first:
 5. **The workflow**, then the **project structure**, then Framework's
    built-in defaults.
 
-Your packages, package sets, and skill sets are added to the blueprint's.
+Pieces from your defaults combine with a blueprint, including one you chose
+by name:
+
+- **Packages, package sets, and skill sets** from your defaults are added to
+  the blueprint's. A project that lists its own package sets or skill sets
+  uses those instead of yours, alongside the blueprint's.
+- **Tools, including starter documents** such as a Quarto manuscript: a tool
+  you turned on is added, and one you turned off is left out, even when the
+  blueprint has it. A tool the workflow or the blueprint requires stays. A
+  tool chosen for the project wins over your default.
+
 Your editor files and AI agents are yours alone, so no blueprint sets them.
 Sensitive data comes from the blueprint and its project structure, and
 Privacy Sensitive turns it on.

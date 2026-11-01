@@ -161,7 +161,11 @@ class Resolver
                 $this->pieces->forget($tool->id);
             }
         }
+        // A project that lists its own sets has chosen them, so yours aren't added
         foreach (['package_sets' => 'package_set', 'skill_sets' => 'skill_set'] as $field => $kind) {
+            if (array_key_exists($field, $choices)) {
+                continue;
+            }
             foreach ($defaults[$field] ?? [] as $handle) {
                 $piece = Facet::visibleTo($this->user)->where('kind', $kind)->with('owner', 'latestVersion')->get()->first(fn (Facet $f) => $f->handle === $handle);
                 if ($piece && $this->fits($piece->latestVersion)) {

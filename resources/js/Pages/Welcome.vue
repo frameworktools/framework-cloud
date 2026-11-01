@@ -6,6 +6,7 @@ import BlueprintPreview from '@/Components/BlueprintPreview.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiCheckboxCards from '@/Components/UiCheckboxCards.vue';
 import UiRadioCards from '@/Components/UiRadioCards.vue';
+import { agentNames, agentOptions as agentOptionsFor, fromChoices, pick, toChoices } from '@/agents.js';
 
 /**
  * Guided setup: six questions, then a review. The answers are a draft until
@@ -20,11 +21,10 @@ const workflowNames = { quarto: 'Quarto', rmarkdown: 'R Markdown', jupyter: 'Jup
 const recommendedWorkflows = { r: 'quarto', python: 'jupyter', stata: 'scripts' };
 const recommendedEditors = { r: ['rstudio'], python: ['vscode'], stata: [] };
 const ideEditors = { rstudio: ['rstudio'], vscode: ['vscode'], positron: ['vscode'], both: ['rstudio', 'vscode'], none: [] };
-const agentNames = { claude: 'Claude Code', codex: 'Codex', copilot: 'GitHub Copilot', other: 'Other agents', none: 'None' };
 
 // The saved answers, read the same way setup asks them. R Markdown is R's Quarto workflow writing .Rmd.
 const savedWorkflow = (lang) => (lang === 'r' && props.values.workflows.r === 'quarto' && props.values.rmarkdown ? 'rmarkdown' : props.values.workflows[lang]);
-const savedAgents = () => (!props.values.ai_enabled ? ['none'] : props.values.ai_agents.length ? [...props.values.ai_agents] : ['other']);
+const savedAgents = () => toChoices(props.values.ai_enabled, props.values.ai_agents);
 const fromSaved = {
     language: props.values.language ?? 'r',
     project_type: props.values.project_type,
@@ -144,21 +144,11 @@ const gitOptions = [
     { value: 'no', label: 'No', description: 'You can run git init in a project later.' },
 ];
 const gitChoice = computed({ get: () => (draft.git ? 'yes' : 'no'), set: (v) => (draft.git = v === 'yes') });
-const agentOptions = [
-    { value: 'claude', label: 'Claude Code' },
-    { value: 'codex', label: 'Codex' },
-    { value: 'copilot', label: 'GitHub Copilot' },
-    { value: 'other', label: 'Other agents', description: 'Any agent that reads AGENTS.md.' },
-    { value: 'none', label: 'None', description: 'No agent files or skills.' },
-];
-// None stands alone: picking it clears the agents, and picking an agent clears None
+// None stands alone, and AGENTS.md (Other agents) comes with any agent
+const agentOptions = computed(() => agentOptionsFor(draft.agents));
 const agents = computed({
     get: () => draft.agents,
-    set: (picked) => {
-        const added = picked.find((a) => !draft.agents.includes(a));
-        const rest = picked.filter((a) => a !== 'none');
-        draft.agents = added === 'none' || !rest.length ? ['none'] : rest;
-    },
+    set: (picked) => (draft.agents = pick(draft.agents, picked)),
 });
 
 // The summary previews your other defaults with these answers in place
@@ -166,8 +156,8 @@ const ide = computed(() => {
     const e = draft.editors;
     return e.includes('rstudio') && e.includes('vscode') ? 'both' : e.includes('rstudio') ? 'rstudio' : e.includes('vscode') ? 'vscode' : 'none';
 });
-const aiOn = computed(() => !draft.agents.includes('none'));
-const named = computed(() => draft.agents.filter((a) => ['claude', 'codex', 'copilot'].includes(a)));
+const aiOn = computed(() => fromChoices(draft.agents).enabled);
+const named = computed(() => fromChoices(draft.agents).agents);
 const previewValues = computed(() => {
     const w = workflow.value;
     return {
@@ -187,7 +177,8 @@ const describe = {
     workflow: (a) => workflowNames[a.workflows[a.language]],
     editors: (a) => a.editors.map((e) => editorOptions.find((o) => o.value === e)?.label).join(', ') || 'None',
     git: (a) => (a.git ? 'Yes' : 'No'),
-    agents: (a) => a.agents.map((x) => agentNames[x]).join(', '),
+    // AGENTS.md comes with every agent, so Other agents shows only on its own
+    agents: (a) => a.agents.filter((x) => x !== 'other' || a.agents.length === 1).map((x) => agentNames[x]).join(', '),
 };
 const review = computed(() => [
     { key: 'language', label: 'Language' },

@@ -5,7 +5,7 @@ defineProps({
     legend: String,
     // The page heading already names the choice: keep the legend for screen readers only
     hideLegend: Boolean,
-    options: { type: Array, required: true }, // [{ value, label, description?, dim? }]: dim for a choice that doesn't apply now
+    options: { type: Array, required: true }, // [{ value, label, description?, dim?, disabled? }]: dim for a choice that doesn't apply now
 });
 
 const model = defineModel({ type: Array, default: () => [] });
@@ -20,13 +20,13 @@ const toggle = (value, on) => {
         <div class="grid max-w-md gap-3">
             <label
                 v-for="option in options" :key="option.value"
-                class="flex cursor-pointer flex-row-reverse items-start justify-between gap-3 rounded-lg border px-5 py-4 transition has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-sky-500"
-                :class="[option.dim ? 'opacity-60' : '', model.includes(option.value)
+                class="flex flex-row-reverse items-start justify-between gap-3 rounded-lg border px-5 py-4 transition has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-sky-500"
+:class="[option.dim || option.disabled ? 'opacity-60' : '', option.disabled ? 'cursor-not-allowed' : 'cursor-pointer', model.includes(option.value)
                     ? 'border-sky-500 bg-sky-50 dark:border-sky-500 dark:bg-sky-950/40'
                     : 'border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-600']"
             >
                 <input
-                    type="checkbox" :value="option.value" :checked="model.includes(option.value)"
+                    type="checkbox" :value="option.value" :checked="model.includes(option.value)" :disabled="option.disabled"
                     class="mt-0.5 size-4 shrink-0 rounded accent-sky-600 focus:outline-none"
                     @change="toggle(option.value, $event.target.checked)"
                 >

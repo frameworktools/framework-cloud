@@ -146,4 +146,27 @@ class ResolutionPolicyTest extends TestCase
             Trust::blockedFiles($files(['./.Rprofile', '/scaffold.R', '.github/workflows/ci.yml', '.claude/settings.json', '.VSCODE/tasks.json', 'README.md', 'notebooks/scaffold.R.md', '.github/ISSUE_TEMPLATE.md'])),
         );
     }
+
+    public function test_starter_documents_and_skill_sets_combine_with_a_chosen_blueprint(): void
+    {
+        $user = User::factory()->create(['project_defaults' => ['tools' => ['quarto_manuscript' => true, 'jupyter' => false], 'skill_sets' => ['framework/ggplot2']]]);
+        $keys = fn (array $choices) => collect((new Resolver($user))->resolve(['name' => 'S'] + $choices)['pieces'])->pluck('facet.key')->all();
+
+        // Your starter document and skill set come along with a blueprint you name
+        $bare = $keys(['blueprint' => 'framework/bare', 'language' => 'r']);
+        $this->assertContains('quarto_manuscript', $bare);
+        $this->assertContains('ggplot2', $bare);
+
+        // Choices for the project win: its own skill sets replace yours, and a tool turned off stays off
+        $chosen = $keys(['blueprint' => 'framework/bare', 'language' => 'r', 'skill_sets' => [], 'tools' => ['quarto_manuscript' => false]]);
+        $this->assertNotContains('ggplot2', $chosen);
+        $this->assertNotContains('quarto_manuscript', $chosen);
+
+        // Jupyter comes with the Jupyter workflow only; your switch being off doesn't remove it
+        $this->assertContains('jupyter', $keys(['language' => 'python', 'workflow' => 'jupyter']));
+        foreach (['quarto', 'scripts'] as $workflow) {
+            $this->assertNotContains('jupyter', $keys(['language' => 'python', 'workflow' => $workflow]));
+        }
+        $this->assertNotContains('jupyter', $keys(['language' => 'python', 'blueprint' => 'framework/course']));
+    }
 }
