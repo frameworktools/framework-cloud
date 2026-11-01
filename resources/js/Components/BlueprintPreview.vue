@@ -1,0 +1,178 @@
+<script setup>
+import { onBeforeUnmount, ref, watch } from 'vue';
+import { usePage } from '@inertiajs/vue3';
+import { ChevronRightIcon } from '@heroicons/vue/20/solid';
+
+/**
+ * What a blueprint creates as someone's default, for one language: the
+ * folder tree and what else the project gets, resolved on the server from
+ * the defaults given (saved or not). Shared by the Blueprint page and guided
+ * setup, so both show exactly what creation writes.
+ */
+const props = defineProps({
+    blueprint: { type: Object, required: true }, // { key, handle, version, id }
+    language: { type: String, required: true },
+    values: { type: Object, required: true }, // the defaults to resolve with
+});
+const page = usePage();
+
+const preview = ref(null);
+const loading = ref(false);
+let request = 0;
+const load = async () => {
+    const id = ++request;
+    loading.value = true;
+    try {
+        const response = await fetch('/settings/blueprint/preview', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': page.props.csrf, 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify({ blueprint: props.blueprint.key, language: props.language, values: props.values }),
+        });
+        const data = response.ok ? await response.json() : { available: false, problem: "The preview couldn't be loaded." };
+        // A later request may have finished first
+        if (id === request) preview.value = data;
+    } finally {
+        if (id === request) loading.value = false;
+    }
+};
+let timer = null;
+watch([() => props.blueprint.key, () => props.language, () => JSON.stringify(props.values)], () => {
+    clearTimeout(timer);
+    timer = setTimeout(load, 150);
+}, { immediate: true });
+onBeforeUnmount(() => clearTimeout(timer));
+
+// The folder tree with connectors, from the preview's flat entries
+const treeLines = (entries) => {
+    const root = { children: new Map() };
+    for (const entry of entries) {
+        let node = root;
+        const parts = entry.path.split('/');
+        parts.forEach((part, i) => {
+            if (!node.children.has(part)) node.children.set(part, { name: part, dir: true, children: new Map() });
+            node = node.children.get(part);
+            if (i === parts.length - 1) Object.assign(node, { dir: entry.type === 'dir', note: entry.note, when: entry.when, later: entry.later });
+        });
+    }
+    const lines = [];
+    const sorted = (node) => [...node.children.values()].sort((a, b) => (a.dir === b.dir ? a.name.localeCompare(b.name) : a.dir ? -1 : 1));
+    const walk = (node, prefix) => {
+        const kids = sorted(node);
+        kids.forEach((child, i) => {
+            const last = i === kids.length - 1;
+            // What a name doesn't say goes in its tooltip
+            const title = [child.note && child.note[0].toUpperCase() + child.note.slice(1), child.when && `Only ${child.when}`, child.later && 'Made when first used or rendered'].filter(Boolean).join('. ') || undefined;
+            lines.push({ prefix: prefix + (last ? '└── ' : '├── '), name: child.name + (child.dir ? '/' : ''), dir: child.dir, later: !!child.later, title });
+            walk(child, prefix + (last ? '    ' : '│   '));
+        });
+    };
+    // A folder holding only later folders is itself made later
+    const mark = (node) => {
+        node.children.forEach(mark);
+        if (node.children.size && [...node.children.values()].every((c) => c.later)) node.later = true;
+    };
+    root.children.forEach(mark);
+    walk(root, '');
+    return lines;
+};
+
+const hookNames = { data_security: 'Check for secrets', check_sensitive_dirs: 'Check private folders', check_notebook_outputs: 'Check notebook outputs' };
+const label = 'text-xs font-semibold uppercase tracking-wider text-slate-500';
+const link = 'text-sky-600 hover:underline dark:text-sky-400';
+</script>
+
+<template>
+    <div class="grid gap-x-8 gap-y-5 border-t border-slate-200 pt-4 xl:grid-cols-[minmax(0,1fr)_16rem] dark:border-slate-800">
+        <!-- What the resolver set aside, such as a workflow the blueprint doesn't support -->
+        <ul v-if="preview?.notices?.length" class="flex flex-col gap-1 text-sm text-amber-800 xl:col-span-2 dark:text-amber-300">
+            <li v-for="n in preview.notices" :key="n">{{ n }}</li>
+        </ul>
+
+        <!-- The project's folders and files -->
+        <div class="min-w-0">
+            <div :class="label" class="mb-2">Project structure</div>
+            <div v-if="!preview" class="text-sm text-slate-500">Loading…</div>
+            <p v-else-if="!preview.available" class="text-sm text-slate-600 dark:text-slate-400">{{ preview.problem }}</p>
+            <div v-else class="overflow-x-auto" :class="loading ? 'opacity-60' : ''">
+                <!-- Line height just over the font size keeps the connectors joined -->
+                <div class="whitespace-pre font-mono text-xs leading-[1.2] text-slate-800 dark:text-slate-200"><div>project-dir/</div><div v-for="(line, i) in treeLines(preview.tree)" :key="i"><span class="text-slate-400 dark:text-slate-600">{{ line.prefix }}</span><span :class="[line.dir ? 'font-medium' : '', line.later ? 'text-slate-400 dark:text-slate-500' : '']" :title="line.title">{{ line.name }}</span></div></div>
+                <p v-if="preview.tree.some((e) => e.later)" class="mt-2 text-xs text-slate-500">Lighter folders are made when they're first used or rendered.</p>
+            </div>
+        </div>
+
+        <!-- What else it gets, most important first -->
+        <div v-if="preview?.available" class="flex min-w-0 flex-col gap-6 text-sm text-slate-700 xl:border-l xl:border-slate-200 xl:pl-8 dark:text-slate-300 xl:dark:border-slate-800" :class="loading ? 'opacity-60' : ''">
+            <section>
+                <div :class="label">Packages</div>
+                <ul class="mt-1 flex flex-col gap-1">
+                    <li v-for="p in preview.packages" :key="p.name" class="flex flex-wrap items-baseline gap-x-1.5">
+                        <span class="font-mono text-xs">{{ p.name }}</span>
+                        <span class="text-xs text-slate-500" :title="p.from ? `From ${p.from}` : 'From your Project defaults'">{{ p.from ? `with ${p.from}` : 'your default' }}</span>
+                    </li>
+                    <li v-if="!preview.packages.length" class="text-slate-500">None</li>
+                </ul>
+            </section>
+
+            <section>
+                <div :class="label">AI agents</div>
+                <div class="mt-1">{{ preview.agents ? (preview.agent_names.join(', ') || 'On, no agent chosen') : 'Off' }} <span v-if="preview.settings.agents.from === 'defaults'" class="text-xs text-slate-500" title="From your Project defaults">· your default</span></div>
+            </section>
+
+            <!-- Each skill on its own line, under the set it comes from -->
+            <section>
+                <div :class="label">Skills</div>
+                <p v-if="!preview.agents" class="mt-1 text-slate-500">None, with agent setup off</p>
+                <template v-else>
+                    <!-- A set opens to its skills -->
+                    <details v-for="set in preview.skill_sets" :key="set.id" class="group mt-2 first-of-type:mt-1">
+                        <summary class="flex cursor-pointer list-none items-center gap-1 [&::-webkit-details-marker]:hidden">
+                            <ChevronRightIcon class="-ml-1 size-4 shrink-0 text-slate-400 transition-transform group-open:rotate-90" />
+                            <span>{{ set.name }}</span>
+                            <span v-if="set.from === 'defaults'" class="text-xs text-slate-500" title="From your Project defaults">· your default</span>
+                        </summary>
+                        <ul class="mb-1 mt-1.5 flex flex-col gap-1 pl-4 text-xs text-slate-600 dark:text-slate-400">
+                            <li v-for="skill in set.skills" :key="skill">{{ skill }}</li>
+                        </ul>
+                    </details>
+                    <ul v-if="preview.skills.length" class="mt-2 flex flex-col gap-1 pl-4">
+                        <li v-for="skill in preview.skills" :key="skill">{{ skill }}</li>
+                    </ul>
+                    <p v-if="!preview.skill_sets.length && !preview.skills.length" class="mt-1 text-slate-500">None</p>
+                </template>
+            </section>
+
+            <section class="text-xs text-slate-600 dark:text-slate-400">
+                <div :class="label">Tools</div>
+                <div class="mt-1">
+                    <template v-for="(t, i) in preview.tools" :key="t.name">{{ i ? ' · ' : '' }}{{ t.name }}</template>
+                    <span v-if="!preview.tools.length">None</span>
+                </div>
+                <div v-for="name in preview.tools_off" :key="name" class="mt-0.5 text-slate-500" title="Turned off in your Project defaults"><s>{{ name }}</s> off in your defaults</div>
+            </section>
+
+            <section>
+                <div :class="label">Git</div>
+                <div class="mt-1">{{ preview.settings.git.on ? 'On' : 'Off' }} <span v-if="preview.settings.git.from === 'defaults'" class="text-xs text-slate-500" title="From your Project defaults">· your default</span></div>
+            </section>
+
+            <!-- Hooks need Git, so they only show with it on -->
+            <section v-if="preview.settings.git.on">
+                <div :class="label">Data safety hooks</div>
+                <ul class="mt-1 flex flex-col gap-1">
+                    <li v-for="hook in preview.settings.hooks.on" :key="hook">{{ hookNames[hook] ?? hook }}</li>
+                    <li v-if="!preview.settings.hooks.on.length" class="text-slate-500">None</li>
+                </ul>
+            </section>
+
+            <section>
+                <div :class="label">Sensitive data</div>
+                <div class="mt-1">{{ preview.settings.sensitive.on ? 'On' : 'Off' }}</div>
+            </section>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-slate-200 pt-3 text-xs text-slate-500 xl:col-span-2 dark:border-slate-800">
+            <span class="font-mono">{{ blueprint.handle }} v{{ blueprint.version }}</span>
+            <Link :href="`/blueprints/${blueprint.id}`" :class="link">View the blueprint</Link>
+        </div>
+    </div>
+</template>
