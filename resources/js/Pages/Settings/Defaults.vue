@@ -42,7 +42,7 @@ const languageNames = { r: 'R', python: 'Python', stata: 'Stata' };
 const languageOptions = [
     { value: 'r', label: 'R', description: 'Use the R statistical computing environment.' },
     { value: 'python', label: 'Python', description: 'Use the Python programming language.' },
-    { value: 'stata', label: 'Stata', description: 'Scaffolding only.' },
+    { value: 'stata', label: 'Stata', description: 'Scaffolding only: folders, master.do, settings.do with path globals, starter do-files, Git, and agent files. Framework doesn\'t install or manage Stata packages.' },
 ];
 const formatOptions = computed(() => [
     { value: 'quarto', label: 'Quarto' },
@@ -51,7 +51,7 @@ const formatOptions = computed(() => [
 // Editor files: RStudio's .Rproj and VS Code and Positron's .code-workspace,
 // saved as the one value R and Python read (positron means vscode)
 const editorOptions = [
-    { value: 'rstudio', label: 'RStudio', description: 'Adds a .Rproj file.' },
+    { value: 'rstudio', label: 'RStudio', description: 'Adds a .Rproj file to R projects.' },
     { value: 'vscode', label: 'Positron / VS Code', description: 'Adds a .code-workspace file.' },
 ];const hooks = [
     { key: 'data_security', label: 'Check for secrets', description: 'Blocks a commit that looks like it holds passwords, keys, or other secrets.' },
@@ -113,7 +113,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                 <a href="/docs/projects-and-blueprints#how-defaults-apply" class="ml-3 text-sm text-slate-500 hover:text-slate-900 hover:underline dark:hover:text-white">Documentation</a>
             </template>
         </PageHeader>
-        <PageHeader v-else-if="section === 'packages'" :title="current.label" description="Select your preferred set of default packages for new projects." />
+        <PageHeader v-else-if="section === 'packages'" :title="current.label" description="Choose default packages for new projects." />
         <PageHeader v-else-if="section === 'editor'" :title="current.label" description="Select the editors/IDEs you typically use." />
         <PageHeader v-else-if="section === 'language'" :title="current.label" description="Choose your default statistical programming environment for new projects." />
         <PageHeader v-else :title="current.label" />
@@ -152,7 +152,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                 </section>
 
                 <section class="flex max-w-xl flex-col gap-4 border-t border-slate-200 pt-8 dark:border-slate-800">
-                    <h2 :class="heading">Dependency management &amp; Reproducibility</h2>
+                    <h2 :class="heading">Dependency management &amp; reproducibility</h2>
                     <UiSwitch v-if="packageLanguage === 'r'" v-model="form.use_renv" label="renv" description="Records the R package versions the project uses in renv.lock." />
                     <UiSwitch v-else-if="tool('uv')" :model-value="!!form.tools.uv" :label="tool('uv').name" description="Manages the Python environment in pyproject.toml and uv.lock." @update:model-value="(on) => setTool('uv', on)" />
                 </section>

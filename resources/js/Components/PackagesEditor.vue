@@ -114,9 +114,10 @@ const field = 'w-full rounded-md border border-slate-300 bg-white px-3 py-2 text
                     @click="remove(i)"
                 ><XMarkIcon class="size-5" /></button>
             </div>
-            <p v-if="!rows.length" class="px-4 py-3 text-sm text-slate-500">No packages yet.</p>
+            <p v-if="!rows.length" class="px-4 py-3 text-sm text-slate-500">{{ r ? 'No default R packages. Add a package to get started.' : 'No default Python packages. Add a package to get started.' }}</p>
         </div>
         <div><UiButton size="sm" variant="outline" @click="add">Add package</UiButton></div>
+        <p v-if="r" class="text-sm text-slate-500 dark:text-slate-400">Auto-attach calls <code class="font-mono text-xs">library()</code> when <code class="font-mono text-xs">scaffold()</code> runs.</p>
 
     </div>
 </template>
