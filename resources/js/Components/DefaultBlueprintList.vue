@@ -206,7 +206,7 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
 
                             <section>
                                 <div :class="label">Git</div>
-                                <div class="mt-1">Git: {{ previews[b.key].settings.git.on ? 'On' : 'Off' }} <span v-if="previews[b.key].settings.git.from === 'defaults'" class="text-xs text-slate-500" title="From your Project defaults">· your default</span></div>
+                                <div class="mt-1">{{ previews[b.key].settings.git.on ? 'On' : 'Off' }} <span v-if="previews[b.key].settings.git.from === 'defaults'" class="text-xs text-slate-500" title="From your Project defaults">· your default</span></div>
                             </section>
 
                             <!-- Hooks need Git, so they only show with it on -->
