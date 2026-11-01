@@ -10,8 +10,6 @@ class HandleInertiaRequests extends Middleware
 {
     protected $rootView = 'app';
 
-    private const PROJECT_LIST = 50;
-
     public function share(Request $request): array
     {
         // The resolved "user" can be a Project (Sanctum tokenable) when a
@@ -54,12 +52,6 @@ class HandleInertiaRequests extends Middleware
                 // The guide is a plain page outside the app, so it opens as a normal link
                 ['label' => 'Help & documentation', 'href' => '/docs', 'section' => 'You', 'external' => true],
             ])),
-
-            // The newest projects, for switching between them from the sidebar
-            'projectList' => fn () => $user ? [
-                'items' => $user->projects()->latest()->limit(self::PROJECT_LIST)->get(['id', 'name', 'slug']),
-                'total' => $user->projects()->count(),
-            ] : null,
 
             'githubSignIn' => filled(config('services.github.client_id')),
             'passwords' => (bool) config('framework.passwords'),

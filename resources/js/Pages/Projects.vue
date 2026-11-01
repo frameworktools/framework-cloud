@@ -1,8 +1,10 @@
 <script setup>
 import { computed, ref, watch, onBeforeUnmount } from 'vue';
 import { router } from '@inertiajs/vue3';
+import { PlusIcon } from '@heroicons/vue/20/solid';
 import { AcademicCapIcon, CalendarIcon, FolderIcon, ListBulletIcon, PresentationChartBarIcon, Squares2X2Icon } from '@heroicons/vue/24/outline';
-import ProjectsLayout from '@/Layouts/ProjectsLayout.vue';
+import AppLayout from '@/Layouts/AppLayout.vue';
+import UiButton from '@/Components/UiButton.vue';
 import EmptyState from '@/Components/EmptyState.vue';
 import UiBadge from '@/Components/UiBadge.vue';
 import GitHubMark from '@/Components/GitHubMark.vue';
@@ -34,10 +36,10 @@ const created = (date) => new Date(date).toLocaleDateString(undefined, { year: '
 <template>
     <Head title="Projects" />
 
-    <ProjectsLayout>
+    <AppLayout>
         <PageHeader title="Projects">
-            <template v-if="projects.length" #actions>
-                <div class="inline-flex rounded-md border border-slate-300 p-0.5 dark:border-slate-700" role="group" aria-label="View">
+            <template #actions>
+                <div v-if="projects.length" class="inline-flex rounded-md border border-slate-300 p-0.5 dark:border-slate-700" role="group" aria-label="View">
                     <button
                         v-for="option in [{ key: 'tiles', label: 'Tiles', icon: Squares2X2Icon }, { key: 'list', label: 'List', icon: ListBulletIcon }]" :key="option.key"
                         type="button" :aria-pressed="view === option.key" :title="option.label"
@@ -48,10 +50,11 @@ const created = (date) => new Date(date).toLocaleDateString(undefined, { year: '
                         <component :is="option.icon" class="size-4" />{{ option.label }}
                     </button>
                 </div>
+                <Link href="/projects/create"><UiButton><PlusIcon class="size-4" />New project</UiButton></Link>
             </template>
         </PageHeader>
 
-        <div v-if="projects.length && view === 'tiles'" class="mt-8 grid gap-6 sm:grid-cols-2 2xl:grid-cols-3">
+        <div v-if="projects.length && view === 'tiles'" class="mt-8 grid gap-6 sm:grid-cols-[repeat(auto-fill,minmax(19rem,1fr))]">
             <div
                 v-for="project in projects" :key="project.id"
                 class="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:shadow-xl hover:shadow-slate-900/5 dark:border-slate-800 dark:bg-slate-900 dark:hover:shadow-sky-500/5"
@@ -80,8 +83,8 @@ const created = (date) => new Date(date).toLocaleDateString(undefined, { year: '
                     </div>
 
                     <div class="mt-auto flex gap-2 pt-6">
-                        <Link :href="`/projects/${project.slug}`" class="flex-1 rounded-md bg-sky-600 px-4 py-2 text-center text-sm font-medium text-white transition hover:bg-sky-700">View project</Link>
-                        <Link :href="`/projects/${project.slug}/setup`" class="flex-1 rounded-md border border-slate-300 px-4 py-2 text-center text-sm font-medium text-slate-800 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-100 dark:hover:bg-slate-800">Project setup</Link>
+                        <Link :href="`/projects/${project.slug}`" class="flex-1 rounded-md bg-sky-600 whitespace-nowrap px-4 py-2 text-center text-sm font-medium text-white transition hover:bg-sky-700">View project</Link>
+                        <Link :href="`/projects/${project.slug}/setup`" class="flex-1 rounded-md border border-slate-300 whitespace-nowrap px-4 py-2 text-center text-sm font-medium text-slate-800 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-100 dark:hover:bg-slate-800">Project setup</Link>
                     </div>
                 </div>
             </div>
@@ -120,5 +123,5 @@ const created = (date) => new Date(date).toLocaleDateString(undefined, { year: '
         </div>
 
         <EmptyState v-else class="mt-8" compact title="No projects yet." />
-    </ProjectsLayout>
+    </AppLayout>
 </template>
