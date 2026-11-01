@@ -23,6 +23,8 @@ const props = defineProps({
     items: { type: Array, default: () => [] },
     // A narrower column with less padding, for short labels such as Project defaults'
     narrow: Boolean,
+    // Unsaved changes somewhere in this section: an amber dot by the heading
+    dirty: Boolean,
 });
 
 const page = usePage();
@@ -80,7 +82,11 @@ const itemClass = (item) => [
                     <div class="flex flex-col gap-4 [&>*]:shrink-0" :class="narrow ? 'p-6 lg:px-4' : 'p-6'">
                         <slot name="top" />
                         <Link v-if="back" :href="back.href" class="-mb-2 text-sm text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white">← {{ back.label }}</Link>
-                        <h2 v-if="heading" class="-mb-2 truncate text-sm font-semibold text-slate-900 dark:text-white">{{ heading }}</h2>
+                        <h2 v-if="heading" class="-mb-2 flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
+                            <span class="truncate">{{ heading }}</span>
+                            <span v-if="dirty" class="size-2 shrink-0 rounded-full bg-amber-500" title="Unsaved changes" />
+                            <span v-if="dirty" class="sr-only">Unsaved changes</span>
+                        </h2>
 
                         <slot name="lead" />
 

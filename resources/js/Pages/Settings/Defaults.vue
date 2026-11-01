@@ -88,7 +88,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
 <template>
     <Head :title="`${current.label} · Project defaults`" />
 
-    <SectionLayout heading="Project defaults" :items="items" narrow>
+    <SectionLayout heading="Project defaults" :items="items" narrow :dirty="form.isDirty">
         <PageHeader v-if="section === 'blueprint'" :title="current.label">
             <template #actions>
                 <a href="/docs/projects-and-blueprints#how-defaults-apply" class="text-sm text-slate-500 hover:text-slate-900 hover:underline dark:hover:text-white">Documentation</a>
@@ -217,8 +217,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
             <UiButton save-shortcut type="submit" form="settings-form" class="w-full" :disabled="form.processing">
                 {{ form.processing ? 'Saving…' : 'Save changes' }}
             </UiButton>
-            <p v-if="form.isDirty" class="text-center text-xs text-amber-600">Unsaved changes. Save covers every Project defaults page.</p>
-            <p v-else-if="saved" class="text-center text-xs text-slate-500">Saved.</p>
+            <p v-if="saved && !form.isDirty" class="text-center text-xs text-slate-500">Saved.</p>
         </template>
     </SectionLayout>
 </template>
