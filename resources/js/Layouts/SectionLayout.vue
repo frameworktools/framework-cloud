@@ -21,7 +21,7 @@ const props = defineProps({
     back: Object, // { label, href }: a way out of this context, shown above the heading
     group: String,
     items: { type: Array, default: () => [] },
-    // A narrower column with less padding, for short labels such as Project defaults'
+    // A narrower column, for short labels such as Project defaults'
     narrow: Boolean,
     // Unsaved changes somewhere in this section: an amber dot by the heading
     dirty: Boolean,
@@ -76,10 +76,10 @@ const itemClass = (item) => [
 <template>
     <AppLayout bleed>
         <div class="flex min-h-screen max-lg:flex-col">
-            <aside class="shrink-0 border-slate-200 lg:border-r dark:border-slate-800 max-lg:border-b" :class="narrow ? 'lg:w-52' : 'lg:w-64'">
+            <aside class="shrink-0 border-slate-200 lg:border-r dark:border-slate-800 max-lg:border-b" :class="narrow ? 'lg:w-56' : 'lg:w-64'">
                 <!-- On wide screens the column scrolls on its own once it's taller than the window; the actions follow its contents and stick to the bottom only while it scrolls -->
                 <div class="flex flex-col lg:sticky lg:top-0 lg:max-h-screen lg:overflow-y-auto">
-                    <div class="flex flex-col gap-4 [&>*]:shrink-0" :class="narrow ? 'p-6 lg:px-4' : 'p-6'">
+                    <div class="flex flex-col gap-4 p-6 [&>*]:shrink-0">
                         <slot name="top" />
                         <Link v-if="back" :href="back.href" class="-mb-2 text-sm text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white">← {{ back.label }}</Link>
                         <h2 v-if="heading" class="-mb-2 flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
@@ -114,7 +114,7 @@ const itemClass = (item) => [
                         </div>
 
                     </div>
-                    <div v-if="$slots.actions" class="-mt-2 flex shrink-0 flex-col gap-2 bg-white pb-6 pt-2 dark:bg-slate-950 max-lg:hidden lg:sticky lg:bottom-0" :class="narrow ? 'px-6 lg:px-4' : 'px-6'">
+                    <div v-if="$slots.actions" class="-mt-2 flex shrink-0 flex-col gap-2 bg-white pb-6 pt-2 dark:bg-slate-950 max-lg:hidden lg:sticky lg:bottom-0 px-6">
                         <slot name="actions" />
                     </div>
                 </div>
