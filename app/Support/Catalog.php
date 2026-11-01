@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Models\Blueprint;
 use App\Models\BlueprintVersion;
 use App\Models\Facet;
+use App\Models\Project;
 use App\Models\Skill;
 use App\Models\User;
 use Illuminate\Support\Arr;
@@ -96,6 +97,9 @@ class Catalog
                 'git' => (bool) ($layer['git']['use_git'] ?? true),
             ],
             'extra_yaml' => Layer::toYaml(Arr::except($layer, self::SETTING_KEYS)),
+            // What it supports; none listed means everything
+            'languages' => $version->languages ?: Project::LANGUAGES,
+            'workflows' => $version->workflows ?: ProjectDefaults::WORKFLOW_KEYS,
         ];
     }
 }

@@ -135,6 +135,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('facets/import', [GitHubLibraryController::class, 'importFacet'])->middleware('throttle:20,1');
     Route::post('skills/{skill}/publish', [GitHubLibraryController::class, 'publishSkill'])->middleware('throttle:20,1');
     Route::post('facets/{facet}/publish', [GitHubLibraryController::class, 'publishFacet'])->middleware('throttle:20,1');
+    Route::post('blueprints/preview', [BlueprintsController::class, 'preview'])->name('blueprints.preview');
     Route::resource('blueprints', BlueprintsController::class);
     Route::resource('skills', SkillsController::class)->except('show');
 

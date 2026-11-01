@@ -80,6 +80,8 @@ const choiceClass = (on) => on
         <p v-if="form.errors.structure" class="text-xs text-red-600 dark:text-red-400">{{ form.errors.structure }}</p>
     </UiPanel>
 
+    <slot name="after-structure" />
+
     <UiPanel id="tools" title="Tools" class="scroll-mt-6" :description="form.language === 'stata' ? 'Stata projects have no tools.' : 'Optional tools. Each adds its own files, folders, and packages.'">
         <div v-if="tools.length" class="flex flex-col divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white dark:divide-slate-700 dark:border-slate-700 dark:bg-slate-900">
             <div v-for="tool in tools" :key="tool.key" class="p-3">
@@ -106,9 +108,9 @@ const choiceClass = (on) => on
         <p v-if="form.errors.package_sets" class="text-xs text-red-600 dark:text-red-400">{{ form.errors.package_sets }}</p>
     </UiPanel>
 
-    <UiPanel id="ai" :title="agentPicker ? 'Agents' : 'AI assistants'" class="scroll-mt-6" :description="agentPicker ? null : 'Skills teach assistants such as Claude Code and Codex how to work in the project.'">
+    <UiPanel id="ai" title="Agents" class="scroll-mt-6" :description="agentPicker ? null : 'Skills teach agents such as Claude Code and Codex how to work in the project. Which agents get files is each person\'s own choice.'">
         <UiCheckboxCards v-if="agentPicker" v-model="agentModel" legend="Agents" hide-legend :options="agentOptions" />
-        <UiSwitch v-else v-model="form.settings.ai" label="Set the project up for AI assistants" description="Adds AGENTS.md and the skills below. Turn off for no assistant files at all." />
+        <UiSwitch v-else v-model="form.settings.ai" label="Set the project up for agents" description="Adds AGENTS.md and the skills below. Turn off for no agent files at all." />
         <template v-if="agentsOn || agentPicker">
             <p v-if="!agentsOn" class="text-xs text-slate-500">With None, the project gets no skills. These are kept if you choose an agent again.</p>
             <fieldset :disabled="!agentsOn" class="flex flex-col gap-3" :class="agentsOn ? '' : 'opacity-60'">

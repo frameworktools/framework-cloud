@@ -118,11 +118,11 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                     <template v-if="page.props.flash.token_language === 'python'">Python connects to the server you signed in to with <code class="font-mono text-xs">cloud_login()</code>, which should be {{ serverUrl }}.</template>
                     <template v-else>The command connects to {{ serverUrl }}.</template>
                     <template v-if="viewingElsewhere"> You're viewing this page at {{ viewingOrigin }}, so check that your computer can reach it.</template>
-                    <button v-if="reachable !== 'checking'" type="button" class="ml-1 text-sky-700 underline dark:text-sky-400" @click="checkServer">Check from this computer</button>
+                    <button v-if="reachable !== 'checking'" type="button" class="ml-1 text-sky-700 underline dark:text-sky-400" @click="checkServer">Check browser connection</button>
                     <span v-else class="ml-1 text-slate-500">Checking…</span>
                 </p>
-                <p v-if="reachable === 'yes'" class="text-sm">This computer reached {{ serverUrl }}.</p>
-                <p v-else-if="reachable === 'no'" class="text-sm text-red-700 dark:text-red-300">This computer couldn't reach {{ serverUrl }}. Ask whoever runs this server to set FW_CLIENT_URL to an address your computer can reach.</p>
+                <p v-if="reachable === 'yes'" class="text-sm">This browser reached {{ serverUrl }}.</p>
+                <p v-else-if="reachable === 'no'" class="text-sm text-red-700 dark:text-red-300">This browser couldn't reach {{ serverUrl }}. Ask whoever runs this server to set FW_CLIENT_URL to an address your computer can reach.</p>
             </UiCallout>
 
             <UiPanel v-if="section === 'overview'" title="Configuration">
