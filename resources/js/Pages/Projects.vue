@@ -36,92 +36,97 @@ const created = (date) => new Date(date).toLocaleDateString(undefined, { year: '
 <template>
     <Head title="Projects" />
 
-    <AppLayout>
-        <PageHeader title="Projects">
-            <template #actions>
-                <div v-if="projects.length" class="inline-flex rounded-md border border-slate-300 p-0.5 dark:border-slate-700" role="group" aria-label="View">
-                    <button
-                        v-for="option in [{ key: 'tiles', label: 'Tiles', icon: Squares2X2Icon }, { key: 'list', label: 'List', icon: ListBulletIcon }]" :key="option.key"
-                        type="button" :aria-pressed="view === option.key" :title="option.label"
-                        class="inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-sm font-medium transition"
-                        :class="view === option.key ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'"
-                        @click="view = option.key"
-                    >
-                        <component :is="option.icon" class="size-4" />{{ option.label }}
-                    </button>
-                </div>
-                <Link href="/projects/create"><UiButton><PlusIcon class="size-4" />New project</UiButton></Link>
-            </template>
-        </PageHeader>
+    <AppLayout bleed>
+        <!-- Full width beside the sidebar, so the grid can fit three tiles on a laptop -->
+        <div class="@container px-6 py-8 lg:px-8">
+            <PageHeader title="Projects">
+                <template #actions>
+                    <Link href="/projects/create"><UiButton><PlusIcon class="size-4" />New project</UiButton></Link>
+                </template>
+            </PageHeader>
 
-        <div v-if="projects.length && view === 'tiles'" class="mt-8 grid gap-6 sm:grid-cols-[repeat(auto-fill,minmax(19rem,1fr))]">
-            <div
-                v-for="project in projects" :key="project.id"
-                class="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:shadow-xl hover:shadow-slate-900/5 dark:border-slate-800 dark:bg-slate-900 dark:hover:shadow-sky-500/5"
-            >
-                <div class="pointer-events-none absolute -right-6 -top-6 size-24 rounded-full bg-gradient-to-br from-sky-500/10 to-sky-600/10 blur-2xl transition duration-300 group-hover:scale-150" />
+            <!-- The view switch has its own row under the heading -->
+            <div v-if="projects.length" class="mt-6 flex w-fit rounded-md border border-slate-300 p-0.5 dark:border-slate-700" role="group" aria-label="View">
+                <button
+                    v-for="option in [{ key: 'tiles', label: 'Tiles', icon: Squares2X2Icon }, { key: 'list', label: 'List', icon: ListBulletIcon }]" :key="option.key"
+                    type="button" :aria-pressed="view === option.key" :title="option.label"
+                    class="inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-sm font-medium transition"
+                    :class="view === option.key ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'"
+                    @click="view = option.key"
+                >
+                    <component :is="option.icon" class="size-4" />{{ option.label }}
+                </button>
+            </div>
 
-                <div class="relative flex flex-1 flex-col">
-                    <div class="flex flex-wrap items-center gap-3">
-                        <div class="flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-sky-600 shadow-lg shadow-sky-500/20">
-                            <component :is="typeIcon(project.project_type)" class="size-5 text-white" />
+            <div v-if="projects.length && view === 'tiles'" class="mt-6 grid grid-cols-1 gap-5 @2xl:grid-cols-2 @4xl:grid-cols-3">
+                <div
+                    v-for="project in projects" :key="project.id"
+                    class="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-300 hover:shadow-xl hover:shadow-slate-900/5 dark:border-slate-800 dark:bg-slate-900 dark:hover:shadow-sky-500/5"
+                >
+                    <div class="pointer-events-none absolute -right-6 -top-6 size-24 rounded-full bg-gradient-to-br from-sky-500/10 to-sky-600/10 blur-2xl transition duration-300 group-hover:scale-150" />
+
+                    <div class="relative flex flex-1 flex-col">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <div class="flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-sky-600 shadow-lg shadow-sky-500/20">
+                                <component :is="typeIcon(project.project_type)" class="size-5 text-white" />
+                            </div>
+                            <UiBadge variant="sky">{{ typeName(project.project_type) }}</UiBadge>
+                            <UiBadge>{{ languageNames[project.language] }}</UiBadge>
+                            <UiBadge v-if="project.github?.status && project.github.status !== 'done'" :variant="statusVariant[project.github.status]">{{ statusLabel[project.github.status] }}</UiBadge>
+                            <UiBadge v-if="project.github?.pages_url" variant="green">Pages</UiBadge>
                         </div>
-                        <UiBadge variant="sky">{{ typeName(project.project_type) }}</UiBadge>
-                        <UiBadge>{{ languageNames[project.language] }}</UiBadge>
-                        <UiBadge v-if="project.github?.status && project.github.status !== 'done'" :variant="statusVariant[project.github.status]">{{ statusLabel[project.github.status] }}</UiBadge>
-                        <UiBadge v-if="project.github?.pages_url" variant="green">Pages</UiBadge>
-                    </div>
 
-                    <h3 class="mt-4 text-xl font-bold text-slate-900 dark:text-white">{{ project.name }}</h3>
-                    <p v-if="project.github?.repo" class="mt-2 flex items-center gap-1.5 truncate font-mono text-sm text-slate-600 dark:text-slate-400"><GitHubMark class="size-4 shrink-0" />{{ project.github.repo }}</p>
-                    <p v-else class="mt-2 truncate font-mono text-sm text-slate-600 dark:text-slate-400">{{ project.slug }}</p>
-                    <p v-if="project.description" class="mt-3 line-clamp-2 text-sm text-slate-600 dark:text-slate-400">{{ project.description }}</p>
+                        <h3 class="mt-3 text-xl font-bold text-slate-900 dark:text-white">{{ project.name }}</h3>
+                        <p v-if="project.github?.repo" class="mt-2 flex items-center gap-1.5 truncate font-mono text-sm text-slate-600 dark:text-slate-400"><GitHubMark class="size-4 shrink-0" />{{ project.github.repo }}</p>
+                        <p v-else class="mt-2 truncate font-mono text-sm text-slate-600 dark:text-slate-400">{{ project.slug }}</p>
+                        <p v-if="project.description" class="mt-3 line-clamp-2 text-sm text-slate-600 dark:text-slate-400">{{ project.description }}</p>
 
-                    <div class="mt-3 flex flex-col gap-1.5 text-xs text-slate-500">
-                        <p v-if="project.blueprint">Blueprint: <span class="font-mono">{{ project.blueprint.handle }} v{{ project.blueprint.version }}</span></p>
-                        <p class="flex items-center gap-2"><CalendarIcon class="size-4" />Created {{ created(project.created_at) }}</p>
-                    </div>
+                        <div class="mt-3 flex flex-col gap-1.5 text-xs text-slate-500">
+                            <p v-if="project.blueprint">Blueprint: <span class="font-mono">{{ project.blueprint.handle }} v{{ project.blueprint.version }}</span></p>
+                            <p class="flex items-center gap-2"><CalendarIcon class="size-4" />Created {{ created(project.created_at) }}</p>
+                        </div>
 
-                    <div class="mt-auto flex gap-2 pt-6">
-                        <Link :href="`/projects/${project.slug}`" class="flex-1 rounded-md bg-sky-600 whitespace-nowrap px-4 py-2 text-center text-sm font-medium text-white transition hover:bg-sky-700">View project</Link>
-                        <Link :href="`/projects/${project.slug}/setup`" class="flex-1 rounded-md border border-slate-300 whitespace-nowrap px-4 py-2 text-center text-sm font-medium text-slate-800 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-100 dark:hover:bg-slate-800">Project setup</Link>
+                        <div class="mt-auto flex gap-2 pt-5">
+                            <Link :href="`/projects/${project.slug}`" class="flex-1 rounded-md bg-sky-600 whitespace-nowrap px-4 py-2 text-center text-sm font-medium text-white transition hover:bg-sky-700">View project</Link>
+                            <Link :href="`/projects/${project.slug}/setup`" class="flex-1 rounded-md border border-slate-300 whitespace-nowrap px-4 py-2 text-center text-sm font-medium text-slate-800 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-100 dark:hover:bg-slate-800">Project setup</Link>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div v-else-if="projects.length" class="mt-8 flex flex-col divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
-            <Link
-                v-for="project in projects" :key="project.id" :href="`/projects/${project.slug}`"
-                class="flex flex-col gap-3 px-5 py-4 transition hover:bg-slate-50 sm:flex-row sm:items-center sm:gap-4 dark:hover:bg-slate-800/50"
-            >
-                <div class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 to-sky-600 shadow-md shadow-sky-500/20 max-sm:hidden">
-                    <component :is="typeIcon(project.project_type)" class="size-5 text-white" />
-                </div>
-                <div class="min-w-0 flex-1">
-                    <div class="flex flex-wrap items-center gap-2">
-                        <span class="font-bold text-slate-900 dark:text-white">{{ project.name }}</span>
-                        <UiBadge variant="sky">{{ typeName(project.project_type) }}</UiBadge>
-                        <UiBadge>{{ languageNames[project.language] }}</UiBadge>
+            <div v-else-if="projects.length" class="mt-6 flex flex-col divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
+                <Link
+                    v-for="project in projects" :key="project.id" :href="`/projects/${project.slug}`"
+                    class="flex flex-col gap-3 px-5 py-4 transition hover:bg-slate-50 sm:flex-row sm:items-center sm:gap-4 dark:hover:bg-slate-800/50"
+                >
+                    <div class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 to-sky-600 shadow-md shadow-sky-500/20 max-sm:hidden">
+                        <component :is="typeIcon(project.project_type)" class="size-5 text-white" />
                     </div>
-                    <p class="mt-1 truncate text-sm text-slate-500 dark:text-slate-400">
-                        <span v-if="project.github?.repo" class="font-mono text-slate-600 dark:text-slate-400">{{ project.github.repo }}</span>
-                        <span v-else class="font-mono">{{ project.slug }}</span>
-                        <span v-if="project.description"> · {{ project.description }}</span>
-                    </p>
-                </div>
-                <div class="flex shrink-0 flex-col gap-1 text-xs text-slate-500 sm:items-end">
-                    <div class="flex items-center gap-2">
-                        <UiBadge v-if="project.github?.status && project.github.status !== 'done'" :variant="statusVariant[project.github.status]">{{ statusLabel[project.github.status] }}</UiBadge>
-                        <span v-else-if="project.github?.repo" class="inline-flex items-center gap-1"><GitHubMark class="size-3.5" />GitHub</span>
-                        <UiBadge v-if="project.github?.pages_url" variant="green">Pages</UiBadge>
+                    <div class="min-w-0 flex-1">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="font-bold text-slate-900 dark:text-white">{{ project.name }}</span>
+                            <UiBadge variant="sky">{{ typeName(project.project_type) }}</UiBadge>
+                            <UiBadge>{{ languageNames[project.language] }}</UiBadge>
+                        </div>
+                        <p class="mt-1 truncate text-sm text-slate-500 dark:text-slate-400">
+                            <span v-if="project.github?.repo" class="font-mono text-slate-600 dark:text-slate-400">{{ project.github.repo }}</span>
+                            <span v-else class="font-mono">{{ project.slug }}</span>
+                            <span v-if="project.description"> · {{ project.description }}</span>
+                        </p>
                     </div>
-                    <span v-if="project.blueprint" class="font-mono">{{ project.blueprint.handle }} v{{ project.blueprint.version }}</span>
-                    <span class="inline-flex items-center gap-1.5"><CalendarIcon class="size-3.5" />Created {{ created(project.created_at) }}</span>
-                </div>
-            </Link>
-        </div>
+                    <div class="flex shrink-0 flex-col gap-1 text-xs text-slate-500 sm:items-end">
+                        <div class="flex items-center gap-2">
+                            <UiBadge v-if="project.github?.status && project.github.status !== 'done'" :variant="statusVariant[project.github.status]">{{ statusLabel[project.github.status] }}</UiBadge>
+                            <span v-else-if="project.github?.repo" class="inline-flex items-center gap-1"><GitHubMark class="size-3.5" />GitHub</span>
+                            <UiBadge v-if="project.github?.pages_url" variant="green">Pages</UiBadge>
+                        </div>
+                        <span v-if="project.blueprint" class="font-mono">{{ project.blueprint.handle }} v{{ project.blueprint.version }}</span>
+                        <span class="inline-flex items-center gap-1.5"><CalendarIcon class="size-3.5" />Created {{ created(project.created_at) }}</span>
+                    </div>
+                </Link>
+            </div>
 
-        <EmptyState v-else class="mt-8" compact title="No projects yet." />
+            <EmptyState v-else class="mt-6" compact title="No projects yet." />
+        </div>
     </AppLayout>
 </template>
