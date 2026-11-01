@@ -72,6 +72,7 @@ class Library
             'kind' => $facet->kind,
             'name' => $facet->name,
             'description' => $facet->description,
+            'requirements' => $facet->requirements,
             'category' => $facet->category,
             'question' => $facet->question,
             'language' => $facet->language,

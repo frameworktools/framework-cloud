@@ -35,6 +35,7 @@ class HandleInertiaRequests extends Middleware
                 'token' => $request->session()->get('token'),
                 'token_language' => $request->session()->get('token_language'),
                 'url' => $request->session()->get('url'),
+                'added' => $request->session()->get('added'),
             ],
 
             // Sidebar groups: main (no section), Framework, Agents, and the

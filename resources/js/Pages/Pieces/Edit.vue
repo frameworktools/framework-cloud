@@ -31,7 +31,8 @@ const form = useForm({
     name: props.facet?.name ?? '',
     description: props.facet?.description ?? '',
     visibility: props.facet?.visibility ?? 'private',
-    language: props.facet?.language?.[0] ?? 'r',
+    language: props.facet?.language?.[0] ?? (new URLSearchParams(typeof window === 'undefined' ? '' : window.location.search).get('language') === 'python' ? 'python' : 'r'),
+    requirements: props.facet?.requirements ?? '',
     settings_yaml: props.values.settings_yaml,
     packages: props.values.packages,
     files: props.values.files.map((f) => ({ ...f })),
@@ -158,6 +159,11 @@ const errorFor = (prefix) => Object.entries(form.errors).filter(([k]) => k.start
                 :description="isSkillSet ? 'Packages these skills need. Projects that use the skill set get them.' : 'One package per line. For R, write owner/name to install from GitHub.'"
             >
                 <UiTextarea v-model="form.packages" code :rows="8" :placeholder="form.language === 'python' ? 'pandas\nmatplotlib' : 'dplyr\nggplot2'" :error="form.errors.packages" />
+                <UiTextarea
+                    v-if="kind === 'package_set'" v-model="form.requirements" :rows="2" label="Requirements (optional)"
+                    description="Anything the packages need that Framework doesn't install, such as Java or a C++ compiler."
+                    :error="form.errors.requirements"
+                />
             </UiPanel>
 
             <UiPanel v-if="facet" id="versions" title="Versions" class="scroll-mt-6">

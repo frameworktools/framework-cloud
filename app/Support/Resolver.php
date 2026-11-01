@@ -186,13 +186,15 @@ class Resolver
             }
             $chose[] = 'tools';
         }
-        // Sets for another language are left out quietly, such as an R
-        // package set in a Python project
+        // A chosen set for another language is left out, with a notice, such
+        // as an R package set in a Python project
         foreach (['package_sets' => 'package_set', 'skill_sets' => 'skill_set'] as $field => $kind) {
             foreach ($choices[$field] ?? [] as $handle) {
                 $piece = $this->findPiece($handle, [$kind], $field);
                 if ($this->fits($piece->latestVersion)) {
                     $this->pieces->put($piece->id, $piece->latestVersion);
+                } else {
+                    $this->notices[] = "{$piece->name} is for ".implode(' and ', array_map(fn ($l) => Project::LANGUAGE_NAMES[$l] ?? $l, $piece->language ?? [])).', so this '.Project::LANGUAGE_NAMES[$this->language].' project leaves it out.';
                 }
                 $chose[] = $field;
             }

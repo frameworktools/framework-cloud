@@ -8,6 +8,7 @@ use App\Models\Project;
 use App\Models\Skill;
 use App\Support\Layer;
 use App\Support\Library;
+use App\Support\ProjectDefaults;
 use App\Support\StructurePreview;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -35,6 +36,20 @@ class FacetsController extends Controller
 
         $pieces = Facet::listedFor($user)->where('kind', $kind)->with(['owner', 'latestVersion'])
             ->orderByRaw('user_id is not null')->orderBy('position')->orderBy('name')->get();
+
+        // Package sets by language, each with how much of it your defaults already have
+        if ($kind === 'package_set') {
+            $mine = ProjectDefaults::for($user)['packages'];
+
+            return Inertia::render('Pieces/PackageSets', [
+                'sets' => $pieces->map(fn (Facet $f) => Library::facet($f, $user) + [
+                    'packages' => self::setPackages($f),
+                    'in_defaults' => self::inDefaults($f, $mine),
+                ]),
+                'language' => ($language = ProjectDefaults::for($user)['language'] ?? 'r') === 'python' ? 'python' : 'r',
+                'defaults_count' => array_map('count', $mine),
+            ]);
+        }
 
         // Structures show their folders and files, each with what it renders
         if ($kind === 'structure') {
@@ -93,6 +108,56 @@ class FacetsController extends Controller
         return back()->with('status', 'facet-saved');
     }
 
+    /**
+     * POST /package-sets/{facet}/defaults: add the set's packages your
+     * default list for its language doesn't have. Packages already in the
+     * list stay as you set them, and nothing is removed.
+     */
+    public function addToDefaults(Request $request, Facet $facet): RedirectResponse
+    {
+        $user = $request->user();
+        abort_unless($facet->kind === 'package_set' && $facet->isVisibleTo($user) && $facet->latestVersion, 404);
+        $language = $facet->language[0] ?? null;
+        if (! in_array($language, ProjectDefaults::PACKAGE_LANGUAGES, true)) {
+            return back()->withErrors(['package_set' => "{$facet->name} doesn't say which language it's for, so it can't be added."]);
+        }
+
+        $lists = ProjectDefaults::for($user)['packages'];
+        $have = array_map('strtolower', array_column($lists[$language], 'name'));
+        $added = array_values(array_filter(self::setPackages($facet), fn (array $p) => ! in_array(strtolower($p['name']), $have, true)));
+        $lists[$language] = [...$lists[$language], ...$added];
+
+        $user->forceFill(['project_defaults' => ['packages' => ProjectDefaults::packages($lists)] + ($user->project_defaults ?? [])])->save();
+
+        return back()->with('status', 'package-set-added')->with('added', ['set' => $facet->name, 'language' => $language, 'added' => count($added), 'kept' => count(self::setPackages($facet)) - count($added)]);
+    }
+
+    /**
+     * A set's packages as rows of the defaults list.
+     *
+     * @return list<array{name: string, source: string, auto_attach: bool, version: ?string, repo: ?string}>
+     */
+    private static function setPackages(Facet $facet): array
+    {
+        return collect($facet->latestVersion?->layer['packages']['default_packages'] ?? [])
+            ->filter(fn ($spec) => is_array($spec))
+            ->map(fn (array $spec, $name) => [
+                'name' => (string) $name,
+                'source' => (string) ($spec['source'] ?? (($facet->language[0] ?? 'r') === 'python' ? 'pypi' : 'cran')),
+                'auto_attach' => (bool) ($spec['auto_attach'] ?? false),
+                'version' => $spec['version'] ?? null,
+                'repo' => $spec['repo'] ?? null,
+            ])->values()->all();
+    }
+
+    /** How many of a set's packages a default list already has. */
+    private static function inDefaults(Facet $facet, array $lists): int
+    {
+        $have = array_map('strtolower', array_column($lists[$facet->language[0] ?? 'r'] ?? [], 'name'));
+
+        return count(array_filter(self::setPackages($facet), fn (array $p) => in_array(strtolower($p['name']), $have, true)));
+    }
+
     public function fork(Request $request, Facet $facet, string $kind): RedirectResponse
     {
         $user = $request->user();
@@ -105,6 +170,7 @@ class FacetsController extends Controller
             'kind' => $facet->kind,
             'name' => $facet->name,
             'description' => $facet->description,
+            'requirements' => $facet->requirements,
             'language' => $facet->language,
             'visibility' => 'private',
             'forked_from_id' => $source->id,
@@ -175,7 +241,9 @@ class FacetsController extends Controller
             'name' => ['required', 'string', 'max:100'],
             'description' => ['nullable', 'string', 'max:1000'],
             'visibility' => ['required', Rule::in(Facet::VISIBILITIES)],
-            'language' => ['nullable', Rule::in(Project::LANGUAGES)],
+            // A package set installs packages for one language, so it names it
+            'language' => $kind === 'package_set' ? ['required', Rule::in(['r', 'python'])] : ['nullable', Rule::in(Project::LANGUAGES)],
+            'requirements' => ['nullable', 'string', 'max:1000'],
             'settings_yaml' => ['nullable', 'string'],
             'packages' => ['nullable', 'string', 'max:5000'],
             'files' => ['array'],
@@ -228,6 +296,7 @@ class FacetsController extends Controller
         }
 
         $meta = array_map(fn ($v) => is_string($v) ? trim($v) : $v, Arr::only($data, ['name', 'description', 'visibility'])) + [
+            'requirements' => $kind === 'package_set' && filled($data['requirements'] ?? null) ? trim($data['requirements']) : null,
             'language' => $kind === 'structure' || blank($data['language'] ?? null) ? null : [$data['language']],
         ];
 

@@ -119,6 +119,7 @@ class BlueprintSeeder extends Seeder
                 'kind' => $kind,
                 'name' => $definition['name'],
                 'description' => $definition['description'] ?? null,
+                'requirements' => $definition['requirements'] ?? null,
                 'category' => $definition['category'] ?? null,
                 'language' => $definition['language'] ?? null,
                 'requires' => $definition['requires'] ?? null,

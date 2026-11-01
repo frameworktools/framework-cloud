@@ -147,8 +147,8 @@ class LibraryTest extends TestCase
         $this->actingAs($user)->post('/package-sets', ['name' => 'Python', 'visibility' => 'private', 'language' => 'python', 'packages' => 'pandas'])->assertSessionHasNoErrors();
         $this->assertSame('pypi', Facet::where('key', 'python')->firstOrFail()->latestVersion->layer['packages']['default_packages']['pandas']['source']);
 
-        $this->actingAs($user)->post('/package-sets', ['name' => 'Empty', 'visibility' => 'private', 'packages' => ''])->assertSessionHasErrors('packages');
-        $this->actingAs($user)->post('/package-sets', ['name' => 'Bad', 'visibility' => 'private', 'packages' => 'not a package'])->assertSessionHasErrors('packages');
+        $this->actingAs($user)->post('/package-sets', ['name' => 'Empty', 'visibility' => 'private', 'language' => 'r', 'packages' => ''])->assertSessionHasErrors('packages');
+        $this->actingAs($user)->post('/package-sets', ['name' => 'Bad', 'visibility' => 'private', 'language' => 'r', 'packages' => 'not a package'])->assertSessionHasErrors('packages');
 
         $this->actingAs($user)->post('/skill-sets', [
             'name' => 'Data', 'visibility' => 'private', 'language' => 'r', 'packages' => 'readr',
@@ -434,7 +434,7 @@ class LibraryTest extends TestCase
         $this->actingAs($user)->get('/blueprints/create')->assertInertia(fn (Assert $page) => $page
             ->component('Blueprints/Builder')->has('catalog.structures', 5)->has('catalog.tools', 7)->has('catalog.skill_sets', 2));
         $this->actingAs($user)->get('/structures')->assertInertia(fn (Assert $page) => $page->component('Pieces/Structures')->has('structures', 5));
-        $this->actingAs($user)->get('/package-sets')->assertInertia(fn (Assert $page) => $page->component('Pieces/Index')->has('pieces', 1));
+        $this->actingAs($user)->get('/package-sets')->assertInertia(fn (Assert $page) => $page->component('Pieces/PackageSets')->has('sets', 1));
         $this->actingAs($user)->get('/skill-sets')->assertInertia(fn (Assert $page) => $page->component('Pieces/Index')->has('pieces', 2));
         $this->actingAs($user)->get('/structures/create')->assertInertia(fn (Assert $page) => $page
             ->component('Pieces/Edit')->where('kind', 'structure')->where('values.settings_yaml', "type: project\n"));

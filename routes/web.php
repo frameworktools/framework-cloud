@@ -124,6 +124,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post("{$path}/{facet}/fork", [FacetsController::class, 'fork'])->defaults('kind', $kind)->name("{$path}.fork");
     }
     Route::redirect('facets', 'structures');
+    Route::post('package-sets/{facet}/defaults', [FacetsController::class, 'addToDefaults'])->name('package-sets.defaults');
 
     foreach ([
         'blueprints' => BlueprintsController::class,

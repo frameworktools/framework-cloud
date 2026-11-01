@@ -10,7 +10,7 @@ export const pieceCopy = {
     package_set: {
         title: 'Package sets',
         noun: 'package set',
-        description: 'A package set is a named list of packages for one language. Add any number to a blueprint or a new project.',
+        description: 'Packages to start R and Python projects with.',
         empty: "You haven't made a package set yet.",
     },
     skill_set: {
