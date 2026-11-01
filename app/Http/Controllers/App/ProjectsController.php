@@ -31,8 +31,13 @@ use Inertia\Response;
 class ProjectsController extends Controller
 {
     /** The home page: every project. */
-    public function index(Request $request): Response
+    public function index(Request $request): Response|RedirectResponse
     {
+        // A new account starts with guided setup, once
+        if (! $request->user()->setup_completed_at) {
+            return redirect()->route('welcome');
+        }
+
         return Inertia::render('Projects', [
             'projects' => $request->user()->projects()->latest()->with('blueprintVersion.blueprint')->get()
                 ->map(fn (Project $p) => self::summary($p)),

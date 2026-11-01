@@ -49,6 +49,7 @@ class User extends Authenticatable implements HasPasskeys, MustVerifyEmail
     {
         return [
             'email_verified_at' => 'datetime',
+            'setup_completed_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
             'profile_public' => 'boolean',

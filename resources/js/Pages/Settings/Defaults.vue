@@ -149,6 +149,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
     <SectionLayout heading="Project defaults" :items="items" narrow :dirty="form.isDirty">
         <PageHeader v-if="section === 'blueprint'" :title="current.label" description="Select a default Blueprint for new projects.">
             <template #actions>
+<Link href="/welcome" class="mr-3 text-sm text-slate-500 hover:text-slate-900 hover:underline dark:hover:text-white">Run guided setup</Link>
                 <Link href="/blueprints" class="text-sm text-slate-500 hover:text-slate-900 hover:underline dark:hover:text-white">Edit blueprints</Link>
                 <a href="/docs/projects-and-blueprints#how-defaults-apply" class="ml-3 text-sm text-slate-500 hover:text-slate-900 hover:underline dark:hover:text-white">Documentation</a>
             </template>

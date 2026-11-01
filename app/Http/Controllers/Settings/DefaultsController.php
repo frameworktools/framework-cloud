@@ -14,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -30,9 +31,7 @@ class DefaultsController extends Controller
         return Inertia::render('Settings/Defaults', [
             'section' => $section,
             'revision' => $setting->revision,
-            'blueprints' => Blueprint::systemTypes()->with('latestVersion.base.facet', 'latestVersion.facetVersions.facet')->get()
-                ->filter(fn (Blueprint $b) => $b->latestVersion)->sortBy(fn (Blueprint $b) => array_search($b->key, self::ORDER, true))
-                ->map(fn (Blueprint $b) => self::listing($b))->values(),
+            'blueprints' => self::blueprintList(),
             'catalog' => Catalog::for($request->user()),
             // Package sets load their packages into a list, for each language they fit
             'presets' => Facet::visibleTo($request->user())->where('kind', 'package_set')->with('latestVersion')
@@ -45,27 +44,51 @@ class DefaultsController extends Controller
                 ])->values(),
             'ggplotThemes' => ProjectDefaults::GGPLOT_THEMES,
             'quartoChoices' => ProjectDefaults::QUARTO_CHOICES,
-            'values' => [
-                'language' => $request->user()->project_defaults['language'] ?? ProjectDefaults::LANGUAGE,
-                'project_type' => Arr::get($doc, 'defaults.project_type', ProjectDefaults::BLUEPRINT),
-                // A workflow per language; R Markdown is a variant of R's Quarto workflow
-                'workflows' => ProjectDefaults::workflows(Arr::get($doc, 'defaults.workflows')),
-                'rmarkdown' => Arr::get($doc, 'defaults.notebook_format') === 'rmarkdown',
-                'ide' => Arr::get($doc, 'defaults.ide', ProjectDefaults::IDE),
-                'use_git' => (bool) Arr::get($doc, 'defaults.use_git', true),
-                'use_renv' => (bool) Arr::get($doc, 'defaults.use_renv', false),
-                ...ProjectDefaults::scaffold((array) ($doc['defaults'] ?? [])),
-                'ai_enabled' => (bool) Arr::get($doc, 'ai.enabled', true),
-                'ai_agents' => ProjectDefaults::agents(Arr::get($doc, 'ai.assistants')),
-                'quarto' => ProjectDefaults::quarto((array) ($doc['quarto'] ?? [])),
-                'ai_skills' => (bool) Arr::get($doc, 'ai.skills', true),
-                'package_sets' => $request->user()->project_defaults['package_sets'] ?? [],
-                'packages' => self::packageLists($request->user()),
-                'skill_sets' => $request->user()->project_defaults['skill_sets'] ?? [],
-                'tools' => (object) ($request->user()->project_defaults['tools'] ?? []),
-                'hooks' => (object) ($request->user()->project_defaults['hooks'] ?? []),
-            ],
+            'values' => self::values($request->user()),
         ]);
+    }
+
+    /**
+     * The person's defaults as the Project defaults form holds them. Guided
+     * setup starts from these too.
+     *
+     * @return array<string, mixed>
+     */
+    public static function values(User $user): array
+    {
+        $doc = $user->globalSettings()->document;
+
+        return [
+            'language' => $user->project_defaults['language'] ?? ProjectDefaults::LANGUAGE,
+            'project_type' => Arr::get($doc, 'defaults.project_type', ProjectDefaults::BLUEPRINT),
+            // A workflow per language; R Markdown is a variant of R's Quarto workflow
+            'workflows' => ProjectDefaults::workflows(Arr::get($doc, 'defaults.workflows')),
+            'rmarkdown' => Arr::get($doc, 'defaults.notebook_format') === 'rmarkdown',
+            'ide' => Arr::get($doc, 'defaults.ide', ProjectDefaults::IDE),
+            'use_git' => (bool) Arr::get($doc, 'defaults.use_git', true),
+            'use_renv' => (bool) Arr::get($doc, 'defaults.use_renv', false),
+            ...ProjectDefaults::scaffold((array) ($doc['defaults'] ?? [])),
+            'ai_enabled' => (bool) Arr::get($doc, 'ai.enabled', true),
+            'ai_agents' => ProjectDefaults::agents(Arr::get($doc, 'ai.assistants')),
+            'quarto' => ProjectDefaults::quarto((array) ($doc['quarto'] ?? [])),
+            'ai_skills' => (bool) Arr::get($doc, 'ai.skills', true),
+            'package_sets' => $user->project_defaults['package_sets'] ?? [],
+            'packages' => self::packageLists($user),
+            'skill_sets' => $user->project_defaults['skill_sets'] ?? [],
+            'tools' => (object) ($user->project_defaults['tools'] ?? []),
+            'hooks' => (object) ($user->project_defaults['hooks'] ?? []),
+        ];
+    }
+
+    /**
+     * The system blueprints, Standard first and Bare last, as the Blueprint
+     * page and guided setup list them.
+     */
+    public static function blueprintList(): Collection
+    {
+        return Blueprint::systemTypes()->with('latestVersion.base.facet', 'latestVersion.facetVersions.facet')->get()
+            ->filter(fn (Blueprint $b) => $b->latestVersion)->sortBy(fn (Blueprint $b) => array_search($b->key, self::ORDER, true))
+            ->map(fn (Blueprint $b) => self::listing($b))->values();
     }
 
     /**

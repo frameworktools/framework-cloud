@@ -9,6 +9,7 @@ use App\Http\Controllers\App\GitHubLibraryController;
 use App\Http\Controllers\App\ProjectsController;
 use App\Http\Controllers\App\SkillsController;
 use App\Http\Controllers\App\TokensController;
+use App\Http\Controllers\App\WelcomeController;
 use App\Http\Controllers\Auth\PasskeyPromptController;
 use App\Http\Controllers\DocsController;
 use App\Http\Controllers\DocumentViewController;
@@ -90,6 +91,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Projects are the home page; /dashboard stays for old links
     Route::redirect('dashboard', 'projects')->name('dashboard');
 
+    Route::get('welcome', [WelcomeController::class, 'show'])->name('welcome');
+    Route::post('welcome', [WelcomeController::class, 'store']);
+    Route::post('welcome/skip', [WelcomeController::class, 'skip'])->name('welcome.skip');
     Route::get('projects', [ProjectsController::class, 'index'])->name('projects');
     Route::get('published', [DocumentsController::class, 'index'])->name('published');
     Route::delete('published/{document}', [DocumentsController::class, 'destroy']);
