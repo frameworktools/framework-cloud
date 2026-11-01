@@ -4,7 +4,7 @@ export const pieceCopy = {
     structure: {
         title: 'Project structures',
         noun: 'project structure',
-        description: 'A project structure is the folders and core files a project starts with. Blueprints pair one with tools, package sets, and skills.',
+        description: 'Folders and core files for your projects.',
         empty: "You haven't made a project structure yet.",
     },
     package_set: {

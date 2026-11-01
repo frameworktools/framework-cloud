@@ -35,8 +35,8 @@ class BlueprintSeeder extends Seeder
         $this->seedBlueprints($mastersDir);
     }
 
-    /** Short names for Framework's blueprints, as the catalog lists them */
-    private const BLUEPRINT_NAMES = [
+    /** Short names for Framework's structures and blueprints, as the catalogs list them */
+    private const SHORT_NAMES = [
         'project' => 'Standard',
         'project_sensitive' => 'Privacy sensitive',
         'presentation' => 'Presentation',
@@ -162,7 +162,7 @@ class BlueprintSeeder extends Seeder
             // settings and skills. A structure's own AGENTS.md would replace it.
 
             $attributes = [
-                'name' => $definition['name'],
+                'name' => self::SHORT_NAMES[$key] ?? $definition['name'],
                 'description' => $definition['description'] ?? null,
                 'visibility' => 'public',
                 'position' => $position++,
@@ -185,8 +185,7 @@ class BlueprintSeeder extends Seeder
             // workflow brings Quarto or Jupyter, so the blueprint doesn't.
             $pieces = collect(['uv'])->concat($sets)->map($latest);
 
-            // A blueprint goes by a short name; its structure keeps the full one
-            $blueprint = Blueprint::updateOrCreate(['user_id' => null, 'key' => $key], ['name' => self::BLUEPRINT_NAMES[$key] ?? $definition['name']] + $attributes + ['is_system' => true]);
+            $blueprint = Blueprint::updateOrCreate(['user_id' => null, 'key' => $key], $attributes + ['is_system' => true]);
             $blueprint->publish(
                 $structureVersion,
                 $pieces->pluck('id')->all(),

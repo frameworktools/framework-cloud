@@ -433,7 +433,7 @@ class LibraryTest extends TestCase
 
         $this->actingAs($user)->get('/blueprints/create')->assertInertia(fn (Assert $page) => $page
             ->component('Blueprints/Builder')->has('catalog.structures', 5)->has('catalog.tools', 7)->has('catalog.skill_sets', 2));
-        $this->actingAs($user)->get('/structures')->assertInertia(fn (Assert $page) => $page->component('Pieces/Index')->has('pieces', 5));
+        $this->actingAs($user)->get('/structures')->assertInertia(fn (Assert $page) => $page->component('Pieces/Structures')->has('structures', 5));
         $this->actingAs($user)->get('/package-sets')->assertInertia(fn (Assert $page) => $page->component('Pieces/Index')->has('pieces', 1));
         $this->actingAs($user)->get('/skill-sets')->assertInertia(fn (Assert $page) => $page->component('Pieces/Index')->has('pieces', 2));
         $this->actingAs($user)->get('/structures/create')->assertInertia(fn (Assert $page) => $page

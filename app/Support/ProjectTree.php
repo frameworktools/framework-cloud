@@ -241,7 +241,7 @@ class ProjectTree
         ]));
     }
 
-    private static function isFile(string $path): bool
+    public static function isFile(string $path): bool
     {
         return str_contains(basename($path), '.');
     }

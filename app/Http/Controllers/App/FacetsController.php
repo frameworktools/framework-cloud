@@ -8,6 +8,7 @@ use App\Models\Project;
 use App\Models\Skill;
 use App\Support\Layer;
 use App\Support\Library;
+use App\Support\StructurePreview;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -32,12 +33,22 @@ class FacetsController extends Controller
     {
         $user = $request->user();
 
+        $pieces = Facet::listedFor($user)->where('kind', $kind)->with(['owner', 'latestVersion'])
+            ->orderByRaw('user_id is not null')->orderBy('position')->orderBy('name')->get();
+
+        // Structures show their folders and files, each with what it renders
+        if ($kind === 'structure') {
+            return Inertia::render('Pieces/Structures', [
+                'structures' => $pieces->map(fn (Facet $f) => Library::facet($f, $user) + [
+                    'preview' => StructurePreview::of($f->latestVersion?->layer ?? []),
+                ]),
+            ]);
+        }
+
         return Inertia::render('Pieces/Index', [
             'kind' => $kind,
             'path' => self::PATHS[$kind],
-            'pieces' => Facet::listedFor($user)->where('kind', $kind)->with(['owner', 'latestVersion'])
-                ->orderByRaw('user_id is not null')->orderBy('position')->orderBy('name')
-                ->get()->map(fn ($f) => Library::facet($f, $user)),
+            'pieces' => $pieces->map(fn ($f) => Library::facet($f, $user)),
         ]);
     }
 
