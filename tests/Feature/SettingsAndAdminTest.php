@@ -248,6 +248,36 @@ class SettingsAndAdminTest extends TestCase
         $this->assertSame('both', end($layers)['layer']['scaffold']['ide']);
     }
 
+    public function test_scaffold_settings_save_to_the_synced_defaults_and_go_in_the_project_layer(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $this->actingAs($user)->get('/settings/scaffold')
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('values.seed', '123')
+                ->where('values.set_theme_on_scaffold', false)
+                ->where('values.source_all_functions', true));
+
+        $base = ['project_type' => 'project', 'notebook_format' => 'quarto', 'ide' => 'vscode', 'ai_canonical_file' => 'AGENTS.md'];
+        $this->actingAs($user)->patch('/settings', $base + [
+            'seed_on_scaffold' => true, 'seed' => '20241107', 'set_theme_on_scaffold' => true, 'ggplot_theme' => 'theme_bw', 'source_all_functions' => false,
+        ])->assertSessionHasNoErrors();
+
+        $defaults = $user->globalSettings()->document['defaults'];
+        $this->assertSame('20241107', $defaults['seed']);
+        $this->assertSame('theme_bw', $defaults['ggplot_theme']);
+        $this->assertTrue($defaults['set_theme_on_scaffold']);
+        $this->assertFalse($defaults['source_all_functions']);
+
+        $scaffold = fn (string $language) => last((new Resolver($user->fresh()))->resolve(['name' => 'Survey', 'language' => $language])['envelope']['layers'])['layer']['scaffold'] ?? [];
+        $this->assertSame(['ide' => 'vscode', 'seed_on_scaffold' => true, 'seed' => '20241107', 'set_theme_on_scaffold' => true, 'ggplot_theme' => 'theme_bw', 'source_all_functions' => false], $scaffold('r'));
+        // Python seeds too; the theme and functions/ are R's
+        $this->assertSame(['ide' => 'vscode', 'seed_on_scaffold' => true, 'seed' => '20241107'], $scaffold('python'));
+        $this->assertSame([], $scaffold('stata'));
+
+        $this->actingAs($user)->patch('/settings', $base + ['seed' => 'abc', 'ggplot_theme' => 'theme_neon'])
+            ->assertSessionHasErrors(['seed', 'ggplot_theme']);
+    }
+
     public function test_default_packages_go_into_new_projects_without_a_blueprint(): void
     {
         $user = User::factory()->create(['email_verified_at' => now(), 'project_defaults' => ['packages' => [

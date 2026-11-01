@@ -10,11 +10,12 @@ import UiCheckboxCards from '@/Components/UiCheckboxCards.vue';
 import UiInput from '@/Components/UiInput.vue';
 import PackagesEditor from '@/Components/PackagesEditor.vue';
 import UiRadioCards from '@/Components/UiRadioCards.vue';
+import UiSelect from '@/Components/UiSelect.vue';
 import UiSwitch from '@/Components/UiSwitch.vue';
 
 // One form for all of your defaults, shown a page at a time. Moving
 // between pages keeps unsaved changes, and Save sends everything.
-const props = defineProps({ section: String, blueprints: Array, catalog: Object, presets: Array, values: Object });
+const props = defineProps({ section: String, blueprints: Array, catalog: Object, presets: Array, ggplotThemes: Array, values: Object });
 
 const page = usePage();
 const saved = computed(() => page.props.flash.status === 'defaults-updated');
@@ -82,6 +83,8 @@ const only = (piece) => (piece?.language?.length === 1 ? (piece.language[0] === 
 const fits = (piece) => (form.language === 'stata' ? false : !piece?.language?.length || piece.language.includes(form.language));
 const notUsed = computed(() => `Not used in ${languageNames[form.language]} projects.`);
 const describe = (piece, text = piece?.description) => [text, fits(piece) ? only(piece) : notUsed.value].filter(Boolean).join(' ');
+// The settings only R reads, described and dimmed the way pieces are
+const rOnly = { language: ['r'] };
 const dim = (piece) => (fits(piece) ? '' : 'opacity-60');
 const setTool = (key, on) => {
     form.tools = { ...form.tools, [key]: on };
@@ -160,6 +163,16 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
 
             <section v-else-if="section === 'scaffold'" class="flex max-w-xl flex-col gap-5">
                 <UiSwitch v-model="form.seed_on_scaffold" label="Set a random seed" description="scaffold() sets a seed, so random results repeat from run to run." />
+                <UiInput v-if="form.seed_on_scaffold" v-model="form.seed" class="-mt-2 max-w-40" label="Seed" :error="form.errors.seed" />
+                <UiSwitch
+                    v-model="form.set_theme_on_scaffold" :class="dim(rOnly)" label="Set a ggplot2 theme"
+                    :description="describe(rOnly, 'scaffold() calls theme_set(), so every plot starts from the same theme.')"
+                />
+                <UiSelect v-if="form.set_theme_on_scaffold" v-model="form.ggplot_theme" class="-mt-2 max-w-48" :class="dim(rOnly)" label="Theme" :options="ggplotThemes.map((t) => ({ value: t, label: t }))" :error="form.errors.ggplot_theme" />
+                <UiSwitch
+                    v-model="form.source_all_functions" :class="dim(rOnly)" label="Load your functions"
+                    :description="describe(rOnly, 'scaffold() sources every R file in functions/, so your helpers are ready in every notebook and script.')"
+                />
                 <UiSwitch v-if="tool('targets')" :class="dim(tool('targets'))" :model-value="!!form.tools.targets" :label="tool('targets').name" :description="describe(tool('targets'))" @update:model-value="(on) => setTool('targets', on)" />
             </section>
 

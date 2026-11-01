@@ -50,7 +50,8 @@ class ProjectLayers
         // Per-project overrides are not editable in the cloud yet. The language
         // always goes in, so every tool can tell which one builds the project,
         // and the owner's editor files, which are a personal choice.
-        $layers[] = self::projectLayer($project->slug, $project->language ?? 'r', $layers, ProjectDefaults::for($user)['settings']['ide']);
+        $settings = ProjectDefaults::for($user)['settings'];
+        $layers[] = self::projectLayer($project->slug, $project->language ?? 'r', $layers, $settings['ide'], $settings['scaffold']);
 
         return self::envelope($user, $project->name, $layers, $version && ! $composition ? ['key' => $version->blueprint->handle, 'version' => $version->version] : null);
     }
@@ -66,15 +67,28 @@ class ProjectLayers
 
     /**
      * The topmost layer: the language, the editor files (scaffold.ide: .Rproj
-     * for RStudio, .code-workspace for VS Code and Positron), and for Stata
-     * the R-only folders removed. With the spec's tools key on, it also names every tool for
+     * for RStudio, .code-workspace for VS Code and Positron), the owner's
+     * scaffold() settings where no layer beneath sets them (seed for R and
+     * Python; theme and functions/ for R), and for Stata the R-only folders
+     * removed. With the spec's tools key on, it also names every tool for
      * the language as on or off, so no client has to guess.
      */
-    public static function projectLayer(string $key, string $language, array $layers, ?string $ide = null): array
+    public static function projectLayer(string $key, string $language, array $layers, ?string $ide = null, array $scaffold = []): array
     {
         $layer = ['language' => $language] + ($language === 'stata' ? self::withoutRFolders($layers) : []);
         if ($ide && $language !== 'stata') {
             $layer['scaffold']['ide'] = $ide;
+        }
+        $keys = match ($language) {
+            'r' => array_keys(ProjectDefaults::SCAFFOLD),
+            'python' => ['seed_on_scaffold', 'seed'],
+            default => [],
+        };
+        foreach (Arr::only($scaffold, $keys) as $name => $value) {
+            // A blueprint or piece that sets it decides
+            if (! collect($layers)->contains(fn (array $l) => array_key_exists($name, (array) ($l['layer']['scaffold'] ?? [])))) {
+                $layer['scaffold'][$name] = $value;
+            }
         }
 
         if (config('framework.spec_tools') && $language !== 'stata') {

@@ -6,6 +6,7 @@ use App\Models\Blueprint;
 use App\Models\Project;
 use App\Models\User;
 use App\Support\Layer;
+use App\Support\ProjectDefaults;
 use App\Support\ProjectLayers;
 use Database\Seeders\BlueprintSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -132,8 +133,8 @@ class ProjectLanguageTest extends TestCase
         $this->assertSame(['notebooks' => null], $top['render_dirs']);
         $this->assertSame([], Layer::envelopeProblems($envelope));
 
-        // R projects keep them, and get the owner's editor files
+        // R projects keep them, and get the owner's editor files and scaffold() settings
         $project->update(['language' => 'r']);
-        $this->assertSame(['language' => 'r', 'scaffold' => ['ide' => 'positron']], end(ProjectLayers::for($project->fresh())['layers'])['layer']);
+        $this->assertSame(['language' => 'r', 'scaffold' => ['ide' => 'positron'] + ProjectDefaults::SCAFFOLD], end(ProjectLayers::for($project->fresh())['layers'])['layer']);
     }
 }

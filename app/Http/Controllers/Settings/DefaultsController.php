@@ -43,6 +43,7 @@ class DefaultsController extends Controller
                     'language' => $set->language ?? ProjectDefaults::PACKAGE_LANGUAGES,
                     'packages' => self::rowsFrom($set->latestVersion?->layer ?? []),
                 ])->values(),
+            'ggplotThemes' => ProjectDefaults::GGPLOT_THEMES,
             'values' => [
                 'language' => $request->user()->project_defaults['language'] ?? ProjectDefaults::LANGUAGE,
                 'project_type' => Arr::get($doc, 'defaults.project_type', ProjectDefaults::BLUEPRINT),
@@ -50,7 +51,7 @@ class DefaultsController extends Controller
                 'ide' => Arr::get($doc, 'defaults.ide', ProjectDefaults::IDE),
                 'use_git' => (bool) Arr::get($doc, 'defaults.use_git', true),
                 'use_renv' => (bool) Arr::get($doc, 'defaults.use_renv', false),
-                'seed_on_scaffold' => (bool) Arr::get($doc, 'defaults.seed_on_scaffold', true),
+                ...ProjectDefaults::scaffold((array) ($doc['defaults'] ?? [])),
                 'ai_enabled' => (bool) Arr::get($doc, 'ai.enabled', true),
                 'ai_canonical_file' => Arr::get($doc, 'ai.canonical_file', 'AGENTS.md'),
                 'ai_skills' => (bool) Arr::get($doc, 'ai.skills', true),
@@ -151,6 +152,10 @@ class DefaultsController extends Controller
             'use_git' => ['boolean'],
             'use_renv' => ['boolean'],
             'seed_on_scaffold' => ['boolean'],
+            'seed' => ['nullable', 'regex:/^-?\d{1,9}$/'],
+            'set_theme_on_scaffold' => ['boolean'],
+            'ggplot_theme' => ['nullable', 'in:'.implode(',', ProjectDefaults::GGPLOT_THEMES)],
+            'source_all_functions' => ['boolean'],
             'ai_enabled' => ['boolean'],
             'ai_canonical_file' => ['required', 'string', 'max:60'],
             'ai_skills' => ['boolean'],
@@ -180,7 +185,10 @@ class DefaultsController extends Controller
         Arr::set($doc, 'defaults.ide', $validated['ide']);
         Arr::set($doc, 'defaults.use_git', (bool) ($validated['use_git'] ?? true));
         Arr::set($doc, 'defaults.use_renv', (bool) ($validated['use_renv'] ?? false));
-        Arr::set($doc, 'defaults.seed_on_scaffold', (bool) ($validated['seed_on_scaffold'] ?? true));
+        // R's own settings read these from defaults too
+        foreach (ProjectDefaults::scaffold($validated) as $name => $value) {
+            Arr::set($doc, "defaults.{$name}", $value);
+        }
         Arr::set($doc, 'ai.enabled', (bool) ($validated['ai_enabled'] ?? true));
         Arr::set($doc, 'ai.canonical_file', $validated['ai_canonical_file']);
         Arr::set($doc, 'ai.skills', (bool) ($validated['ai_skills'] ?? true));

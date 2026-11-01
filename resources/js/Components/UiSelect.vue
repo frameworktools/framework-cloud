@@ -1,4 +1,6 @@
 <script setup>
+import { useId } from 'vue';
+
 defineProps({
     label: String,
     description: String,
@@ -7,15 +9,17 @@ defineProps({
     options: { type: Array, default: () => [] },
 });
 
+const id = useId();
 const model = defineModel({ type: [String, Number], default: '' });
 </script>
 
 <template>
     <div class="flex flex-col gap-1.5">
-        <label v-if="label" class="text-sm font-medium text-slate-800 dark:text-slate-200">
+        <label v-if="label" :for="id" class="text-sm font-medium text-slate-800 dark:text-slate-200">
             {{ label }}
         </label>
         <select
+            :id="id"
             v-model="model"
             class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
         >

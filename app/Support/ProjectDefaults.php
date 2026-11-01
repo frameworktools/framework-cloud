@@ -27,11 +27,27 @@ class ProjectDefaults
      */
     public const IDE = 'vscode';
 
+    /**
+     * What scaffold() does at the start of every notebook and script, for an
+     * account that never chose: seed with 123, as R does, and leave the
+     * ggplot2 theme alone. The theme and sourcing functions/ are R only.
+     */
+    public const SCAFFOLD = [
+        'seed_on_scaffold' => true,
+        'seed' => '123',
+        'set_theme_on_scaffold' => false,
+        'ggplot_theme' => 'theme_minimal',
+        'source_all_functions' => true,
+    ];
+
+    /** The ggplot2 themes the Scaffold page offers. */
+    public const GGPLOT_THEMES = ['theme_minimal', 'theme_bw', 'theme_classic', 'theme_light', 'theme_gray', 'theme_linedraw', 'theme_dark', 'theme_void'];
+
     /** The git hooks a user can turn on for new projects, as the R package names them. */
     public const HOOKS = ['data_security', 'check_sensitive_dirs'];
 
     /**
-     * @return array{blueprint: string, package_sets: list<string>, skill_sets: list<string>, packages: array<string, list<array<string, mixed>>>, tools: array<string, bool>, settings: array{sensitive: bool, git: bool, ai: bool, hooks: list<string>, ide: string}}
+     * @return array{blueprint: string, package_sets: list<string>, skill_sets: list<string>, packages: array<string, list<array<string, mixed>>>, tools: array<string, bool>, settings: array{sensitive: bool, git: bool, ai: bool, hooks: list<string>, ide: string, scaffold: array<string, bool|string>}}
      */
     public static function for(User $user): array
     {
@@ -50,7 +66,28 @@ class ProjectDefaults
                 'ai' => (bool) Arr::get($doc, 'ai.enabled', true),
                 'hooks' => array_keys(array_filter(Arr::only($own['hooks'] ?? [], self::HOOKS))),
                 'ide' => (string) Arr::get($doc, 'defaults.ide', self::IDE),
+                'scaffold' => self::scaffold((array) ($doc['defaults'] ?? [])),
             ],
+        ];
+    }
+
+    /**
+     * The scaffold settings from the synced document's defaults or the form's values.
+     *
+     * @param  array<string, mixed>  $values
+     * @return array<string, bool|string>
+     */
+    public static function scaffold(array $values): array
+    {
+        $seed = trim((string) ($values['seed'] ?? ''));
+        $theme = (string) ($values['ggplot_theme'] ?? '');
+
+        return [
+            'seed_on_scaffold' => (bool) ($values['seed_on_scaffold'] ?? self::SCAFFOLD['seed_on_scaffold']),
+            'seed' => preg_match('/^-?\d{1,9}$/', $seed) ? $seed : self::SCAFFOLD['seed'],
+            'set_theme_on_scaffold' => (bool) ($values['set_theme_on_scaffold'] ?? self::SCAFFOLD['set_theme_on_scaffold']),
+            'ggplot_theme' => in_array($theme, self::GGPLOT_THEMES, true) ? $theme : self::SCAFFOLD['ggplot_theme'],
+            'source_all_functions' => (bool) ($values['source_all_functions'] ?? self::SCAFFOLD['source_all_functions']),
         ];
     }
 
@@ -123,7 +160,7 @@ class ProjectDefaults
      * not, for previewing what a new project would get.
      *
      * @param  array<string, mixed>  $values  as DefaultsController hands them to the form
-     * @return array{blueprint: string, package_sets: list<string>, skill_sets: list<string>, packages: array<string, list<array<string, mixed>>>, tools: array<string, bool>, settings: array{sensitive: bool, git: bool, ai: bool, hooks: list<string>, ide: string}}
+     * @return array{blueprint: string, package_sets: list<string>, skill_sets: list<string>, packages: array<string, list<array<string, mixed>>>, tools: array<string, bool>, settings: array{sensitive: bool, git: bool, ai: bool, hooks: list<string>, ide: string, scaffold: array<string, bool|string>}}
      */
     public static function fromValues(array $values): array
     {
@@ -139,6 +176,7 @@ class ProjectDefaults
                 'ai' => (bool) ($values['ai_enabled'] ?? true),
                 'hooks' => array_keys(array_filter(Arr::only((array) ($values['hooks'] ?? []), self::HOOKS))),
                 'ide' => (string) ($values['ide'] ?? self::IDE),
+                'scaffold' => self::scaffold($values),
             ],
         ];
     }
