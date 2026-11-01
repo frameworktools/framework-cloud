@@ -136,9 +136,9 @@ class GitHubTest extends TestCase
         $envelope = ProjectLayers::for($project);
 
         $this->assertSame([], Layer::envelopeProblems($envelope));
-        // The structure, then Quarto and the skill sets, then settings and the project
-        $this->assertSame(['base', 'facet', 'facet', 'facet', 'blueprint', 'project'], array_column($envelope['layers'], 'kind'));
-        $this->assertSame(['framework/project', 'framework/quarto', 'framework/framework', 'framework/ggplot2'], array_slice(array_column($envelope['layers'], 'key'), 0, 4));
+        // The structure, the skill sets, Quarto and the workflow, the blueprint, your defaults, and the project
+        $this->assertSame(['base', 'facet', 'facet', 'facet', 'facet', 'blueprint', 'settings', 'project'], array_column($envelope['layers'], 'kind'));
+        $this->assertSame(['framework/project', 'framework/framework', 'framework/ggplot2', 'framework/quarto', 'framework/workflow-quarto'], array_slice(array_column($envelope['layers'], 'key'), 0, 5));
         $this->assertSame('framework/project', $envelope['source']['blueprint']['key']);
         $this->assertSame(['name' => 'Ada Lovelace', 'email' => 'ada@example.org', 'affiliation' => ''], $envelope['author']);
 

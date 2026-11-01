@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\Project;
 use App\Models\User;
 use Illuminate\Support\Arr;
 
@@ -39,8 +40,15 @@ class ProjectDefaults
         'set_theme_on_scaffold' => false,
         'ggplot_theme' => 'theme_minimal',
         'source_all_functions' => true,
-        'notebook_format' => 'quarto',
     ];
+
+    /**
+     * Each language's workflow for an account that never chose: Quarto for
+     * R, Jupyter for Python, and Scripts only for Stata, the one Stata has.
+     */
+    public const WORKFLOWS = ['r' => 'quarto', 'python' => 'jupyter', 'stata' => 'scripts'];
+
+    public const WORKFLOW_KEYS = ['quarto', 'jupyter', 'scripts'];
 
     /**
      * The _quarto.yml settings for HTML documents and RevealJS slides, as the
@@ -77,9 +85,6 @@ class ProjectDefaults
         'highlight_style' => ['github', 'tango', 'pygments', 'kate', 'monochrome', 'espresso', 'zenburn', 'haddock', 'breezedark'],
     ];
 
-    /** The notebook platforms: Quarto and Jupyter for R and Python, R Markdown for R. */
-    public const NOTEBOOK_FORMATS = ['quarto', 'jupyter', 'rmarkdown'];
-
     /** The ggplot2 themes the Scaffold page offers. */
     public const GGPLOT_THEMES = ['theme_minimal', 'theme_bw', 'theme_classic', 'theme_light', 'theme_gray', 'theme_linedraw', 'theme_dark', 'theme_void'];
 
@@ -98,7 +103,7 @@ class ProjectDefaults
     public const HOOKS = ['data_security', 'check_sensitive_dirs', 'check_notebook_outputs'];
 
     /**
-     * @return array{blueprint: string, package_sets: list<string>, skill_sets: list<string>, packages: array<string, list<array<string, mixed>>>, tools: array<string, bool>, settings: array{git: bool, ai: bool, hooks: list<string>, ide: string, scaffold: array<string, bool|string>, agents: list<string>, quarto: array<string, array<string, mixed>>}}
+     * @return array{blueprint: string, package_sets: list<string>, skill_sets: list<string>, packages: array<string, list<array<string, mixed>>>, tools: array<string, bool>, settings: array{git: bool, ai: bool, hooks: list<string>, ide: string, scaffold: array<string, bool|string>, agents: list<string>, quarto: array<string, array<string, mixed>>}, language: ?string, workflows: array<string, string>, rmarkdown: bool}
      */
     public static function for(User $user): array
     {
@@ -107,6 +112,10 @@ class ProjectDefaults
 
         return [
             'blueprint' => 'framework/'.Arr::get($doc, 'defaults.project_type', self::BLUEPRINT),
+            // Only what the person chose: a blueprint's own language and workflow show through the rest
+            'language' => in_array($own['language'] ?? null, Project::LANGUAGES, true) ? $own['language'] : null,
+            'workflows' => self::chosenWorkflows(Arr::get($doc, 'defaults.workflows')),
+            'rmarkdown' => Arr::get($doc, 'defaults.notebook_format') === 'rmarkdown',
             'package_sets' => array_values($own['package_sets'] ?? []),
             'skill_sets' => array_values($own['skill_sets'] ?? []),
             'packages' => self::packages($own['packages'] ?? self::DEFAULT_PACKAGES),
@@ -140,8 +149,113 @@ class ProjectDefaults
             'set_theme_on_scaffold' => (bool) ($values['set_theme_on_scaffold'] ?? self::SCAFFOLD['set_theme_on_scaffold']),
             'ggplot_theme' => in_array($theme, self::GGPLOT_THEMES, true) ? $theme : self::SCAFFOLD['ggplot_theme'],
             'source_all_functions' => (bool) ($values['source_all_functions'] ?? self::SCAFFOLD['source_all_functions']),
-            'notebook_format' => in_array($values['notebook_format'] ?? null, self::NOTEBOOK_FORMATS, true) ? $values['notebook_format'] : self::SCAFFOLD['notebook_format'],
         ];
+    }
+
+    /**
+     * An opaque revision of a person's defaults: it changes whenever what
+     * their new projects start with changes. Clients cache the default
+     * envelope by it.
+     */
+    public static function revision(User $user): string
+    {
+        return substr(hash('sha256', json_encode(self::for($user))), 0, 16);
+    }
+
+    /**
+     * Each language's workflow, from what was saved, with the initial ones
+     * for languages never chosen or saved with a workflow they can't use.
+     *
+     * @return array{r: string, python: string, stata: string}
+     */
+    public static function workflows(mixed $saved): array
+    {
+        $out = self::WORKFLOWS;
+        foreach (is_array($saved) ? $saved : [] as $language => $workflow) {
+            if (isset($out[$language]) && is_string($workflow) && self::workflowFits($workflow, $language)) {
+                $out[$language] = $workflow;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Only the workflows a person chose, by language, for resolution.
+     *
+     * @return array<string, string>
+     */
+    public static function chosenWorkflows(mixed $saved): array
+    {
+        return array_filter(is_array($saved) ? $saved : [], fn ($workflow, $language) => is_string($workflow) && isset(self::WORKFLOWS[$language]) && self::workflowFits($workflow, $language), ARRAY_FILTER_USE_BOTH);
+    }
+
+    /** Whether a language has a workflow: Stata has only Scripts only. */
+    public static function workflowFits(string $workflow, string $language): bool
+    {
+        return in_array($workflow, $language === 'stata' ? ['scripts'] : self::WORKFLOW_KEYS, true);
+    }
+
+    /**
+     * The notebook format a workflow gives a language. R Markdown is a
+     * variant of the Quarto workflow for R. Scripts only has no notebooks;
+     * the workflow piece names the script format where the packages take it.
+     */
+    public static function notebookFormat(string $workflow, string $language, bool $rmarkdown = false): ?string
+    {
+        return match ($workflow) {
+            'quarto' => $language === 'r' && $rmarkdown ? 'rmarkdown' : 'quarto',
+            'jupyter' => 'jupyter',
+            default => null,
+        };
+    }
+
+    /**
+     * A person's defaults as a layer for one language, under creation
+     * choices and above the blueprint's own values. It holds what the
+     * person set that differs from Framework's own, so a blueprint's values
+     * show through wherever the person kept Framework's. Editor files and
+     * agents are the person's alone, so they're always here.
+     *
+     * Tools, package sets, and skill sets are pieces; the resolver adds them.
+     *
+     * @param  array<string, mixed>  $defaults  from for() or fromValues()
+     * @return array<string, mixed>
+     */
+    public static function personalLayer(array $defaults, string $language): array
+    {
+        $settings = $defaults['settings'];
+        $layer = [];
+
+        if ($language !== 'stata') {
+            $layer['scaffold']['ide'] = $settings['ide'];
+            $keys = $language === 'r' ? array_keys(self::SCAFFOLD) : ['seed_on_scaffold', 'seed', 'source_all_functions'];
+            foreach ($keys as $key) {
+                if ($settings['scaffold'][$key] !== self::SCAFFOLD[$key]) {
+                    $layer['scaffold'][$key] = $settings['scaffold'][$key];
+                }
+            }
+            foreach (self::QUARTO as $format => $values) {
+                foreach ($values as $key => $value) {
+                    if ($settings['quarto'][$format][$key] !== $value) {
+                        $layer['quarto'][$format][$key] = $settings['quarto'][$format][$key];
+                    }
+                }
+            }
+        }
+
+        $layer['ai']['assistants'] = array_combine(self::AGENTS, array_map(fn (string $a) => in_array($a, $settings['agents'], true), self::AGENTS));
+        if (! $settings['ai']) {
+            $layer['ai']['enabled'] = false;
+        }
+
+        if (! $settings['git']) {
+            $layer['git']['use_git'] = false;
+        } elseif ($settings['hooks'] && $language !== 'stata') {
+            $layer['git']['hooks'] = array_fill_keys($settings['hooks'], true);
+        }
+
+        return $layer;
     }
 
     /**
@@ -246,12 +360,15 @@ class ProjectDefaults
      * not, for previewing what a new project would get.
      *
      * @param  array<string, mixed>  $values  as DefaultsController hands them to the form
-     * @return array{blueprint: string, package_sets: list<string>, skill_sets: list<string>, packages: array<string, list<array<string, mixed>>>, tools: array<string, bool>, settings: array{git: bool, ai: bool, hooks: list<string>, ide: string, scaffold: array<string, bool|string>, agents: list<string>, quarto: array<string, array<string, mixed>>}}
+     * @return array{blueprint: string, package_sets: list<string>, skill_sets: list<string>, packages: array<string, list<array<string, mixed>>>, tools: array<string, bool>, settings: array{git: bool, ai: bool, hooks: list<string>, ide: string, scaffold: array<string, bool|string>, agents: list<string>, quarto: array<string, array<string, mixed>>}, language: ?string, workflows: array<string, string>, rmarkdown: bool}
      */
     public static function fromValues(array $values): array
     {
         return [
             'blueprint' => 'framework/'.($values['project_type'] ?? self::BLUEPRINT),
+            'language' => in_array($values['language'] ?? null, Project::LANGUAGES, true) ? $values['language'] : null,
+            'workflows' => self::chosenWorkflows($values['workflows'] ?? null),
+            'rmarkdown' => (bool) ($values['rmarkdown'] ?? false),
             'package_sets' => array_values(array_filter((array) ($values['package_sets'] ?? []), 'is_string')),
             'skill_sets' => array_values(array_filter((array) ($values['skill_sets'] ?? []), 'is_string')),
             'packages' => self::packages((array) ($values['packages'] ?? [])),
@@ -266,33 +383,5 @@ class ProjectDefaults
                 'quarto' => self::quarto((array) ($values['quarto'] ?? [])),
             ],
         ];
-    }
-
-    /**
-     * The choices a resolve starts from. Without a blueprint or structure,
-     * the default blueprint and the preferred pieces apply. Settings always
-     * fall back to the defaults, with the blueprint's own settings in between.
-     *
-     * @param  array<string, mixed>  $choices
-     * @param  array<string, mixed>|null  $defaults  from fromValues() to preview unsaved defaults
-     * @return array<string, mixed>
-     */
-    public static function apply(User $user, array $choices, ?array $defaults = null): array
-    {
-        $defaults ??= self::for($user);
-
-        if (blank($choices['blueprint'] ?? null) && blank($choices['structure'] ?? null)) {
-            $choices['blueprint'] = $defaults['blueprint'];
-            $choices['package_sets'] = array_values(array_unique([...$defaults['package_sets'], ...($choices['package_sets'] ?? [])]));
-            $choices['skill_sets'] = array_values(array_unique([...$defaults['skill_sets'], ...($choices['skill_sets'] ?? [])]));
-            $choices['tools'] = ($choices['tools'] ?? []) + $defaults['tools'];
-            // A list left as Framework's own needs nothing sent: R starts every project with it
-            $choices['default_packages'] = array_filter($defaults['packages'], fn (array $rows, string $language) => $rows !== self::packages(self::DEFAULT_PACKAGES)[$language], ARRAY_FILTER_USE_BOTH);
-            $choices['from_defaults'] = true;
-        }
-
-        $choices['default_settings'] = $defaults['settings'];
-
-        return $choices;
     }
 }

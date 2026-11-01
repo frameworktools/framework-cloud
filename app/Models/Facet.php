@@ -25,7 +25,7 @@ class Facet extends Model
 {
     use HasFactory, HasVersions, Shareable;
 
-    public const KINDS = ['structure', 'tool', 'package_set', 'skill_set', 'setting', 'legacy', 'retired'];
+    public const KINDS = ['structure', 'workflow', 'tool', 'package_set', 'skill_set', 'setting', 'legacy', 'retired'];
 
     /** Kinds a blueprint can add on top of its structure. */
     public const PIECES = ['tool', 'package_set', 'skill_set'];
@@ -66,6 +66,12 @@ class Facet extends Model
     }
 
     /** The kind the layers envelope labels this piece with. Clients know only base and facet. */
+    /** A workflow's id as the spec names it (quarto, jupyter, or scripts), kept in category. */
+    public function workflowId(): ?string
+    {
+        return $this->kind === 'workflow' ? $this->category : null;
+    }
+
     public function layerKind(): string
     {
         return $this->isStructure() ? 'base' : 'facet';

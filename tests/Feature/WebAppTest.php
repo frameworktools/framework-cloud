@@ -166,14 +166,11 @@ class WebAppTest extends TestCase
         $this->assertContains('framework/tidyverse-analysis', $keys);
         $this->assertNotContains('framework/ggplot2', $keys);
 
-        // The same pieces as the blueprint pin it instead of recording them
-        $this->actingAs($user)->post('/projects', [
-            'name' => 'Plain', 'blueprint_id' => $blueprint->id, 'customized' => true,
-            'structure' => 'framework/project', 'tools' => ['quarto' => true],
-            'package_sets' => [], 'skill_sets' => ['framework/framework', 'framework/ggplot2'], 'skills' => [],
-            'settings' => ['sensitive' => false, 'ai' => true, 'git' => true],
-        ])->assertSessionHasNoErrors();
-        $this->assertNull($user->projects()->where('slug', 'plain')->first()->composition);
+        // An uncustomized project pins the blueprint, and every project keeps what it was resolved from
+        $this->actingAs($user)->post('/projects', ['name' => 'Plain', 'blueprint_id' => $this->systemBlueprint('project')->id])->assertSessionHasNoErrors();
+        $plain = $user->projects()->where('slug', 'plain')->first();
+        $this->assertNull($plain->composition);
+        $this->assertSame(ProjectLayers::for($plain), json_decode($plain->resolved, true));
     }
 
     public function test_new_project_page_lists_blueprints_with_what_they_set_up(): void
@@ -185,7 +182,7 @@ class WebAppTest extends TestCase
                 ->has('blueprints', 5)
                 ->where('blueprints.0.handle', 'framework/bare')
                 ->where('blueprints.1.choices.structure', 'framework/project')
-                ->where('blueprints.1.choices.tools', ['quarto' => true, 'uv' => true])
+                ->where('blueprints.1.choices.tools', ['uv' => true])
                 ->has('catalog.structures', 5)
                 ->where('selected', $this->systemBlueprint('project')->id));
     }

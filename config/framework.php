@@ -12,6 +12,10 @@ return [
     */
     'spec_tools' => (bool) env('FW_SPEC_TOOLS', true),
 
+    // scaffold.workflow and the script notebook format, which the packages'
+    // schema takes from the framework commit that adds workflows
+    'spec_workflows' => (bool) env('FW_SPEC_WORKFLOWS', false),
+
     /*
     |--------------------------------------------------------------------------
     | Documents storage

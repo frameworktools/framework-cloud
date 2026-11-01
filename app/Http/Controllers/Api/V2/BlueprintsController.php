@@ -36,6 +36,10 @@ class BlueprintsController extends Controller
                 'visibility' => $b->visibility,
                 'system' => $b->isSystem(),
                 'structure' => $b->latestVersion->base?->facet->handle,
+                // What it supports and needs, which resolution checks
+                ...$b->latestVersion->compatibility(),
+                'license' => $b->license,
+                'tags' => $b->tags ?? [],
                 'tools' => $b->latestVersion->facetVersions->filter(fn ($v) => $v->facet->kind === 'tool')->map(fn ($v) => $v->facet->key)->values()->all(),
                 'package_sets' => $this->handles($b, 'package_set'),
                 'skill_sets' => $this->handles($b, 'skill_set'),

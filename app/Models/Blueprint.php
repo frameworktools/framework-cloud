@@ -28,10 +28,21 @@ class Blueprint extends Model
 
     protected $appends = ['handle'];
 
+    /**
+     * A version's declared compatibility: the languages and workflows it
+     * supports, its default workflow per language, the tools it needs, and
+     * the values it requires. Tags never affect resolution.
+     */
+    public const COMPATIBILITY = ['languages', 'workflows', 'default_workflow', 'requires_tools', 'requires'];
+
+    /** Statuses: a draft has no published version yet. */
+    public const STATUSES = ['draft', 'published'];
+
     protected function casts(): array
     {
         return [
             'is_system' => 'boolean',
+            'tags' => 'array',
         ];
     }
 
@@ -48,7 +59,7 @@ class Blueprint extends Model
 
     protected function versionContent(): array
     {
-        return ['base_version_id', 'facet_version_ids', 'layer'];
+        return ['base_version_id', 'facet_version_ids', 'layer', ...self::COMPATIBILITY];
     }
 
     protected function versionSnapshot(Model $version): array
@@ -57,6 +68,7 @@ class Blueprint extends Model
             'base_version_id' => $version->base_version_id,
             'facet_version_ids' => $version->facetVersions()->pluck('facet_versions.id')->all(),
             'layer' => $version->layer,
+            ...$version->only(self::COMPATIBILITY),
         ];
     }
 
@@ -77,14 +89,14 @@ class Blueprint extends Model
      *
      * @param  list<int>  $facetVersionIds  in merge order
      */
-    public function publish(FacetVersion $base, array $facetVersionIds, array $layer = [], ?string $notes = null): BlueprintVersion
+    public function publish(FacetVersion $base, array $facetVersionIds, array $layer = [], ?string $notes = null, array $compatibility = []): BlueprintVersion
     {
         return $this->publishVersion([
             'base_version_id' => $base->id,
             'facet_version_ids' => array_map('intval', array_values($facetVersionIds)),
             'layer' => $layer,
             'notes' => $notes,
-        ]);
+        ] + array_map(fn ($value) => $value ?: null, array_intersect_key($compatibility, array_flip(self::COMPATIBILITY))));
     }
 
     /**

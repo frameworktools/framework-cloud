@@ -143,6 +143,33 @@ Offline creation stays supported:
 
 Clients never silently fall back to a different configuration.
 
+The contract, shared by R, Python, and `fw`:
+
+- **Cache file:** `<Framework config folder>/cache/defaults/<host[:port]>/<language>.json`,
+  holding `{"fetched_at": RFC 3339, "defaults_revision": "...", "envelope": {...}}`.
+  Only the default envelope is cached (choices are the language only).
+  Projects with explicit pieces need a connection.
+- **Revision:** `POST /api/v2/resolve` and `GET /api/v2/defaults` send a
+  `Framework-Defaults-Revision` header. It is opaque; compare for equality.
+- **Defaults request:** `POST /api/v2/resolve` with only `{"language": ...}`
+  resolves from the person's defaults. When their default blueprint doesn't
+  support the language, the cloud uses `framework/project` and says so in
+  `notices`.
+- **Offline** means network errors, timeouts, and 5xx responses. 401 and 403
+  are authentication errors.
+- **Not signed in:** build from package built-ins with no prompt.
+- **Paths:** `:` in `host[:port]` becomes `_` on every platform, such as
+  `cache/defaults/localhost_8000/stata.json`. Each client writes its own
+  config folder and reads the newest cache among the folders it knows.
+- **Names:** the envelope always has a valid name ("Untitled project" when
+  the request has none), and clients put the project's name in before
+  validating.
+- **Notices:** one `Framework-Notice` response header per notice, in plain
+  text. The body is always exactly a layers envelope.
+- **Handoff:** `fw new` passes choices (and `--offline`) to R's or Python's
+  `new()`, so each language has one resolving client. Layers files remain
+  for explicit envelopes.
+
 ### Frozen projects
 
 A project stores its resolved envelope (`projects.resolved`) at creation,

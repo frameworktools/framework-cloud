@@ -69,7 +69,7 @@ class LibraryTest extends TestCase
     public function test_seeder_builds_the_system_library_and_is_idempotent(): void
     {
         $counts = Facet::whereNull('user_id')->get()->countBy('kind')->all();
-        $this->assertEquals(['structure' => 5, 'tool' => 7, 'setting' => 1, 'skill_set' => 2, 'package_set' => 1], $counts);
+        $this->assertEquals(['structure' => 5, 'workflow' => 3, 'tool' => 7, 'setting' => 1, 'skill_set' => 2, 'package_set' => 1], $counts);
         $this->assertSame(7, Skill::whereNull('user_id')->count());
         $this->assertSame(5, Blueprint::systemTypes()->count());
 

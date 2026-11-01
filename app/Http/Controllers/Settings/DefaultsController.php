@@ -48,7 +48,9 @@ class DefaultsController extends Controller
             'values' => [
                 'language' => $request->user()->project_defaults['language'] ?? ProjectDefaults::LANGUAGE,
                 'project_type' => Arr::get($doc, 'defaults.project_type', ProjectDefaults::BLUEPRINT),
-                'notebook_format' => Arr::get($doc, 'defaults.notebook_format', 'quarto'),
+                // A workflow per language; R Markdown is a variant of R's Quarto workflow
+                'workflows' => ProjectDefaults::workflows(Arr::get($doc, 'defaults.workflows')),
+                'rmarkdown' => Arr::get($doc, 'defaults.notebook_format') === 'rmarkdown',
                 'ide' => Arr::get($doc, 'defaults.ide', ProjectDefaults::IDE),
                 'use_git' => (bool) Arr::get($doc, 'defaults.use_git', true),
                 'use_renv' => (bool) Arr::get($doc, 'defaults.use_renv', false),
@@ -152,7 +154,11 @@ class DefaultsController extends Controller
         $validated = $request->validate([
             'language' => ['sometimes', 'in:r,python,stata'],
             'project_type' => ['required', 'exists:blueprints,key'],
-            'notebook_format' => ['required', 'in:'.implode(',', ProjectDefaults::NOTEBOOK_FORMATS)],
+            'workflows' => ['array'],
+            'workflows.r' => ['sometimes', 'in:quarto,jupyter,scripts'],
+            'workflows.python' => ['sometimes', 'in:quarto,jupyter,scripts'],
+            'workflows.stata' => ['sometimes', 'in:scripts'],
+            'rmarkdown' => ['boolean'],
             'ide' => ['required', 'in:positron,vscode,rstudio,both,none'],
             'use_git' => ['boolean'],
             'use_renv' => ['boolean'],
@@ -189,7 +195,11 @@ class DefaultsController extends Controller
         $doc = $setting->document;
 
         Arr::set($doc, 'defaults.project_type', $validated['project_type']);
-        Arr::set($doc, 'defaults.notebook_format', $validated['notebook_format']);
+        // R and Python read these; notebook_format is R's, for clients that predate workflows
+        $workflows = ProjectDefaults::workflows($validated['workflows'] ?? Arr::get($doc, 'defaults.workflows'));
+        $rmarkdown = $workflows['r'] === 'quarto' && (bool) ($validated['rmarkdown'] ?? false);
+        Arr::set($doc, 'defaults.workflows', $workflows);
+        Arr::set($doc, 'defaults.notebook_format', ProjectDefaults::notebookFormat($workflows['r'], 'r', $rmarkdown) ?? 'quarto');
         Arr::set($doc, 'defaults.ide', $validated['ide']);
         Arr::set($doc, 'defaults.use_git', (bool) ($validated['use_git'] ?? true));
         Arr::set($doc, 'defaults.use_renv', (bool) ($validated['use_renv'] ?? false));
@@ -216,7 +226,7 @@ class DefaultsController extends Controller
             'packages' => ProjectDefaults::packages($validated['packages'] ?? []),
             'skill_sets' => array_values($validated['skill_sets'] ?? []),
             // Jupyter notebooks need the Jupyter tool's kernel
-            'tools' => ($validated['notebook_format'] === 'jupyter' ? ['jupyter' => true] : []) + array_map('boolval', Arr::except($validated['tools'] ?? [], ['renv'])),
+            'tools' => array_map('boolval', Arr::except($validated['tools'] ?? [], ['renv'])),
             'hooks' => array_map('boolval', Arr::only($validated['hooks'] ?? [], ProjectDefaults::HOOKS)),
         ]])->save();
 

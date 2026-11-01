@@ -37,7 +37,9 @@ class PiecesController extends Controller
     /** GET /api/v2/defaults: what the user's new projects start with. */
     public function defaults(Request $request): JsonResponse
     {
-        return response()->json(ProjectDefaults::for($this->user($request)));
+        $user = $this->user($request);
+
+        return response()->json(ProjectDefaults::for($user))->header('Framework-Defaults-Revision', ProjectDefaults::revision($user));
     }
 
     /** GET /api/v2/skills: single skills, for --skill. */
@@ -65,7 +67,12 @@ class PiecesController extends Controller
     {
         $user = $this->user($request);
 
-        return response()->json(Layer::toJsonValue((new Resolver($user))->resolve($this->choices($request))['envelope']));
+        $resolved = (new Resolver($user))->resolve($this->choices($request));
+
+        // Clients cache the default envelope by this revision and print the notices
+        return response()->json(Layer::toJsonValue($resolved['envelope']))
+            ->header('Framework-Defaults-Revision', ProjectDefaults::revision($user))
+            ->withHeaders($resolved['notices'] ? ['Framework-Notice' => $resolved['notices']] : []);
     }
 
     /**
@@ -96,6 +103,8 @@ class PiecesController extends Controller
             'language' => ['nullable', 'string'],
             'blueprint' => ['nullable', 'string', 'max:200'],
             'structure' => ['nullable', 'string', 'max:200'],
+            'workflow' => ['nullable', 'in:'.implode(',', ProjectDefaults::WORKFLOW_KEYS)],
+            'notebook_format' => ['nullable', 'in:rmarkdown'],
             'tools' => ['nullable', 'array'],
             'tools.*' => ['boolean'],
             'package_sets' => ['nullable', 'array'],

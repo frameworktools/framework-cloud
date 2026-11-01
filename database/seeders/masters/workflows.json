@@ -1,0 +1,52 @@
+{
+  "workflow-quarto": {
+    "id": "workflow-quarto",
+    "name": "Quarto",
+    "description": "Write notebooks as Quarto documents (.qmd), or R Markdown in R projects. Quarto renders them to HTML, PDF, and Word.",
+    "language": [
+      "r",
+      "python"
+    ],
+    "requires": [
+      "quarto"
+    ],
+    "layer": {
+      "scaffold": {
+        "notebook_format": "quarto"
+      }
+    },
+    "category": "quarto"
+  },
+  "workflow-jupyter": {
+    "id": "workflow-jupyter",
+    "name": "Jupyter",
+    "description": "Write notebooks in Jupyter (.ipynb) with the kernel for the project's language. Quarto stays available to render and publish them.",
+    "language": [
+      "r",
+      "python"
+    ],
+    "requires": [
+      "jupyter",
+      "quarto"
+    ],
+    "layer": {
+      "scaffold": {
+        "notebook_format": "jupyter"
+      }
+    },
+    "category": "jupyter"
+  },
+  "workflow-scripts": {
+    "id": "workflow-scripts",
+    "name": "Scripts only",
+    "description": "No notebooks. Analysis lives in scripts, and the blueprint supplies any starter scripts.",
+    "language": [
+      "r",
+      "python",
+      "stata"
+    ],
+    "requires": [],
+    "layer": {},
+    "category": "scripts"
+  }
+}

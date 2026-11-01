@@ -28,8 +28,22 @@ class BlueprintSeeder extends Seeder
         $this->seedPieces('setting', $this->json("$mastersDir/settings.json"));
         $this->seedPieces('skill_set', $this->fromR('sets/skills'));
         $this->seedPieces('package_set', $this->fromR('sets/packages'));
+        $this->seedPieces('workflow', $this->json("$mastersDir/workflows.json"));
         $this->seedBlueprints($mastersDir);
     }
+
+    /**
+     * What each system blueprint supports. Presentation and Course are built
+     * on Quarto, so they need it; the rest take any workflow their languages
+     * have. Stata has only Scripts only.
+     */
+    private const COMPATIBILITY = [
+        'project' => ['languages' => ['r', 'python', 'stata'], 'workflows' => ['quarto', 'jupyter', 'scripts']],
+        'project_sensitive' => ['languages' => ['r', 'python', 'stata'], 'workflows' => ['quarto', 'jupyter', 'scripts']],
+        'presentation' => ['languages' => ['r', 'python'], 'workflows' => ['quarto'], 'requires_tools' => ['quarto']],
+        'course' => ['languages' => ['r', 'python'], 'workflows' => ['quarto'], 'requires_tools' => ['quarto']],
+        'bare' => ['languages' => ['r', 'python', 'stata'], 'workflows' => ['quarto', 'jupyter', 'scripts']],
+    ];
 
     /** How the builder lists Framework's tools; any others follow */
     private const TOOL_ORDER = ['quarto', 'quarto_manuscript', 'quarto_slides', 'jupyter', 'targets', 'renv', 'uv'];
@@ -155,15 +169,17 @@ class BlueprintSeeder extends Seeder
                 $sets->push('ggplot2');
             }
 
-            // Quarto where the structure renders with it, and uv for Python
-            // projects (left out of R and Stata ones), as the R package does
-            $pieces = collect(isset($layer['quarto']) ? ['quarto'] : [])->push('uv')->concat($sets)->map($latest);
+            // uv for Python projects (left out of R and Stata ones). The
+            // workflow brings Quarto or Jupyter, so the blueprint doesn't.
+            $pieces = collect(['uv'])->concat($sets)->map($latest);
 
             $blueprint = Blueprint::updateOrCreate(['user_id' => null, 'key' => $key], $attributes + ['is_system' => true]);
             $blueprint->publish(
                 $structureVersion,
                 $pieces->pluck('id')->all(),
                 $single ? ['skills' => array_fill_keys($single, ['package' => true])] : [],
+                null,
+                self::COMPATIBILITY[$key] ?? [],
             );
         }
     }

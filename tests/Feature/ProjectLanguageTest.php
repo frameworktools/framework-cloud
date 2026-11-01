@@ -6,7 +6,6 @@ use App\Models\Blueprint;
 use App\Models\Project;
 use App\Models\User;
 use App\Support\Layer;
-use App\Support\ProjectDefaults;
 use App\Support\ProjectLayers;
 use Database\Seeders\BlueprintSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -134,16 +133,21 @@ class ProjectLanguageTest extends TestCase
         $this->assertSame(['notebooks' => null], $top['render_dirs']);
         $this->assertSame([], Layer::envelopeProblems($envelope));
 
-        // R projects keep them, and get the owner's editor files and scaffold() settings
+        // The envelope is kept: asking again returns it unchanged
         $project->update(['language' => 'r']);
-        $layer = end(ProjectLayers::for($project->fresh())['layers'])['layer'];
+        $this->assertSame($envelope, ProjectLayers::for($project->fresh()));
+
+        // R projects keep the folders, and the owner's editor files and agents sit in their own layer
+        $project->update(['resolved' => null]);
+        $layers = ProjectLayers::for($project->fresh())['layers'];
+        $layer = end($layers)['layer'];
+        $this->assertSame(['language' => 'r'], Arr::except($layer, ['tools']));
         $this->assertSame([
-            'language' => 'r',
-            'scaffold' => ['ide' => 'positron'] + ProjectDefaults::SCAFFOLD,
+            'scaffold' => ['ide' => 'positron'],
             'ai' => ['assistants' => ['claude' => false, 'codex' => false, 'copilot' => false]],
-        ], Arr::except($layer, ['tools', 'quarto']));
-        $this->assertSame(ProjectDefaults::QUARTO['html'], $layer['quarto']['html']);
-        // With the spec's tools key on, every R tool is named on or off
+        ], collect($layers)->firstWhere('kind', 'settings')['layer']);
+        // With the spec's tools key on, every R tool is named on or off, and the workflow's are on
+        $this->assertTrue($layer['tools']['quarto']);
         $this->assertArrayHasKey('renv', $layer['tools']);
         $this->assertNotContains('uv', array_keys($layer['tools']));
     }

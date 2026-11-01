@@ -20,11 +20,22 @@ class ProjectLayers
     /** Folders that only R projects use */
     private const R_FOLDERS = ['notebooks', 'scripts', 'functions', 'outputs_notebooks', 'outputs_models', 'outputs_private_models', 'outputs_public_models'];
 
+    /**
+     * A project's layers. A project keeps the envelope it was resolved from
+     * at creation, so later changes to anyone's defaults or to a blueprint
+     * leave it alone. A project made before that has its envelope built from
+     * what it recorded and the owner's defaults, once, and then keeps it.
+     */
     public static function for(Project $project): array
     {
+        if ($project->resolved) {
+            return json_decode($project->resolved, true);
+        }
+
         $project->loadMissing('user', 'blueprintVersion.blueprint.owner', 'blueprintVersion.base.facet.owner', 'blueprintVersion.facetVersions.facet.owner');
 
         $user = $project->user;
+        $language = $project->language ?? 'r';
         $version = $project->blueprintVersion;
         $composition = $project->composition;
         $fragments = match (true) {
@@ -33,8 +44,27 @@ class ProjectLayers
             default => collect(),
         };
 
-        $layers = $fragments->filter(fn (FacetVersion $fragment) => $fragment->facet->isStructure() || self::fits($fragment, $project->language ?? 'r'))
-            ->flatMap(fn (FacetVersion $fragment) => self::entries($fragment, $project->language ?? 'r'))->all();
+        $layers = $fragments->filter(fn (FacetVersion $fragment) => $fragment->facet->isStructure() || self::fits($fragment, $language))
+            ->flatMap(fn (FacetVersion $fragment) => self::entries($fragment, $language))->all();
+
+        // Recorded before workflows: the owner's workflow, else the blueprint's, else Framework's
+        $defaults = ProjectDefaults::for($user);
+        if (! $fragments->contains(fn (FacetVersion $f) => $f->facet->kind === 'workflow')) {
+            $supported = array_values(array_filter($version?->workflows ?: ProjectDefaults::WORKFLOW_KEYS, fn (string $w) => ProjectDefaults::workflowFits($w, $language)));
+            $workflow = collect([$defaults['workflows'][$language] ?? null, $version?->default_workflow[$language] ?? null, ProjectDefaults::WORKFLOWS[$language]])
+                ->first(fn ($w) => in_array($w, $supported, true)) ?? $supported[0] ?? null;
+            $piece = $workflow ? Facet::whereNull('user_id')->where('kind', 'workflow')->where('category', $workflow)->with('latestVersion.facet')->first()?->latestVersion : null;
+            if ($piece) {
+                $have = array_column($layers, 'key');
+                foreach ($piece->facet->requires ?? [] as $key) {
+                    $tool = Facet::whereNull('user_id')->where('kind', 'tool')->where('key', $key)->with('latestVersion.facet')->first()?->latestVersion;
+                    if ($tool && ! in_array($tool->facet->handle, $have, true)) {
+                        array_push($layers, ...self::entries($tool, $language));
+                    }
+                }
+                array_push($layers, ...self::entries($piece, $language));
+            }
+        }
 
         if ($composition) {
             $layers[] = ['kind' => 'blueprint', 'key' => $version?->blueprint->handle ?? 'choices', 'layer' => $composition['layer'] ?? []];
@@ -47,13 +77,15 @@ class ProjectLayers
             ];
         }
 
-        // Per-project overrides are not editable in the cloud yet. The language
-        // always goes in, so every tool can tell which one builds the project,
-        // and the owner's editor files, which are a personal choice.
-        $settings = ProjectDefaults::for($user)['settings'];
-        $layers[] = self::projectLayer($project->slug, $project->language ?? 'r', $layers, $settings['ide'], $settings['scaffold'], $settings['agents'], $settings['quarto']);
+        if ($personal = ProjectDefaults::personalLayer($defaults, $language)) {
+            $layers[] = ['kind' => 'settings', 'key' => 'your defaults', 'layer' => $personal];
+        }
+        $layers[] = self::projectLayer($project->slug, $language, $layers);
 
-        return self::envelope($user, $project->name, $layers, $version && ! $composition ? ['key' => $version->blueprint->handle, 'version' => $version->version] : null);
+        $envelope = self::envelope($user, $project->name, $layers, $version && ! $composition ? ['key' => $version->blueprint->handle, 'version' => $version->version] : null);
+        $project->forceFill(['resolved' => json_encode($envelope, JSON_UNESCAPED_SLASHES)])->saveQuietly();
+
+        return $envelope;
     }
 
     /** The structure, then the pieces, in the order the project recorded them. */
@@ -66,49 +98,14 @@ class ProjectLayers
     }
 
     /**
-     * The topmost layer: the language, the editor files (scaffold.ide: .Rproj
-     * for RStudio, .code-workspace for VS Code and Positron), the owner's
-     * scaffold() settings where no layer beneath sets them (the seed and
-     * functions/ for R and Python, the ggplot2 theme for R), the owner's
-     * agents, and for Stata the R-only folders removed. With the spec's tools key on, it also names every tool for
-     * the language as on or off, so no client has to guess.
+     * The topmost layer: the project's language, for Stata the R-only folders
+     * removed, and, with the spec's tools key on, every tool for the
+     * language named on or off, so no client has to guess. The person's
+     * defaults sit beneath it in their own layer.
      */
-    public static function projectLayer(string $key, string $language, array $layers, ?string $ide = null, array $scaffold = [], ?array $agents = null, array $quarto = []): array
+    public static function projectLayer(string $key, string $language, array $layers): array
     {
         $layer = ['language' => $language] + ($language === 'stata' ? self::withoutRFolders($layers) : []);
-        if ($ide && $language !== 'stata') {
-            $layer['scaffold']['ide'] = $ide;
-        }
-        $keys = match ($language) {
-            'r' => array_keys(ProjectDefaults::SCAFFOLD),
-            'python' => ['seed_on_scaffold', 'seed', 'source_all_functions', 'notebook_format'],
-            default => [],
-        };
-        // R Markdown is R's alone; R's spec takes jupyter once the framework package accepts it
-        $scaffold = array_filter($scaffold, fn ($value, $name) => $name !== 'notebook_format'
-            || ! ($value === 'rmarkdown' && $language !== 'r') && ! ($value === 'jupyter' && $language === 'r'), ARRAY_FILTER_USE_BOTH);
-        foreach (Arr::only($scaffold, $keys) as $name => $value) {
-            // A blueprint or piece that sets it decides
-            if (! collect($layers)->contains(fn (array $l) => array_key_exists($name, (array) ($l['layer']['scaffold'] ?? [])))) {
-                $layer['scaffold'][$name] = $value;
-            }
-        }
-
-        // _quarto.yml settings, each where no layer beneath sets it; Stata has no Quarto
-        if ($language !== 'stata') {
-            foreach ($quarto as $format => $settings) {
-                foreach ((array) $settings as $name => $value) {
-                    if (! collect($layers)->contains(fn (array $l) => array_key_exists($name, (array) ($l['layer']['quarto'][$format] ?? [])))) {
-                        $layer['quarto'][$format][$name] = $value;
-                    }
-                }
-            }
-        }
-
-        // The agents someone works with are theirs, like their editor: each one in or out
-        if ($agents !== null) {
-            $layer['ai']['assistants'] = array_combine(ProjectDefaults::AGENTS, array_map(fn (string $a) => in_array($a, $agents, true), ProjectDefaults::AGENTS));
-        }
 
         if (config('framework.spec_tools') && $language !== 'stata') {
             $on = array_column(array_filter($layers, fn (array $l) => str_starts_with((string) ($l['key'] ?? ''), 'framework/') && isset($l['layer']['tools'])), 'layer');
@@ -141,11 +138,19 @@ class ProjectLayers
     public static function entries(FacetVersion $version, string $language): array
     {
         $facet = $version->facet;
+        $layer = self::pieceLayer($facet, $version->layer);
+        // R's released schema takes jupyter as a notebook format from the
+        // framework commit that adds workflows; until then R picks the format
+        // from the tools
+        if ($facet->kind === 'workflow' && $language === 'r' && ! config('framework.spec_workflows') && ($layer['scaffold']['notebook_format'] ?? null) === 'jupyter') {
+            unset($layer['scaffold']['notebook_format']);
+            $layer = array_filter($layer);
+        }
         $entries = [[
             'kind' => $facet->layerKind(),
             'key' => $facet->handle,
             'version' => $version->version,
-            'layer' => self::pieceLayer($facet, $version->layer),
+            'layer' => $layer,
         ]];
 
         if ($extra = $version->language_layers[$language] ?? null) {
@@ -162,12 +167,24 @@ class ProjectLayers
      */
     public static function pieceLayer(Facet $facet, array $layer): array
     {
+        // Editor files and agents are the person's, never a piece's
+        $layer = Trust::withoutPersonal($layer);
+
         if (! config('framework.spec_tools')) {
             return $layer;
         }
 
         if ($facet->kind === 'tool') {
             $layer['tools'][$facet->key] = true;
+        }
+
+        // The workflow names itself, and Scripts only sets the script notebook
+        // format, once the packages' schema has both keys
+        if ($facet->kind === 'workflow' && $facet->isSystem() && config('framework.spec_workflows')) {
+            $layer['scaffold']['workflow'] = $facet->category;
+            if ($facet->category === 'scripts') {
+                $layer['scaffold']['notebook_format'] = 'script';
+            }
         }
 
         if ($facet->kind === 'structure' && $facet->isSystem()) {
@@ -216,7 +233,8 @@ class ProjectLayers
             $envelope['source'] = [
                 'origin' => 'cloud',
                 'blueprint' => $blueprint,
-                'fragments' => array_map(fn (array $l) => Arr::only($l, ['kind', 'key', 'version']), array_slice($layers, 0, -1)),
+                // What the project was built from: the structure, pieces, and blueprint, not the person's or project's own layers
+                'fragments' => array_values(array_map(fn (array $l) => Arr::only($l, ['kind', 'key', 'version']), array_filter($layers, fn (array $l) => in_array($l['kind'] ?? null, ['base', 'facet', 'blueprint'], true)))),
             ];
         }
 

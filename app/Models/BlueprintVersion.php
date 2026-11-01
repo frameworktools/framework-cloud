@@ -13,7 +13,14 @@ class BlueprintVersion extends Model
 
     protected function casts(): array
     {
-        return ['layer' => 'array'];
+        return [
+            'layer' => 'array',
+            'languages' => 'array',
+            'workflows' => 'array',
+            'default_workflow' => 'array',
+            'requires_tools' => 'array',
+            'requires' => 'array',
+        ];
     }
 
     public function blueprint(): BelongsTo
@@ -38,6 +45,24 @@ class BlueprintVersion extends Model
      *
      * @return Collection<int, FacetVersion>
      */
+    /**
+     * What the version declares it supports and needs, for resolution to
+     * validate against. A field left empty means no restriction: every
+     * language, or every workflow the language has.
+     *
+     * @return array{languages: ?list<string>, workflows: ?list<string>, default_workflow: array<string, string>, requires_tools: list<string>, requires: array<string, mixed>}
+     */
+    public function compatibility(): array
+    {
+        return [
+            'languages' => $this->languages ?: null,
+            'workflows' => $this->workflows ?: null,
+            'default_workflow' => $this->default_workflow ?? [],
+            'requires_tools' => $this->requires_tools ?? [],
+            'requires' => $this->requires ?? [],
+        ];
+    }
+
     public function fragments(): Collection
     {
         return collect([$this->base])->concat($this->facetVersions);

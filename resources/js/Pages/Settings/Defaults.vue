@@ -46,19 +46,15 @@ const languageOptions = [
     { value: 'python', label: 'Python', description: 'Use the Python programming language.' },
     { value: 'stata', label: 'Stata', description: 'Scaffolding only: folders, master.do, settings.do with path globals, starter do-files, Git, and agent files. Framework doesn\'t install or manage Stata packages.' },
 ];
-// The notebook new projects make by default. Jupyter needs its kernel, so choosing it turns the Jupyter tool on.
-const formatOptions = computed(() => [
+// How each language's new projects write notebooks: the workflow. R Markdown
+// is a variant of R's Quarto workflow, and Stata has only Scripts only.
+const workflowOptions = [
     { value: 'quarto', label: 'Quarto', description: 'Quarto notebooks (.qmd) that render to HTML, PDF, and Word.' },
-    { value: 'jupyter', label: 'Jupyter', description: 'Jupyter notebooks (.ipynb), with the kernel for the project\'s language.' },
-    { value: 'rmarkdown', label: 'R Markdown', description: form.language === 'r' || form.language === 'stata' ? 'R Markdown notebooks (.Rmd). R only.' : `R Markdown notebooks (.Rmd). Not used in ${languageNames[form.language]} projects.` },
-]);
-const notebookFormat = computed({
-    get: () => form.notebook_format,
-    set: (format) => {
-        form.notebook_format = format;
-        if (format === 'jupyter') setTool('jupyter', true);
-    },
-});
+    { value: 'jupyter', label: 'Jupyter', description: 'Jupyter notebooks (.ipynb) with the language\'s kernel. Quarto stays available to render and publish them.' },
+    { value: 'scripts', label: 'Scripts only', description: 'No notebooks: analysis lives in scripts.' },
+];
+// Your default language first
+const workflowLanguages = computed(() => ['r', 'python'].sort((a, b) => (a === form.language ? -1 : b === form.language ? 1 : 0)));
 // Editor files: RStudio's .Rproj and VS Code and Positron's .code-workspace,
 // saved as the one value R and Python read (positron means vscode)
 const editorOptions = [
@@ -76,6 +72,7 @@ const form = useForm({
     hooks: { ...props.values.hooks },
     packages: { r: [...(props.values.packages?.r ?? [])], python: [...(props.values.packages?.python ?? [])] },
     quarto: { html: { ...props.values.quarto.html }, revealjs: { ...props.values.quarto.revealjs } },
+    workflows: { ...props.values.workflows },
 });
 const defaultBlueprint = computed(() => props.blueprints.find((b) => b.key === form.project_type));
 // Quarto's names for themes and highlighting, shown the way the GUI showed them
@@ -162,7 +159,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
         <PageHeader v-else-if="section === 'scaffold'" :title="current.label" description="Configure behaviors triggered by scaffold()." />
         <PageHeader v-else-if="section === 'hooks'" :title="current.label" description="Configure Git hooks for data safety protections." />
         <PageHeader v-else-if="section === 'agents'" :title="current.label" description="Configure project setup for AI agents." />
-        <PageHeader v-else-if="section === 'notebooks'" :title="current.title" description="Select the format make_notebook() uses for new notebooks. A project can still hold notebooks in other formats." />
+        <PageHeader v-else-if="section === 'notebooks'" :title="current.title" description="Select how new projects in each language write notebooks. A project can still hold notebooks in other formats." />
         <PageHeader v-else-if="section === 'quarto'" :title="current.label" description="Configure Quarto for new projects." />
         <PageHeader v-else-if="section === 'jupyter'" :title="current.label" description="Configure Jupyter for new projects." />
         <PageHeader v-else :title="current.label" />
@@ -278,20 +275,29 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
             </section>
 
             <template v-else-if="section === 'notebooks'">
-                <p v-if="form.language === 'stata'" class="text-sm text-slate-600 dark:text-slate-400">Stata projects don't get notebooks. These apply to your R and Python projects.</p>
-                <UiRadioCards v-model="notebookFormat" name="notebook_format" legend="Default notebook format" hide-legend :options="formatOptions" stacked />
+                <section v-for="lang in workflowLanguages" :key="lang" class="flex flex-col gap-3">
+                    <h2 :class="heading">{{ languageNames[lang] }}</h2>
+                    <UiRadioCards v-model="form.workflows[lang]" :name="`workflow_${lang}`" :legend="`${languageNames[lang]} workflow`" hide-legend :options="workflowOptions" stacked />
+                    <UiSwitch
+                        v-if="lang === 'r' && form.workflows.r === 'quarto'" v-model="form.rmarkdown" class="max-w-md"
+                        label="Write R Markdown (.Rmd)" description="make_notebook() makes .Rmd files instead of Quarto notebooks."
+                    />
+                </section>
+                <section class="flex flex-col gap-1">
+                    <h2 :class="heading">Stata</h2>
+                    <p :class="note">Scripts only: do-files, with master.do running them in order.</p>
+                </section>
                 <p :class="note">Name another format when you need one, such as make_notebook("analysis.ipynb") in a Quarto project.</p>
-                <p v-if="form.errors.notebook_format" class="text-sm text-red-600">{{ form.errors.notebook_format }}</p>
             </template>
 
             <section v-else-if="section === 'jupyter'" class="flex max-w-xl flex-col gap-5" :class="form.language === 'stata' ? 'opacity-60' : ''">
                 <p v-if="form.language === 'stata'" class="text-sm text-slate-600 dark:text-slate-400">Stata projects don't use Jupyter. These apply to your R and Python projects.</p>
                 <UiSwitch
                     v-if="tool('jupyter')" :model-value="!!form.tools.jupyter" label="Jupyter"
-                    :disabled="form.notebook_format === 'jupyter'"
-                    :description="form.notebook_format === 'jupyter'
-                        ? 'Jupyter notebooks with the kernel for the project\'s language: IRkernel for R, ipykernel for Python. On while Jupyter is your default notebook format.'
-                        : 'Jupyter notebooks with the kernel for the project\'s language: IRkernel for R, ipykernel for Python. Turn it on to use Jupyter alongside your default format.'"
+                    :disabled="form.workflows[form.language] === 'jupyter'"
+                    :description="form.workflows[form.language] === 'jupyter'
+                        ? 'Jupyter notebooks with the kernel for the project\'s language: IRkernel for R, ipykernel for Python. On while Jupyter is your workflow.'
+                        : 'Jupyter notebooks with the kernel for the project\'s language: IRkernel for R, ipykernel for Python. Turn it on to use Jupyter alongside your workflow.'"
                     @update:model-value="(on) => setTool('jupyter', on)"
                 />
                 <p :class="note">

@@ -50,7 +50,9 @@ class PiecesTest extends TestCase
 
         $this->withToken($token)->getJson('/api/v2/blueprints')->assertOk()
             ->assertJsonPath('blueprints.1.structure', 'framework/project')
-            ->assertJsonPath('blueprints.1.tools', ['quarto', 'uv'])
+            ->assertJsonPath('blueprints.1.tools', ['uv'])
+            ->assertJsonPath('blueprints.1.workflows', ['quarto', 'jupyter', 'scripts'])
+            ->assertJsonPath('blueprints.3.workflows', ['quarto'])
             ->assertJsonPath('blueprints.1.skill_sets', ['framework/framework', 'framework/ggplot2']);
     }
 
@@ -62,7 +64,8 @@ class PiecesTest extends TestCase
             ->assertOk()->json();
 
         $this->assertSame([], Layer::envelopeProblems($envelope));
-        $this->assertSame(['framework/project', 'framework/quarto', 'framework/framework', 'framework/ggplot2', 'framework/project', 'survey'], array_column($envelope['layers'], 'key'));
+        // Structure, pieces, the workflow and its tool, the blueprint, your defaults, and the project
+        $this->assertSame(['framework/project', 'framework/framework', 'framework/ggplot2', 'framework/workflow-quarto', 'framework/quarto', 'framework/project', 'your defaults', 'survey'], array_column($envelope['layers'], 'key'));
         $this->assertSame(['key' => 'framework/project', 'version' => 1], $envelope['source']['blueprint']);
     }
 
@@ -108,7 +111,7 @@ class PiecesTest extends TestCase
     {
         $token = $this->token();
 
-        $this->withToken($token)->postJson('/api/v2/resolve', ['structure' => 'framework/project', 'tools' => ['quarto_slides' => true]])
+        $this->withToken($token)->postJson('/api/v2/resolve', ['structure' => 'framework/project', 'workflow' => 'scripts', 'tools' => ['quarto_slides' => true]])
             ->assertUnprocessable()->assertJsonValidationErrors(['tools' => 'Quarto slides needs the quarto tool.']);
 
         $this->withToken($token)->postJson('/api/v2/resolve', ['structure' => 'framework/project', 'language' => 'python', 'tools' => ['renv' => true]])
@@ -166,12 +169,12 @@ class PiecesTest extends TestCase
         $this->assertSame('framework/project', $keys[0]);
         $this->assertContains('framework/tidyverse-analysis', $keys);
         $this->assertContains('framework/targets', $keys);
-        $this->assertTrue($envelope['layers'][count($keys) - 2]['layer']['git']['hooks']['data_security']);
+        $this->assertTrue(collect($envelope['layers'])->firstWhere('kind', 'settings')['layer']['git']['hooks']['data_security']);
 
-        // A chosen blueprint replaces the preferred pieces, but default settings still apply
+        // Your pieces and settings come along with a chosen blueprint too
         $layers = $this->withToken($token)->postJson('/api/v2/resolve', ['blueprint' => 'framework/course'])->json('layers');
-        $this->assertNotContains('framework/tidyverse-analysis', array_column($layers, 'key'));
-        $this->assertTrue($layers[count($layers) - 2]['layer']['git']['hooks']['data_security']);
+        $this->assertContains('framework/tidyverse-analysis', array_column($layers, 'key'));
+        $this->assertTrue(collect($layers)->firstWhere('kind', 'settings')['layer']['git']['hooks']['data_security']);
 
         // Defaults equal to Framework's own leave a blueprint unchanged
         $plain = User::factory()->create();
@@ -225,7 +228,8 @@ class PiecesTest extends TestCase
         $this->assertNotContains('framework/ggplot2', $keys, 'ggplot2 is for R');
 
         $bare = array_column($this->withToken($token)->postJson('/api/v2/resolve', ['name' => 'S', 'blueprint' => 'framework/bare', 'language' => 'python'])->json('layers'), 'key');
-        $this->assertSame(['framework/bare', 'framework/uv', 'framework/bare', 's'], $bare);
+        // Python's workflow is Jupyter, which brings its kernel and Quarto for rendering
+        $this->assertSame(['framework/bare', 'framework/uv', 'framework/workflow-jupyter', 'framework/jupyter', 'framework/jupyter-python', 'framework/quarto', 'framework/bare', 'your defaults', 's'], $bare);
     }
 
     public function test_sets_for_another_language_are_left_out(): void
@@ -281,9 +285,9 @@ class PiecesTest extends TestCase
         $token = $this->token($user);
 
         $layers = collect($this->withToken($token)->postJson('/api/v2/resolve', ['name' => 'S', 'blueprint' => 'framework/project'])->assertOk()->json('layers'));
-        $this->assertSame(['data_security' => true], $layers->firstWhere('kind', 'blueprint')['layer']['git']['hooks']);
+        $this->assertSame(['data_security' => true], $layers->firstWhere('kind', 'settings')['layer']['git']['hooks']);
 
         $layers = collect($this->withToken($token)->postJson('/api/v2/resolve', ['name' => 'S', 'blueprint' => 'framework/project', 'settings' => ['git' => false]])->json('layers'));
-        $this->assertArrayNotHasKey('hooks', $layers->firstWhere('kind', 'blueprint')['layer']['git'] ?? []);
+        $this->assertArrayNotHasKey('hooks', $layers->firstWhere('kind', 'settings')['layer']['git'] ?? []);
     }
 }
