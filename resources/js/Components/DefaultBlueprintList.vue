@@ -146,7 +146,7 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
                             <p v-else-if="!previews[b.key].available" class="text-sm text-slate-600 dark:text-slate-400">{{ previews[b.key].problem }}</p>
                             <div v-else class="overflow-x-auto" :class="loading[b.key] ? 'opacity-60' : ''">
                                 <!-- Line height just over the font size keeps the connectors joined -->
-                                <div class="whitespace-pre font-mono text-xs leading-[1.2] text-slate-800 dark:text-slate-200"><div>project/</div><div v-for="(line, i) in treeLines(previews[b.key].tree)" :key="i"><span class="text-slate-400 dark:text-slate-600">{{ line.prefix }}</span><span :class="[line.dir ? 'font-medium' : '', line.later ? 'text-slate-400 dark:text-slate-500' : '', line.title ? 'cursor-help' : '']" :title="line.title">{{ line.name }}</span></div></div>
+                                <div class="whitespace-pre font-mono text-xs leading-[1.2] text-slate-800 dark:text-slate-200"><div>/</div><div v-for="(line, i) in treeLines(previews[b.key].tree)" :key="i"><span class="text-slate-400 dark:text-slate-600">{{ line.prefix }}</span><span :class="[line.dir ? 'font-medium' : '', line.later ? 'text-slate-400 dark:text-slate-500' : '', line.title ? 'cursor-help' : '']" :title="line.title">{{ line.name }}</span></div></div>
                                 <p v-if="previews[b.key].tree.some((e) => e.later)" class="mt-2 text-xs text-slate-500">Lighter folders are made when they're first used or rendered.</p>
                             </div>
                         </div>
