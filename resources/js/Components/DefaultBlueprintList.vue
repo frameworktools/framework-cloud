@@ -127,21 +127,21 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
 
                 <div v-if="open.has(b.key)" :id="`blueprint-${b.key}`" class="px-4 pb-4 sm:pl-11">
                     <div class="grid gap-x-8 gap-y-5 border-t border-slate-200 pt-4 xl:grid-cols-[minmax(0,1fr)_16rem] dark:border-slate-800">
+                        <!-- The language the whole preview is for: folders, packages, skills, and tools all follow it -->
+                        <div class="flex w-fit rounded-md border border-slate-300 bg-white p-0.5 text-xs xl:col-span-2 dark:border-slate-700 dark:bg-slate-950" role="group" :aria-label="`Preview language for ${b.name}`">
+                            <button
+                                v-for="lang in ['r', 'python', 'stata']" :key="lang" type="button"
+                                :disabled="!b.languages.includes(lang)" :aria-pressed="language[b.key] === lang"
+                                :title="b.languages.includes(lang) ? `Preview as a ${languageNames[lang]} project` : `Not available for ${languageNames[lang]}`"
+                                class="rounded px-2 py-0.5 transition disabled:cursor-not-allowed disabled:opacity-40"
+                                :class="language[b.key] === lang ? 'bg-slate-200 font-medium text-slate-900 dark:bg-slate-700 dark:text-white' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'"
+                                @click="language[b.key] = lang"
+                            >{{ languageNames[lang] }}</button>
+                        </div>
+
                         <!-- The project's folders and files -->
                         <div class="min-w-0">
-                            <div class="mb-3 flex flex-col items-start gap-2">
-                                <div :class="label">Project structure</div>
-                                <div class="flex rounded-md border border-slate-300 bg-white p-0.5 text-xs dark:border-slate-700 dark:bg-slate-950" role="group" :aria-label="`Preview language for ${b.name}`">
-                                    <button
-                                        v-for="lang in ['r', 'python', 'stata']" :key="lang" type="button"
-                                        :disabled="!b.languages.includes(lang)" :aria-pressed="language[b.key] === lang"
-                                        :title="b.languages.includes(lang) ? `Preview as a ${languageNames[lang]} project` : `Not available for ${languageNames[lang]}`"
-                                        class="rounded px-2 py-0.5 transition disabled:cursor-not-allowed disabled:opacity-40"
-                                        :class="language[b.key] === lang ? 'bg-slate-200 font-medium text-slate-900 dark:bg-slate-700 dark:text-white' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'"
-                                        @click="language[b.key] = lang"
-                                    >{{ languageNames[lang] }}</button>
-                                </div>
-                            </div>
+                            <div :class="label" class="mb-3">Project structure</div>
                             <div v-if="!previews[b.key]" class="text-sm text-slate-500">Loading…</div>
                             <p v-else-if="!previews[b.key].available" class="text-sm text-slate-600 dark:text-slate-400">{{ previews[b.key].problem }}</p>
                             <div v-else class="overflow-x-auto" :class="loading[b.key] ? 'opacity-60' : ''">
