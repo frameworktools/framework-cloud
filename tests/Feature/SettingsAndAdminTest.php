@@ -57,7 +57,6 @@ class SettingsAndAdminTest extends TestCase
                 ],
                 'skill_sets' => ['framework/ggplot2'],
                 'tools' => ['targets' => true, 'renv' => true],
-                'sensitive' => true,
                 'hooks' => ['data_security' => true, 'not_a_hook' => true],
             ])
             ->assertRedirect();
@@ -76,7 +75,6 @@ class SettingsAndAdminTest extends TestCase
             ],
             'skill_sets' => ['framework/ggplot2'],
             'tools' => ['targets' => true],
-            'sensitive' => true,
             'hooks' => ['data_security' => true],
         ], $user->fresh()->project_defaults);
         $this->assertArrayNotHasKey('package_sets', $user->globalSettings()->document['defaults']);
@@ -202,7 +200,6 @@ class SettingsAndAdminTest extends TestCase
         $this->assertFalse($paths->contains('.git'));
         $this->assertSame('defaults', $preview->json('package_sets.0.from'));
         $this->assertTrue($preview->json('settings.sensitive.on'));
-        $this->assertSame('blueprint', $preview->json('settings.sensitive.from'));
 
         // Stata has no presentation structure; previewing changes nothing saved
         $this->actingAs($user)->postJson('/settings/blueprint/preview', ['blueprint' => 'presentation', 'language' => 'stata'])

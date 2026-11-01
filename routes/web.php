@@ -169,6 +169,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::redirect('settings/defaults', '/settings/language');
     // Blueprint & editor were one page
     Route::redirect('settings/basics', '/settings/blueprint');
+    // Blueprints decide whether a project is sensitive
+    Route::redirect('settings/data', '/settings/hooks');
     foreach (['profile', 'account', 'github', 'passkeys'] as $moved) {
         Route::redirect("settings/{$moved}", $moved === 'passkeys' ? '/account/security' : "/account/{$moved}");
     }

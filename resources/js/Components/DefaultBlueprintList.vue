@@ -37,7 +37,7 @@ const language = reactive(Object.fromEntries(props.blueprints.map((b) => [b.key,
 // What the server resolves the previews from: every default that changes a new project
 const values = computed(() => {
     const d = props.defaults;
-    return { ide: d.ide, packages: d.packages, skill_sets: d.skill_sets, tools: d.tools, use_renv: d.use_renv, sensitive: d.sensitive, use_git: d.use_git, ai_enabled: d.ai_enabled, ai_agents: d.ai_agents, hooks: d.hooks };
+    return { ide: d.ide, packages: d.packages, skill_sets: d.skill_sets, tools: d.tools, use_renv: d.use_renv, use_git: d.use_git, ai_enabled: d.ai_enabled, ai_agents: d.ai_agents, hooks: d.hooks };
 });
 const previews = reactive({});
 const loading = reactive({});
@@ -221,7 +221,7 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
 
                             <section>
                                 <div :class="label">Sensitive data</div>
-                                <div class="mt-1">{{ previews[b.key].settings.sensitive.on ? 'On' : 'Off' }} <span class="text-xs text-slate-500" :title="previews[b.key].settings.sensitive.from === 'defaults' ? 'From your Project defaults' : 'Set by the blueprint'">· {{ previews[b.key].settings.sensitive.from === 'defaults' ? 'your default' : 'blueprint' }}</span></div>
+                                <div class="mt-1">{{ previews[b.key].settings.sensitive.on ? 'On' : 'Off' }}</div>
                             </section>
                         </div>
 

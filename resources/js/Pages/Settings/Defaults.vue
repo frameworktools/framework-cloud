@@ -29,7 +29,6 @@ const sections = [
     { key: 'git', label: 'Git' },
     { key: 'agents', label: 'Agents' },
     { heading: 'Data safety' },
-    { key: 'data', label: 'Sensitive data' },
     { key: 'hooks', label: 'Git hooks' },
     { heading: 'Documents' },
     { key: 'notebooks', label: 'Notebooks' },
@@ -225,17 +224,6 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                 </fieldset>
             </template>
 
-            <section v-else-if="section === 'data'" class="flex max-w-xl flex-col gap-5">
-                <UiSwitch
-                    v-model="form.sensitive" label="Treat new projects as sensitive"
-                    description="Splits data and outputs into private and public folders and keeps the private ones out of git, even under a blueprint that isn't sensitive. Sensitive projects on GitHub must be private repositories."
-                />
-                <p :class="note">
-                    Every project, sensitive or not, warns before it uploads or publishes a file whose path contains "private".
-                    <Link href="/settings/hooks" preserve-state :class="link">Git hooks</Link> can also check commits.
-                </p>
-            </section>
-
             <section v-else-if="section === 'hooks'" class="flex max-w-xl flex-col gap-5">
                 <p :class="note">For R and Python projects with Git.<template v-if="form.language === 'stata'"> Stata projects don't get hooks.</template></p>
                 <UiSwitch
@@ -243,7 +231,10 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                     :model-value="!!form.hooks[hook.key]" :label="hook.label" :description="hook.description"
                     @update:model-value="(on) => (form.hooks = { ...form.hooks, [hook.key]: on })"
                 />
-                <p :class="note">Which folders count as private comes from <Link href="/settings/data" preserve-state :class="link">Sensitive data</Link>.</p>
+                <p :class="note">
+                    Which folders count as private comes from the project's blueprint. Every project, sensitive or not,
+                    also warns before it uploads or publishes a file whose path contains "private".
+                </p>
             </section>
 
             <template v-else-if="section === 'notebooks'">

@@ -55,9 +55,7 @@ class DefaultsPreview
 
         // Settings the blueprint (or its structure) sets itself; the rest come from the defaults
         $blueprintLayer = $version->layer ?? [];
-        $structureLayer = $version->base->layer ?? [];
         $sensitive = ProjectLayers::isSensitive($layers);
-        $setsSensitive = isset($blueprintLayer['security']['sensitive']) || isset($structureLayer['security']['sensitive']);
 
         return [
             'available' => true,
@@ -90,7 +88,8 @@ class DefaultsPreview
                 ->map(fn (FacetVersion $v) => $v->facet->name)->values()->all(),
             'settings' => [
                 'git' => ['on' => (bool) ($spec['git']['use_git'] ?? true), 'from' => isset($blueprintLayer['git']['use_git']) ? 'blueprint' : 'defaults'],
-                'sensitive' => ['on' => $sensitive, 'from' => $setsSensitive ? 'blueprint' : 'defaults'],
+                // The blueprint and its structure decide
+                'sensitive' => ['on' => $sensitive],
                 'agents' => ['on' => $aiOn, 'from' => isset($blueprintLayer['ai']) ? 'blueprint' : 'defaults'],
                 'hooks' => [
                     'on' => array_keys(array_filter((array) ($spec['git']['hooks'] ?? []))),

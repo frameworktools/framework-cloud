@@ -20,7 +20,7 @@ use Inertia\Response;
 class DefaultsController extends Controller
 {
     /** The settings pages, in sidebar order. They share one form. */
-    public const SECTIONS = ['language', 'blueprint', 'editor', 'packages', 'scaffold', 'git', 'agents', 'data', 'hooks', 'notebooks', 'quarto'];
+    public const SECTIONS = ['language', 'blueprint', 'editor', 'packages', 'scaffold', 'git', 'agents', 'hooks', 'notebooks', 'quarto'];
 
     public function edit(Request $request, string $section): Response
     {
@@ -59,7 +59,6 @@ class DefaultsController extends Controller
                 'packages' => self::packageLists($request->user()),
                 'skill_sets' => $request->user()->project_defaults['skill_sets'] ?? [],
                 'tools' => (object) ($request->user()->project_defaults['tools'] ?? []),
-                'sensitive' => (bool) ($request->user()->project_defaults['sensitive'] ?? false),
                 'hooks' => (object) ($request->user()->project_defaults['hooks'] ?? []),
             ],
         ]);
@@ -173,7 +172,6 @@ class DefaultsController extends Controller
             'skill_sets.*' => ['string', 'max:200'],
             'tools' => ['array'],
             'tools.*' => ['boolean'],
-            'sensitive' => ['boolean'],
             'hooks' => ['array'],
             'hooks.*' => ['boolean'],
         ]);
@@ -207,7 +205,6 @@ class DefaultsController extends Controller
             'packages' => ProjectDefaults::packages($validated['packages'] ?? []),
             'skill_sets' => array_values($validated['skill_sets'] ?? []),
             'tools' => array_map('boolval', Arr::except($validated['tools'] ?? [], ['renv'])),
-            'sensitive' => (bool) ($validated['sensitive'] ?? false),
             'hooks' => array_map('boolval', Arr::only($validated['hooks'] ?? [], ProjectDefaults::HOOKS)),
         ]])->save();
 

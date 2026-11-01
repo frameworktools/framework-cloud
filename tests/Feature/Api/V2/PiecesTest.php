@@ -152,26 +152,26 @@ class PiecesTest extends TestCase
         $user = User::factory()->create(['project_defaults' => [
             'package_sets' => ['framework/tidyverse-analysis'],
             'tools' => ['targets' => true],
-            'sensitive' => true,
+            'hooks' => ['data_security' => true],
         ]]);
         $token = $this->token($user);
 
         $this->withToken($token)->getJson('/api/v2/defaults')->assertOk()
             ->assertJsonPath('blueprint', 'framework/project')
             ->assertJsonPath('package_sets', ['framework/tidyverse-analysis'])
-            ->assertJsonPath('settings.sensitive', true);
+            ->assertJsonPath('settings.hooks', ['data_security']);
 
         $envelope = $this->withToken($token)->postJson('/api/v2/resolve', ['name' => 'Survey'])->assertOk()->json();
         $keys = array_column($envelope['layers'], 'key');
         $this->assertSame('framework/project', $keys[0]);
         $this->assertContains('framework/tidyverse-analysis', $keys);
         $this->assertContains('framework/targets', $keys);
-        $this->assertTrue($envelope['layers'][count($keys) - 2]['layer']['security']['sensitive']);
+        $this->assertTrue($envelope['layers'][count($keys) - 2]['layer']['git']['hooks']['data_security']);
 
         // A chosen blueprint replaces the preferred pieces, but default settings still apply
-        $keys = array_column($this->withToken($token)->postJson('/api/v2/resolve', ['blueprint' => 'framework/course'])->json('layers'), 'key');
-        $this->assertNotContains('framework/tidyverse-analysis', $keys);
-        $this->assertContains('framework/sensitive_data', $keys);
+        $layers = $this->withToken($token)->postJson('/api/v2/resolve', ['blueprint' => 'framework/course'])->json('layers');
+        $this->assertNotContains('framework/tidyverse-analysis', array_column($layers, 'key'));
+        $this->assertTrue($layers[count($layers) - 2]['layer']['git']['hooks']['data_security']);
 
         // Defaults equal to Framework's own leave a blueprint unchanged
         $plain = User::factory()->create();

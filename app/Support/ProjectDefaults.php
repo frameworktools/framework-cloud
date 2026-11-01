@@ -59,7 +59,7 @@ class ProjectDefaults
     public const HOOKS = ['data_security', 'check_sensitive_dirs'];
 
     /**
-     * @return array{blueprint: string, package_sets: list<string>, skill_sets: list<string>, packages: array<string, list<array<string, mixed>>>, tools: array<string, bool>, settings: array{sensitive: bool, git: bool, ai: bool, hooks: list<string>, ide: string, scaffold: array<string, bool|string>, agents: list<string>}}
+     * @return array{blueprint: string, package_sets: list<string>, skill_sets: list<string>, packages: array<string, list<array<string, mixed>>>, tools: array<string, bool>, settings: array{git: bool, ai: bool, hooks: list<string>, ide: string, scaffold: array<string, bool|string>, agents: list<string>}}
      */
     public static function for(User $user): array
     {
@@ -73,7 +73,6 @@ class ProjectDefaults
             'packages' => self::packages($own['packages'] ?? self::DEFAULT_PACKAGES),
             'tools' => ['renv' => (bool) Arr::get($doc, 'defaults.use_renv', false)] + ($own['tools'] ?? []),
             'settings' => [
-                'sensitive' => (bool) ($own['sensitive'] ?? false),
                 'git' => (bool) Arr::get($doc, 'defaults.use_git', true),
                 'ai' => (bool) Arr::get($doc, 'ai.enabled', true),
                 'hooks' => array_keys(array_filter(Arr::only($own['hooks'] ?? [], self::HOOKS))),
@@ -183,7 +182,7 @@ class ProjectDefaults
      * not, for previewing what a new project would get.
      *
      * @param  array<string, mixed>  $values  as DefaultsController hands them to the form
-     * @return array{blueprint: string, package_sets: list<string>, skill_sets: list<string>, packages: array<string, list<array<string, mixed>>>, tools: array<string, bool>, settings: array{sensitive: bool, git: bool, ai: bool, hooks: list<string>, ide: string, scaffold: array<string, bool|string>, agents: list<string>}}
+     * @return array{blueprint: string, package_sets: list<string>, skill_sets: list<string>, packages: array<string, list<array<string, mixed>>>, tools: array<string, bool>, settings: array{git: bool, ai: bool, hooks: list<string>, ide: string, scaffold: array<string, bool|string>, agents: list<string>}}
      */
     public static function fromValues(array $values): array
     {
@@ -194,7 +193,6 @@ class ProjectDefaults
             'packages' => self::packages((array) ($values['packages'] ?? [])),
             'tools' => ['renv' => (bool) ($values['use_renv'] ?? false)] + array_map('boolval', Arr::except((array) ($values['tools'] ?? []), ['renv'])),
             'settings' => [
-                'sensitive' => (bool) ($values['sensitive'] ?? false),
                 'git' => (bool) ($values['use_git'] ?? true),
                 'ai' => (bool) ($values['ai_enabled'] ?? true),
                 'hooks' => array_keys(array_filter(Arr::only((array) ($values['hooks'] ?? []), self::HOOKS))),
