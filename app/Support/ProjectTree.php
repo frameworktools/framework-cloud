@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use Illuminate\Support\Str;
+
 /**
  * The folders and files a new project starts with, from its merged spec and
  * the rules each language's new() follows when it writes the project:
@@ -35,6 +37,8 @@ class ProjectTree
         };
 
         $type = $spec['type'] ?? 'bare';
+        // Files named after the project, as the packages name them
+        $slug = Str::slug((string) ($spec['name'] ?? 'project')) ?: 'project';
         $core = ($spec['core_files'] ?? $type !== 'bare') !== false;
         $directories = array_filter((array) ($spec['directories'] ?? []), 'is_string');
         $renderDirs = array_filter((array) ($spec['render_dirs'] ?? []), 'is_string');
@@ -54,14 +58,11 @@ class ProjectTree
             }
             $add('settings.do', 'file');
             $add('.gitignore', 'file');
+            // Starter do-files come from the blueprint, like any starter scripts
             if ($core) {
                 $add('master.do', 'file');
-                $do = $directories['do'] ?? 'do';
-                foreach (['01_import.do', '02_clean.do', '03_analysis.do'] as $file) {
-                    $add("{$do}/{$file}", 'file');
-                }
             }
-            if ($agents) {
+            if ($agents && $core) {
                 // Of Framework's skills, fw ships only these for Stata
                 self::agentFiles($add, $spec, array_values(array_intersect($skills, ['framework-stata', 'framework-sensitive-data'])), $sensitive);
             }
@@ -98,7 +99,7 @@ class ProjectTree
 
             if ($language === 'r') {
                 if ($rstudio) {
-                    $add('project.Rproj', 'file', null, 'named after the project');
+                    $add("{$slug}.Rproj", 'file', null, 'named after the project');
                 }
             } else {
                 $add('pyproject.toml', 'file');
@@ -111,13 +112,14 @@ class ProjectTree
                     $add('framework.db', 'file');
                 }
                 if ($vscode) {
-                    $add('project.code-workspace', 'file', null, 'named after the project');
+                    $add("{$slug}.code-workspace", 'file', null, 'named after the project');
                 }
             }
 
             // Quarto follows R's own default for the type until the cloud names tools to clients
             $quarto = config('framework.spec_tools') ? in_array('quarto', $tools, true) : $type !== 'bare';
-            if ($quarto) {
+            // Without core files (Bare) there's no _quarto.yml
+            if ($quarto && $core) {
                 $add('_quarto.yml', 'file');
                 foreach (array_keys($renderDirs) as $key) {
                     $source = $directories[$key] ?? $key;
