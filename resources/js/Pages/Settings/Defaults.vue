@@ -103,7 +103,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                 <a href="/docs/projects-and-blueprints#how-defaults-apply" class="ml-3 text-sm text-slate-500 hover:text-slate-900 hover:underline dark:hover:text-white">Documentation</a>
             </template>
         </PageHeader>
-        <PageHeader v-else-if="section === 'editor'" :title="current.label" description="Pick which editors you typically use." />
+        <PageHeader v-else-if="section === 'editor'" :title="current.label" description="Select the editors/IDEs you typically use." />
         <PageHeader v-else-if="section === 'language'" :title="current.label" description="Choose your default statistical programming environment for new projects." />
         <PageHeader v-else :title="current.label" />
 
