@@ -198,10 +198,9 @@ const heading = 'text-sm font-semibold text-slate-900 dark:text-white';
             </div>
 
             <div class="flex items-center justify-between border-t border-slate-200 pt-6 dark:border-slate-800">
-                <UiButton v-if="index > 0" variant="outline" @click="back">Back</UiButton>
-                <span v-else />
+                <UiButton variant="ghost" @click="skip">{{ again ? 'Cancel' : 'Skip setup' }}</UiButton>
                 <div class="flex items-center gap-3">
-                    <UiButton variant="outline" @click="skip">{{ again ? 'Cancel' : 'Skip setup' }}</UiButton>
+                    <UiButton v-if="index > 0" variant="outline" @click="back">Back</UiButton>
                     <UiButton v-if="step.key !== 'summary'" @click="next">Continue</UiButton>
                     <UiButton v-else :disabled="form.processing" @click="save">{{ form.processing ? 'Saving…' : 'Save my defaults' }}</UiButton>
                 </div>
