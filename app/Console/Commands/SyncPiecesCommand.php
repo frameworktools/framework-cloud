@@ -7,8 +7,9 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
 
 /**
- * Copies Framework's tool definitions (inst/features) and its skill and
- * package sets (inst/sets) from the framework R package at a commit, into
+ * Copies Framework's tool definitions (inst/features), workflows
+ * (inst/workflows), skill and package sets (inst/sets), and the create/
+ * conformance fixtures from the framework R package at a commit, into
  * database/seeders/masters/r, and records each file's SHA-256 in lock.json.
  * The R package is canonical, so R, Python, fw, and the cloud offer the same
  * pieces. PiecesLockTest fails when a copy drifts from its lock entry.
@@ -18,7 +19,16 @@ use Illuminate\Support\Facades\Process;
 class SyncPiecesCommand extends Command
 {
     /** Source folders in the R repository, copied under the same names */
-    public const FOLDERS = ['inst/features' => 'features', 'inst/sets/skills' => 'sets/skills', 'inst/sets/packages' => 'sets/packages'];
+    public const FOLDERS = [
+        'inst/features' => 'features',
+        'inst/workflows' => 'workflows',
+        'inst/sets/skills' => 'sets/skills',
+        'inst/sets/packages' => 'sets/packages',
+        // What R, Python, and fw create for each resolved spec, which the preview must match
+        'inst/conformance/create/r' => 'conformance/create/r',
+        'inst/conformance/create/python' => 'conformance/create/python',
+        'inst/conformance/create/stata' => 'conformance/create/stata',
+    ];
 
     protected $signature = 'fw:sync-pieces {repo : Path to a framework R package checkout} {ref : The full commit SHA to copy from}';
 

@@ -179,12 +179,14 @@ class ProjectLayers
         }
 
         // The workflow names itself, and Scripts only sets the script notebook
-        // format, once the packages' schema has both keys
-        if ($facet->kind === 'workflow' && $facet->isSystem() && config('framework.spec_workflows')) {
-            $layer['scaffold']['workflow'] = $facet->category;
-            if ($facet->category === 'scripts') {
-                $layer['scaffold']['notebook_format'] = 'script';
+        // format; a server that still serves clients older than the schema
+        // with both keys leaves them out
+        if ($facet->kind === 'workflow' && ! config('framework.spec_workflows')) {
+            unset($layer['scaffold']['workflow']);
+            if (($layer['scaffold']['notebook_format'] ?? null) === 'script') {
+                unset($layer['scaffold']['notebook_format']);
             }
+            $layer = array_filter($layer);
         }
 
         if ($facet->kind === 'structure' && $facet->isSystem()) {

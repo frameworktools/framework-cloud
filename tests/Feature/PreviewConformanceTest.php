@@ -7,7 +7,8 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
- * The preview tree against the packages' create/ fixtures: for each resolved
+ * The preview tree against the packages' create/ fixtures, copied from the
+ * framework R package with fw:sync-pieces: for each resolved
  * spec, the files and folders R, Python, or fw actually write. The preview
  * collapses agent folders to one entry with their contents in a tooltip, and
  * leaves out .git and Framework's internal .framework folder.
@@ -17,7 +18,7 @@ class PreviewConformanceTest extends TestCase
     public static function cases(): array
     {
         $cases = [];
-        foreach (glob(__DIR__.'/../fixtures/conformance/create/*/*.json') as $file) {
+        foreach (glob(__DIR__.'/../../database/seeders/masters/r/conformance/create/*/*.json') as $file) {
             $cases[basename(dirname($file)).'/'.basename($file, '.json')] = [$file];
         }
 

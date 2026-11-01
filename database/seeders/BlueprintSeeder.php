@@ -28,7 +28,9 @@ class BlueprintSeeder extends Seeder
         $this->seedPieces('setting', $this->json("$mastersDir/settings.json"));
         $this->seedPieces('skill_set', $this->fromR('sets/skills'));
         $this->seedPieces('package_set', $this->fromR('sets/packages'));
-        $this->seedPieces('workflow', $this->json("$mastersDir/workflows.json"));
+        // Workflows key as workflow-<id>; the id stays in category, as the spec names it
+        $this->seedPieces('workflow', collect($this->fromR('workflows', ['quarto', 'jupyter', 'scripts']))
+            ->mapWithKeys(fn (array $w, string $id) => ["workflow-{$id}" => $w + ['category' => $id]])->all());
         $this->seedBlueprints($mastersDir);
     }
 

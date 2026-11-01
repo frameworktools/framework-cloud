@@ -12,9 +12,10 @@ return [
     */
     'spec_tools' => (bool) env('FW_SPEC_TOOLS', true),
 
-    // scaffold.workflow and the script notebook format, which the packages'
-    // schema takes from the framework commit that adds workflows
-    'spec_workflows' => (bool) env('FW_SPEC_WORKFLOWS', false),
+    // scaffold.workflow and the script notebook format (framework f526b1d).
+    // FW_SPEC_WORKFLOWS=false keeps them out for a server whose clients
+    // predate that schema.
+    'spec_workflows' => (bool) env('FW_SPEC_WORKFLOWS', true),
 
     /*
     |--------------------------------------------------------------------------

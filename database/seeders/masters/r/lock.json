@@ -1,6 +1,150 @@
 {
-    "commit": "abf9173c5959f17f833b5506d26f670ae2fe0fc1",
+    "commit": "f526b1dd8cd753ee9919190c34cb84b3772c006d",
     "files": {
+        "conformance/create/python/bare-jupyter.json": {
+            "source": "inst/conformance/create/python/bare-jupyter.json",
+            "sha256": "871d54581afecc1faa0e405b193ae91435c280707fc0c36f6afca6ac30a7e5c4"
+        },
+        "conformance/create/python/bare-quarto.json": {
+            "source": "inst/conformance/create/python/bare-quarto.json",
+            "sha256": "a16a8272552a45add7dcba06f37d1c2bbed3a3b840630581d5e1b27c9c965439"
+        },
+        "conformance/create/python/bare-scripts.json": {
+            "source": "inst/conformance/create/python/bare-scripts.json",
+            "sha256": "0056a338346320670c61005f9d8a526f539e8486b1594f3aab195c5d6c6d8f73"
+        },
+        "conformance/create/python/course-quarto.json": {
+            "source": "inst/conformance/create/python/course-quarto.json",
+            "sha256": "a819be95a8c255a0f6ded9117deb619c3b62c03e9ff81d12c8eee55f20989f04"
+        },
+        "conformance/create/python/presentation-quarto.json": {
+            "source": "inst/conformance/create/python/presentation-quarto.json",
+            "sha256": "f3b0f14bb604f47223e1905eb3caa793656fc1bc04a7d07b1d9cd146fd86577a"
+        },
+        "conformance/create/python/project-jupyter-both.json": {
+            "source": "inst/conformance/create/python/project-jupyter-both.json",
+            "sha256": "c527b445be8b603d292676afd49788a5e52483069bc022959bb6dba5eb62c54e"
+        },
+        "conformance/create/python/project-jupyter-no-agents.json": {
+            "source": "inst/conformance/create/python/project-jupyter-no-agents.json",
+            "sha256": "8a9dea00a45084fae5dffbba0abaabcb4b32887a6ad667f9e629bdcaffbc6214"
+        },
+        "conformance/create/python/project-jupyter-none.json": {
+            "source": "inst/conformance/create/python/project-jupyter-none.json",
+            "sha256": "cc87c1ca615c930648fa3a82062b45478d4336441a6505123d7a85c338dc2f81"
+        },
+        "conformance/create/python/project-jupyter-rstudio.json": {
+            "source": "inst/conformance/create/python/project-jupyter-rstudio.json",
+            "sha256": "d4f77900c3cd495cc12886cf36cd339169bb5cb74e9f582c0389e671fbc7bb46"
+        },
+        "conformance/create/python/project-jupyter.json": {
+            "source": "inst/conformance/create/python/project-jupyter.json",
+            "sha256": "e9212863435d0ada28d6c76c484b7337bf43e98fe051493f997842547041a4d2"
+        },
+        "conformance/create/python/project-quarto.json": {
+            "source": "inst/conformance/create/python/project-quarto.json",
+            "sha256": "4eeebdc3204cccc7e5d025b3f6ea65a89d6a709737c24bfa811cccdb1dec7b1c"
+        },
+        "conformance/create/python/project-scripts.json": {
+            "source": "inst/conformance/create/python/project-scripts.json",
+            "sha256": "b00e29ef1530be217bfe2511aa0a168915011b4cf452a55409ec846365e50fdd"
+        },
+        "conformance/create/python/project_sensitive-jupyter.json": {
+            "source": "inst/conformance/create/python/project_sensitive-jupyter.json",
+            "sha256": "79ca00caceed026c74e64af65f5a9c8dc87555f30c5141d6ada5bca9cd7e1bc8"
+        },
+        "conformance/create/python/project_sensitive-quarto.json": {
+            "source": "inst/conformance/create/python/project_sensitive-quarto.json",
+            "sha256": "acbc594faedb12b9455e47528b7b824366a71d8ba7fb19c8113bc8d0de4220a8"
+        },
+        "conformance/create/python/project_sensitive-scripts.json": {
+            "source": "inst/conformance/create/python/project_sensitive-scripts.json",
+            "sha256": "a39b93d974595022e6edd518d0eec64aa0b3f365fc039ebaa5d9e19c547c6c11"
+        },
+        "conformance/create/r/bare-jupyter.json": {
+            "source": "inst/conformance/create/r/bare-jupyter.json",
+            "sha256": "ee796b37e20b35f6585d261621a6d3a1e100436b124ea7b71b6c37f249203084"
+        },
+        "conformance/create/r/bare-quarto.json": {
+            "source": "inst/conformance/create/r/bare-quarto.json",
+            "sha256": "771516cb0f69fce592cb810a56cc2753a1cdcaa787fbb547cc17295af6d6ad56"
+        },
+        "conformance/create/r/bare-scripts.json": {
+            "source": "inst/conformance/create/r/bare-scripts.json",
+            "sha256": "580a749d4d013d2c1681fa32bc4f31c9392bd47ab44c8926d83926178b4fff41"
+        },
+        "conformance/create/r/course-quarto.json": {
+            "source": "inst/conformance/create/r/course-quarto.json",
+            "sha256": "510cb61bbe151754713a8a6bfa76805258ee2f86839e025d882511a0abdf7845"
+        },
+        "conformance/create/r/presentation-quarto.json": {
+            "source": "inst/conformance/create/r/presentation-quarto.json",
+            "sha256": "c9fd64c2c9e4d7b247a70f9193c09529540996d656cf6b27977cc836c894384e"
+        },
+        "conformance/create/r/project-jupyter.json": {
+            "source": "inst/conformance/create/r/project-jupyter.json",
+            "sha256": "f3dc4a6e36b42c8b7832b41aba2b5144b5253573a40cc4b048fe08d1f192250a"
+        },
+        "conformance/create/r/project-quarto-both.json": {
+            "source": "inst/conformance/create/r/project-quarto-both.json",
+            "sha256": "420ee1da70c72ec844dd20cb9601ec80f91b30e28f5c6ac0d93b304859b342cb"
+        },
+        "conformance/create/r/project-quarto-no-agents.json": {
+            "source": "inst/conformance/create/r/project-quarto-no-agents.json",
+            "sha256": "1e4d6b92f21c0734bc757dda407c45a00c70b817e8a1b3bae4b063c7be53c7dd"
+        },
+        "conformance/create/r/project-quarto-none.json": {
+            "source": "inst/conformance/create/r/project-quarto-none.json",
+            "sha256": "cbddd0d5b5092ba5ad18f7f95be420a3509f9383745b4a901d073e8c632a355e"
+        },
+        "conformance/create/r/project-quarto-rmarkdown.json": {
+            "source": "inst/conformance/create/r/project-quarto-rmarkdown.json",
+            "sha256": "e616258dcf79f857cf84caa6fae9e65de60e5f442af4d942b9f8096b2f79f75e"
+        },
+        "conformance/create/r/project-quarto-rstudio.json": {
+            "source": "inst/conformance/create/r/project-quarto-rstudio.json",
+            "sha256": "5b867962be697c95a162218bc59d04abc29585b155aaef4b30512e0b9e85b105"
+        },
+        "conformance/create/r/project-quarto.json": {
+            "source": "inst/conformance/create/r/project-quarto.json",
+            "sha256": "676b33ea707eeadaec9f3b6de62599f06c52b87bf9856d64299735ce66df1d4a"
+        },
+        "conformance/create/r/project-scripts.json": {
+            "source": "inst/conformance/create/r/project-scripts.json",
+            "sha256": "23d0a7b3ed2c8c2a42ab754cc8176f8a5ef7150563d6e8b59c44093362c3fe9b"
+        },
+        "conformance/create/r/project_sensitive-jupyter.json": {
+            "source": "inst/conformance/create/r/project_sensitive-jupyter.json",
+            "sha256": "ffd8d33dacf665580525fec823ad163bc0ffdee065d6f7ba4a979c1634b916c1"
+        },
+        "conformance/create/r/project_sensitive-quarto.json": {
+            "source": "inst/conformance/create/r/project_sensitive-quarto.json",
+            "sha256": "30f267493bed533d64e5022dd39ecd0422d71977ae59ff42a42eb63e346ae441"
+        },
+        "conformance/create/r/project_sensitive-scripts.json": {
+            "source": "inst/conformance/create/r/project_sensitive-scripts.json",
+            "sha256": "2b29eeca5eea84d4081e24b9fc5068b11c9e9f53649e7a6809c5afafdce78b6e"
+        },
+        "conformance/create/stata/bare-scripts.json": {
+            "source": "inst/conformance/create/stata/bare-scripts.json",
+            "sha256": "8a624f6588f35f4452e14a57f74236f7f19451acf118b9b3783917c1b7acc8ef"
+        },
+        "conformance/create/stata/project-scripts-codex-copilot.json": {
+            "source": "inst/conformance/create/stata/project-scripts-codex-copilot.json",
+            "sha256": "3e96c89f2e3becd4ec0fd3c108b77dce6f18dfb1c665755d9288ba64a32943a3"
+        },
+        "conformance/create/stata/project-scripts-no-agents.json": {
+            "source": "inst/conformance/create/stata/project-scripts-no-agents.json",
+            "sha256": "59052e3d9514772a2eafac399762a0f3e2d75408052b28883ddef6b80b5e37cf"
+        },
+        "conformance/create/stata/project-scripts.json": {
+            "source": "inst/conformance/create/stata/project-scripts.json",
+            "sha256": "f821a703225eb66c4079cf3cbc1896156fba2282d309325515dd1b2550994f12"
+        },
+        "conformance/create/stata/project_sensitive-scripts.json": {
+            "source": "inst/conformance/create/stata/project_sensitive-scripts.json",
+            "sha256": "eb4b59355a056a3b74e6581a421cd7e9970adb183425b5ca7b03d6d61d062b83"
+        },
         "features/jupyter.json": {
             "source": "inst/features/jupyter.json",
             "sha256": "0653e047d3887e694c553b2dc2959b62b000e0c371eb542f2bd9726eb36d1a00"
@@ -40,6 +184,18 @@
         "sets/skills/ggplot2.json": {
             "source": "inst/sets/skills/ggplot2.json",
             "sha256": "524bb5822139694f01e46e3c94e1f960b722ac2ae0438a97bee7b8e097f0c2be"
+        },
+        "workflows/jupyter.json": {
+            "source": "inst/workflows/jupyter.json",
+            "sha256": "9e91741ab4f1e9f2d64475314bcdd6a3caea327b18538890b991b57c9fbfe5a3"
+        },
+        "workflows/quarto.json": {
+            "source": "inst/workflows/quarto.json",
+            "sha256": "69f6d2ae2e4b2eab65612ebe45b010311fa6f87e392f91a8ee3b127e47d2af03"
+        },
+        "workflows/scripts.json": {
+            "source": "inst/workflows/scripts.json",
+            "sha256": "f8b7a9ee06f7930b38177b88802b5aaa952e2894443377ab6fe195fb5183015b"
         }
     }
 }

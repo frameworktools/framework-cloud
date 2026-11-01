@@ -325,7 +325,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                     @update:model-value="(on) => setTool('jupyter', on)"
                 />
                 <p :class="note">
-                    In Python projects, save_notebook() renders a Jupyter notebook with Quarto, into the
+                    save_notebook() renders a Jupyter notebook with Quarto, into the
                     <Link href="/settings/quarto" preserve-state :class="link">render folders</Link> with the HTML settings there.
                 </p>
                 <p :class="note">
@@ -445,7 +445,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                             </SettingRow>
                         </SettingGroup>
                         <!-- Render folders belong to the project structure; shown here for the default blueprint -->
-                        <SettingGroup title="Render folders" :description="`Where rendered documents go, from the project structure of your default blueprint, ${defaultBlueprint?.name}. In Python projects, Jupyter notebooks saved with save_notebook() render to the same folders.`">
+                        <SettingGroup title="Render folders" :description="`Where rendered documents go, from the project structure of your default blueprint, ${defaultBlueprint?.name}. Jupyter notebooks saved with save_notebook() render to the same folders.`">
                             <ul v-if="defaultBlueprint?.render_dirs.length" class="divide-y divide-slate-200 font-mono text-sm dark:divide-slate-800">
                                 <li v-for="dir in defaultBlueprint.render_dirs" :key="dir.from" class="flex flex-wrap items-center gap-x-3 px-4 py-2.5">
                                     <span class="text-slate-900 dark:text-white">{{ dir.from }}/</span>
