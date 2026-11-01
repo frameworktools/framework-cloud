@@ -38,9 +38,9 @@ const current = computed(() => sections.find((s) => s.key === props.section));
 
 const languageNames = { r: 'R', python: 'Python', stata: 'Stata' };
 const languageOptions = [
-    { value: 'r', label: 'R', description: 'Projects built by the framework R package.' },
-    { value: 'python', label: 'Python', description: 'Projects built by the framework Python package.' },
-    { value: 'stata', label: 'Stata', description: 'Scaffolding only: folders, do-files, and settings.do, built by fw.' },
+    { value: 'r', label: 'R' },
+    { value: 'python', label: 'Python' },
+    { value: 'stata', label: 'Stata', description: 'Scaffolding only.' },
 ];
 const formatOptions = computed(() => [
     { value: 'quarto', label: 'Quarto' },
