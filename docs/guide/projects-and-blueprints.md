@@ -32,7 +32,7 @@ grouped by subject:
   that run before each commit, and agent files with preferred skill sets.
   Whether a project holds sensitive data comes from its blueprint, such as
   Privacy Sensitive.
-- **Notebooks.** Your notebook platform (Quarto, Jupyter, or R Markdown for R), and the Quarto and Jupyter setup new projects get.
+- **Notebooks.** The default format for new notebooks (Quarto, Jupyter, or R Markdown for R), Quarto's HTML, slide, and project settings, and Jupyter setup.
 
 The pages share one form, so changes on several pages are saved together.
 

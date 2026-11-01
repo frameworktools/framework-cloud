@@ -11,6 +11,9 @@ import PackagesEditor from '@/Components/PackagesEditor.vue';
 import UiRadioCards from '@/Components/UiRadioCards.vue';
 import UiSelect from '@/Components/UiSelect.vue';
 import UiSwitch from '@/Components/UiSwitch.vue';
+import UiToggle from '@/Components/UiToggle.vue';
+import SettingGroup from '@/Components/SettingGroup.vue';
+import SettingRow from '@/Components/SettingRow.vue';
 
 // One form for all of your defaults, shown a page at a time. Moving
 // between pages keeps unsaved changes, and Save sends everything.
@@ -30,7 +33,7 @@ const sections = [
     { key: 'hooks', label: 'Data safety hooks' },
     { key: 'agents', label: 'Agents' },
     { heading: 'Notebooks' },
-    { key: 'notebooks', label: 'Preferences', title: 'Notebook preferences' },
+    { key: 'notebooks', label: 'Default format', title: 'Default notebook format' },
     { key: 'quarto', label: 'Quarto' },
     { key: 'jupyter', label: 'Jupyter' },
 ];
@@ -77,8 +80,23 @@ const form = useForm({
 const defaultBlueprint = computed(() => props.blueprints.find((b) => b.key === form.project_type));
 // Quarto's names for themes and highlighting, shown the way the GUI showed them
 const titled = (value) => value.charAt(0).toUpperCase() + value.slice(1);
-const themeOption = (value) => ({ value, label: titled(value) });
-const highlightOption = (value) => ({ value, label: value === 'github' ? 'GitHub' : value === 'breezedark' ? 'Breeze Dark' : titled(value) });
+const themeLabel = titled;
+const highlightLabel = (value) => (value === 'github' ? 'GitHub' : value === 'breezedark' ? 'Breeze Dark' : titled(value));
+const rowNumber = 'w-20 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-900 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100';
+const rowSelect = 'w-44 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-900 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100';
+
+// The Quarto page's tabs. The choice stays while you move between pages.
+const quartoTabs = [{ key: 'html', label: 'HTML documents' }, { key: 'slides', label: 'Slides' }, { key: 'setup', label: 'Project setup' }];
+const quartoTab = ref('html');
+const quartoTabEls = [];
+const quartoTabKey = (event, i) => {
+    const next = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: quartoTabs.length - 1 }[event.key];
+    if (next === undefined) return;
+    event.preventDefault();
+    const index = (next + quartoTabs.length) % quartoTabs.length;
+    quartoTab.value = quartoTabs[index].key;
+    quartoTabEls[index]?.focus();
+};
 const packageLanguage = ref(props.values.language === 'python' ? 'python' : 'r');
 
 // The agents R, Python, and fw set projects up for, and what each one gets
@@ -144,7 +162,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
         <PageHeader v-else-if="section === 'scaffold'" :title="current.label" description="Configure behaviors triggered by scaffold()." />
         <PageHeader v-else-if="section === 'hooks'" :title="current.label" description="Configure Git hooks for data safety protections." />
         <PageHeader v-else-if="section === 'agents'" :title="current.label" description="Configure project setup for AI agents." />
-        <PageHeader v-else-if="section === 'notebooks'" :title="current.title" description="Configure preferred scientific notebook platform." />
+        <PageHeader v-else-if="section === 'notebooks'" :title="current.title" description="Select the format make_notebook() uses for new notebooks. A project can still hold notebooks in other formats." />
         <PageHeader v-else-if="section === 'quarto'" :title="current.label" description="Configure Quarto for new projects." />
         <PageHeader v-else-if="section === 'jupyter'" :title="current.label" description="Configure Jupyter for new projects." />
         <PageHeader v-else :title="current.label" />
@@ -261,7 +279,8 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
 
             <template v-else-if="section === 'notebooks'">
                 <p v-if="form.language === 'stata'" class="text-sm text-slate-600 dark:text-slate-400">Stata projects don't get notebooks. These apply to your R and Python projects.</p>
-                <UiRadioCards v-model="notebookFormat" name="notebook_format" legend="Notebook platform" hide-legend :options="formatOptions" stacked />
+                <UiRadioCards v-model="notebookFormat" name="notebook_format" legend="Default notebook format" hide-legend :options="formatOptions" stacked />
+                <p :class="note">Name another format when you need one, such as make_notebook("analysis.ipynb") in a Quarto project.</p>
                 <p v-if="form.errors.notebook_format" class="text-sm text-red-600">{{ form.errors.notebook_format }}</p>
             </template>
 
@@ -271,8 +290,8 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                     v-if="tool('jupyter')" :model-value="!!form.tools.jupyter" label="Jupyter"
                     :disabled="form.notebook_format === 'jupyter'"
                     :description="form.notebook_format === 'jupyter'
-                        ? 'Jupyter notebooks with the kernel for the project\'s language: IRkernel for R, ipykernel for Python. On while Jupyter is your notebook platform.'
-                        : 'Jupyter notebooks with the kernel for the project\'s language: IRkernel for R, ipykernel for Python. Turn it on to use Jupyter alongside your notebook platform.'"
+                        ? 'Jupyter notebooks with the kernel for the project\'s language: IRkernel for R, ipykernel for Python. On while Jupyter is your default notebook format.'
+                        : 'Jupyter notebooks with the kernel for the project\'s language: IRkernel for R, ipykernel for Python. Turn it on to use Jupyter alongside your default format.'"
                     @update:model-value="(on) => setTool('jupyter', on)"
                 />
                 <p :class="note">
@@ -286,71 +305,128 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
             </section>
 
             <template v-else-if="section === 'quarto'">
-                <p v-if="form.language === 'stata'" class="text-sm text-slate-600 dark:text-slate-400">Stata projects don't use Quarto. These apply to your R and Python projects.</p>
-                <div class="flex max-w-xl flex-col gap-8" :class="form.language === 'stata' ? 'opacity-60' : ''">
-                    <UiSwitch v-if="tool('quarto')" :model-value="!!form.tools.quarto" label="Quarto project files" description="Adds _quarto.yml with the settings below, so documents render the same way across the project. Applies when a new project doesn't start from a blueprint." @update:model-value="(on) => setTool('quarto', on)" />
+                <p v-if="form.language === 'stata'" :class="note">Stata projects don't use Quarto. These apply to your R and Python projects.</p>
+                <div class="flex max-w-2xl flex-col gap-6">
+                    <!-- Tabs: arrow keys, Home, and End move between them; every panel stays in the form -->
+                    <div role="tablist" aria-label="Quarto settings" class="flex gap-1 overflow-x-auto border-b border-slate-200 dark:border-slate-700">
+                        <button
+                            v-for="(tab, i) in quartoTabs" :id="`quarto-tab-${tab.key}`" :key="tab.key" :ref="(el) => (quartoTabEls[i] = el)"
+                            type="button" role="tab" :aria-selected="quartoTab === tab.key" :aria-controls="`quarto-panel-${tab.key}`" :tabindex="quartoTab === tab.key ? 0 : -1"
+                            class="-mb-px shrink-0 rounded-t border-b-2 px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-500"
+                            :class="quartoTab === tab.key ? 'border-sky-600 text-sky-700 dark:border-sky-400 dark:text-sky-300' : 'border-transparent text-slate-600 hover:border-slate-300 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'"
+                            @click="quartoTab = tab.key" @keydown="quartoTabKey($event, i)"
+                        >{{ tab.label }}</button>
+                    </div>
 
-                    <!-- Render folders belong to the project structure; shown here for the default blueprint -->
-                    <section class="flex flex-col gap-3">
-                        <div>
-                            <h2 :class="heading">Render folders</h2>
-                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                                Where rendered documents go, from the project structure of your default blueprint, {{ defaultBlueprint?.name }}.
-                                In Python projects, Jupyter notebooks saved with save_notebook() render to the same folders.
-                            </p>
-                        </div>
-                        <ul v-if="defaultBlueprint?.render_dirs.length" class="divide-y divide-slate-200 rounded-lg border border-slate-200 font-mono text-sm dark:divide-slate-800 dark:border-slate-700">
-                            <li v-for="dir in defaultBlueprint.render_dirs" :key="dir.from" class="flex items-center gap-3 px-4 py-2.5">
-                                <span class="text-slate-900 dark:text-white">{{ dir.from }}/</span>
-                                <span class="text-slate-400" aria-label="renders to">→</span>
-                                <span class="text-slate-600 dark:text-slate-300">{{ dir.to }}/</span>
-                            </li>
-                        </ul>
-                        <p v-else :class="note">{{ defaultBlueprint?.render_dir === '.' ? 'Documents render next to their source.' : 'This structure has no render folders: documents render next to their source.' }}</p>
-                        <p class="text-sm"><Link href="/structures" :class="link">Edit project structures</Link></p>
-                    </section>
+                    <div v-show="quartoTab === 'html'" id="quarto-panel-html" role="tabpanel" aria-labelledby="quarto-tab-html" tabindex="0" class="flex flex-col gap-6 focus-visible:outline-none">
+                        <p :class="note">Notebooks and documents rendered to HTML. These settings go into each new project's _quarto.yml.</p>
+                        <SettingGroup title="Appearance">
+                            <SettingRow more="Quarto&#x27;s HTML themes come from Bootswatch. Default is Quarto&#x27;s own theme. The others change the colors, fonts, and spacing of the whole page." v-slot="{ id, describedby }" label="Theme" description="Colors and fonts for the page.">
+                                <select :id="id" v-model="form.quarto.html.theme" :aria-describedby="describedby" :class="rowSelect">
+                                    <option v-for="t in quartoChoices['html.theme']" :key="t" :value="t">{{ themeLabel(t) }}</option>
+                                </select>
+                            </SettingRow>
+                            <SettingRow v-slot="{ id, describedby }" label="Syntax highlighting" description="Colors for code.">
+                                <select :id="id" v-model="form.quarto.html.highlight_style" :aria-describedby="describedby" :class="rowSelect">
+                                    <option v-for="t in quartoChoices.highlight_style" :key="t" :value="t">{{ highlightLabel(t) }}</option>
+                                </select>
+                            </SettingRow>
+                        </SettingGroup>
+                        <SettingGroup title="Contents">
+                            <SettingRow v-slot="{ id, labelledby, describedby }" label="Table of contents" description="A table of contents beside the document.">
+                                <UiToggle :id="id" v-model="form.quarto.html.toc" :aria-labelledby="labelledby" :aria-describedby="describedby" />
+                            </SettingRow>
+                            <SettingRow more="Depth 2 lists # and ## headings, and depth 3 adds ###. Quarto takes 1 to 6." v-if="form.quarto.html.toc" v-slot="{ id, describedby }" nested label="Depth" description="How many heading levels it lists.">
+                                <input :id="id" v-model.number="form.quarto.html.toc_depth" type="number" min="1" max="6" :aria-describedby="describedby" :class="rowNumber">
+                            </SettingRow>
+                        </SettingGroup>
+                        <SettingGroup title="Code">
+                            <SettingRow v-slot="{ id, labelledby, describedby }" label="Code folding" description="Readers can collapse and expand code blocks.">
+                                <UiToggle :id="id" v-model="form.quarto.html.code_fold" :aria-labelledby="labelledby" :aria-describedby="describedby" />
+                            </SettingRow>
+                            <SettingRow more="Adds a &quot;Code&quot; menu at the top of the page. Readers can show or hide every code block at once and view or download the notebook&#x27;s source." v-slot="{ id, labelledby, describedby }" label="Code tools" description="A menu to show, hide, or download the code.">
+                                <UiToggle :id="id" v-model="form.quarto.html.code_tools" :aria-labelledby="labelledby" :aria-describedby="describedby" />
+                            </SettingRow>
+                        </SettingGroup>
+                        <SettingGroup title="File portability">
+                            <SettingRow more="The HTML file holds its images, styles, and scripts, so you can email it or upload it as one file. Files are larger. Off, the HTML needs the folder of supporting files rendered beside it." v-slot="{ id, labelledby, describedby }" label="Embed resources" description="Each HTML file opens on its own.">
+                                <UiToggle :id="id" v-model="form.quarto.html.embed_resources" :aria-labelledby="labelledby" :aria-describedby="describedby" />
+                            </SettingRow>
+                        </SettingGroup>
+                    </div>
 
-                    <section class="flex flex-col gap-5">
-                        <div>
-                            <h2 :class="heading">HTML documents</h2>
-                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Notebooks and documents rendered to HTML.</p>
-                        </div>
-                        <UiSelect v-model="form.quarto.html.theme" class="max-w-56" label="Theme" :options="quartoChoices['html.theme'].map(themeOption)" />
-                        <UiSwitch v-model="form.quarto.html.embed_resources" label="Embed resources" description="Each HTML file holds its images, styles, and scripts, so it opens on its own." />
-                        <UiSwitch v-model="form.quarto.html.toc" label="Table of contents" description="A table of contents beside the document." />
-                        <UiInput v-if="form.quarto.html.toc" v-model.number="form.quarto.html.toc_depth" type="number" min="1" max="6" class="-mt-2 max-w-48" label="Table of contents depth" />
-                        <UiSwitch v-model="form.quarto.html.code_fold" label="Code folding" description="Readers can collapse and expand code blocks." />
-                        <UiSwitch v-model="form.quarto.html.code_tools" label="Code tools" description="A menu to show, hide, or download the code." />
-                        <UiSelect v-model="form.quarto.html.highlight_style" class="max-w-56" label="Syntax highlighting" :options="quartoChoices.highlight_style.map(highlightOption)" />
-                    </section>
+                    <div v-show="quartoTab === 'slides'" id="quarto-panel-slides" role="tabpanel" aria-labelledby="quarto-tab-slides" tabindex="0" class="flex flex-col gap-6 focus-visible:outline-none">
+                        <p :class="note">Presentations rendered with RevealJS. These settings go into each new project's _quarto.yml.</p>
+                        <SettingGroup title="Appearance">
+                            <SettingRow v-slot="{ id, describedby }" label="Theme" description="Colors and fonts for the slides.">
+                                <select :id="id" v-model="form.quarto.revealjs.theme" :aria-describedby="describedby" :class="rowSelect">
+                                    <option v-for="t in quartoChoices['revealjs.theme']" :key="t" :value="t">{{ themeLabel(t) }}</option>
+                                </select>
+                            </SettingRow>
+                            <SettingRow v-slot="{ id, describedby }" label="Syntax highlighting" description="Colors for code.">
+                                <select :id="id" v-model="form.quarto.revealjs.highlight_style" :aria-describedby="describedby" :class="rowSelect">
+                                    <option v-for="t in quartoChoices.highlight_style" :key="t" :value="t">{{ highlightLabel(t) }}</option>
+                                </select>
+                            </SettingRow>
+                            <SettingRow v-slot="{ id, labelledby, describedby }" label="Center vertically" description="Slide content sits in the middle of the slide.">
+                                <UiToggle :id="id" v-model="form.quarto.revealjs.center" :aria-labelledby="labelledby" :aria-describedby="describedby" />
+                            </SettingRow>
+                        </SettingGroup>
+                        <SettingGroup title="Navigation">
+                            <SettingRow v-slot="{ id, labelledby, describedby }" label="Slide numbers" description="Each slide shows its number in the corner.">
+                                <UiToggle :id="id" v-model="form.quarto.revealjs.slide_number" :aria-labelledby="labelledby" :aria-describedby="describedby" />
+                            </SettingRow>
+                            <SettingRow v-slot="{ id, labelledby, describedby }" label="Navigation controls" description="Arrows for moving between slides.">
+                                <UiToggle :id="id" v-model="form.quarto.revealjs.controls" :aria-labelledby="labelledby" :aria-describedby="describedby" />
+                            </SettingRow>
+                            <SettingRow v-slot="{ id, labelledby, describedby }" label="Progress bar" description="A bar along the bottom that shows how far along the talk is.">
+                                <UiToggle :id="id" v-model="form.quarto.revealjs.progress" :aria-labelledby="labelledby" :aria-describedby="describedby" />
+                            </SettingRow>
+                        </SettingGroup>
+                        <SettingGroup title="Playback">
+                            <SettingRow v-slot="{ id, labelledby, describedby }" label="Incremental bullets" description="List items appear one at a time.">
+                                <UiToggle :id="id" v-model="form.quarto.revealjs.incremental" :aria-labelledby="labelledby" :aria-describedby="describedby" />
+                            </SettingRow>
+                            <SettingRow v-slot="{ id, describedby }" label="Slide transition" description="How one slide gives way to the next.">
+                                <select :id="id" v-model="form.quarto.revealjs.transition" :aria-describedby="describedby" :class="rowSelect">
+                                    <option v-for="t in quartoChoices.transition" :key="t" :value="t">{{ themeLabel(t) }}</option>
+                                </select>
+                            </SettingRow>
+                            <SettingRow more="Applies to slides with their own background color or image. With the same background on both slides, only the content transition shows." v-slot="{ id, describedby }" label="Background transition" description="How slide backgrounds change.">
+                                <select :id="id" v-model="form.quarto.revealjs.background_transition" :aria-describedby="describedby" :class="rowSelect">
+                                    <option v-for="t in quartoChoices.transition" :key="t" :value="t">{{ themeLabel(t) }}</option>
+                                </select>
+                            </SettingRow>
+                        </SettingGroup>
+                    </div>
 
-                    <section class="flex flex-col gap-5">
-                        <div>
-                            <h2 :class="heading">Slides</h2>
-                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Presentations rendered with RevealJS.</p>
-                        </div>
-                        <UiSelect v-model="form.quarto.revealjs.theme" class="max-w-56" label="Theme" :options="quartoChoices['revealjs.theme'].map(themeOption)" />
-                        <UiSwitch v-model="form.quarto.revealjs.incremental" label="Incremental bullets" description="List items appear one at a time." />
-                        <UiSwitch v-model="form.quarto.revealjs.slide_number" label="Slide numbers" description="Each slide shows its number in the corner." />
-                        <UiSwitch v-model="form.quarto.revealjs.controls" label="Navigation controls" description="Arrows for moving between slides." />
-                        <UiSwitch v-model="form.quarto.revealjs.progress" label="Progress bar" description="A bar along the bottom that shows how far along the presentation is." />
-                        <UiSwitch v-model="form.quarto.revealjs.center" label="Center slides" description="Slide content is centered vertically." />
-                        <div class="grid max-w-md gap-5 sm:grid-cols-2">
-                            <UiSelect v-model="form.quarto.revealjs.transition" label="Slide transition" :options="quartoChoices.transition.map(themeOption)" />
-                            <UiSelect v-model="form.quarto.revealjs.background_transition" label="Background transition" :options="quartoChoices.transition.map(themeOption)" />
-                        </div>
-                        <UiSelect v-model="form.quarto.revealjs.highlight_style" class="max-w-56" label="Syntax highlighting" :options="quartoChoices.highlight_style.map(highlightOption)" />
-                    </section>
-
-                    <section class="flex flex-col gap-5">
-                        <div>
-                            <h2 :class="heading">Starter documents</h2>
-                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Applies when a new project doesn't start from a blueprint.</p>
-                        </div>
-                        <template v-for="key in ['quarto_manuscript', 'quarto_slides']" :key="key">
-                            <UiSwitch v-if="tool(key)" :model-value="!!form.tools[key]" :label="tool(key).name" :description="`${tool(key).description} Turns Quarto project files on.`" @update:model-value="(on) => setTool(key, on)" />
-                        </template>
-                    </section>
+                    <div v-show="quartoTab === 'setup'" id="quarto-panel-setup" role="tabpanel" aria-labelledby="quarto-tab-setup" tabindex="0" class="flex flex-col gap-6 focus-visible:outline-none">
+                        <SettingGroup title="Project files" description="Only for new projects that don't start from a blueprint. A blueprint decides for itself, and Framework's blueprints other than Bare include Quarto.">
+                            <SettingRow more="Quarto reads _quarto.yml when it renders, so documents in the project share one setup. Your HTML and Slides settings go into these files in any project that has them, including projects from a blueprint." v-if="tool('quarto')" v-slot="{ id, labelledby, describedby }" label="Quarto project files" description="Adds _quarto.yml files to the project.">
+                                <UiToggle :id="id" :model-value="!!form.tools.quarto" :aria-labelledby="labelledby" :aria-describedby="describedby" @update:model-value="(on) => setTool('quarto', on)" />
+                            </SettingRow>
+                        </SettingGroup>
+                        <SettingGroup title="Starter documents" description="Only for new projects that don't start from a blueprint. Each one turns Quarto project files on.">
+                            <SettingRow
+                                v-for="key in ['quarto_manuscript', 'quarto_slides'].filter((k) => tool(k))" :key="key" v-slot="{ id, labelledby, describedby }"
+                                :label="tool(key).name" :description="tool(key).description"
+                            >
+                                <UiToggle :id="id" :model-value="!!form.tools[key]" :aria-labelledby="labelledby" :aria-describedby="describedby" @update:model-value="(on) => setTool(key, on)" />
+                            </SettingRow>
+                        </SettingGroup>
+                        <!-- Render folders belong to the project structure; shown here for the default blueprint -->
+                        <SettingGroup title="Render folders" :description="`Where rendered documents go, from the project structure of your default blueprint, ${defaultBlueprint?.name}. In Python projects, Jupyter notebooks saved with save_notebook() render to the same folders.`">
+                            <ul v-if="defaultBlueprint?.render_dirs.length" class="divide-y divide-slate-200 font-mono text-sm dark:divide-slate-800">
+                                <li v-for="dir in defaultBlueprint.render_dirs" :key="dir.from" class="flex flex-wrap items-center gap-x-3 px-4 py-2.5">
+                                    <span class="text-slate-900 dark:text-white">{{ dir.from }}/</span>
+                                    <span class="text-slate-400" aria-hidden="true">→</span><span class="sr-only">renders to</span>
+                                    <span class="text-slate-600 dark:text-slate-300">{{ dir.to }}/</span>
+                                </li>
+                            </ul>
+                            <p v-else class="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">This structure has no render folders, so documents render next to their source.</p>
+                        </SettingGroup>
+                        <p class="-mt-4 text-sm"><Link href="/structures" :class="link">Edit project structures</Link></p>
+                    </div>
                 </div>
             </template>
         </form>
