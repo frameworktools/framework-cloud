@@ -321,12 +321,12 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                     <div v-show="quartoTab === 'html'" id="quarto-panel-html" role="tabpanel" aria-labelledby="quarto-tab-html" tabindex="0" class="flex flex-col gap-6 focus-visible:outline-none">
                         <p :class="note">Notebooks and documents rendered to HTML. These settings go into each new project's _quarto.yml.</p>
                         <SettingGroup title="Appearance">
-                            <SettingRow more="Quarto&#x27;s HTML themes come from Bootswatch. Default is Quarto&#x27;s own theme. The others change the colors, fonts, and spacing of the whole page." v-slot="{ id, describedby }" label="Theme" description="Colors and fonts for the page.">
+                            <SettingRow v-slot="{ id, describedby }" label="Theme" description="Colors and fonts for the page." :example="{ href: 'https://bootswatch.com/', label: 'See the themes' }">
                                 <select :id="id" v-model="form.quarto.html.theme" :aria-describedby="describedby" :class="rowSelect">
                                     <option v-for="t in quartoChoices['html.theme']" :key="t" :value="t">{{ themeLabel(t) }}</option>
                                 </select>
                             </SettingRow>
-                            <SettingRow v-slot="{ id, describedby }" label="Syntax highlighting" description="Colors for code.">
+                            <SettingRow v-slot="{ id, describedby }" label="Syntax highlighting" description="Colors for code." :example="{ href: 'https://www.garrickadenbuie.com/blog/pandoc-syntax-highlighting-examples/', label: 'See the styles' }">
                                 <select :id="id" v-model="form.quarto.html.highlight_style" :aria-describedby="describedby" :class="rowSelect">
                                     <option v-for="t in quartoChoices.highlight_style" :key="t" :value="t">{{ highlightLabel(t) }}</option>
                                 </select>
@@ -336,7 +336,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                             <SettingRow v-slot="{ id, labelledby, describedby }" label="Table of contents" description="A table of contents beside the document.">
                                 <UiToggle :id="id" v-model="form.quarto.html.toc" :aria-labelledby="labelledby" :aria-describedby="describedby" />
                             </SettingRow>
-                            <SettingRow more="Depth 2 lists # and ## headings, and depth 3 adds ###. Quarto takes 1 to 6." v-if="form.quarto.html.toc" v-slot="{ id, describedby }" nested label="Depth" description="How many heading levels it lists.">
+                            <SettingRow more="Depth 2 lists # and ## headings, and depth 3 adds ###. Quarto takes 1 to 6." v-if="form.quarto.html.toc" v-slot="{ id, describedby }" label="Depth" description="How many heading levels it lists.">
                                 <input :id="id" v-model.number="form.quarto.html.toc_depth" type="number" min="1" max="6" :aria-describedby="describedby" :class="rowNumber">
                             </SettingRow>
                         </SettingGroup>
@@ -358,12 +358,12 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                     <div v-show="quartoTab === 'slides'" id="quarto-panel-slides" role="tabpanel" aria-labelledby="quarto-tab-slides" tabindex="0" class="flex flex-col gap-6 focus-visible:outline-none">
                         <p :class="note">Presentations rendered with RevealJS. These settings go into each new project's _quarto.yml.</p>
                         <SettingGroup title="Appearance">
-                            <SettingRow v-slot="{ id, describedby }" label="Theme" description="Colors and fonts for the slides.">
+                            <SettingRow v-slot="{ id, describedby }" label="Theme" description="Colors and fonts for the slides." :example="{ href: 'https://revealjs.com/themes/', label: 'See the themes' }">
                                 <select :id="id" v-model="form.quarto.revealjs.theme" :aria-describedby="describedby" :class="rowSelect">
                                     <option v-for="t in quartoChoices['revealjs.theme']" :key="t" :value="t">{{ themeLabel(t) }}</option>
                                 </select>
                             </SettingRow>
-                            <SettingRow v-slot="{ id, describedby }" label="Syntax highlighting" description="Colors for code.">
+                            <SettingRow v-slot="{ id, describedby }" label="Syntax highlighting" description="Colors for code." :example="{ href: 'https://www.garrickadenbuie.com/blog/pandoc-syntax-highlighting-examples/', label: 'See the styles' }">
                                 <select :id="id" v-model="form.quarto.revealjs.highlight_style" :aria-describedby="describedby" :class="rowSelect">
                                     <option v-for="t in quartoChoices.highlight_style" :key="t" :value="t">{{ highlightLabel(t) }}</option>
                                 </select>
