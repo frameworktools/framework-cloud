@@ -8,16 +8,31 @@ import UiCheckboxCards from '@/Components/UiCheckboxCards.vue';
 import UiRadioCards from '@/Components/UiRadioCards.vue';
 
 /**
- * Guided setup: six questions that set your defaults for new projects, then
- * a summary of what new projects will include. Every answer is preselected
- * from the ones before it, and nothing is saved until the summary.
+ * Guided setup: six questions, then a review. The answers are a draft until
+ * Save defaults on the review; Skip setup and leaving save nothing. Setup
+ * starts from what the account saved and recommends only where it saved
+ * nothing.
  */
-const props = defineProps({ blueprints: Array, values: Object, again: Boolean });
+const props = defineProps({ blueprints: Array, values: Object, again: Boolean, saved: Object });
 
 const languageNames = { r: 'R', python: 'Python', stata: 'Stata' };
-const workflowNames = { quarto: 'Quarto', jupyter: 'Jupyter', scripts: 'Scripts only' };
-const initialWorkflows = { r: 'quarto', python: 'jupyter', stata: 'scripts' };
+const workflowNames = { quarto: 'Quarto', rmarkdown: 'R Markdown', jupyter: 'Jupyter', scripts: 'Scripts only' };
+const recommendedWorkflows = { r: 'quarto', python: 'jupyter', stata: 'scripts' };
+const recommendedEditors = { r: ['rstudio'], python: ['vscode'], stata: [] };
 const ideEditors = { rstudio: ['rstudio'], vscode: ['vscode'], positron: ['vscode'], both: ['rstudio', 'vscode'], none: [] };
+const agentNames = { claude: 'Claude Code', codex: 'Codex', copilot: 'GitHub Copilot', other: 'Other agents', none: 'None' };
+
+// The saved answers, read the same way setup asks them. R Markdown is R's Quarto workflow writing .Rmd.
+const savedWorkflow = (lang) => (lang === 'r' && props.values.workflows.r === 'quarto' && props.values.rmarkdown ? 'rmarkdown' : props.values.workflows[lang]);
+const savedAgents = () => (!props.values.ai_enabled ? ['none'] : props.values.ai_agents.length ? [...props.values.ai_agents] : ['other']);
+const fromSaved = {
+    language: props.values.language ?? 'r',
+    project_type: props.values.project_type,
+    workflows: Object.fromEntries(['r', 'python', 'stata'].map((l) => [l, savedWorkflow(l)])),
+    editors: ideEditors[props.values.ide] ?? [],
+    git: props.values.use_git,
+    agents: savedAgents(),
+};
 
 // Progress saved when someone left for the structure builder, picked up once
 const STORE = 'welcome.progress';
@@ -31,59 +46,61 @@ const restored = (() => {
     }
 })();
 
-const form = useForm(restored?.answers ?? {
-    language: props.values.language ?? 'r',
-    project_type: props.values.project_type,
-    workflow: null,
-    editors: props.again ? (ideEditors[props.values.ide] ?? []) : null,
-    git: props.values.use_git,
-    ai: props.values.ai_enabled,
-    agents: [...props.values.ai_agents],
+const startLanguage = props.saved.language ? fromSaved.language : 'r';
+const draft = useForm(restored?.answers ?? {
+    language: startLanguage,
+    project_type: props.saved.any ? fromSaved.project_type : 'project',
+    // One workflow answer per language, so switching languages never changes another's
+    workflows: Object.fromEntries(['r', 'python', 'stata'].map((l) => [l, props.saved.workflows.includes(l) ? fromSaved.workflows[l] : recommendedWorkflows[l]])),
+    editors: props.saved.any ? fromSaved.editors : recommendedEditors[startLanguage],
+    git: fromSaved.git,
+    agents: fromSaved.agents,
+});
+// Without saved editors, the recommendation follows the language until the person picks
+const editorsChosen = ref(restored?.editorsChosen ?? props.saved.any);
+watch(() => draft.language, (language) => {
+    if (!editorsChosen.value) draft.editors = [...recommendedEditors[language]];
 });
 
-const blueprint = computed(() => props.blueprints.find((b) => b.key === form.project_type));
-const supported = (b) => b.languages.includes(form.language);
-const workflowsFor = (b) => (b?.workflows ?? []).filter((w) => form.language !== 'stata' || w === 'scripts');
+const blueprint = computed(() => props.blueprints.find((b) => b.key === draft.project_type));
+const supports = (b, language = draft.language) => b.languages.includes(language);
+// R Markdown rides on the Quarto workflow
+const workflowSupported = (w) => (blueprint.value?.workflows ?? []).includes(w === 'rmarkdown' ? 'quarto' : w);
+const workflow = computed({
+    get: () => draft.workflows[draft.language],
+    set: (w) => (draft.workflows = { ...draft.workflows, [draft.language]: w }),
+});
 
-// Earlier answers preselect later ones: a project type the language has, the
-// language's workflow where the project type has it, and the language's editor
-const preferredWorkflow = () => props.values.workflows[form.language] ?? initialWorkflows[form.language];
-// Restored answers stand as they were
-watch(() => form.language, (language, previous) => {
-    if (restored && previous === undefined) return;
-    if (!blueprint.value || !supported(blueprint.value)) form.project_type = 'project';
-    if (!props.again || form.editors === null) form.editors = form.language === 'r' ? ['rstudio'] : form.language === 'python' ? ['vscode'] : [];
-}, { immediate: true });
-// A new language starts from its own workflow; a new project type keeps the
-// workflow when it has it
-watch([() => form.language, () => form.project_type], ([language], [previous] = []) => {
-    if (restored && previous === undefined) return;
-    const options = workflowsFor(blueprint.value);
-    const preferred = preferredWorkflow();
-    if (language !== previous || !options.includes(form.workflow)) form.workflow = options.includes(preferred) ? preferred : options[0];
-}, { immediate: true });
+// What's out of step, shown where it happens and on the review; nothing changes on its own
+const problems = computed(() => ({
+    project: blueprint.value && !supports(blueprint.value) ? `${blueprint.value.name} isn't available for ${languageNames[draft.language]}. Choose another structure.` : null,
+    workflow: draft.language !== 'stata' && blueprint.value && supports(blueprint.value) && !workflowSupported(workflow.value)
+        ? `${blueprint.value.name} uses ${blueprint.value.workflows.map((w) => workflowNames[w]).join(' or ')}. Choose one of those, or another structure.`
+        : null,
+}));
 
 const steps = computed(() => [
-    { key: 'language', title: 'Which environment do you work in most?' },
+    { key: 'language', title: 'Which language do you use most?' },
     { key: 'project', title: 'Which project structure do you prefer?' },
-    ...(form.language === 'stata' ? [] : [
-        { key: 'workflow', title: 'How do you write notebooks?' },
+    ...(draft.language === 'stata' ? [] : [
+        { key: 'workflow', title: 'How do you prefer to work?' },
         { key: 'editors', title: 'Which editors do you use?' },
     ]),
     { key: 'git', title: 'Should new projects use Git?' },
-    { key: 'agents', title: 'Do you work with AI coding agents?' },
-    { key: 'summary', title: 'Your project defaults' },
+    { key: 'agents', title: 'Which coding agents do you use?' },
+    { key: 'review', title: 'Review your defaults' },
 ]);
 const index = ref(restored?.index ?? 0);
 const step = computed(() => steps.value[Math.min(index.value, steps.value.length - 1)]);
+const blocked = computed(() => !!problems.value[step.value.key]);
 const next = () => (index.value = Math.min(index.value + 1, steps.value.length - 1));
 const back = () => (index.value = Math.max(index.value - 1, 0));
-const go = (key) => (index.value = steps.value.findIndex((s) => s.key === key));
+const edit = (key) => (index.value = steps.value.findIndex((s) => s.key === key));
 
 const languageOptions = [
-    { value: 'r', label: 'R', description: 'Projects built by the framework R package, with renv for package versions.' },
-    { value: 'python', label: 'Python', description: 'Projects built by the framework Python package, with uv for the environment.' },
-    { value: 'stata', label: 'Stata', description: 'Folders, master.do, and do-files, set up by the fw command-line tool. Framework doesn\'t manage Stata packages.' },
+    { value: 'r', label: 'R' },
+    { value: 'python', label: 'Python' },
+    { value: 'stata', label: 'Stata', description: "Creates the project's files and folders. Framework doesn't manage Stata packages." },
 ];
 // What sets each structure apart; the tree beside them shows the folders
 const structureNotes = {
@@ -93,73 +110,123 @@ const structureNotes = {
     course: 'Slides, modules, assignments, and readings for teaching.',
     bare: 'Start with the essential Framework settings and organize your own folders.',
 };
-const projectOptions = computed(() => props.blueprints.filter(supported).map((b) => ({
-    value: b.key, label: b.name, description: structureNotes[b.key] ?? b.description,
+const projectOptions = computed(() => props.blueprints.map((b) => ({
+    value: b.key,
+    label: b.name,
+    description: supports(b) ? structureNotes[b.key] ?? b.description : `Not available for ${languageNames[draft.language]}.`,
+    disabled: !supports(b) && draft.project_type !== b.key,
 })));
-const workflowOptions = computed(() => workflowsFor(blueprint.value).map((w) => ({
+const workflowNotes = {
+    quarto: 'Write notebooks as Quarto documents (.qmd).',
+    rmarkdown: 'Write notebooks as R Markdown documents (.Rmd).',
+    jupyter: 'Write notebooks in Jupyter (.ipynb). Quarto still renders them.',
+    scripts: 'Write your analysis as scripts, without notebooks.',
+};
+const workflowOptions = computed(() => (draft.language === 'r' ? ['quarto', 'rmarkdown', 'jupyter', 'scripts'] : ['quarto', 'jupyter', 'scripts']).map((w) => ({
     value: w,
     label: workflowNames[w],
-    description: {
-        quarto: 'Quarto notebooks (.qmd) that render to HTML, PDF, and Word.',
-        jupyter: 'Jupyter notebooks (.ipynb) with the kernel for your environment. Quarto stays available to render and publish them.',
-        scripts: 'No notebooks. Your analysis lives in scripts.',
-    }[w],
+    description: workflowSupported(w) ? workflowNotes[w] : `${blueprint.value?.name} doesn't use it.`,
+    disabled: !workflowSupported(w) && workflow.value !== w,
 })));
 const editorOptions = [
     { value: 'rstudio', label: 'RStudio', description: 'Adds a .Rproj file to R projects.' },
     { value: 'vscode', label: 'Positron / VS Code', description: 'Adds a .code-workspace file.' },
 ];
+const editors = computed({
+    get: () => draft.editors,
+    set: (e) => {
+        draft.editors = e;
+        editorsChosen.value = true;
+    },
+});
 const gitOptions = [
     { value: 'yes', label: 'Yes', description: 'Each new project starts as a Git repository with a first commit.' },
-    { value: 'no', label: 'No', description: 'You can still run git init in a project later.' },
+    { value: 'no', label: 'No', description: 'You can run git init in a project later.' },
 ];
-const aiOptions = [
-    { value: 'yes', label: 'Yes', description: 'Adds an AGENTS.md that tells agents how the project works, and Framework skills they load when they need them.' },
-    { value: 'no', label: 'No', description: 'No agent files.' },
-];
+const gitChoice = computed({ get: () => (draft.git ? 'yes' : 'no'), set: (v) => (draft.git = v === 'yes') });
 const agentOptions = [
-    { value: 'claude', label: 'Claude Code', description: 'Adds a CLAUDE.md that imports AGENTS.md, and skills in .claude/skills.' },
-    { value: 'codex', label: 'Codex', description: 'Reads AGENTS.md, and skills in .agents/skills.' },
-    { value: 'copilot', label: 'GitHub Copilot', description: 'Adds .github/copilot-instructions.md, and skills in .agents/skills.' },
+    { value: 'claude', label: 'Claude Code' },
+    { value: 'codex', label: 'Codex' },
+    { value: 'copilot', label: 'GitHub Copilot' },
+    { value: 'other', label: 'Other agents', description: 'Any agent that reads AGENTS.md.' },
+    { value: 'none', label: 'None', description: 'No agent files or skills.' },
 ];
-const yesNo = (key) => computed({ get: () => (form[key] ? 'yes' : 'no'), set: (v) => (form[key] = v === 'yes') });
-const gitChoice = yesNo('git');
-const aiChoice = yesNo('ai');
+// None stands alone: picking it clears the agents, and picking an agent clears None
+const agents = computed({
+    get: () => draft.agents,
+    set: (picked) => {
+        const added = picked.find((a) => !draft.agents.includes(a));
+        const rest = picked.filter((a) => a !== 'none');
+        draft.agents = added === 'none' || !rest.length ? ['none'] : rest;
+    },
+});
 
-// What the summary previews: your other defaults with these answers in place
+// The summary previews your other defaults with these answers in place
 const ide = computed(() => {
-    const e = form.editors ?? [];
+    const e = draft.editors;
     return e.includes('rstudio') && e.includes('vscode') ? 'both' : e.includes('rstudio') ? 'rstudio' : e.includes('vscode') ? 'vscode' : 'none';
 });
-const previewValues = computed(() => ({
-    ...props.values,
-    workflows: { ...props.values.workflows, [form.language]: form.workflow },
-    ide: ide.value,
-    use_git: form.git,
-    ai_enabled: form.ai,
-    ai_agents: form.ai ? form.agents : props.values.ai_agents,
-}));
-const answers = computed(() => [
-    { key: 'language', label: 'Environment', value: languageNames[form.language] },
-    { key: 'project', label: 'Project type', value: blueprint.value?.name },
-    ...(form.language === 'stata' ? [] : [
-        { key: 'workflow', label: 'Workflow', value: workflowNames[form.workflow] },
-        { key: 'editors', label: 'Editors', value: (form.editors ?? []).map((e) => editorOptions.find((o) => o.value === e)?.label).join(', ') || 'None' },
-    ]),
-    { key: 'git', label: 'Git', value: form.git ? 'Yes' : 'No' },
-    { key: 'agents', label: 'AI agents', value: form.ai ? (form.agents.map((a) => agentOptions.find((o) => o.value === a)?.label).join(', ') || 'Yes, AGENTS.md only') : 'No' },
-]);
+const aiOn = computed(() => !draft.agents.includes('none'));
+const named = computed(() => draft.agents.filter((a) => ['claude', 'codex', 'copilot'].includes(a)));
+const previewValues = computed(() => {
+    const w = workflow.value;
+    return {
+        ...props.values,
+        workflows: { ...props.values.workflows, [draft.language]: w === 'rmarkdown' ? 'quarto' : w },
+        rmarkdown: draft.language === 'r' ? w === 'rmarkdown' : props.values.rmarkdown,
+        ide: ide.value,
+        use_git: draft.git,
+        ai_enabled: aiOn.value,
+        ai_agents: aiOn.value ? named.value : props.values.ai_agents,
+    };
+});
 
-// Leaving for the structure builder keeps your answers and place for when you come back
+const describe = {
+    language: (a) => languageNames[a.language],
+    project: (a) => props.blueprints.find((b) => b.key === a.project_type)?.name,
+    workflow: (a) => workflowNames[a.workflows[a.language]],
+    editors: (a) => a.editors.map((e) => editorOptions.find((o) => o.value === e)?.label).join(', ') || 'None',
+    git: (a) => (a.git ? 'Yes' : 'No'),
+    agents: (a) => a.agents.map((x) => agentNames[x]).join(', '),
+};
+const review = computed(() => [
+    { key: 'language', label: 'Language' },
+    { key: 'project', label: 'Project structure' },
+    ...(draft.language === 'stata' ? [{ key: 'workflow', label: 'Notebook workflow', fixed: 'Scripts only' }] : [
+        { key: 'workflow', label: 'Notebook workflow' },
+        { key: 'editors', label: 'Editor support' },
+    ]),
+    { key: 'git', label: 'Git' },
+    { key: 'agents', label: 'Agents' },
+].map((row) => {
+    const value = row.fixed ?? describe[row.key](draft);
+    // Returning people see what differs from what they saved
+    const before = props.saved.any && !row.fixed ? describe[row.key]({ ...fromSaved, language: row.key === 'workflow' ? draft.language : fromSaved.language }) : null;
+    return { ...row, value, before: before !== null && before !== value ? before : null, problem: problems.value[row.key] };
+}));
+const savable = computed(() => !Object.values(problems.value).some(Boolean));
+
+// Leaving for the structure builder keeps the draft and place for when you come back
 const remember = () => {
     try {
-        sessionStorage.setItem(STORE, JSON.stringify({ answers: form.data(), index: index.value }));
+        sessionStorage.setItem(STORE, JSON.stringify({ answers: draft.data(), index: index.value, editorsChosen: editorsChosen.value }));
     } catch {}
 };
 
-const save = () => form.transform((data) => ({ ...data, editors: data.editors ?? [] })).post('/welcome');
+const save = () => draft
+    .transform((d) => ({
+        language: d.language,
+        project_type: d.project_type,
+        workflow: d.language === 'stata' ? 'scripts' : d.workflows[d.language],
+        editors: d.language === 'stata' ? fromSaved.editors : d.editors,
+        git: d.git,
+        ai: aiOn.value,
+        agents: named.value,
+    }))
+    .post('/welcome');
 const skip = () => router.post('/welcome/skip');
 const heading = 'text-sm font-semibold text-slate-900 dark:text-white';
+const note = 'text-sm text-slate-600 dark:text-slate-400';
 </script>
 
 <template>
@@ -167,73 +234,78 @@ const heading = 'text-sm font-semibold text-slate-900 dark:text-white';
 
     <AppLayout bleed>
         <div class="mx-auto flex max-w-5xl flex-col gap-8 px-6 py-10 lg:px-12">
-            <div class="flex items-start justify-between gap-6">
-                <div>
-                    <p class="text-sm text-slate-500">{{ step.key === 'summary' ? 'Review' : `Question ${index + 1} of ${steps.length - 1}` }}</p>
-                    <h1 class="mt-1 text-2xl font-semibold text-slate-900 dark:text-white">{{ step.title }}</h1>
-                    <p v-if="index === 0" class="mt-2 text-sm text-slate-600 dark:text-slate-400">
-                        A few questions set your defaults for new projects. Every way of creating a project uses them: this site, R, Python, and fw.
-                        You can change any of them later in Project defaults.
-                    </p>
-                </div>
+            <div>
+                <p class="text-sm text-slate-500">{{ step.key === 'review' ? 'Review' : `Question ${index + 1} of ${steps.length - 1}` }}</p>
+                <h1 class="mt-1 text-2xl font-semibold text-slate-900 dark:text-white">{{ step.title }}</h1>
+                <p v-if="index === 0" :class="note" class="mt-2">Your answers set the defaults for new projects. You can change them later in Project defaults.</p>
             </div>
 
             <!-- One question at a time -->
             <div class="min-h-64">
-                <UiRadioCards v-if="step.key === 'language'" v-model="form.language" name="language" :legend="step.title" hide-legend :options="languageOptions" stacked />
+                <UiRadioCards v-if="step.key === 'language'" v-model="draft.language" name="language" :legend="step.title" hide-legend :options="languageOptions" stacked />
 
                 <div v-else-if="step.key === 'project'" class="flex flex-col gap-3">
-                    <p class="text-sm text-slate-600 dark:text-slate-400">These recommended structures organize your files from a small analysis to a larger project. Choose a default here; you can use a different structure for each project.</p>
+                    <p :class="note">These recommended structures organize your files from a small analysis to a larger project. Choose a default here; you can use a different structure for each project.</p>
                     <p class="text-sm text-slate-500 dark:text-slate-400">Prefer your own arrangement? Choose Bare. You can later <Link href="/structures/create" class="text-sky-600 hover:underline dark:text-sky-400" @click="remember">create a custom project structure</Link>.</p>
-                    <!-- The chosen type's folders beside the choices -->
+                    <p v-if="problems.project" class="text-sm text-amber-800 dark:text-amber-300" role="alert">{{ problems.project }}</p>
+                    <!-- The chosen structure's folders beside the choices -->
                     <div class="grid gap-8 lg:grid-cols-[minmax(0,28rem)_minmax(0,1fr)]">
-                        <UiRadioCards v-model="form.project_type" name="project_type" :legend="step.title" hide-legend :options="projectOptions" stacked />
+                        <UiRadioCards v-model="draft.project_type" name="project_type" :legend="step.title" hide-legend :options="projectOptions" stacked />
                         <section class="self-start rounded-lg border border-slate-200 p-4 lg:sticky lg:top-6 dark:border-slate-700" aria-live="polite">
                             <h2 class="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">{{ blueprint?.name }}</h2>
-                            <BlueprintPreview v-if="blueprint" tree-only :blueprint="blueprint" :language="form.language" :values="previewValues" />
+                            <BlueprintPreview v-if="blueprint && supports(blueprint)" tree-only :blueprint="blueprint" :language="draft.language" :values="previewValues" />
                         </section>
                     </div>
                 </div>
 
                 <div v-else-if="step.key === 'workflow'" class="flex flex-col gap-3">
-                    <p v-if="workflowOptions.length === 1" class="text-sm text-slate-600 dark:text-slate-400">{{ blueprint.name }} is built on {{ workflowNames[workflowOptions[0].value] }}, so that's its workflow.</p>
-                    <UiRadioCards v-model="form.workflow" name="workflow" :legend="step.title" hide-legend :options="workflowOptions" stacked />
+                    <p v-if="problems.workflow" class="text-sm text-amber-800 dark:text-amber-300" role="alert">{{ problems.workflow }}</p>
+                    <UiRadioCards v-model="workflow" :name="`workflow_${draft.language}`" :legend="step.title" hide-legend :options="workflowOptions" stacked />
                 </div>
 
                 <div v-else-if="step.key === 'editors'" class="flex flex-col gap-3">
-                    <p class="text-sm text-slate-600 dark:text-slate-400">Select every editor you use. Each one gets the file it opens a project with.</p>
-                    <UiCheckboxCards v-model="form.editors" :legend="step.title" hide-legend :options="editorOptions" />
+                    <p :class="note">Select all that apply.</p>
+                    <UiCheckboxCards v-model="editors" :legend="step.title" hide-legend :options="editorOptions" />
                 </div>
 
                 <UiRadioCards v-else-if="step.key === 'git'" v-model="gitChoice" name="git" :legend="step.title" hide-legend :options="gitOptions" stacked />
 
-                <div v-else-if="step.key === 'agents'" class="flex flex-col gap-6">
-                    <UiRadioCards v-model="aiChoice" name="ai" :legend="step.title" hide-legend :options="aiOptions" stacked />
-                    <section v-if="form.ai" class="flex flex-col gap-3">
-                        <h2 :class="heading">Which agents?</h2>
-                        <p class="text-sm text-slate-600 dark:text-slate-400">Each one gets the files it reads. Agents that read AGENTS.md need nothing more.</p>
-                        <UiCheckboxCards v-model="form.agents" legend="Which agents?" hide-legend :options="agentOptions" />
-                    </section>
+                <div v-else-if="step.key === 'agents'" class="flex flex-col gap-3">
+                    <p :class="note">Select all that apply.</p>
+                    <UiCheckboxCards v-model="agents" :legend="step.title" hide-legend :options="agentOptions" />
+                    <details class="max-w-md text-sm text-slate-600 dark:text-slate-400">
+                        <summary class="cursor-pointer text-sky-700 hover:underline dark:text-sky-400">What each one adds</summary>
+                        <ul class="mt-2 flex list-disc flex-col gap-1 pl-5">
+                            <li>Every choice except None adds AGENTS.md, the project's instructions, and Framework's skills.</li>
+                            <li>Claude Code: a CLAUDE.md that imports AGENTS.md, with skills in .claude/skills.</li>
+                            <li>Codex: skills in .agents/skills.</li>
+                            <li>GitHub Copilot: .github/copilot-instructions.md, with skills in .agents/skills.</li>
+                        </ul>
+                    </details>
                 </div>
 
-                <div v-else class="flex flex-col gap-8">
+                <div v-else class="flex max-w-3xl flex-col gap-6">
                     <dl class="divide-y divide-slate-200 rounded-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-700">
-                        <div v-for="a in answers" :key="a.key" class="flex items-center justify-between gap-4 px-4 py-2.5 text-sm">
-                            <dt class="text-slate-500">{{ a.label }}</dt>
-                            <dd class="flex items-center gap-4 text-right text-slate-900 dark:text-white">
-                                {{ a.value }}
-                                <button type="button" class="text-sky-600 hover:underline dark:text-sky-400" @click="go(a.key)">Change<span class="sr-only"> {{ a.label }}</span></button>
+                        <div v-for="row in review" :key="row.key" class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-2.5 text-sm">
+                            <dt class="text-slate-500">{{ row.label }}</dt>
+                            <dd class="flex items-center gap-4 text-right">
+                                <span class="flex flex-col items-end">
+                                    <span class="text-slate-900 dark:text-white">{{ row.value }}</span>
+                                    <span v-if="row.before" class="text-xs text-slate-500">Was {{ row.before }}</span>
+                                    <span v-if="row.problem" class="text-xs text-amber-800 dark:text-amber-300">{{ row.problem }}</span>
+                                </span>
+                                <button v-if="!row.fixed" type="button" class="text-sky-600 hover:underline dark:text-sky-400" @click="edit(row.key)">Edit<span class="sr-only"> {{ row.label }}</span></button>
                             </dd>
                         </div>
                     </dl>
                     <section class="flex flex-col gap-3">
                         <h2 :class="heading">What new projects include</h2>
-                        <p class="text-sm text-slate-600 dark:text-slate-400">Your other defaults, such as packages and Quarto settings, are included too. Change them anytime in Project defaults.</p>
                         <div class="rounded-lg border border-slate-200 p-4 dark:border-slate-700">
-                            <BlueprintPreview v-if="blueprint" :blueprint="blueprint" :language="form.language" :values="previewValues" />
+                            <BlueprintPreview v-if="blueprint && savable" :blueprint="blueprint" :language="draft.language" :values="previewValues" />
                         </div>
                     </section>
-                    <p v-if="Object.keys(form.errors).length" class="text-sm text-red-600">{{ Object.values(form.errors)[0] }}</p>
+                    <p class="text-sm text-slate-500">Nothing is saved until you choose Save defaults.</p>
+                    <p v-if="Object.keys(draft.errors).length" class="text-sm text-red-600">{{ Object.values(draft.errors)[0] }}</p>
                 </div>
             </div>
 
@@ -241,8 +313,8 @@ const heading = 'text-sm font-semibold text-slate-900 dark:text-white';
                 <UiButton variant="ghost" @click="skip">{{ again ? 'Cancel' : 'Skip setup' }}</UiButton>
                 <div class="flex items-center gap-3">
                     <UiButton v-if="index > 0" variant="outline" @click="back">Back</UiButton>
-                    <UiButton v-if="step.key !== 'summary'" @click="next">Continue</UiButton>
-                    <UiButton v-else :disabled="form.processing" @click="save">{{ form.processing ? 'Saving…' : 'Save my defaults' }}</UiButton>
+                    <UiButton v-if="step.key !== 'review'" :disabled="blocked" @click="next">{{ index === steps.length - 2 ? 'Review defaults' : 'Continue' }}</UiButton>
+                    <UiButton v-else :disabled="draft.processing || !savable" @click="save">{{ draft.processing ? 'Saving…' : 'Save defaults' }}</UiButton>
                 </div>
             </div>
         </div>

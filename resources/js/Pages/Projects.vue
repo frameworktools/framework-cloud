@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, watch, onBeforeUnmount } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { router, usePage } from '@inertiajs/vue3';
 import { PlusIcon } from '@heroicons/vue/20/solid';
 import { AcademicCapIcon, CalendarIcon, FolderIcon, ListBulletIcon, PresentationChartBarIcon, Squares2X2Icon } from '@heroicons/vue/24/outline';
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -9,6 +9,7 @@ import EmptyState from '@/Components/EmptyState.vue';
 import UiBadge from '@/Components/UiBadge.vue';
 import GitHubMark from '@/Components/GitHubMark.vue';
 import PageHeader from '@/Components/PageHeader.vue';
+import UiCallout from '@/Components/UiCallout.vue';
 import { languageNames } from '@/library.js';
 import { statusLabel, statusVariant, typeName } from '@/projects.js';
 
@@ -44,6 +45,14 @@ const created = (date) => new Date(date).toLocaleDateString(undefined, { year: '
                     <Link href="/projects/create"><UiButton><PlusIcon class="size-4" />New project</UiButton></Link>
                 </template>
             </PageHeader>
+
+            <!-- Just after guided setup: the defaults are saved, and the next step is a project -->
+            <UiCallout v-if="usePage().props.flash.status === 'setup-complete'" variant="success" class="mt-6">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <span>Your defaults are saved. New projects start from them.</span>
+                    <Link href="/projects/create"><UiButton size="sm">Create a project</UiButton></Link>
+                </div>
+            </UiCallout>
 
             <!-- How the projects are shown: its own row, apart from New project -->
             <div v-if="projects.length" class="mt-6 ml-auto flex w-fit rounded-md border border-slate-300 p-0.5 dark:border-slate-700" role="group" aria-label="View">

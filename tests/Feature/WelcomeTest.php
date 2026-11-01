@@ -82,4 +82,41 @@ class WelcomeTest extends TestCase
         $this->actingAs($user)->post('/welcome', $answers + ['language' => 'stata', 'project_type' => 'project', 'workflow' => 'quarto'])->assertSessionHasErrors('workflow');
         $this->assertNull($user->fresh()->setup_completed_at);
     }
+
+    public function test_r_markdown_is_an_answer_and_setup_starts_from_what_was_saved(): void
+    {
+        $user = $this->newcomer();
+        $this->actingAs($user)->get('/welcome')->assertInertia(fn (Assert $page) => $page
+            ->where('saved.any', false)->where('saved.language', false)->where('saved.workflows', []));
+
+        $answers = ['project_type' => 'project', 'editors' => ['vscode'], 'git' => true, 'ai' => false, 'agents' => []];
+        $this->actingAs($user)->post('/welcome', $answers + ['language' => 'r', 'workflow' => 'rmarkdown'])->assertSessionHasNoErrors();
+        $doc = $user->fresh()->globalSettings()->document;
+        $this->assertSame('quarto', $doc['defaults']['workflows']['r']);
+        $this->assertSame('rmarkdown', $doc['defaults']['notebook_format']);
+        $this->assertSame('vscode', $doc['defaults']['ide']);
+
+        // Rerunning starts from the saved answers, editors included
+        $this->actingAs($user)->get('/welcome')->assertInertia(fn (Assert $page) => $page
+            ->where('saved.any', true)->where('saved.language', true)->where('saved.workflows', ['r', 'python', 'stata'])
+            ->where('values.ide', 'vscode')->where('values.rmarkdown', true));
+
+        // A Python answer leaves R's R Markdown alone
+        $this->actingAs($user)->post('/welcome', $answers + ['language' => 'python', 'workflow' => 'jupyter'])->assertSessionHasNoErrors();
+        $this->assertSame('rmarkdown', $user->fresh()->globalSettings()->document['defaults']['notebook_format']);
+
+        // R Markdown is R's alone
+        $this->actingAs($user)->post('/welcome', $answers + ['language' => 'python', 'workflow' => 'rmarkdown'])->assertSessionHasErrors('workflow');
+    }
+
+    public function test_skipping_saves_nothing_but_the_skip(): void
+    {
+        $user = $this->newcomer();
+        $before = $user->globalSettings()->document;
+
+        $this->actingAs($user)->post('/welcome/skip')->assertRedirect('/projects');
+
+        $this->assertSame($before, $user->fresh()->globalSettings()->document);
+        $this->assertNull($user->fresh()->project_defaults['language'] ?? null);
+    }
 }

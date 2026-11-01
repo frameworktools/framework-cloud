@@ -42,6 +42,12 @@ const missing = (preset) => preset.packages.filter((p) => !rows.value.some((row)
 const load = (preset) => {
     rows.value = [...rows.value.filter((row) => row.name), ...missing(preset).map((p) => ({ ...blank(), ...p }))];
 };
+// Replacing drops the list for the set's packages, so it asks first
+const replace = (preset) => {
+    if (window.confirm(`Replace your ${rows.value.filter((r) => r.name).length} packages with the ${preset.packages.length} in ${preset.name}?`)) {
+        rows.value = preset.packages.map((p) => ({ ...blank(), ...p }));
+    }
+};
 
 const field = 'w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100';
 </script>
@@ -53,6 +59,7 @@ const field = 'w-full rounded-md border border-slate-300 bg-white px-3 py-2 text
             <summary class="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-medium text-slate-800 dark:text-slate-200 [&::-webkit-details-marker]:hidden">
                 <ChevronRightIcon class="size-4 text-slate-400 transition-transform group-open:rotate-90" />
                 Load a package set
+                <span class="font-normal text-slate-500">· adds to your list unless you replace it</span>
             </summary>
             <div class="divide-y divide-slate-200 border-t border-slate-200 dark:divide-slate-800 dark:border-slate-700">
                 <div v-for="preset in presets" :key="preset.key" class="flex items-start justify-between gap-4 px-4 py-3">
@@ -60,9 +67,12 @@ const field = 'w-full rounded-md border border-slate-300 bg-white px-3 py-2 text
                         <div class="text-sm font-medium text-slate-900 dark:text-white">{{ preset.name }}</div>
                         <div class="mt-0.5 font-mono text-xs text-slate-500">{{ preset.packages.map((p) => p.name).join(', ') }}</div>
                     </div>
-                    <UiButton size="sm" variant="outline" class="shrink-0" :disabled="!missing(preset).length" @click="load(preset)">
-                        {{ missing(preset).length ? `Add ${missing(preset).length}` : 'All added' }}
-                    </UiButton>
+                    <div class="flex shrink-0 items-center gap-2">
+                        <UiButton size="sm" variant="outline" :disabled="!missing(preset).length" :title="`Adds the packages your list doesn't have yet`" @click="load(preset)">
+                            {{ missing(preset).length ? `Add ${missing(preset).length}` : 'All added' }}
+                        </UiButton>
+                        <UiButton size="sm" variant="ghost" @click="replace(preset)">Replace list</UiButton>
+                    </div>
                 </div>
                 <p class="px-4 py-3 text-sm"><Link href="/package-sets" class="text-sky-600 hover:underline dark:text-sky-400">Manage package sets</Link></p>
             </div>

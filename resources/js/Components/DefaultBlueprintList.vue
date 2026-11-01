@@ -44,19 +44,21 @@ const values = computed(() => {
 <template>
     <fieldset>
         <legend class="sr-only">Default blueprint</legend>
+        <!-- What the previews are for, such as a language and workflow -->
+        <div v-if="$slots.default" class="mb-3"><slot /></div>
         <div class="divide-y divide-slate-200 rounded-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-800">
             <div v-for="b in blueprints" :key="b.key" class="relative">
                 <!-- The chosen row's accent: a thin bar at its left edge -->
                 <span v-if="model === b.key" class="absolute inset-y-0 left-0 w-0.5 bg-sky-600" aria-hidden="true" />
                 <div class="flex items-start gap-3 px-4 py-3">
-                    <label class="flex min-w-0 flex-1 items-start gap-3" :class="supports(b) ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'">
-                        <input v-model="model" type="radio" name="project_type" :value="b.key" :disabled="!supports(b) && model !== b.key" class="mt-0.5 size-4 shrink-0 accent-sky-600">
+                    <label class="flex min-w-0 flex-1 cursor-pointer items-start gap-3">
+                        <input v-model="model" type="radio" name="project_type" :value="b.key" class="mt-0.5 size-4 shrink-0 accent-sky-600">
                         <span class="flex min-w-0 flex-col gap-0.5">
                             <span class="text-sm font-medium text-slate-900 dark:text-white">{{ b.name }}</span>
                             <span class="text-sm text-slate-600 dark:text-slate-400">{{ b.description }}</span>
                             <span class="mt-0.5 text-xs text-slate-500">
                                 <template v-if="supports(b)">Workflows: {{ workflowsFor(b).map((w) => workflowNames[w]).join(', ') }}</template>
-                                <template v-else>Not available for {{ languageNames[language] }}. New {{ languageNames[language] }} projects use the standard project instead.</template>
+                                <template v-else>Not available for {{ languageNames[language] }}: new {{ languageNames[language] }} projects use the standard project instead.</template>
                             </span>
                         </span>
                     </label>

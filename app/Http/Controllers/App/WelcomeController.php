@@ -23,10 +23,21 @@ class WelcomeController extends Controller
 {
     public function show(Request $request): Response
     {
+        $user = $request->user();
+        $setting = $user->globalSettings();
+        $doc = $setting->document;
+
         return Inertia::render('Welcome', [
             'blueprints' => DefaultsController::blueprintList(),
-            'values' => DefaultsController::values($request->user()),
-            'again' => (bool) $request->user()->setup_completed_at,
+            'values' => DefaultsController::values($user),
+            'again' => (bool) $user->setup_completed_at,
+            // What the account has actually saved: setup starts from these, and
+            // recommends only where nothing was saved
+            'saved' => [
+                'any' => $setting->revision > 0 || (bool) $user->setup_completed_at,
+                'language' => isset($user->project_defaults['language']),
+                'workflows' => array_keys(ProjectDefaults::chosenWorkflows(Arr::get($doc, 'defaults.workflows'))),
+            ],
         ]);
     }
 
@@ -35,7 +46,8 @@ class WelcomeController extends Controller
         $validated = $request->validate([
             'language' => ['required', 'in:r,python,stata'],
             'project_type' => ['required', 'string'],
-            'workflow' => ['required', 'in:'.implode(',', ProjectDefaults::WORKFLOW_KEYS)],
+            // R Markdown is R's Quarto workflow writing .Rmd notebooks
+            'workflow' => ['required', 'in:'.implode(',', [...ProjectDefaults::WORKFLOW_KEYS, 'rmarkdown'])],
             'editors' => ['array'],
             'editors.*' => ['in:rstudio,vscode'],
             'git' => ['required', 'boolean'],
@@ -48,6 +60,11 @@ class WelcomeController extends Controller
         $version = Blueprint::systemTypes()->where('key', $validated['project_type'])->with('latestVersion')->first()?->latestVersion
             ?? throw ValidationException::withMessages(['project_type' => 'Choose one of the project types.']);
         $compatibility = $version->compatibility();
+        $rmarkdown = $validated['workflow'] === 'rmarkdown';
+        if ($rmarkdown && $validated['language'] !== 'r') {
+            throw ValidationException::withMessages(['workflow' => 'R Markdown is for R projects.']);
+        }
+        $validated['workflow'] = $rmarkdown ? 'quarto' : $validated['workflow'];
         if ($compatibility['languages'] && ! in_array($validated['language'], $compatibility['languages'], true)) {
             throw ValidationException::withMessages(['project_type' => 'That project type isn\'t available for this language.']);
         }
@@ -65,7 +82,9 @@ class WelcomeController extends Controller
 
         Arr::set($doc, 'defaults.project_type', $validated['project_type']);
         Arr::set($doc, 'defaults.workflows', $workflows);
-        Arr::set($doc, 'defaults.notebook_format', ProjectDefaults::notebookFormat($workflows['r'], 'r', Arr::get($doc, 'defaults.notebook_format') === 'rmarkdown') ?? 'quarto');
+        // Setup answers R's workflow only when R is the language; otherwise R's R Markdown choice stays
+        $keepRmarkdown = $validated['language'] === 'r' ? $rmarkdown : Arr::get($doc, 'defaults.notebook_format') === 'rmarkdown';
+        Arr::set($doc, 'defaults.notebook_format', ProjectDefaults::notebookFormat($workflows['r'], 'r', $keepRmarkdown) ?? 'quarto');
         Arr::set($doc, 'defaults.ide', match (true) {
             in_array('rstudio', $editors, true) && in_array('vscode', $editors, true) => 'both',
             in_array('rstudio', $editors, true) => 'rstudio',

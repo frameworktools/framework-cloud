@@ -84,6 +84,48 @@ With no copy, they ask first, or stop in a script unless you pass
 `offline = TRUE` (R), `offline=True` (Python), or `--offline` (`fw`). They
 never switch to a different configuration without saying so.
 
+#### Notebook workflows
+
+Each language has a notebook workflow, set under **Project defaults >
+Notebook workflow**:
+
+- **Quarto:** `make_notebook()` creates Quarto documents (`.qmd`).
+- **R Markdown** (R only): R Markdown documents (`.Rmd`), rendered by Quarto.
+- **Jupyter:** Jupyter notebooks (`.ipynb`) with the language's kernel,
+  IRkernel for R and ipykernel for Python. The project keeps Quarto, which
+  renders and publishes the notebooks.
+- **Scripts only:** no notebooks. `make_notebook()` creates a script.
+  Stata projects always use this workflow.
+
+The workflow sets the default format. A project can still hold notebooks in
+other formats: `make_notebook("analysis.ipynb")` creates a Jupyter notebook in
+a Quarto project.
+
+A project gets the tools its workflow needs: Quarto for the Quarto and R
+Markdown workflows, and Jupyter and Quarto for the Jupyter workflow. **Add
+Jupyter to Quarto and Scripts-only projects** and **Add Quarto to
+Scripts-only projects** add them to the other workflows.
+
+`save_notebook()` renders a notebook, Quarto or Jupyter, with Quarto, into
+the project structure's render folder, such as `outputs/notebooks/`. It
+renders the outputs saved in the notebook, so run the notebook first.
+Notebook outputs can contain data. The **Block notebook outputs** data
+safety hook stops a commit until they're cleared.
+
+The project's `_quarto.yml` at the root holds the shared HTML and slide
+settings. A folder that renders differently, such as a course's slides, has
+its own `_metadata.yml`.
+
+#### What scaffold() does
+
+`scaffold()` runs at the top of every notebook and script:
+
+- **Random seed:** R calls `set.seed()`. Python seeds `random` and NumPy's
+  global generator.
+- **ggplot2 theme** (R only): `theme_set()` with the chosen theme.
+- **Functions:** R sources each file in `functions/`. Python adds the folder
+  to the import path, so `functions/helpers.py` imports as `helpers`.
+
 #### Guided setup
 
 New accounts start with six questions: language, typical project, workflow,
