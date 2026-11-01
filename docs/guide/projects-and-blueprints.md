@@ -28,11 +28,10 @@ grouped by subject:
 
 - **New projects.** The default language and blueprint, editor support,
   default R and Python packages (a package set loads its packages into the
-  list) with renv or uv, what `scaffold()` does, git, and agent files with preferred skill
-  sets.
-- **Data safety.** The Git hooks that run before each commit. Whether a
-  project holds sensitive data comes from its blueprint, such as Privacy
-  Sensitive.
+  list) with renv or uv, what `scaffold()` does, git, the data safety hooks
+  that run before each commit, and agent files with preferred skill sets.
+  Whether a project holds sensitive data comes from its blueprint, such as
+  Privacy Sensitive.
 - **Documents.** The notebook format, Jupyter, and Quarto.
 
 The pages share one form, so changes on several pages are saved together.
@@ -57,20 +56,20 @@ Without a named blueprint, a new project gets:
 
 Choosing a blueprint replaces your default blueprint, packages, skill sets,
 and tools, including ones the blueprint doesn't mention. Your
-Git, agent setup, and Git hooks defaults still apply where the blueprint
+Git, agent setup, and data safety hooks defaults still apply where the blueprint
 doesn't set them itself. Sensitive data has no default: the blueprint and
 its project structure decide, and Privacy Sensitive turns it on. When you
 change a blueprint's pieces on the New project page, the sensitive data
 switch on that page decides.
 
 - **Agent setup.** Off, a project gets no context file and no skill sets.
-- **Git hooks.** They need Git, so they're skipped when Git is off. A
+- **Data safety hooks.** They need Git, so they're skipped when Git is off. A
   blueprint's own choice for a hook wins.
 
 Some defaults sync to the computers where you've run `cloud_login()` in R
 or Python: the default blueprint, editor, notebook format, Git, renv, the
 random seed, and agent setup with its context file and skills. Package sets,
-skill sets, the other tools, and Git hooks stay in your
+skill sets, the other tools, and data safety hooks stay in your
 account. They apply when Framework Cloud resolves a new project: on the New
 project page, or with `fw new` and a cloud choice such as `--defaults` or
 `--blueprint`. Plain `fw new NAME` builds the project with R's or Python's

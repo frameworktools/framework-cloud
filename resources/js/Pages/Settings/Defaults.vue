@@ -27,9 +27,8 @@ const sections = [
     { key: 'packages', label: 'Packages' },
     { key: 'scaffold', label: 'Scaffold' },
     { key: 'git', label: 'Git' },
+    { key: 'hooks', label: 'Data safety hooks' },
     { key: 'agents', label: 'Agents' },
-    { heading: 'Data safety' },
-    { key: 'hooks', label: 'Git hooks' },
     { heading: 'Documents' },
     { key: 'notebooks', label: 'Notebooks' },
     { key: 'quarto', label: 'Quarto' },
@@ -187,7 +186,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
 
             <section v-else-if="section === 'git'" class="flex max-w-xl flex-col gap-5">
                 <UiSwitch v-model="form.use_git" label="Set up Git" description="Makes each new project a git repository." />
-                <p :class="note"><Link href="/settings/hooks" preserve-state :class="link">Git hooks</Link> can check each commit for secrets and private folders.</p>
+                <p :class="note"><Link href="/settings/hooks" preserve-state :class="link">Data safety hooks</Link> can check each commit for secrets and private folders.</p>
             </section>
 
             <template v-else-if="section === 'agents'">

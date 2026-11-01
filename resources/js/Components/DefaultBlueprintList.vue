@@ -212,7 +212,7 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
 
                             <!-- Hooks need Git, so they only show with it on -->
                             <section v-if="previews[b.key].settings.git.on">
-                                <div :class="label">Git hooks</div>
+                                <div :class="label">Data safety hooks</div>
                                 <ul class="mt-1 flex flex-col gap-1">
                                     <li v-for="hook in previews[b.key].settings.hooks.on" :key="hook">{{ hookNames[hook] ?? hook }}</li>
                                     <li v-if="!previews[b.key].settings.hooks.on.length" class="text-slate-500">None</li>

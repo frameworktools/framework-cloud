@@ -20,7 +20,7 @@ use Inertia\Response;
 class DefaultsController extends Controller
 {
     /** The settings pages, in sidebar order. They share one form. */
-    public const SECTIONS = ['language', 'blueprint', 'editor', 'packages', 'scaffold', 'git', 'agents', 'hooks', 'notebooks', 'quarto'];
+    public const SECTIONS = ['language', 'blueprint', 'editor', 'packages', 'scaffold', 'git', 'hooks', 'agents', 'notebooks', 'quarto'];
 
     public function edit(Request $request, string $section): Response
     {
