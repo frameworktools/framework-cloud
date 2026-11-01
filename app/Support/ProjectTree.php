@@ -62,12 +62,8 @@ class ProjectTree
                 }
             }
             if ($agents) {
-                // Of Framework's skills, fw ships only these for Stata. The folder
-                // shows alone, with what's inside in its tooltip.
-                $inside = array_values(array_intersect($skills, ['framework-stata', 'framework-sensitive-data']));
-                if ($inside || $sensitive) {
-                    $add('.claude', 'dir', self::inside($inside, $sensitive));
-                }
+                // Of Framework's skills, fw ships only these for Stata
+                self::agentFiles($add, $spec, array_values(array_intersect($skills, ['framework-stata', 'framework-sensitive-data'])), $sensitive);
             }
         } else {
             // R and Python make the folders now, except outputs and render folders, which come with use
@@ -136,13 +132,7 @@ class ProjectTree
             }
 
             if ($core && $agents) {
-                $add('AGENTS.md', 'file');
-                $add('CLAUDE.md', 'file', null, 'with Claude Code');
-                // Agent folders show alone, with what's inside in their tooltips
-                $add('.agents', 'dir', self::inside($skills, false), 'or .claude/ with Claude Code');
-                if ($sensitive) {
-                    $add('.claude', 'dir', 'settings.json, which keeps private folders from Claude Code', 'with Claude Code');
-                }
+                self::agentFiles($add, $spec, $skills, $sensitive);
             }
         }
 
@@ -164,6 +154,41 @@ class ProjectTree
     }
 
     /** What an agent folder holds, for its tooltip. */
+    /**
+     * The context file and each agent's own files, as R, Python, and fw write
+     * them: AGENTS.md, a CLAUDE.md for Claude Code that points to it (or holds
+     * everything, for someone who uses only Claude Code), Copilot's
+     * instructions, and the skills in .claude/ for Claude Code and .agents/
+     * for the others. Agent folders show alone, with what's inside in their tooltips.
+     *
+     * @param  list<string>  $skills
+     */
+    private static function agentFiles(callable $add, array $spec, array $skills, bool $sensitive): void
+    {
+        $agents = array_values(array_intersect(ProjectDefaults::AGENTS, array_keys(array_filter((array) ($spec['ai']['assistants'] ?? [])))));
+        $claude = in_array('claude', $agents, true);
+        $claudeOnly = $agents === ['claude'] && ($spec['ai']['context_file'] ?? 'AGENTS.md') === 'CLAUDE.md';
+
+        if ($claudeOnly) {
+            $add('CLAUDE.md', 'file', 'the instructions for Claude Code');
+        } else {
+            $add('AGENTS.md', 'file', 'the instructions agents read');
+            if ($claude) {
+                $add('CLAUDE.md', 'file', 'points Claude Code to AGENTS.md');
+            }
+        }
+        if (in_array('copilot', $agents, true)) {
+            $add('.github', 'dir', 'copilot-instructions.md, which points Copilot to AGENTS.md');
+        }
+        if ($claude && ($skills || $sensitive)) {
+            $add('.claude', 'dir', self::inside($skills, $sensitive));
+        }
+        // Codex and Copilot read .agents/skills, where skills go with no agent chosen too
+        if ($skills && (! $agents || array_diff($agents, ['claude']))) {
+            $add('.agents', 'dir', self::inside($skills, false));
+        }
+    }
+
     private static function inside(array $skills, bool $settings): string
     {
         return implode('; ', array_filter([

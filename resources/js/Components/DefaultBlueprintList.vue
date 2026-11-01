@@ -37,7 +37,7 @@ const language = reactive(Object.fromEntries(props.blueprints.map((b) => [b.key,
 // What the server resolves the previews from: every default that changes a new project
 const values = computed(() => {
     const d = props.defaults;
-    return { ide: d.ide, packages: d.packages, skill_sets: d.skill_sets, tools: d.tools, use_renv: d.use_renv, sensitive: d.sensitive, use_git: d.use_git, ai_enabled: d.ai_enabled, hooks: d.hooks };
+    return { ide: d.ide, packages: d.packages, skill_sets: d.skill_sets, tools: d.tools, use_renv: d.use_renv, sensitive: d.sensitive, use_git: d.use_git, ai_enabled: d.ai_enabled, ai_agents: d.ai_agents, ai_canonical_file: d.ai_canonical_file, hooks: d.hooks };
 });
 const previews = reactive({});
 const loading = reactive({});
@@ -170,7 +170,7 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
 
                             <section>
                                 <div :class="label">AI agents</div>
-                                <div class="mt-1">Setup: {{ previews[b.key].agents ? 'On' : 'Off' }} <span v-if="previews[b.key].settings.agents.from === 'defaults'" class="text-xs text-slate-500" title="From your Project defaults">· your default</span></div>
+                                <div class="mt-1">{{ previews[b.key].agents ? (previews[b.key].agent_names.join(', ') || 'On, no agent chosen') : 'Off' }} <span v-if="previews[b.key].settings.agents.from === 'defaults'" class="text-xs text-slate-500" title="From your Project defaults">· your default</span></div>
                             </section>
 
                             <!-- Each skill on its own line, under the set it comes from -->

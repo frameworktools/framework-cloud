@@ -135,6 +135,10 @@ class ProjectLanguageTest extends TestCase
 
         // R projects keep them, and get the owner's editor files and scaffold() settings
         $project->update(['language' => 'r']);
-        $this->assertSame(['language' => 'r', 'scaffold' => ['ide' => 'positron'] + ProjectDefaults::SCAFFOLD], end(ProjectLayers::for($project->fresh())['layers'])['layer']);
+        $this->assertSame([
+            'language' => 'r',
+            'scaffold' => ['ide' => 'positron'] + ProjectDefaults::SCAFFOLD,
+            'ai' => ['assistants' => ['claude' => true, 'codex' => false, 'copilot' => false]],
+        ], end(ProjectLayers::for($project->fresh())['layers'])['layer']);
     }
 }

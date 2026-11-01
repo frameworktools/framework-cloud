@@ -51,7 +51,7 @@ class ProjectLayers
         // always goes in, so every tool can tell which one builds the project,
         // and the owner's editor files, which are a personal choice.
         $settings = ProjectDefaults::for($user)['settings'];
-        $layers[] = self::projectLayer($project->slug, $project->language ?? 'r', $layers, $settings['ide'], $settings['scaffold']);
+        $layers[] = self::projectLayer($project->slug, $project->language ?? 'r', $layers, $settings['ide'], $settings['scaffold'], $settings['agents'], $settings['context_file']);
 
         return self::envelope($user, $project->name, $layers, $version && ! $composition ? ['key' => $version->blueprint->handle, 'version' => $version->version] : null);
     }
@@ -69,11 +69,11 @@ class ProjectLayers
      * The topmost layer: the language, the editor files (scaffold.ide: .Rproj
      * for RStudio, .code-workspace for VS Code and Positron), the owner's
      * scaffold() settings where no layer beneath sets them (the seed and
-     * functions/ for R and Python, the ggplot2 theme for R), and for Stata the R-only folders
-     * removed. With the spec's tools key on, it also names every tool for
+     * functions/ for R and Python, the ggplot2 theme for R), the owner's
+     * agents, and for Stata the R-only folders removed. With the spec's tools key on, it also names every tool for
      * the language as on or off, so no client has to guess.
      */
-    public static function projectLayer(string $key, string $language, array $layers, ?string $ide = null, array $scaffold = []): array
+    public static function projectLayer(string $key, string $language, array $layers, ?string $ide = null, array $scaffold = [], ?array $agents = null, string $contextFile = 'AGENTS.md'): array
     {
         $layer = ['language' => $language] + ($language === 'stata' ? self::withoutRFolders($layers) : []);
         if ($ide && $language !== 'stata') {
@@ -88,6 +88,15 @@ class ProjectLayers
             // A blueprint or piece that sets it decides
             if (! collect($layers)->contains(fn (array $l) => array_key_exists($name, (array) ($l['layer']['scaffold'] ?? [])))) {
                 $layer['scaffold'][$name] = $value;
+            }
+        }
+
+        // The agents someone works with are theirs, like their editor: each one in or out
+        if ($agents !== null) {
+            $layer['ai']['assistants'] = array_combine(ProjectDefaults::AGENTS, array_map(fn (string $a) => in_array($a, $agents, true), ProjectDefaults::AGENTS));
+            // CLAUDE.md as the context file waits for the packages to read the key
+            if ($contextFile === 'CLAUDE.md' && config('framework.spec_context_file')) {
+                $layer['ai']['context_file'] = 'CLAUDE.md';
             }
         }
 
