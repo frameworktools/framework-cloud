@@ -152,7 +152,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                 </section>
 
                 <section class="flex max-w-xl flex-col gap-4 border-t border-slate-200 pt-8 dark:border-slate-800">
-                    <h2 :class="heading">Package environment</h2>
+                    <h2 :class="heading">Dependency management &amp; Reproducibility</h2>
                     <UiSwitch v-if="packageLanguage === 'r'" v-model="form.use_renv" label="renv" description="Records the R package versions the project uses in renv.lock." />
                     <UiSwitch v-else-if="tool('uv')" :model-value="!!form.tools.uv" :label="tool('uv').name" description="Manages the Python environment in pyproject.toml and uv.lock." @update:model-value="(on) => setTool('uv', on)" />
                 </section>

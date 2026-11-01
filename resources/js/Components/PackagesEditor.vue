@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue';
-import { ChevronRightIcon, XMarkIcon } from '@heroicons/vue/20/solid';
+import { ChevronRightIcon, InformationCircleIcon, XMarkIcon } from '@heroicons/vue/20/solid';
 import PackageNameInput from '@/Components/PackageNameInput.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiSwitch from '@/Components/UiSwitch.vue';
@@ -71,7 +71,21 @@ const field = 'w-full rounded-md border border-slate-300 bg-white px-3 py-2 text
         <div class="divide-y divide-slate-200 rounded-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-700">
             <!-- Column labels, for the rows below -->
             <div class="hidden gap-3 px-4 py-2 text-xs font-medium text-slate-500 sm:grid" :class="r ? 'grid-cols-[1fr_9rem_7rem_2rem]' : 'grid-cols-[1fr_9rem_7rem_2rem]'">
-                <span>Package</span><span>Source</span><span>{{ r ? 'Auto-attach' : 'Version' }}</span><span class="sr-only">Remove</span>
+                <span>Package</span><span>Source</span>
+                <span v-if="r" class="flex items-center gap-1">
+                    Auto-attach
+                    <!-- A popover on hover or focus -->
+                    <span class="group/info relative">
+                        <button type="button" class="flex rounded-full text-slate-400 hover:text-slate-600 focus-visible:outline-2 focus-visible:outline-sky-500 dark:hover:text-slate-300" aria-label="About auto-attach" aria-describedby="auto-attach-help">
+                            <InformationCircleIcon class="size-4" />
+                        </button>
+                        <span
+                            id="auto-attach-help" role="tooltip"
+                            class="pointer-events-none invisible absolute left-1/2 top-6 z-30 w-64 -translate-x-1/2 rounded-md bg-slate-900 px-3 py-2 text-xs font-normal leading-relaxed text-white opacity-0 shadow-lg transition group-focus-within/info:visible group-focus-within/info:opacity-100 group-hover/info:visible group-hover/info:opacity-100 dark:bg-slate-700"
+                        >When scaffold() runs, it installs any missing packages and loads the ones switched on here with library(), so they're ready in every notebook and script.</span>
+                    </span>
+                </span>
+                <span v-else>Version</span><span class="sr-only">Remove</span>
             </div>
             <div v-for="(row, i) in rows" :key="i" class="grid items-center gap-3 px-4 py-2.5 sm:grid-cols-[1fr_9rem_7rem_2rem]">
                 <input
