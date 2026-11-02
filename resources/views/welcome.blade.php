@@ -73,47 +73,6 @@
 
     <main class="mx-auto max-w-6xl px-6">
 
-        {{-- Ways to start: for beginners, people new to Git, and the command line --}}
-        <section id="start" class="scroll-mt-6 py-12 sm:py-16">
-            <h2 class="text-center {{ $h2 }}">Three ways to start a project</h2>
-            <p class="mx-auto mt-4 max-w-2xl text-center text-slate-600 dark:text-slate-400">
-                A blueprint gives a project the same folders, settings, and instructions for AI
-                assistants whichever way you create it. A downloaded project can be connected to
-                Framework Cloud later.
-            </p>
-            <div class="mx-auto mt-8 grid max-w-5xl gap-4 lg:grid-cols-3">
-                @foreach ([
-                    [
-                        'label' => 'New to all this',
-                        'heading' => 'Download it',
-                        'body' => 'Choose a blueprint in your browser and download the project as a zip. Unzip it and open the folder in RStudio, Positron, VS Code, or Stata. You don\'t need Git, and you don\'t need to install any R or Python packages first.',
-                        'example' => null,
-                    ],
-                    [
-                        'label' => 'New to Git and GitHub',
-                        'heading' => 'Start on GitHub',
-                        'body' => 'Connect GitHub, and Framework Cloud creates a repository with the project already in it. Clone it in VS Code, Positron, or RStudio, and your work has history and a backup from the first day.',
-                        'example' => null,
-                    ],
-                    [
-                        'label' => 'At home in a terminal',
-                        'heading' => 'Use the command line',
-                        'body' => '`fw new` asks a few questions, or takes them all as flags, so you or an AI agent can create the project, download it, or put it on GitHub in one command.',
-                        'example' => 'fw new survey --lang python --github my-lab/survey',
-                    ],
-                ] as $way)
-                    <div class="flex flex-col rounded-xl border border-slate-200 p-6 dark:border-slate-800">
-                        <span class="text-xs font-medium tracking-wide text-sky-700 uppercase dark:text-sky-400">{{ $way['label'] }}</span>
-                        <h3 class="mt-2 text-lg leading-snug font-semibold">{{ $way['heading'] }}</h3>
-                        <p class="mt-2 flex-1 text-sm leading-normal text-slate-600 dark:text-slate-400 [&_code]:font-mono [&_code]:text-[0.9em] [&_code]:text-slate-800 dark:[&_code]:text-slate-200">{!! Str::inlineMarkdown($way['body']) !!}</p>
-                        @if ($way['example'])
-                            <code class="mt-4 block overflow-x-auto rounded-md bg-slate-900 px-3 py-2 font-mono text-xs whitespace-nowrap text-slate-100">{{ $way['example'] }}</code>
-                        @endif
-                    </div>
-                @endforeach
-            </div>
-        </section>
-
         {{-- Features --}}
         <section id="features" class="border-t border-slate-200 py-12 sm:py-16 dark:border-slate-800">
             <h2 class="text-center {{ $h2 }}">Features</h2>
@@ -131,6 +90,51 @@
                         <span aria-hidden="true" class="mt-4 text-sm font-medium text-sky-600 dark:text-sky-400">
                             How it works <span class="inline-block transition-transform group-hover:translate-x-0.5">&rarr;</span>
                         </span>
+                    </div>
+                @endforeach
+            </div>
+        </section>
+
+        {{-- Ways to start: for beginners, people new to Git, and the command line --}}
+        <section id="start" class="scroll-mt-6 border-t border-slate-200 py-12 sm:py-16 dark:border-slate-800">
+            <h2 class="text-center {{ $h2 }}">Three ways to start a project</h2>
+            <p class="mx-auto mt-4 max-w-xl text-center text-slate-600 dark:text-slate-400">
+                Pick the one that suits you. Each way gives you the same project.
+            </p>
+            <div class="mx-auto mt-8 grid max-w-5xl gap-4 lg:grid-cols-3">
+                @foreach ([
+                    [
+                        'icon' => 'heroicon-o-arrow-down-tray',
+                        'label' => 'New to all this',
+                        'heading' => 'Download it',
+                        'body' => 'Pick a blueprint and download your project as a zip. Open the folder in RStudio, Positron, VS Code, or Stata. There is nothing to install first.',
+                        'example' => null,
+                    ],
+                    [
+                        'icon' => 'icon-github',
+                        'label' => 'New to Git and GitHub',
+                        'heading' => 'Start on GitHub',
+                        'body' => 'Connect GitHub, and Framework Cloud creates a repository with your project in it. Clone it in VS Code or Positron to start working.',
+                        'example' => null,
+                    ],
+                    [
+                        'icon' => 'heroicon-o-command-line',
+                        'label' => 'At home in a terminal',
+                        'heading' => 'Use the command line',
+                        'body' => 'Run `fw new` and answer a few questions. An AI agent can pass the answers as flags instead.',
+                        'example' => 'fw new survey --github my-lab',
+                    ],
+                ] as $way)
+                    <div class="flex flex-col rounded-xl border border-slate-200 p-6 dark:border-slate-800">
+                        <span class="flex size-9 items-center justify-center rounded-lg bg-sky-100 text-sky-600 dark:bg-sky-950/60 dark:text-sky-400">
+                            <x-dynamic-component :component="$way['icon']" class="size-5" />
+                        </span>
+                        <span class="mt-4 text-xs font-medium tracking-wide text-sky-700 uppercase dark:text-sky-400">{{ $way['label'] }}</span>
+                        <h3 class="mt-1 text-lg leading-snug font-semibold">{{ $way['heading'] }}</h3>
+                        <p class="mt-2 flex-1 text-sm leading-normal text-slate-600 dark:text-slate-400 [&_code]:font-mono [&_code]:text-[0.9em] [&_code]:text-slate-800 dark:[&_code]:text-slate-200">{!! Str::inlineMarkdown($way['body']) !!}</p>
+                        @if ($way['example'])
+                            <code class="mt-4 block overflow-x-auto rounded-md bg-slate-900 px-3 py-2 font-mono text-xs whitespace-nowrap text-slate-100">{{ $way['example'] }}</code>
+                        @endif
                     </div>
                 @endforeach
             </div>
