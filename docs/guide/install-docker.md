@@ -1,13 +1,17 @@
 # Install with Docker
 
 Framework Cloud releases are published as a Docker image,
-`ghcr.io/frameworktools/framework-cloud`. A Compose file runs it as three
+`ghcr.io/frameworktools/framework-cloud`. A Compose file runs it as four
 containers:
 
 - **app**: the web server. FrankenPHP serves the app and gets an HTTPS
   certificate from Let's Encrypt for your domain.
 - **worker**: runs background jobs, such as creating GitHub repositories and
   sending email.
+- **scaffolder**: builds projects that people download as a zip. It runs
+  `fw`, the framework R package, and framework-py, and only the app can
+  reach it. Its image, `ghcr.io/frameworktools/framework-scaffolder`, has the
+  same version tags as the app's.
 - **postgres**: the database.
 
 Published notebooks, logs, certificates, and the database are kept in Docker

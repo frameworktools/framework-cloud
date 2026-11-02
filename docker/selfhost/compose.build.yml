@@ -14,3 +14,7 @@ services:
     <<: *build
   worker:
     <<: *build
+  scaffolder:
+    build:
+      context: ../scaffolder
+    image: framework-scaffolder:local

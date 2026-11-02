@@ -20,6 +20,8 @@ x-app: &app
     DB_CONNECTION: pgsql
     DB_HOST: postgres
     DB_PORT: 5432
+    # Downloadable projects. SCAFFOLDER_URL= (empty) in .env turns them off
+    SCAFFOLDER_URL: ${SCAFFOLDER_URL-http://scaffolder:8000}
   restart: unless-stopped
   depends_on:
     postgres:
@@ -54,6 +56,7 @@ services:
       DB_PORT: 5432
       # The app container migrates and seeds; the worker waits for it
       FW_PREPARE_DATABASE: "false"
+      SCAFFOLDER_URL: ${SCAFFOLDER_URL-http://scaffolder:8000}
     volumes:
       - storage:/app/storage
       # The base image declares these; mounting them avoids anonymous volumes
@@ -67,6 +70,20 @@ services:
     depends_on:
       app:
         condition: service_healthy
+
+  # Builds projects for download with fw and the R and Python packages. Only
+  # the app reaches it, over the compose network; it publishes no port.
+  scaffolder:
+    image: ghcr.io/frameworktools/framework-scaffolder:${FRAMEWORK_CLOUD_VERSION:-latest}
+    restart: unless-stopped
+    environment:
+      SCAFFOLDER_TOKEN: ${SCAFFOLDER_TOKEN:-}
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /home/scaffolder
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
 
   postgres:
     image: postgres:17-alpine

@@ -67,8 +67,21 @@ result.
 | Variable | Default | What it does |
 |---|---|---|
 | `GITHUB_FRAMEWORK_SHA` | a tested commit | The framework R package commit that builds R projects. A full 40-character SHA. Empty turns GitHub scaffolding off. |
+| `GITHUB_FRAMEWORK_PY_SHA` | a tested commit | The framework-py commit that builds Python projects. A full 40-character SHA. Empty turns off Python projects on GitHub. |
 | `GITHUB_FW_VERSION` | a tested release | The `fw` release that builds Stata projects, such as `0.3.0`. Empty turns off Stata projects on GitHub. They can still be set up on a computer. |
 | `GITHUB_FW_SHA256` | the tested release's checksum | The SHA-256 checksum of the `fw` Linux download. It applies only to the default release. For another release, set it or leave it empty. Empty makes the workflow check the download against the release's checksums file. |
+
+## Downloads
+
+People can download a new project as a zip. The scaffolder container builds
+it with the same tools that build projects on GitHub and on people's own
+computers. The Docker install runs it for you.
+
+| Variable | Default | What it does |
+|---|---|---|
+| `SCAFFOLDER_URL` | `http://scaffolder:8000` with Docker, otherwise empty | Where the app reaches the scaffolder. Empty turns downloads off. |
+| `SCAFFOLDER_TOKEN` | empty | A shared secret the app sends to the scaffolder. Set the same value for both when the scaffolder is reachable from other machines. |
+| `SCAFFOLDER_TIMEOUT` | `200` | Seconds the app waits for a build. |
 
 ## Documentation sites
 

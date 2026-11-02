@@ -53,6 +53,20 @@ in a queue worker. Keep this command running with your process manager:
 php artisan queue:work --sleep=3 --tries=1 --max-time=3600
 ```
 
+## Downloads (optional)
+
+To let people download new projects as a zip, run the scaffolder container
+next to the app and point the app at it:
+
+```sh
+docker run -d --name framework-scaffolder --restart unless-stopped \
+  -p 127.0.0.1:8100:8000 -e SCAFFOLDER_TOKEN=choose-a-secret \
+  ghcr.io/frameworktools/framework-scaffolder:latest
+```
+
+Then set `SCAFFOLDER_URL=http://127.0.0.1:8100` and the same
+`SCAFFOLDER_TOKEN` in `.env`. Without them, the download choice is hidden.
+
 ## Sign in
 
 Print a sign-in link on the server:
