@@ -106,20 +106,17 @@
                     [
                         'icon' => 'heroicon-o-arrow-down-tray',
                         'heading' => 'Download it',
-                        'body' => 'Pick a blueprint and download your project as a zip. Open the folder in RStudio, Positron, VS Code, or Stata. There is nothing to install first.',
-                        'example' => null,
+                        'body' => 'Pick a blueprint and download your project as a zip. Open the folder in your preferred editor and start working. There is nothing to install first.',
                     ],
                     [
                         'icon' => 'icon-github',
                         'heading' => 'Start on GitHub',
-                        'body' => 'Connect GitHub, and Framework Cloud creates a repository with your project in it. Clone it in VS Code or Positron to start working.',
-                        'example' => null,
+                        'body' => 'Connect GitHub, and Framework Cloud creates a repository with your project in it. Clone it in your preferred editor and start working.',
                     ],
                     [
                         'icon' => 'heroicon-o-command-line',
                         'heading' => 'Use the command line',
-                        'body' => 'Run `fw new` and answer a few questions. An AI agent can pass the answers as flags instead.',
-                        'example' => 'fw new survey --github my-lab',
+                        'body' => 'Run `fw new` in our CLI tool, answer a few questions, and get to work. Or have your agent do it.',
                     ],
                 ] as $way)
                     <div class="flex flex-col rounded-xl border border-slate-200 p-6 dark:border-slate-800">
@@ -128,9 +125,6 @@
                         </span>
                         <h3 class="mt-4 text-lg leading-snug font-semibold">{{ $way['heading'] }}</h3>
                         <p class="mt-2 flex-1 text-sm leading-normal text-slate-600 dark:text-slate-400 [&_code]:font-mono [&_code]:text-[0.9em] [&_code]:text-slate-800 dark:[&_code]:text-slate-200">{!! Str::inlineMarkdown($way['body']) !!}</p>
-                        @if ($way['example'])
-                            <code class="mt-4 block overflow-x-auto rounded-md bg-slate-900 px-3 py-2 font-mono text-xs whitespace-nowrap text-slate-100">{{ $way['example'] }}</code>
-                        @endif
                     </div>
                 @endforeach
             </div>
