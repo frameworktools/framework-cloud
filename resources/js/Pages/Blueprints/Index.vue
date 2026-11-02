@@ -70,9 +70,15 @@ const supportLine = (b) => {
     return `Languages: ${langs} · Workflows: ${wfs}`;
 };
 
-// Details open on their own; several can be open to compare
-const open = reactive(new Set());
-const toggle = (id) => (open.has(id) ? open.delete(id) : open.add(id));
+// One blueprint in each section is always open: the one chosen, else your
+// default, else the first that matches
+const chosen = reactive({});
+const openIn = (section) => {
+    const ids = section.rows.map((b) => b.id);
+    if (ids.includes(chosen[section.key])) return chosen[section.key];
+    return section.rows.find(isDefault)?.id ?? section.rows.find((b) => b.handle === props.default_blueprint)?.id ?? ids[0];
+};
+const choose = (section, id) => (chosen[section.key] = id);
 const source = (b) => ({ url: `/blueprints/${b.id}/preview`, body: { language: language.value, workflow: workflow.value } });
 
 const isDefault = (b) => b.handle === props.default_blueprint && props.workflows?.[language.value] === workflow.value;
@@ -164,8 +170,12 @@ const pill = (on) => on
                     </div>
                 </div>
 
-                <div v-else class="divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
-                    <div v-for="b in section.rows" :key="b.id">
+                <div v-else class="flex flex-col gap-4">
+                    <div
+                        v-for="b in section.rows" :key="b.id"
+                        class="rounded-xl border bg-white transition dark:bg-slate-900"
+                        :class="openIn(section) === b.id ? 'border-slate-300 shadow-sm dark:border-slate-700' : 'border-slate-200 dark:border-slate-800'"
+                    >
                         <div class="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-start sm:px-5">
                             <div class="min-w-0 flex-1">
                                 <div class="flex flex-wrap items-center gap-2">
@@ -182,16 +192,16 @@ const pill = (on) => on
                                 <UiButton v-else size="sm" variant="ghost" @click="fork(b)">Copy and edit</UiButton>
                             </div>
                         </div>
-                        <div class="px-4 pb-3 sm:px-5" :class="open.has(b.id) ? '' : '-mt-2'">
+                        <div class="px-4 pb-3 sm:px-5" :class="openIn(section) === b.id ? '' : '-mt-2'">
                             <button
-                                type="button" :aria-expanded="open.has(b.id)" :aria-controls="`blueprint-${b.id}`"
+                                type="button" :aria-expanded="openIn(section) === b.id" :aria-controls="`blueprint-${b.id}`"
                                 class="-ml-1.5 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-2 focus-visible:outline-sky-500 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-                                @click="toggle(b.id)"
+                                @click="choose(section, b.id)"
                             >
-                                <ChevronRightIcon class="size-4 transition-transform" :class="open.has(b.id) ? 'rotate-90' : ''" />
+                                <ChevronRightIcon class="size-4 transition-transform" :class="openIn(section) === b.id ? 'rotate-90' : ''" />
                                 Details for {{ languageNames[language] }} with {{ workflowNames[workflow] }}
                             </button>
-                            <div v-if="open.has(b.id)" :id="`blueprint-${b.id}`" class="mt-3">
+                            <div v-if="openIn(section) === b.id" :id="`blueprint-${b.id}`" class="mt-3">
                                 <BlueprintPreview :blueprint="b" :language="language" :source="source(b)" />
                             </div>
                         </div>
