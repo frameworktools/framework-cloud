@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 
 /**
@@ -17,7 +18,14 @@ class ThrottleRequestsPerRoute extends ThrottleRequests
     protected function resolveRequestSignature($request)
     {
         $route = $request->route();
+        $user = $request->user();
 
-        return sha1(parent::resolveRequestSignature($request).'|'.$request->method().' '.$route?->uri());
+        // A project token's tokenable is a Project, which Laravel's version
+        // can't key on (it has no getAuthIdentifier), so key it ourselves
+        $who = $user instanceof Authenticatable
+            ? parent::resolveRequestSignature($request)
+            : sha1(($user ? $user::class.':'.$user->getKey() : $request->ip()).'|'.$request->ip());
+
+        return sha1($who.'|'.$request->method().' '.$route?->uri());
     }
 }
