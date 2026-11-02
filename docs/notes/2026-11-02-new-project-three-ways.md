@@ -1,8 +1,8 @@
 # New projects three ways: download, GitHub, or local
 
-Where things stood at the end of 2026-11-02. Nothing here is committed or
-deployed to production. The homelab test instance
-(https://framework-cloud-test.pequod.sh) runs it from the working tree.
+Where things stood at the end of 2026-11-02. Committed (framework-cloud
+dc237b8, framework-cli d83f1b4) and live on framework.pub and the homelab's
+stable and staging instances.
 
 ## What a person can do
 
@@ -69,22 +69,28 @@ golangci-lint pass.
   it would create real repositories. The Python workflow's command was run
   in a fresh checkout inside the container.
 
+## Production (framework.pub)
+
+- Docker (Ubuntu's `docker.io`) is installed on the Forge box, which it
+  wasn't before. The `framework-scaffolder` container runs
+  `framework-scaffolder:dc237b8`, built on the box from `git archive` of
+  `docker/scaffolder` (source in `/opt/scaffolder-src`). It listens on
+  127.0.0.1:8100 only, with `--read-only`, `--cap-drop ALL`, and
+  `--restart unless-stopped`.
+- `.env` has `SCAFFOLDER_URL=http://127.0.0.1:8100` and a random
+  `SCAFFOLDER_TOKEN`. Root access is `ssh framework-root`.
+- To move the pins: rebuild on the box the same way, or pull
+  `ghcr.io/frameworktools/framework-scaffolder` (the `main` tag was
+  published by a manual run; `latest` comes with the first v* tag).
+
 ## Open
 
-1. **Commit and push**: framework-cloud and framework-cli are uncommitted.
-2. **Homelab stable follows main.** Once compose.yml on main names the
-   scaffolder, stable needs `ghcr.io/frameworktools/framework-scaffolder:latest`.
-   The VM has that tag locally (built from `~/scaffolder-build`), and a
-   release publishes it to ghcr.
-3. **Production (Forge)**: run the container on the box, as in
-   install-manual's Downloads section, and set `SCAFFOLDER_URL` and
-   `SCAFFOLDER_TOKEN`.
-4. **Pins**: `GITHUB_FRAMEWORK_SHA` now defaults to bdb1115, the
-   scaffolder's R pin, so the GitHub and zip paths match. Move them together.
-5. **fw release**: `--zip` and `--github` need a new fw tag, and the
-   scaffolder's fw pin should move to it.
-6. **Not built**: a "Put this on GitHub" button for projects that started as
+1. **fw release**: `--zip` and `--github` need a new fw tag (the server's
+   scaffolder pin, 6fe39d5, doesn't need them).
+2. **Not built**: a "Put this on GitHub" button for projects that started as
    a download or on a computer, and R or Python functions to link an
    existing folder (fw has `fw project link`).
-7. The New project and project pages were checked through their props and
-   HTTP responses, not by looking at them in a browser.
+3. GitHub creation hasn't been run end to end, and the pages haven't been
+   checked by eye in a browser.
+4. Pins: `GITHUB_FRAMEWORK_SHA` defaults to bdb1115, the scaffolder's R pin.
+   Move them together.
