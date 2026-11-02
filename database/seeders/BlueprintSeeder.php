@@ -108,6 +108,7 @@ class BlueprintSeeder extends Seeder
                 [
                     'name' => $frontmatter['title'],
                     'description' => $frontmatter['description'],
+                    'summary' => $frontmatter['summary'],
                     'language' => $python ? ['r', 'python'] : ['r'],
                     'visibility' => 'public',
                     'position' => $position,

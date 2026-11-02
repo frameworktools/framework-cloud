@@ -74,7 +74,7 @@ const fork = (id) => router.post(`/skills/${id}/fork`);
                                 <span class="font-semibold text-slate-900 group-hover:underline dark:text-white">{{ s.name }}</span>
                                 <span class="text-xs text-slate-500">{{ languageScope(s.language) }}</span>
                             </span>
-                            <span class="mt-0.5 block text-sm text-slate-600 dark:text-slate-400">{{ s.descriptions?.[language] ?? s.description }}</span>
+                            <span class="mt-0.5 block text-sm text-slate-600 dark:text-slate-400">{{ s.summary ?? s.descriptions?.[language] ?? s.description }}</span>
                         </Link>
                         <div class="flex shrink-0 items-center gap-2">
                             <Link :href="read(s)"><UiButton size="sm" variant="outline">Read</UiButton></Link>

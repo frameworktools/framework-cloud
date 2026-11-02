@@ -84,9 +84,10 @@ class Skill extends Model
      * assistants read, and the readable title people see. The name is the
      * skill's official id, such as framework-data; the title, such as
      * "Reading and saving data", comes from metadata.title and falls back to
-     * the name.
+     * the name. metadata.summary is a short line for people browsing; the
+     * description, which can be long, is what tells an agent to load it.
      *
-     * @return array{key: string, description: string, title: string}
+     * @return array{key: string, description: string, title: string, summary: ?string}
      */
     public static function frontmatter(string $content, string $field): array
     {
@@ -107,11 +108,13 @@ class Skill extends Model
 
         preg_match('/^metadata:[ \t]*\R((?:[ \t]+\S.*(?:\R|$))+)/m', $frontmatter[1], $metadata);
         preg_match('/^[ \t]+title:[ \t]*["\']?(.+?)["\']?[ \t]*$/m', $metadata[1] ?? '', $title);
+        preg_match('/^[ \t]+summary:[ \t]*["\']?(.+?)["\']?[ \t]*$/m', $metadata[1] ?? '', $summary);
 
         return [
             'key' => $key,
             'description' => trim($description[1]),
             'title' => mb_substr(trim($title[1] ?? '') ?: $key, 0, 100),
+            'summary' => filled($summary[1] ?? null) ? mb_substr(trim($summary[1]), 0, 200) : null,
         ];
     }
 }

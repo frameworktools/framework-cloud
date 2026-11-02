@@ -100,7 +100,7 @@ const sourceNames = { cran: 'CRAN', bioc: 'Bioconductor', github: 'GitHub', pypi
                                 <li v-for="skill in skillsFor(s)" :key="skill.key" class="flex flex-col gap-1 py-3 sm:flex-row sm:items-start sm:gap-4">
                                     <div class="min-w-0 flex-1">
                                         <div class="text-sm font-medium text-slate-900 dark:text-white">{{ skill.name }}</div>
-                                        <p v-if="skill.description" class="mt-0.5 text-xs text-slate-600 dark:text-slate-400">{{ skill.descriptions?.[language] ?? skill.description }}</p>
+                                        <p v-if="skill.description" class="mt-0.5 text-xs text-slate-600 dark:text-slate-400">{{ skill.summary ?? skill.descriptions?.[language] ?? skill.description }}</p>
                                     </div>
                                     <Link v-if="skill.id" :href="read(skill)" class="shrink-0 text-sm font-medium text-sky-600 hover:underline dark:text-sky-400">Read skill</Link>
                                 </li>

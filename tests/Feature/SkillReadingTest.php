@@ -34,6 +34,11 @@ class SkillReadingTest extends TestCase
         $this->assertStringNotContainsString('fw.scaffold()', $workflow->latestVersion->contentFor('r'));
         // The Python text is framework-py's own copy
         $this->assertSame(file_get_contents(database_path('seeders/masters/skills/python/framework-workflow.md')), $workflow->latestVersion->contentFor('python'));
+        // People read a short summary; agents read the description
+        $this->assertSame('Quick, accurate ggplot2 figures for understanding data.', $this->system('ggplot2-exploring')->summary);
+        $this->assertNull(Skill::frontmatter("---\nname: x\ndescription: Use when.\n---\n", 'content')['summary']);
+        $this->assertSame('Short', Skill::frontmatter("---\nname: x\ndescription: Use when.\nmetadata:\n  title: X\n  summary: Short\n---\n", 'content')['summary']);
+
         // ggplot2 is R's alone
         $this->assertSame(['r'], $this->system('ggplot2-exploring')->language);
     }

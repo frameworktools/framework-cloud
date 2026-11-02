@@ -133,6 +133,8 @@ class Library
             'handle' => $skill->handle,
             'name' => $skill->name,
             'description' => $skill->description,
+            // A short line for people; the description is for agents
+            'summary' => $skill->summary,
             // Languages it's for; none means any
             'language' => $skill->language,
             // A language with its own text has its own description

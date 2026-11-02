@@ -67,6 +67,7 @@ class FacetsController extends Controller
                             'id' => $skill?->id,
                             'name' => $skill?->name ?? (string) $key,
                             'description' => $skill?->description,
+                            'summary' => $skill?->summary,
                             'descriptions' => (object) ($skill?->descriptions() ?? []),
                             'language' => $skill?->language,
                         ];

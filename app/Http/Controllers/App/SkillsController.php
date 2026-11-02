@@ -83,6 +83,7 @@ class SkillsController extends Controller
             'key' => $data['key'],
             'name' => $data['title'],
             'description' => $data['description'],
+            'summary' => $data['summary'],
             'language' => $data['language'],
             'visibility' => $data['visibility'],
         ]);
@@ -116,7 +117,7 @@ class SkillsController extends Controller
         DB::transaction(function () use ($skill, $data) {
             // A skill with text per language keeps its languages and variants
             $variants = $skill->latestVersion->variants;
-            $skill->update(['name' => $data['title'], 'description' => $data['description'], 'visibility' => $data['visibility']]
+            $skill->update(['name' => $data['title'], 'description' => $data['description'], 'summary' => $data['summary'], 'visibility' => $data['visibility']]
                 + ($variants ? [] : ['language' => $data['language']]));
             $skill->publishVersion(['content' => $data['content'], 'variants' => $variants, 'files' => $skill->latestVersion->files ?? [], 'notes' => $data['notes']]);
         });
@@ -139,6 +140,7 @@ class SkillsController extends Controller
             'key' => $skill->key,
             'name' => $skill->name,
             'description' => $skill->description,
+            'summary' => $skill->summary,
             'language' => $skill->language,
             'visibility' => 'private',
             'forked_from_id' => $source->id,
@@ -177,7 +179,7 @@ class SkillsController extends Controller
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
 
-        ['key' => $key, 'description' => $description, 'title' => $title] = Skill::frontmatter($data['content'], 'content');
+        ['key' => $key, 'description' => $description, 'title' => $title, 'summary' => $summary] = Skill::frontmatter($data['content'], 'content');
 
         if ($skill && $key !== $skill->key) {
             throw ValidationException::withMessages(['content' => "This skill is named {$skill->key}. Fork it to make one with a new name."]);
@@ -187,6 +189,7 @@ class SkillsController extends Controller
             'key' => $key,
             'title' => $title,
             'description' => $description,
+            'summary' => $summary,
             'content' => $data['content'],
             'visibility' => $data['visibility'],
             'language' => filled($data['language'] ?? null) ? [$data['language']] : null,
@@ -200,6 +203,7 @@ class SkillsController extends Controller
         description: Use when ... (say when an assistant should load this skill)
         metadata:
           title: My skill
+          summary: One short line for people browsing skills
         ---
 
         # My skill

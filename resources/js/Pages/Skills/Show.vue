@@ -51,7 +51,13 @@ const pill = (on) => on
             <header class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div class="min-w-0 max-w-[70ch]">
                     <h1 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{{ skill.name }}</h1>
-                    <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">{{ skill.descriptions?.[language] ?? skill.description }}</p>
+                    <p v-if="skill.summary" class="mt-2 text-base text-slate-700 dark:text-slate-300">{{ skill.summary }}</p>
+                    <details class="group mt-2 text-sm">
+                        <summary class="cursor-pointer list-none text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 [&::-webkit-details-marker]:hidden">
+                            <span class="group-open:hidden">When agents load it ›</span><span class="hidden group-open:inline">When agents load it ⌄</span>
+                        </summary>
+                        <p class="mt-1 text-slate-600 dark:text-slate-400">{{ skill.descriptions?.[language] ?? skill.description }}</p>
+                    </details>
                     <p class="mt-2 text-xs text-slate-500">{{ languageScope(skill.language) }}</p>
                 </div>
                 <div class="flex shrink-0 gap-2">
