@@ -73,33 +73,12 @@
 
     <main class="mx-auto max-w-6xl px-6">
 
-        {{-- Features --}}
-        <section id="features" class="border-t border-slate-200 py-12 sm:py-16 dark:border-slate-800">
-            <h2 class="text-center {{ $h2 }}">Features</h2>
-            <div class="mx-auto mt-8 grid max-w-5xl gap-4 md:grid-cols-2 lg:grid-cols-3">
-                @foreach ($features as $feature)
-                    <div class="group relative flex flex-col rounded-xl border border-slate-200 p-6 transition-colors focus-within:border-sky-400 hover:border-sky-400 hover:bg-sky-50/50 dark:border-slate-800 dark:hover:border-sky-800 dark:hover:bg-sky-950/20">
-                        <span class="flex size-9 items-center justify-center rounded-lg bg-sky-100 text-sky-600 dark:bg-sky-950/60 dark:text-sky-400">
-                            <x-dynamic-component :component="$feature['icon']" class="size-5" />
-                        </span>
-                        <h3 class="mt-4 leading-snug font-semibold">
-                            <a href="#{{ $feature['anchor'] }}" class="after:absolute after:inset-0 after:rounded-xl focus:outline-none">{{ $feature['heading'] }}</a>
-                        </h3>
-                        {{-- Bodies are fixed strings here; backticks mark code such as `fw` --}}
-                        <p class="mt-2 flex-1 text-sm leading-normal text-slate-600 dark:text-slate-400 [&_code]:font-mono [&_code]:text-[0.9em] [&_code]:text-slate-800 dark:[&_code]:text-slate-200">{!! Str::inlineMarkdown($feature['body']) !!}</p>
-                        <span aria-hidden="true" class="mt-4 text-sm font-medium text-sky-600 dark:text-sky-400">
-                            How it works <span class="inline-block transition-transform group-hover:translate-x-0.5">&rarr;</span>
-                        </span>
-                    </div>
-                @endforeach
-            </div>
-        </section>
-
         {{-- Ways to start: for beginners, people new to Git, and the command line --}}
-        <section id="start" class="scroll-mt-6 border-t border-slate-200 py-12 sm:py-16 dark:border-slate-800">
-            <h2 class="text-center {{ $h2 }}">Three ways to start a project</h2>
+        <section id="start" class="scroll-mt-6 py-12 sm:py-16">
+            <h2 class="text-center {{ $h2 }}">Beginner or expert, start a project in minutes</h2>
             <p class="mx-auto mt-4 max-w-xl text-center text-slate-600 dark:text-slate-400">
-                Pick the one that suits you. Each way gives you the same project.
+                Framework sets up your project to follow good research practices from the first
+                day. Pick the way that suits you. Each one gives you the same project.
             </p>
             <div class="mx-auto mt-8 grid max-w-5xl gap-4 lg:grid-cols-3">
                 @foreach ([
@@ -125,6 +104,28 @@
                         </span>
                         <h3 class="mt-4 text-lg leading-snug font-semibold">{{ $way['heading'] }}</h3>
                         <p class="mt-2 flex-1 text-sm leading-normal text-slate-600 dark:text-slate-400 [&_code]:font-mono [&_code]:text-[0.9em] [&_code]:text-slate-800 dark:[&_code]:text-slate-200">{!! Str::inlineMarkdown($way['body']) !!}</p>
+                    </div>
+                @endforeach
+            </div>
+        </section>
+
+        {{-- Features --}}
+        <section id="features" class="border-t border-slate-200 py-12 sm:py-16 dark:border-slate-800">
+            <h2 class="text-center {{ $h2 }}">Features</h2>
+            <div class="mx-auto mt-8 grid max-w-5xl gap-4 md:grid-cols-2 lg:grid-cols-3">
+                @foreach ($features as $feature)
+                    <div class="group relative flex flex-col rounded-xl border border-slate-200 p-6 transition-colors focus-within:border-sky-400 hover:border-sky-400 hover:bg-sky-50/50 dark:border-slate-800 dark:hover:border-sky-800 dark:hover:bg-sky-950/20">
+                        <span class="flex size-9 items-center justify-center rounded-lg bg-sky-100 text-sky-600 dark:bg-sky-950/60 dark:text-sky-400">
+                            <x-dynamic-component :component="$feature['icon']" class="size-5" />
+                        </span>
+                        <h3 class="mt-4 leading-snug font-semibold">
+                            <a href="#{{ $feature['anchor'] }}" class="after:absolute after:inset-0 after:rounded-xl focus:outline-none">{{ $feature['heading'] }}</a>
+                        </h3>
+                        {{-- Bodies are fixed strings here; backticks mark code such as `fw` --}}
+                        <p class="mt-2 flex-1 text-sm leading-normal text-slate-600 dark:text-slate-400 [&_code]:font-mono [&_code]:text-[0.9em] [&_code]:text-slate-800 dark:[&_code]:text-slate-200">{!! Str::inlineMarkdown($feature['body']) !!}</p>
+                        <span aria-hidden="true" class="mt-4 text-sm font-medium text-sky-600 dark:text-sky-400">
+                            How it works <span class="inline-block transition-transform group-hover:translate-x-0.5">&rarr;</span>
+                        </span>
                     </div>
                 @endforeach
             </div>

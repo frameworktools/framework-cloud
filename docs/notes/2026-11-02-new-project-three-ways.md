@@ -44,7 +44,7 @@ terminal fw never asks.
   off. `.github/workflows/scaffolder-image.yml` publishes
   `ghcr.io/frameworktools/framework-scaffolder` with the app's version tags.
   The docs (install-docker, install-manual, configuration) cover it.
-- Landing page: "Three ways to start a project" after the hero.
+- Landing page: "Beginner or expert, start a project in minutes" after the hero, with a card for each way.
 
 Tests: `ProjectDownloadTest`, `Api/V2/NewProjectDestinationsTest`, and new
 Python cases in `GitHubTest`. The full suite passed (376).
