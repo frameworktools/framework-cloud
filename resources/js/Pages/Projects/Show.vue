@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch, onBeforeUnmount } from 'vue';
+import { computed, ref, watch, onBeforeUnmount, onMounted } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
 import ProjectLayout from '@/Layouts/ProjectLayout.vue';
 import UiButton from '@/Components/UiButton.vue';
@@ -13,7 +13,7 @@ import { clientUrl, useServerArg, useServerFlag, useSetupCommand } from '@/cloud
 import { languageNames } from '@/library.js';
 import { statusLabel, statusVariant, typeName } from '@/projects.js';
 
-const props = defineProps({ project: Object, section: String, setup: Object });
+const props = defineProps({ project: Object, section: String, setup: Object, downloads: Boolean });
 
 const sectionTitles = { overview: 'Overview', setup: 'Project setup', github: 'GitHub & Pages', published: 'Published documents', computers: 'Computers & tokens' };
 const kindTitles = { structure: 'Project structure', tool: 'Tools', package_set: 'Package sets', skill_set: 'Skill sets', setting: 'Settings' };
@@ -45,6 +45,22 @@ const serverFlag = useServerFlag();
 const setupCommand = useSetupCommand();
 const pullToken = computed(() => (page.props.flash.status === 'project-token' ? page.props.flash.token : null));
 const githubError = computed(() => page.props.errors.github);
+
+// A zip built fresh from the project's layers. The browser shows its own
+// progress, so the note only covers the few seconds before the file arrives
+const downloadUrl = computed(() => `/projects/${props.project.id}/download`);
+const downloadError = computed(() => page.props.errors.download);
+const justCreated = page.props.flash.status === 'project-download';
+const preparing = ref(false);
+let preparingTimer = null;
+const download = () => {
+    preparing.value = true;
+    clearTimeout(preparingTimer);
+    preparingTimer = setTimeout(() => { preparing.value = false; }, 15000);
+    window.location.href = downloadUrl.value;
+};
+onMounted(() => { if (justCreated && props.downloads) download(); });
+onBeforeUnmount(() => clearTimeout(preparingTimer));
 
 const github = computed(() => props.project.github);
 const refresh = () => router.post(`/projects/${props.project.id}/scaffold/refresh`, {}, { preserveScroll: true });
@@ -102,7 +118,23 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                     </template>
                     <template v-else>{{ project.name }}</template>
                 </template>
+                <template v-if="downloads && (section === 'overview' || section === 'computers')" #actions>
+                    <UiButton variant="outline" size="sm" :disabled="preparing" @click="download">{{ preparing ? 'Preparing…' : 'Download zip' }}</UiButton>
+                </template>
             </PageHeader>
+
+            <UiCallout v-if="downloadError" variant="danger" heading="Download">{{ downloadError }}</UiCallout>
+            <UiCallout v-else-if="justCreated && section === 'overview'" variant="success" heading="Your project is downloading">
+                <p class="text-sm">
+                    Unzip <span class="font-mono text-xs">{{ project.slug }}.zip</span> and open the folder in RStudio, Positron, VS Code, or Stata.
+                    If the download doesn't start, use Download zip.
+                </p>
+                <p class="text-sm">
+                    To connect the folder to Framework Cloud later, get a project token under
+                    <Link :href="`/projects/${project.slug}/computers`" class="underline">Computers &amp; tokens</Link>
+                    and paste it into the folder's <span class="font-mono text-xs">.env</span> file, where a line marks the spot.
+                </p>
+            </UiCallout>
 
             <UiCallout v-if="githubError && section === 'github'" variant="danger" heading="GitHub">{{ githubError }}</UiCallout>
 
@@ -312,6 +344,11 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                         <CodeChip>fw new --from {{ project.slug }}{{ serverFlag }}</CodeChip>
                     </span>
                 </div>
+                <p v-if="downloads" class="text-sm text-slate-600 dark:text-slate-400">
+                    Downloaded the project as a zip? Get a token, open the folder's <span class="font-mono text-xs">.env</span> file,
+                    remove the <span class="font-mono text-xs">#</span> in front of <span class="font-mono text-xs">FW_PROJECT_TOKEN=</span>, and paste the token after the
+                    <span class="font-mono text-xs">=</span>. If you use fw, run <CodeChip>fw project link --from {{ project.slug }}{{ serverFlag }}</CodeChip> in the folder instead.
+                </p>
                 <ul v-if="project.tokens.length" class="flex flex-col divide-y divide-slate-200 rounded-md bg-white text-xs dark:divide-slate-700 dark:bg-slate-900">
                     <li v-for="token in project.tokens" :key="token.id" class="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2">
                         <span class="font-medium text-slate-700 dark:text-slate-300">{{ token.name }}</span>

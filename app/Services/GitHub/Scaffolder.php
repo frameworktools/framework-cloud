@@ -13,7 +13,7 @@ use RuntimeException;
  * Scaffolds a project on GitHub without the cloud writing any project files:
  * it creates the repository, commits the project's layers and a one-time
  * workflow, and the workflow generates the project: the framework R package
- * for R projects, and fw for Stata projects. The webhook (or a status check)
+ * for R projects, framework-py for Python projects, and fw for Stata projects. The webhook (or a status check)
  * records how the run went.
  */
 class Scaffolder
@@ -34,6 +34,7 @@ class Scaffolder
     {
         return match ($language) {
             'r' => null,
+            'python' => preg_match('/^[0-9a-f]{40}$/', (string) config('services.github.framework_py_sha')) ? null : 'This server is not set up to scaffold Python projects on GitHub yet.',
             'stata' => filled(config('services.github.fw_version')) ? null : 'This server is not set up to scaffold Stata projects on GitHub yet.',
             default => 'Projects in this language cannot be scaffolded on GitHub yet.',
         };
@@ -44,6 +45,16 @@ class Scaffolder
     {
         if ($language === 'stata') {
             return self::fwWorkflow();
+        }
+
+        if ($language === 'python') {
+            $sha = config('services.github.framework_py_sha');
+
+            if (! preg_match('/^[0-9a-f]{40}$/', (string) $sha)) {
+                throw new RuntimeException('GITHUB_FRAMEWORK_PY_SHA must be a full 40-character commit SHA.');
+            }
+
+            return str_replace('{{framework_py_ref}}', "frameworktools/framework-py@{$sha}", File::get(resource_path('github/framework-scaffold-python.yml')));
         }
 
         $sha = config('services.github.framework_sha');

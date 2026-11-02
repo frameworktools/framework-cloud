@@ -26,7 +26,7 @@
 
         $screens = [
             ['key' => 'blueprints', 'label' => 'Blueprints', 'caption' => 'Each blueprint lists the folders, skills, and files a new project receives.', 'alt' => 'The Blueprints page, with the Standard Project Structure blueprint expanded to show its folders, skills, and files.'],
-            ['key' => 'new-project', 'label' => 'New project', 'caption' => 'Choose a blueprint, name the project, and choose where to set it up.', 'alt' => 'The New project page, with a list of blueprints to choose from and a summary of the next steps.'],
+            ['key' => 'new-project', 'label' => 'New project', 'caption' => 'Choose a blueprint, name the project, and choose how you get it: a download, a GitHub repository, or set up on your computer.', 'alt' => 'The New project page, with a list of blueprints to choose from and a summary of the next steps.'],
             ['key' => 'skills', 'label' => 'Skills', 'caption' => 'Skills are instruction files for AI assistants. Copy Framework\'s or import your own from GitHub.', 'alt' => 'The Skills page, listing Framework\'s skills for data, outputs, packages, sensitive data, and workflow.'],
             ['key' => 'profile', 'label' => 'Author profile', 'caption' => 'Your author details go into the front matter of new notebooks, reports, and slides.', 'alt' => 'The Profile settings page, with name, email, ORCID iD, website, and an affiliation filled in.'],
         ];
@@ -73,8 +73,49 @@
 
     <main class="mx-auto max-w-6xl px-6">
 
+        {{-- Ways to start: for beginners, people new to Git, and the command line --}}
+        <section id="start" class="scroll-mt-6 py-12 sm:py-16">
+            <h2 class="text-center {{ $h2 }}">Three ways to start a project</h2>
+            <p class="mx-auto mt-4 max-w-2xl text-center text-slate-600 dark:text-slate-400">
+                A blueprint gives a project the same folders, settings, and instructions for AI
+                assistants whichever way you create it. A downloaded project can be connected to
+                Framework Cloud later.
+            </p>
+            <div class="mx-auto mt-8 grid max-w-5xl gap-4 lg:grid-cols-3">
+                @foreach ([
+                    [
+                        'label' => 'New to all this',
+                        'heading' => 'Download it',
+                        'body' => 'Choose a blueprint in your browser and download the project as a zip. Unzip it and open the folder in RStudio, Positron, VS Code, or Stata. You don\'t need Git, and you don\'t need to install any R or Python packages first.',
+                        'example' => null,
+                    ],
+                    [
+                        'label' => 'New to Git and GitHub',
+                        'heading' => 'Start on GitHub',
+                        'body' => 'Connect GitHub, and Framework Cloud creates a repository with the project already in it. Clone it in VS Code, Positron, or RStudio, and your work has history and a backup from the first day.',
+                        'example' => null,
+                    ],
+                    [
+                        'label' => 'At home in a terminal',
+                        'heading' => 'Use the command line',
+                        'body' => '`fw new` asks a few questions, or takes them all as flags, so you or an AI agent can create the project, download it, or put it on GitHub in one command.',
+                        'example' => 'fw new survey --lang python --github my-lab/survey',
+                    ],
+                ] as $way)
+                    <div class="flex flex-col rounded-xl border border-slate-200 p-6 dark:border-slate-800">
+                        <span class="text-xs font-medium tracking-wide text-sky-700 uppercase dark:text-sky-400">{{ $way['label'] }}</span>
+                        <h3 class="mt-2 text-lg leading-snug font-semibold">{{ $way['heading'] }}</h3>
+                        <p class="mt-2 flex-1 text-sm leading-normal text-slate-600 dark:text-slate-400 [&_code]:font-mono [&_code]:text-[0.9em] [&_code]:text-slate-800 dark:[&_code]:text-slate-200">{!! Str::inlineMarkdown($way['body']) !!}</p>
+                        @if ($way['example'])
+                            <code class="mt-4 block overflow-x-auto rounded-md bg-slate-900 px-3 py-2 font-mono text-xs whitespace-nowrap text-slate-100">{{ $way['example'] }}</code>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+        </section>
+
         {{-- Features --}}
-        <section id="features" class="py-12 sm:py-16">
+        <section id="features" class="border-t border-slate-200 py-12 sm:py-16 dark:border-slate-800">
             <h2 class="text-center {{ $h2 }}">Features</h2>
             <div class="mx-auto mt-8 grid max-w-5xl gap-4 md:grid-cols-2 lg:grid-cols-3">
                 @foreach ($features as $feature)
@@ -470,7 +511,7 @@ Link: https://framework.pub/d/lh2hr0gjulf3vj1fzhmscgr2</x-code-panel>
                 </div>
                 <ol class="flex flex-col gap-5 rounded-xl border border-slate-200 p-6 lg:order-1 dark:border-slate-800">
                     @foreach ([
-                        'Create a project and choose On GitHub.',
+                        'Create a project and choose Create it on GitHub, or run fw new with --github.',
                         'Framework Cloud creates the repository.',
                         'A one-time GitHub Action builds the project files and commits them.',
                         'Clone the repository and start working.',

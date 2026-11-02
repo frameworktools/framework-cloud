@@ -13,7 +13,10 @@ use App\Services\GitHub\GitHubNotConnected;
 use App\Services\GitHub\Installations;
 use App\Services\GitHub\Pages;
 use App\Services\GitHub\PagesFailed;
+use App\Services\GitHub\RepositoryTarget;
 use App\Services\GitHub\Scaffolder;
+use App\Services\Scaffolder\ProjectZip;
+use App\Services\Scaffolder\ProjectZipFailed;
 use App\Support\Catalog;
 use App\Support\ProjectDefaults;
 use App\Support\ProjectLayers;
@@ -29,6 +32,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ProjectsController extends Controller
 {
@@ -56,6 +60,7 @@ class ProjectsController extends Controller
 
         return Inertia::render('Projects/Show', [
             'section' => $section,
+            'downloads' => ProjectZip::enabled(),
             'setup' => fn () => $section === 'setup' ? self::setup($project) : null,
             'project' => self::summary($project) + [
                 'tokens' => $project->tokens->sortByDesc('id')->values()
@@ -154,6 +159,9 @@ class ProjectsController extends Controller
                 'language' => in_array($request->query('language'), Project::LANGUAGES, true) ? $request->query('language') : null,
                 'workflow' => in_array($request->query('workflow'), ProjectDefaults::WORKFLOW_KEYS, true) ? $request->query('workflow') : null,
             ],
+            'downloads' => ProjectZip::enabled(),
+            // Languages GitHub can't scaffold here, and why
+            'githubUnavailable' => collect(Project::LANGUAGES)->mapWithKeys(fn (string $l) => [$l => Scaffolder::unavailableFor($l)])->filter()->all(),
             'github' => [
                 'enabled' => Scaffolder::enabled(),
                 'login' => $account?->login,
@@ -195,6 +203,8 @@ class ProjectsController extends Controller
             'settings.ai.enabled' => ['sometimes', 'boolean'],
             'settings.ai.assistants' => ['sometimes', 'array'],
             'settings.ai.assistants.*' => ['boolean'],
+            // download: a zip of the built project; local: a token for setting it up on a computer
+            'destination' => ['nullable', Rule::in(['local', 'download', 'github'])],
             'github' => ['nullable', 'array'],
             'github.enabled' => ['boolean'],
             'github.owner' => ['required_if_accepted:github.enabled', 'nullable', 'string', 'max:100'],
@@ -217,8 +227,12 @@ class ProjectsController extends Controller
             return back()->withErrors(['github.enabled' => $reason]);
         }
 
+        if (($validated['destination'] ?? null) === 'download' && ! ProjectZip::enabled()) {
+            return back()->withErrors(['destination' => 'This server is not set up to build downloads.']);
+        }
+
         $sensitive = ProjectLayers::isSensitive($resolved['envelope']['layers']);
-        $github = ($validated['github']['enabled'] ?? false) ? $this->githubTarget($request, $validated['github'], $sensitive) : null;
+        $github = ($validated['github']['enabled'] ?? false) ? RepositoryTarget::for($request->user(), $validated['github'], $sensitive) : null;
 
         $project = $resolver->createProject($validated['name'], $resolved, $validated['description'] ?? null, [
             'scaffold_status' => $github ? 'pending' : null,
@@ -228,6 +242,11 @@ class ProjectsController extends Controller
             ScaffoldOnGitHub::dispatch($project, $github['org'], $github['name'], $github['private']);
 
             return to_route('projects.show', $project->slug);
+        }
+
+        // Download: the project page starts the download, and says how to connect the folder later
+        if (($validated['destination'] ?? null) === 'download') {
+            return to_route('projects.show', $project->slug)->with('status', 'project-download');
         }
 
         // Set up locally: hand over the token now, on the page that explains it
@@ -292,6 +311,23 @@ class ProjectsController extends Controller
             : ['blueprint' => $blueprint->handle] + Arr::only($validated, ['name', 'language', 'workflow']);
     }
 
+    /**
+     * GET /projects/{id}/download: the project built by the scaffolder, as a
+     * zip. Built fresh each time, so it always matches the project's layers.
+     */
+    public function download(Request $request, int $project, ProjectZip $zips): RedirectResponse|BinaryFileResponse
+    {
+        $project = $request->user()->projects()->findOrFail($project);
+
+        try {
+            $path = $zips->build($project);
+        } catch (ProjectZipFailed $e) {
+            return to_route('projects.show', $project->slug)->withErrors(['download' => $e->getMessage()]);
+        }
+
+        return response()->download($path, "{$project->slug}.zip", ['Content-Type' => 'application/zip'])->deleteFileAfterSend();
+    }
+
     /** Ask GitHub how the scaffold run went, in case a webhook was missed. */
     public function refreshScaffold(Request $request, int $project, Scaffolder $scaffolder): RedirectResponse
     {
@@ -341,36 +377,6 @@ class ProjectsController extends Controller
      *
      * @return array{org: ?string, name: string, private: bool}
      */
-    private function githubTarget(Request $request, array $input, bool $sensitive): array
-    {
-        $account = $request->user()->githubAccount;
-
-        if (! Scaffolder::enabled()) {
-            throw ValidationException::withMessages(['github.enabled' => 'GitHub scaffolding is not set up on this server.']);
-        }
-        if (! $account) {
-            throw ValidationException::withMessages(['github.enabled' => 'Connect GitHub in settings first.']);
-        }
-
-        $owner = collect(Installations::for($account) ?? [])->firstWhere('login', $input['owner']);
-
-        if (! $owner) {
-            throw ValidationException::withMessages(['github.owner' => 'Install the Framework app on that account first.']);
-        }
-
-        $private = (bool) ($input['private'] ?? true);
-
-        if (! $private && $sensitive) {
-            throw ValidationException::withMessages(['github.private' => 'This blueprint handles restricted data, so its repository must be private.']);
-        }
-
-        return [
-            'org' => $owner['type'] === 'Organization' ? $owner['login'] : null,
-            'name' => $input['name'],
-            'private' => $private,
-        ];
-    }
-
     public function issueToken(Request $request, int $project): RedirectResponse
     {
         $project = $request->user()->projects()->findOrFail($project);

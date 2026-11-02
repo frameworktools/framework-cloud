@@ -1,0 +1,136 @@
+<?php
+
+namespace App\Services\Scaffolder;
+
+use App\Models\Project;
+use App\Support\Layer;
+use App\Support\ProjectLayers;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use ZipArchive;
+
+/**
+ * A project as a zip to download. The cloud still writes no project files:
+ * the scaffolder container (docker/scaffolder) runs fw and the language
+ * packages on the project's layers, exactly as GitHub or a person's own
+ * computer would. The cloud only adds the lines that let the folder connect
+ * back to this server later.
+ */
+class ProjectZip
+{
+    public static function enabled(): bool
+    {
+        return filled(config('services.scaffolder.url'));
+    }
+
+    /**
+     * Build the zip into a temporary file. The caller sends it and deletes it.
+     *
+     * @throws ProjectZipFailed
+     */
+    public function build(Project $project): string
+    {
+        if (! self::enabled()) {
+            throw new ProjectZipFailed('This server is not set up to build downloads.');
+        }
+
+        $envelope = ProjectLayers::for($project);
+
+        if ($problems = Layer::envelopeProblems($envelope)) {
+            throw new ProjectZipFailed('The project layers are not valid: '.implode(' ', $problems));
+        }
+
+        $request = Http::timeout((int) config('services.scaffolder.timeout', 200))->acceptJson();
+        if (filled($token = config('services.scaffolder.token'))) {
+            $request = $request->withToken($token);
+        }
+
+        try {
+            // Layer::toJsonValue keeps empty maps as {}, which the layers schema requires
+            $body = json_encode(['layers' => Layer::toJsonValue($envelope), 'folder' => $project->slug], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            $response = $request->withBody($body, 'application/json')
+                ->post(rtrim((string) config('services.scaffolder.url'), '/').'/build');
+        } catch (ConnectionException $e) {
+            Log::warning('Scaffolder unreachable', ['project' => $project->id, 'error' => $e->getMessage()]);
+
+            throw new ProjectZipFailed('The project could not be built right now. Try again in a minute.');
+        }
+
+        if (! $response->successful() || $response->header('Content-Type') !== 'application/zip') {
+            Log::warning('Scaffolder build failed', [
+                'project' => $project->id,
+                'status' => $response->status(),
+                'error' => $response->json('error'),
+                'log' => $response->json('log'),
+            ]);
+
+            throw new ProjectZipFailed($response->status() === 422
+                ? ($response->json('error') ?: 'The project could not be built.').' The details are in the server log.'
+                : 'The project could not be built right now. Try again in a minute.');
+        }
+
+        $path = tempnam(sys_get_temp_dir(), 'project-zip-');
+        file_put_contents($path, $response->body());
+        $this->addConnection($path, $project);
+
+        return $path;
+    }
+
+    /**
+     * The server address, and where to get a token, in the project's .env.
+     * No token: a zip gets passed around, and a token in it would go along.
+     * R, Python, and fw all read FW_PROJECT_TOKEN and FW_CLOUD_URL from .env.
+     */
+    private function addConnection(string $path, Project $project): void
+    {
+        $zip = new ZipArchive;
+        if ($zip->open($path) !== true) {
+            throw new ProjectZipFailed('The project could not be built: the scaffolder sent an unreadable zip.');
+        }
+
+        $folder = $project->slug;
+        $url = config('framework.client_url');
+        $page = "{$url}/projects/{$project->slug}/computers";
+
+        $env = $zip->getFromName("{$folder}/.env");
+        $env = $env === false ? '' : rtrim($env, "\n")."\n\n";
+        $env .= self::connectionLines($url, $page);
+        $zip->addFromString("{$folder}/.env", $env);
+
+        // .env holds the token once it's added, so git must never take it
+        $gitignore = $zip->getFromName("{$folder}/.gitignore");
+        if ($gitignore === false || ! self::ignoresEnv($gitignore)) {
+            $gitignore = $gitignore === false || $gitignore === '' ? '' : rtrim($gitignore, "\n")."\n\n";
+            $zip->addFromString("{$folder}/.gitignore", $gitignore."# Secrets, including the Framework Cloud project token\n.env\n");
+        }
+
+        $zip->close();
+    }
+
+    public static function connectionLines(string $url, string $page): string
+    {
+        return <<<ENV
+        # Framework Cloud. To connect this project, get a project token at
+        # {$page}
+        # then remove the # in front of FW_PROJECT_TOKEN below and paste it after the =.
+        FW_CLOUD_URL={$url}
+        # FW_PROJECT_TOKEN=
+
+        ENV;
+    }
+
+    /** Whether the last .gitignore line about .env ignores it (a later !.env would undo it). */
+    public static function ignoresEnv(string $gitignore): bool
+    {
+        $last = null;
+        foreach (preg_split('/\R/', $gitignore) as $line) {
+            $line = trim($line);
+            if (preg_match('#^!?/?\.env\*?$#', $line)) {
+                $last = $line;
+            }
+        }
+
+        return $last !== null && ! str_starts_with($last, '!');
+    }
+}

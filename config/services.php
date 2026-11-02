@@ -49,7 +49,10 @@ return [
         // never a branch, so a repo's scaffold is reproducible. Bump it here
         // deliberately; the env var overrides it, and an empty one turns
         // GitHub scaffolding off.
-        'framework_sha' => env('GITHUB_FRAMEWORK_SHA', 'f526b1dd8cd753ee9919190c34cb84b3772c006d'),
+        'framework_sha' => env('GITHUB_FRAMEWORK_SHA', 'bdb11153edb36773a6ab8baa4ca99ad1e085abbc'),
+        // The framework-py commit that scaffolds Python projects. Empty turns
+        // Python scaffolding on GitHub off.
+        'framework_py_sha' => env('GITHUB_FRAMEWORK_PY_SHA', 'd10c19f221ac41b75e6dbe5abd7ab986ff72b055'),
         // The fw release that scaffolds Stata projects. Empty turns Stata
         // scaffolding on GitHub off. The workflow checks the download against
         // fw_sha256 when it is set, and otherwise against the release's
@@ -59,6 +62,14 @@ return [
         'fw_sha256' => env('GITHUB_FW_SHA256', env('GITHUB_FW_VERSION', '0.3.0') === '0.3.0'
             ? 'f36595a5ba347604773351a64e5649e01dfc702bed39c04fa6d6384ea6c612b9'
             : null),
+    ],
+
+    // The scaffolder container (docker/scaffolder) builds downloadable zips
+    // with fw and the language packages. Empty turns downloads off.
+    'scaffolder' => [
+        'url' => env('SCAFFOLDER_URL'),
+        'token' => env('SCAFFOLDER_TOKEN'),
+        'timeout' => (int) env('SCAFFOLDER_TIMEOUT', 200),
     ],
 
 ];

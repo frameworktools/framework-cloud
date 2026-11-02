@@ -16,7 +16,7 @@ import UiModal from '@/Components/UiModal.vue';
 import { agentSummary, fromChoices, NAMED, toChoices } from '@/agents.js';
 import { group, groups, languageNames, languageOptions } from '@/library.js';
 
-const props = defineProps({ blueprints: Array, catalog: Object, defaults: Object, selected: Number, start: Object, github: Object });
+const props = defineProps({ blueprints: Array, catalog: Object, defaults: Object, selected: Number, start: Object, github: Object, downloads: Boolean, githubUnavailable: Object });
 
 const page = usePage();
 const bare = props.blueprints.find((b) => b.handle === props.defaults.blueprint) ?? props.blueprints.find((b) => b.handle === 'framework/bare');
@@ -29,7 +29,8 @@ const form = useForm({
     language: 'r',
     // Empty uses your default workflow for the language
     workflow: props.start?.workflow ?? '',
-    destination: 'local',
+    // download, github, or local. Downloading needs nothing installed, so it comes first
+    destination: props.downloads ? 'download' : 'local',
     github: { owner: props.github.owners?.[0]?.login ?? null, name: '', private: true, nameEdited: false },
     // Changing pieces starts from the chosen blueprint's choices
     customized: false,
@@ -168,16 +169,45 @@ const workflowOptions = computed(() => [
 watch(workflows, (list) => { if (form.workflow && !list.includes(form.workflow)) form.workflow = ''; }, { immediate: true });
 
 const onGitHub = computed(() => form.destination === 'github');
+// Why GitHub can't set up a project in this language here, if it can't
+const githubBlocked = computed(() => props.githubUnavailable?.[form.language] ?? null);
+watch(githubBlocked, (reason) => { if (reason && onGitHub.value) form.destination = props.downloads ? 'download' : 'local'; });
 const create = () => form
     .transform((data) => ({
         name: data.name,
         description: data.description,
         ...choicePayload(data),
+        destination: data.destination,
         github: onGitHub.value
             ? { enabled: true, owner: data.github.owner, name: repoName.value, private: data.github.private }
             : { enabled: false },
     }))
     .post('/projects');
+
+const destinations = computed(() => [
+    ...(props.downloads ? [{
+        key: 'download',
+        title: 'Download a zip',
+        text: 'Framework builds the project and your browser downloads it. Unzip it and open the folder. You need no Git and no Framework packages.',
+    }] : []),
+    ...(props.github.enabled ? [{
+        key: 'github',
+        title: 'Create it on GitHub',
+        text: githubBlocked.value ?? 'Framework creates a repository on your GitHub account and sets the project up there. Open it in VS Code, Positron, or RStudio by cloning it.',
+        disabled: !!githubBlocked.value,
+    }] : []),
+    {
+        key: 'local',
+        title: 'Set it up on your computer',
+        text: form.language === 'stata'
+            ? 'In a terminal, run fw login, then fw new with the project\'s name. Git is set up for you.'
+            : form.language === 'python'
+                ? 'You get a project token, and framework.new(key=...) in Python builds the project with Git. fw new works too.'
+                : 'You get a project token, and framework::setup() in R builds the project with Git. fw new works too.',
+    },
+]);
+const submitLabel = computed(() => ({ download: 'Create and download', github: 'Create on GitHub' })[form.destination] ?? 'Create project');
+const destinationName = computed(() => destinations.value.find((d) => d.key === form.destination)?.title ?? '');
 
 const githubError = computed(() => page.props.errors.github ?? form.errors['github.enabled']);
 
@@ -186,7 +216,7 @@ const items = computed(() => [
     { label: 'Blueprint', anchor: 'blueprint' },
     ...(form.customized ? [{ label: 'Pieces', anchor: 'structure' }] : []),
     { label: 'Name', anchor: 'name' },
-    { label: 'Where to set it up', anchor: 'where' },
+    { label: 'How you get it', anchor: 'where' },
 ]);
 </script>
 
@@ -194,7 +224,7 @@ const items = computed(() => [
     <Head title="New project" />
 
     <SectionLayout heading="New project" :back="{ label: 'Back to all projects', href: '/projects' }" :items="items">
-        <PageHeader title="New project" description="Pick what kind of project it is, name it, and choose where it gets set up." />
+        <PageHeader title="New project" description="Pick what kind of project it is, name it, and choose how you get it: a download, a GitHub repository, or set up on your computer." />
 
         <form id="create-form" class="mt-8 flex flex-col gap-8" @submit.prevent="create">
             <UiPanel id="blueprint" title="Blueprint" class="scroll-mt-6">
@@ -302,40 +332,27 @@ const items = computed(() => [
                 </div>
             </UiPanel>
 
-            <UiPanel id="where" title="Where to set it up" class="scroll-mt-6">
-                <div class="grid gap-3 sm:grid-cols-2">
+            <UiPanel id="where" title="How you get it" class="scroll-mt-6">
+                <div class="grid gap-3" :class="destinations.length === 3 ? 'lg:grid-cols-3' : 'sm:grid-cols-2'">
                     <button
+                        v-for="d in destinations" :key="d.key"
                         type="button"
-                        class="flex flex-col gap-1.5 rounded-lg border p-4 text-left transition-colors"
-                        :class="!onGitHub
+                        class="flex flex-col gap-1.5 rounded-lg border p-4 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+                        :class="form.destination === d.key
                             ? 'border-sky-500 bg-sky-50 ring-1 ring-sky-500 dark:bg-sky-950/30'
                             : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-600'"
-                        :aria-pressed="!onGitHub"
-                        @click="form.destination = 'local'"
+                        :aria-pressed="form.destination === d.key"
+                        :disabled="d.disabled"
+                        @click="form.destination = d.key"
                     >
-                        <span class="font-medium">On your computer</span>
-                        <span class="text-sm text-slate-600 dark:text-slate-400">
-                            <template v-if="stata">In a terminal, run <code class="font-mono text-xs">fw login</code>, then <code class="font-mono text-xs">fw new</code> with the project's name.</template>
-                            <template v-else-if="form.language === 'python'">You get a project token. Run <code class="font-mono text-xs">framework.new(key=...)</code> with it in Python.</template>
-                            <template v-else>You get a project token. Run <code class="font-mono text-xs">framework::setup()</code> with it in R.</template>
-                        </span>
-                    </button>
-                    <button
-                        v-if="github.enabled"
-                        type="button"
-                        class="flex flex-col gap-1.5 rounded-lg border p-4 text-left transition-colors"
-                        :class="onGitHub
-                            ? 'border-sky-500 bg-sky-50 ring-1 ring-sky-500 dark:bg-sky-950/30'
-                            : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-600'"
-                        :aria-pressed="onGitHub"
-                        @click="form.destination = 'github'"
-                    >
-                        <span class="font-medium">On GitHub</span>
-                        <span class="text-sm text-slate-600 dark:text-slate-400">
-                            Framework Cloud creates the repository and sets it up there. Then you clone it.
-                        </span>
+                        <span class="font-medium">{{ d.title }}</span>
+                        <span class="text-sm text-slate-600 dark:text-slate-400">{{ d.text }}</span>
                     </button>
                 </div>
+                <p v-if="form.errors.destination" class="text-sm text-red-600 dark:text-red-400">{{ form.errors.destination }}</p>
+                <p v-if="form.destination === 'download'" class="text-sm text-slate-600 dark:text-slate-400">
+                    The project stays here too. You can download it again from its page, and connect the folder to it later with a project token.
+                </p>
 
                 <div v-if="onGitHub" class="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
                     <p v-if="!github.login" class="text-sm text-slate-600 dark:text-slate-400">
@@ -371,7 +388,7 @@ const items = computed(() => [
                 <UiButton
                     type="submit"
                     :disabled="form.processing || (onGitHub && (!githubReady || (sensitive && !form.github.private)))"
-                >{{ onGitHub ? 'Create on GitHub' : 'Create project' }}</UiButton>
+                >{{ submitLabel }}</UiButton>
             </div>
         </form>
 
@@ -390,7 +407,7 @@ const items = computed(() => [
                     <dt class="text-slate-500">Language</dt><dd>{{ languages.find((l) => l.value === form.language)?.label ?? form.language }}</dd>
                     <template v-if="current?.workflow"><dt class="text-slate-500">Workflow</dt><dd>{{ current.workflow.name }}</dd></template>
                     <dt class="text-slate-500">Pieces</dt><dd>{{ form.customized ? 'Changed for this project' : 'As the blueprint has them' }}</dd>
-                    <dt class="text-slate-500">Set up</dt><dd>{{ onGitHub ? 'On GitHub' : 'On your computer' }}</dd>
+                    <dt class="text-slate-500">Set up</dt><dd>{{ destinationName }}</dd>
                 </dl>
             </div>
         </template>

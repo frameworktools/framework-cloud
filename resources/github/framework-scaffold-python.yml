@@ -1,0 +1,55 @@
+# Committed by Framework Cloud to scaffold this Python project once. It runs
+# framework-py on .framework/layers.json, commits the result, and Framework
+# Cloud removes this file when the run succeeds.
+name: Framework scaffold
+
+on:
+  push:
+    paths:
+      - .github/workflows/framework-scaffold.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: framework-scaffold
+  cancel-in-progress: false
+
+jobs:
+  scaffold:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for layers
+        id: layers
+        run: |
+          if [ -f .framework/layers.json ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "This project is already scaffolded."
+          fi
+
+      - uses: actions/setup-python@v5
+        if: steps.layers.outputs.present == 'true'
+        with:
+          python-version: "3.12"
+
+      - name: Install framework-py
+        if: steps.layers.outputs.present == 'true'
+        run: python -m pip install --quiet "framework-py @ git+https://github.com/{{framework_py_ref}}"
+
+      - name: Scaffold
+        if: steps.layers.outputs.present == 'true'
+        run: python -m framework create --from-layers .framework/layers.json --path .
+
+      - name: Commit
+        if: steps.layers.outputs.present == 'true'
+        run: |
+          git rm -q --ignore-unmatch .framework/layers.json
+          git add -A
+          git -c user.name="Framework Cloud" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "Scaffold with Framework"
+          git push

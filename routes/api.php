@@ -64,6 +64,8 @@ Route::prefix('v2')->middleware('auth:sanctum')->group(function () {
     Route::post('/resolve', [PiecesController::class, 'resolve'])->middleware('throttle:60,1');
     Route::post('/projects', [PiecesController::class, 'store'])->middleware('throttle:20,1');
     Route::get('/projects/{slug}', [App\Http\Controllers\Api\V2\ProjectsController::class, 'show']);
+    Route::get('/destinations', [PiecesController::class, 'destinations']);
+    Route::get('/projects/{slug}/download', [App\Http\Controllers\Api\V2\ProjectsController::class, 'download'])->middleware('throttle:10,1');
     Route::get('/projects/{slug}/layers', [App\Http\Controllers\Api\V2\ProjectsController::class, 'layers']);
     Route::post('/projects/{slug}/pull-tokens', [App\Http\Controllers\Api\V2\ProjectsController::class, 'issuePullToken'])
         ->middleware('throttle:30,1');

@@ -251,7 +251,49 @@ class GitHubTest extends TestCase
     {
         $this->assertStringContainsString('frameworktools/framework@'.self::SHA, Scaffolder::workflow('r'));
         $this->assertNull(Scaffolder::unavailableFor('r'));
-        $this->assertNotNull(Scaffolder::unavailableFor('python'));
+    }
+
+    public function test_python_projects_scaffold_with_a_pinned_framework_py_commit(): void
+    {
+        $sha = str_repeat('c', 40);
+        config(['services.github.framework_py_sha' => $sha]);
+        $user = $this->connected();
+        $this->fakeGitHub();
+        $blueprint = Blueprint::whereNull('user_id')->where('key', 'project')->firstOrFail();
+
+        $this->actingAs($user)->post('/projects', [
+            'name' => 'NHANES Study',
+            'blueprint_id' => $blueprint->id,
+            'language' => 'python',
+            'github' => ['enabled' => true, 'owner' => 'ada', 'name' => 'nhanes-study', 'private' => true],
+        ])->assertRedirect('/projects/nhanes-study')->assertSessionHasNoErrors();
+
+        $puts = collect(Http::recorded())->map(fn ($pair) => $pair[0])->filter(fn ($r) => $r->method() === 'PUT')->values();
+        $workflow = base64_decode($puts[1]['content']);
+        $this->assertStringContainsString("framework-py @ git+https://github.com/frameworktools/framework-py@{$sha}", $workflow);
+        $this->assertStringContainsString('python -m framework create --from-layers .framework/layers.json --path .', $workflow);
+        $this->assertStringNotContainsString('Rscript', $workflow);
+        $this->assertStringNotContainsString('{{', $workflow);
+
+        $layers = json_decode(base64_decode($puts[0]['content']), true);
+        $this->assertSame('python', end($layers['layers'])['layer']['language']);
+    }
+
+    public function test_python_projects_need_a_framework_py_commit_to_scaffold_on_github(): void
+    {
+        config(['services.github.framework_py_sha' => 'main']);
+        $user = $this->connected();
+        $this->fakeGitHub();
+        $blueprint = Blueprint::whereNull('user_id')->where('key', 'project')->firstOrFail();
+
+        $this->actingAs($user)->post('/projects', [
+            'name' => 'NHANES Study',
+            'blueprint_id' => $blueprint->id,
+            'language' => 'python',
+            'github' => ['enabled' => true, 'owner' => 'ada', 'name' => 'nhanes-study', 'private' => true],
+        ])->assertSessionHasErrors('github.enabled');
+
+        $this->assertSame(0, Project::count());
     }
 
     public function test_organization_repositories_go_to_the_org_endpoint(): void

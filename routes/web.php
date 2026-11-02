@@ -105,6 +105,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('projects/{slug}', [ProjectsController::class, 'show'])->where('slug', '[A-Za-z0-9_-]+')->name('projects.show');
     Route::get('projects/{slug}/{section}', [ProjectsController::class, 'show'])->where('slug', '[A-Za-z0-9_-]+')
         ->whereIn('section', array_slice(ProjectsController::SECTIONS, 1))->name('projects.section');
+    Route::get('projects/{project}/download', [ProjectsController::class, 'download'])->whereNumber('project')->middleware('throttle:10,1')->name('projects.download');
     Route::post('projects/{project}/token', [ProjectsController::class, 'issueToken']);
     Route::delete('projects/{project}/tokens/{token}', [ProjectsController::class, 'revokeToken']);
     Route::delete('projects/{project}', [ProjectsController::class, 'destroy']);

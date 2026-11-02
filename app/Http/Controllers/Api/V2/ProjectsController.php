@@ -5,10 +5,13 @@ namespace App\Http\Controllers\Api\V2;
 use App\Http\Controllers\Controller;
 use App\Models\Project;
 use App\Models\User;
+use App\Services\Scaffolder\ProjectZip;
+use App\Services\Scaffolder\ProjectZipFailed;
 use App\Support\Layer;
 use App\Support\ProjectLayers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
  * Pull v2: a project's layers envelope (resources/schema/layers.v1.json),
@@ -81,6 +84,7 @@ class ProjectsController extends Controller
                 'url' => "https://github.com/{$project->github_repo}",
                 'private' => (bool) $project->github_private,
                 'scaffold_status' => $project->scaffold_status,
+                'scaffold_error' => $project->scaffold_error,
                 // Set while GitHub Pages publishes the repository's published/ folder
                 'pages_url' => $project->pages_url,
             ] : null,
@@ -88,6 +92,27 @@ class ProjectsController extends Controller
             'created_at' => $project->created_at?->toIso8601String(),
             'updated_at' => $project->updated_at?->toIso8601String(),
         ]);
+    }
+
+    /**
+     * GET /api/v2/projects/{slug}/download, with a user token: the project
+     * built by the scaffolder, as a zip with the project under {slug}/.
+     */
+    public function download(Request $request, string $slug, ProjectZip $zips): JsonResponse|BinaryFileResponse
+    {
+        $project = $this->project($request, $slug);
+
+        if (! ProjectZip::enabled()) {
+            return response()->json(['message' => 'This server is not set up to build downloads.'], 404);
+        }
+
+        try {
+            $path = $zips->build($project);
+        } catch (ProjectZipFailed $e) {
+            return response()->json(['message' => $e->getMessage()], 502);
+        }
+
+        return response()->download($path, "{$project->slug}.zip", ['Content-Type' => 'application/zip'])->deleteFileAfterSend();
     }
 
     /** GET /api/v2/projects/{slug}/layers, with a user token. */

@@ -3,14 +3,22 @@
 namespace App\Http\Controllers\Api\V2;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\ScaffoldOnGitHub;
 use App\Models\Facet;
+use App\Models\Project;
 use App\Models\Skill;
 use App\Models\User;
+use App\Services\GitHub\Installations;
+use App\Services\GitHub\RepositoryTarget;
+use App\Services\GitHub\Scaffolder;
+use App\Services\Scaffolder\ProjectZip;
 use App\Support\Layer;
 use App\Support\ProjectDefaults;
+use App\Support\ProjectLayers;
 use App\Support\Resolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 /**
  * The pieces a project is made from, for fw, the R and Python packages, and
@@ -81,12 +89,41 @@ class PiecesController extends Controller
      * POST /api/v2/projects: make a cloud project from the same choices, and
      * hand back a project token so fw can link the local copy.
      */
+    /**
+     * POST /api/v2/projects: create a project from choices. With github
+     * ({owner, name, private}), the project is also scaffolded in a new
+     * repository; GET /api/v2/projects/{slug} reports how that went.
+     */
     public function store(Request $request): JsonResponse
     {
         $user = $this->user($request);
         $choices = $this->choices($request, nameRequired: true);
+        $github = $request->validate([
+            'github' => ['nullable', 'array'],
+            'github.owner' => ['required_with:github', 'string', 'max:100'],
+            'github.name' => ['nullable', 'string', 'max:100', 'regex:/^[A-Za-z0-9._-]+$/', 'not_in:.,..'],
+            'github.private' => ['boolean'],
+        ], ['github.name.regex' => 'Use letters, numbers, hyphens, underscores, and periods.'])['github'] ?? null;
+
         $resolver = new Resolver($user);
-        $project = $resolver->createProject($choices['name'], $resolver->resolve($choices), $choices['description'] ?? null);
+        $resolved = $resolver->resolve($choices);
+
+        $target = null;
+        if ($github) {
+            if ($reason = Scaffolder::unavailableFor($resolved['language'])) {
+                throw ValidationException::withMessages(['github' => $reason]);
+            }
+            $github['name'] ??= str($choices['name'])->slug()->value();
+            $target = RepositoryTarget::for($user, $github, ProjectLayers::isSensitive($resolved['envelope']['layers']));
+        }
+
+        $project = $resolver->createProject($choices['name'], $resolved, $choices['description'] ?? null, [
+            'scaffold_status' => $target ? 'pending' : null,
+        ]);
+
+        if ($target) {
+            ScaffoldOnGitHub::dispatch($project, $target['org'], $target['name'], $target['private']);
+        }
 
         return response()->json([
             'slug' => $project->slug,
@@ -94,7 +131,37 @@ class PiecesController extends Controller
             'language' => $project->language,
             'url' => route('projects.show', $project->slug),
             'token' => $project->issuePullToken('fw'),
+            'github' => $target ? [
+                'repository' => ($target['org'] ?? $github['owner']).'/'.$target['name'],
+                'scaffold_status' => 'pending',
+            ] : null,
         ], 201);
+    }
+
+    /**
+     * GET /api/v2/destinations: the ways this server can hand over a new
+     * project besides building it on the person's computer, so fw can ask.
+     */
+    public function destinations(Request $request): JsonResponse
+    {
+        $user = $this->user($request);
+        $account = $user->githubAccount;
+        $owners = $account && Scaffolder::enabled() ? Installations::for($account) : [];
+
+        return response()->json([
+            'download' => [
+                'available' => ProjectZip::enabled(),
+            ],
+            'github' => [
+                'available' => Scaffolder::enabled(),
+                'login' => $account?->login,
+                // null when GitHub could not be reached
+                'owners' => $owners === null ? null : collect($owners)->map(fn (array $o) => ['login' => $o['login'], 'type' => $o['type']])->values()->all(),
+                'install_url' => Installations::installUrl(),
+                'connect_url' => url('/account/github'),
+                'unavailable' => (object) collect(Project::LANGUAGES)->mapWithKeys(fn (string $l) => [$l => Scaffolder::unavailableFor($l)])->filter()->all(),
+            ],
+        ]);
     }
 
     private function choices(Request $request, bool $nameRequired = false): array
