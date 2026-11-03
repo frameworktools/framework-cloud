@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 /**
@@ -19,6 +20,49 @@ use Illuminate\Support\Str;
 class Document extends Model
 {
     protected $guarded = [];
+
+    protected $hidden = ['password_hash'];
+
+    protected function casts(): array
+    {
+        return ['manifest' => 'array', 'merged_at' => 'datetime'];
+    }
+
+    public function isPasswordProtected(): bool
+    {
+        return filled($this->password_hash);
+    }
+
+    public function hasUnprotectedLegacyContent(): bool
+    {
+        // Only the standard private local disk is a known-safe legacy source.
+        // A public disk can expose files even without a content-domain setting.
+        return (filled(config('framework.documents_base_url')) || config('framework.documents_disk') !== 'local')
+            && ($this->storage_disk === null || $this->versions()->whereNull('storage_disk')->exists());
+    }
+
+    public function passwordSessionKey(): string
+    {
+        return 'artifact_access.'.$this->id;
+    }
+
+    public function canRead(?Request $request = null): bool
+    {
+        $request ??= request();
+
+        return ! $this->isPasswordProtected()
+            || ($request->user() instanceof User && $request->user()->id === $this->project->user_id)
+            || ($request->hasSession() && hash_equals($this->password_hash, (string) $request->session()->get($this->passwordSessionKey(), '')));
+    }
+
+    public function preserveImplicitVersion(): void
+    {
+        if (! $this->versions()->exists()) {
+            $version = $this->implicitVersion();
+            $version->document_id = $this->id;
+            $version->save();
+        }
+    }
 
     public function project(): BelongsTo
     {
@@ -49,6 +93,11 @@ class Document extends Model
     {
         $version = new DocumentVersion([
             'number' => 1,
+            'kind' => $this->kind ?? 'html',
+            'original_filename' => $this->original_filename,
+            'manifest' => $this->manifest,
+            'storage_disk' => $this->storage_disk,
+            'source_path' => $this->source_path,
             'disk_path' => $this->disk_path,
             'entrypoint' => $this->entrypoint,
             'content_type' => $this->content_type,

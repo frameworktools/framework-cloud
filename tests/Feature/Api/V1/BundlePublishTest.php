@@ -69,7 +69,7 @@ class BundlePublishTest extends TestCase
         $this->get('/d/'.$document->key.'/analysis_files/figure-html/plot-1.png')->assertOk();
 
         // Wrapper page still works
-        $this->get('/d/'.$document->key)->assertOk()->assertSee('published with Framework Cloud');
+        $this->get('/d/'.$document->key)->assertOk()->assertSee('Published with Framework Cloud');
     }
 
     public function test_traversal_and_missing_assets_404(): void
@@ -126,7 +126,7 @@ class BundlePublishTest extends TestCase
         ], ['Accept' => 'application/json'])->assertStatus(422);
     }
 
-    public function test_r2_base_url_switches_iframe_and_redirects(): void
+    public function test_new_artifacts_are_served_privately_even_with_a_public_content_host(): void
     {
         Storage::fake('local');
         config(['framework.documents_base_url' => 'https://files.framework.pub']);
@@ -138,15 +138,10 @@ class BundlePublishTest extends TestCase
         ], ['Accept' => 'application/json'])->assertCreated();
 
         $document = Document::first();
-        $expected = 'https://files.framework.pub/'.$document->disk_path.'/analysis.html';
+        $this->get('/d/'.$document->key)->assertOk()->assertSee($document->latestVersion()->contentUrl(), false);
+        $this->get('/d/'.$document->key.'/raw')->assertOk();
+        $this->get('/d/'.$document->key.'/analysis_files/libs/quarto.css')->assertOk();
 
-        // Wrapper iframes the R2 origin (separate-origin sandbox for uploads)
-        $this->get('/d/'.$document->key)->assertOk()->assertSee($expected, false);
-
-        // Old app-served URLs keep working via redirect
-        $this->get('/d/'.$document->key.'/raw')->assertRedirect($expected);
-        $this->get('/d/'.$document->key.'/analysis_files/libs/quarto.css')
-            ->assertRedirect('https://files.framework.pub/'.$document->disk_path.'/analysis_files/libs/quarto.css');
     }
 
     public function test_republishing_a_bundle_replaces_content_and_keeps_url(): void

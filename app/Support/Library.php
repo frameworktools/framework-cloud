@@ -127,8 +127,14 @@ class Library
 
     public static function skill(Skill $skill, ?User $user): array
     {
+        $source = $skill->forked_from_id ? \App\Models\SkillVersion::find($skill->forked_from_id) : null;
+        $parent = $source?->skill()->withTrashed()->first();
+        $lineage = $parent && ! $parent->trashed() && $parent->isVisibleTo($user)
+            ? ['id' => $parent->id, 'name' => $parent->name, 'version' => $source->version] : null;
         return [
             'id' => $skill->id,
+            'sync_id' => $skill->sync_id,
+            'parent' => $lineage,
             'key' => $skill->key,
             'handle' => $skill->handle,
             'name' => $skill->name,

@@ -32,7 +32,7 @@ return [
 
         'local' => [
             'driver' => 'local',
-            'root' => storage_path('app/private'),
+            'root' => env('FW_LOCAL_STORAGE_ROOT', storage_path('app/private')),
             'serve' => true,
             'throw' => false,
         ],

@@ -126,7 +126,7 @@ const dir = (path) => (path === '.' ? 'the project folder' : `${path}/`);
                                         </ul>
                                         <details class="group mt-3 text-xs">
                                             <summary class="flex cursor-pointer list-none items-center gap-1 text-sky-600 hover:underline dark:text-sky-400 [&::-webkit-details-marker]:hidden">
-                                                <ChevronRightIcon class="-ml-1 size-4 transition-transform group-open:rotate-90" />How protection works
+                                                <ChevronRightIcon class="-ml-1 size-4 transition-transform group-open:rotate-90" />Data protection
                                             </summary>
                                             <div class="mt-2 flex flex-col gap-2 text-slate-600 dark:text-slate-400">
                                                 <p>The project's .gitignore excludes every <span class="font-mono">private/</span> folder, such as <template v-for="(p, i) in s.preview.private" :key="p">{{ i ? ' and ' : '' }}<span class="font-mono">{{ p }}/</span></template>, so Git never commits them.</p>

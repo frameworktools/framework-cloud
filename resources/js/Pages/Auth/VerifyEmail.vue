@@ -13,11 +13,11 @@ const logout = () => router.post('/logout');
 </script>
 
 <template>
-    <Head title="Verify your email" />
+    <Head title="Email verification" />
 
     <AuthLayout
-        title="Verify your email"
-        description="You changed your email address, so we need to confirm it. Check your inbox for the verification link."
+        title="Email verification"
+        description="Check your inbox to confirm your new email address."
     >
         <UiCallout v-if="sent" variant="success" heading="Sent">
             A fresh verification link is on its way.

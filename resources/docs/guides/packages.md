@@ -32,7 +32,7 @@ packages:
 - `true`: package is loaded automatically when you call `scaffold()`
 - `false`: package is installed but not loaded (use `library()` when needed)
 
-## How It Works
+## Package management
 
 When `scaffold()` runs:
 

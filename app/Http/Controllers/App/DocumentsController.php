@@ -3,10 +3,18 @@
 namespace App\Http\Controllers\App;
 
 use App\Http\Controllers\Controller;
+use App\Models\CollectionItem;
 use App\Models\Document;
 use App\Models\DocumentVersion;
+use App\Models\Project;
+use App\Models\Report;
+use App\Support\ArtifactPublisher;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -22,10 +30,17 @@ class DocumentsController extends Controller
         return Inertia::render('Published', [
             'canPublish' => $request->user()->canPublish(),
             'handle' => $request->user()->handle,
+            'projects' => $request->user()->projects()->get(['id', 'name', 'slug']),
             'documents' => $this->documents($request)->with(['project:id,user_id,name,slug', 'project.user:id,handle', 'versions'])
                 ->latest('updated_at')->get()
                 ->map(fn (Document $d) => [
                     'id' => $d->id,
+                    'kind' => $d->kind,
+                    'description' => $d->description,
+                    'original_filename' => $d->original_filename,
+                    'password_protected' => $d->isPasswordProtected(),
+                    'merged_into_id' => $d->merged_into_id,
+                    'merged_at' => $d->merged_at,
                     'title' => $d->title ?? $d->slug,
                     'slug' => $d->slug,
                     'url' => $d->shareUrl(),
@@ -38,8 +53,10 @@ class DocumentsController extends Controller
                     'published_at' => $d->created_at,
                     'updated_at' => $d->updated_at,
                     'project' => $d->project->only(['id', 'name', 'slug']),
-                    'versions' => $d->versions->map(fn (DocumentVersion $v) => [
+                    'versions' => ($d->versions->isEmpty() ? collect([$d->latestVersion()]) : $d->versions)->map(fn (DocumentVersion $v) => [
                         'number' => $v->number,
+                        'kind' => $v->kind,
+                        'provenance' => $v->provenance,
                         'url' => $d->readableUrl($v->number) ?? $v->url(),
                         'size_bytes' => $v->size_bytes,
                         'created_at' => $v->created_at,
@@ -48,48 +65,145 @@ class DocumentsController extends Controller
         ]);
     }
 
-    /** Turn the readable URL on or off. The private link always works. */
+    /** One artifact's own page: preview, versions, sharing, and settings, outside its project. */
+    public function show(Request $request, int $document): Response
+    {
+        $document = $this->documents($request)->with(['project.user', 'versions'])->findOrFail($document);
+        $versions = $document->versions->isEmpty() ? collect([$document->latestVersion()]) : $document->versions;
+        $reports = Report::where('project_id', $document->project_id)->get(['id', 'title', 'draft_blocks'])
+            ->filter(fn (Report $report) => collect($report->draft_blocks ?? [])->contains(fn ($block) => (int) ($block['document_id'] ?? 0) === $document->id));
+
+        return Inertia::render('Artifacts/Show', [
+            'handle' => $request->user()->handle,
+            'artifact' => [
+                ...$document->only('id', 'kind', 'slug', 'description', 'visibility', 'views', 'size_bytes', 'original_filename', 'merged_into_id', 'merged_at'),
+                'title' => $document->title ?? $document->slug,
+                'password_protected' => $document->isPasswordProtected(),
+                'readable' => $document->isReadable(),
+                'url' => $document->shareUrl(), 'private_url' => $document->publicUrl(), 'readable_url' => $document->readableUrl(),
+                'bundle' => $document->entrypoint !== null,
+                'published_at' => $document->created_at, 'updated_at' => $document->updated_at,
+                'merged_into' => $document->merged_into_id ? Document::find($document->merged_into_id)?->only('id', 'title') : null,
+            ],
+            'project' => $document->project->only('id', 'name', 'slug'),
+            'versions' => $versions->map(fn (DocumentVersion $v) => [
+                'number' => $v->number, 'kind' => $v->kind, 'size_bytes' => $v->size_bytes, 'created_at' => $v->created_at,
+                'original_filename' => $v->original_filename,
+                'url' => $document->readableUrl($v->number) ?? $v->url(),
+                'merged_from' => $v->provenance['source_document_id'] ?? null ? ['title' => Document::find($v->provenance['source_document_id'])?->title, 'version' => $v->provenance['source_version'] ?? null] : null,
+            ])->values(),
+            'usedIn' => [
+                ...CollectionItem::where('document_id', $document->id)->with('collection:id,title')->get()
+                    ->map(fn ($item) => ['type' => 'Collection', 'title' => $item->collection->title, 'href' => '/collections/'.$item->collection_id.'/edit']),
+                ...$reports->map(fn (Report $report) => ['type' => 'Report', 'title' => $report->title, 'href' => '/reports/'.$report->id.'/edit'])->values(),
+            ],
+            'mergeSources' => Document::where('project_id', $document->project_id)->whereKeyNot($document->id)
+                ->whereNull('merged_into_id')->whereNull('merged_at')->orderBy('title')->get(['id', 'title', 'slug'])
+                ->map(fn ($d) => ['id' => $d->id, 'title' => $d->title ?? $d->slug]),
+        ]);
+    }
+
+    public function store(Request $request, int $project): RedirectResponse
+    {
+        $project = $request->user()->projects()->findOrFail($project);
+        abort_unless($request->user()->canPublish(), 402, 'Publishing artifacts is part of a paid plan.');
+        app(ArtifactPublisher::class)->publish($project, $request->validate(ArtifactPublisher::rules()));
+
+        return redirect()->route('published')->with('status', 'artifact-published');
+    }
+
     public function update(Request $request, int $document): RedirectResponse
     {
-        $document = $this->documents($request)->findOrFail($document);
-        $validated = $request->validate(['readable' => ['required', 'boolean']]);
-
-        $document->update(['visibility' => $validated['readable'] ? 'public' : 'unlisted']);
+        $validated = $request->validate([
+            'readable' => ['sometimes', 'boolean'],
+            'visibility' => ['sometimes', Rule::in(['public', 'unlisted'])],
+            'title' => ['sometimes', 'string', 'max:200'],
+            'description' => ['sometimes', 'nullable', 'string', 'max:10000'],
+            'password' => ['sometimes', 'nullable', 'string', 'min:8', 'max:200'],
+        ]);
+        DB::transaction(function () use ($request, $document, $validated) {
+            $document = $this->lockedDocument($request, $document);
+            if (array_key_exists('readable', $validated)) {
+                $validated['visibility'] = $validated['readable'] ? 'public' : 'unlisted';
+                unset($validated['readable']);
+            }
+            if (array_key_exists('password', $validated)) {
+                // Legacy files may already be public on an independent content host.
+                // Reject the change rather than claiming those URLs are protected.
+                if (filled($validated['password']) && $document->hasUnprotectedLegacyContent()) {
+                    throw ValidationException::withMessages(['password' => 'This artifact has legacy versions outside managed private storage. Remove those versions before adding a password.']);
+                }
+                $validated['password_hash'] = filled($validated['password']) ? Hash::make($validated['password']) : null;
+                unset($validated['password']);
+            }
+            $document->update($validated);
+        });
 
         return back()->with('status', 'document-updated');
     }
 
-    public function destroy(Request $request, int $document): RedirectResponse
+    public function merge(Request $request, int $document): RedirectResponse
     {
-        $document = $this->documents($request)->findOrFail($document);
+        $target = $this->documents($request)->findOrFail($document);
+        $validated = $request->validate(['source_id' => ['required', 'integer']]);
+        $source = $this->documents($request)->findOrFail($validated['source_id']);
+        app(ArtifactPublisher::class)->merge($target, $source);
 
-        $versions = $document->versions()->get();
-        $versions->isEmpty() ? $document->latestVersion()->deleteFiles() : $versions->each->deleteFiles();
-        $document->delete();
-
-        return back()->with('status', 'document-deleted');
+        return back()->with('status', 'artifact-merged');
     }
 
-    /**
-     * Delete one version. Deleting the newest makes the one before it
-     * current; deleting the only version takes the document down.
-     */
+    public function destroy(Request $request, int $document): RedirectResponse
+    {
+        $versions = DB::transaction(function () use ($request, $document) {
+            $document = $this->lockedDocument($request, $document);
+            $versions = $document->versions()->get();
+            if ($versions->isEmpty()) {
+                $versions = collect([$document->latestVersion()]);
+            }
+            $document->delete();
+
+            return $versions;
+        });
+        $versions->each->deleteFiles();
+
+        // From the artifact's own page there is nothing to go back to
+        return $request->query('then') === 'list'
+            ? redirect()->route('published')->with('status', 'document-deleted')
+            : back()->with('status', 'document-deleted');
+    }
+
+    /** Deleting the newest version restores the previous publication. */
     public function destroyVersion(Request $request, int $document, int $number): RedirectResponse
     {
-        $document = $this->documents($request)->findOrFail($document);
-        $version = $document->versions()->where('number', $number)->firstOrFail();
+        $version = DB::transaction(function () use ($request, $document, $number) {
+            $document = $this->lockedDocument($request, $document);
+            $version = $document->findVersion($number) ?? abort(404);
+            if ($document->versions()->count() <= 1) {
+                $document->delete();
+            } else {
+                $version->delete();
+                $newest = $document->versions()->first();
+                $document->update($newest->only(ArtifactPublisher::VERSION_FIELDS));
+            }
 
-        if ($document->versions()->count() === 1) {
-            return $this->destroy($request, $document->id);
+            return $version;
+        });
+        $version->deleteFiles();
+
+        if ($request->query('then') === 'list' && ! $this->documents($request)->whereKey($document)->exists()) {
+            return redirect()->route('published')->with('status', 'document-deleted');
         }
 
-        $version->deleteFiles();
-        $version->delete();
-
-        $newest = $document->versions()->first();
-        $document->update($newest->only(['disk_path', 'entrypoint', 'content_type', 'size_bytes']));
-
         return back()->with('status', 'version-deleted');
+    }
+
+    /** Call inside a transaction; publishing and merging take this same lock. */
+    private function lockedDocument(Request $request, int $id): Document
+    {
+        $projectId = $this->documents($request)->findOrFail($id)->project_id;
+        Project::whereKey($projectId)->lockForUpdate()->firstOrFail();
+
+        return $this->documents($request)->findOrFail($id);
     }
 
     private function documents(Request $request)

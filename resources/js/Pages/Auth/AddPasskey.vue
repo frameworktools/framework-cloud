@@ -53,10 +53,10 @@ const skip = () => router.post('/welcome/passkey/skip');
 </script>
 
 <template>
-    <Head title="Add a passkey" />
+    <Head title="New passkey" />
 
     <AuthLayout
-        title="Sign in faster next time"
+        title="Passkey setup"
         :description="`You're signed in as ${email}. Save a passkey on this device to sign in with Touch ID, Face ID, or a security key instead of waiting for an email.`"
     >
         <template v-if="supported">

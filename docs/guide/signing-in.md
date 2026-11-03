@@ -43,7 +43,7 @@ up yet:
 php artisan fw:password you@example.edu
 ```
 
-## Your sign-in email and your public email
+## Sign-in and public email
 
 The email address on your account is used only to sign in and to send you
 sign-in links. You can use a personal address.
@@ -52,7 +52,7 @@ The email that appears on your work is set separately in
 **Account > Profile**. For example, you can sign in with a personal address
 and show your university address on your notebooks.
 
-## Deleting your account
+## Account deletion
 
 **Account > Account details > Delete account** deletes your settings, projects,
 tokens, and published notebooks. Type your account email to confirm.

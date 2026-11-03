@@ -179,7 +179,7 @@ publish_data(results, "data/q4-results.csv")
 
 ## Best Practices
 
-### Use Prefixes for Organization
+### Storage prefixes
 
 ```yaml
 connections:
@@ -196,7 +196,7 @@ team-name/project-name/reports/...
 team-name/project-name/data/...
 ```
 
-### Version Important Outputs
+### Output versions
 
 Include dates or versions in destinations:
 
@@ -205,7 +205,7 @@ publish_notebook("analysis.qmd", dest = "reports/analysis-2024-01-15")
 publish_data(results, "data/results-v2.csv")
 ```
 
-### Use Static Hosting for Reports
+### Static report hosting
 
 Enable `static_hosting: true` for cleaner URLs when sharing reports:
 

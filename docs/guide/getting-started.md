@@ -3,7 +3,7 @@
 This page uses Framework Public Cloud at framework.pub. On your own server,
 replace framework.pub with your server's address.
 
-## 1. Create an account
+## 1. Account registration
 
 Open [framework.pub/register](https://framework.pub/register) and sign up with
 GitHub or your email address. There is no password to set. If you sign up by
@@ -13,14 +13,14 @@ You can sign up with a personal email address. The address you sign in with
 stays private. The email shown on your work comes from your profile, which
 you set in the next step. See [Signing in](signing-in.md).
 
-## 2. Fill in your profile
+## 2. Author profile
 
 Open **Account > Profile** and enter your name, the email you want shown on
 your work, your ORCID iD, your website, and up to five affiliations. Framework
 writes these into the author block of every new notebook, report, and slide
 deck.
 
-## 3. Connect R or Python
+## 3. R and Python connections
 
 Framework Cloud talks to the Framework package in R or Python with a token.
 
@@ -59,7 +59,7 @@ framework.cloud_login("<your token>", url="https://framework.example.edu")
 Framework remembers the server, so later commands use it. Run
 `cloud_status()` to see which server is in use.
 
-## 4. Start a project
+## 4. Project setup
 
 Open **Projects > New project**.
 
@@ -75,7 +75,7 @@ Open **Projects > New project**.
      project there. Clone it and start working. See
      [GitHub integration](github.md).
 
-## 5. Publish a notebook
+## 5. Notebook publishing
 
 From inside the project:
 

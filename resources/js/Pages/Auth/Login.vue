@@ -65,7 +65,7 @@ async function signInWithPasskey() {
             Sign in with your new password.
         </UiCallout>
 
-        <UiCallout v-if="sent" variant="success" heading="Check your email">
+        <UiCallout v-if="sent" variant="success" heading="Sign-in email">
             If an account exists for that address, a sign-in link is on its way.
             It works once and expires in 15 minutes.
         </UiCallout>

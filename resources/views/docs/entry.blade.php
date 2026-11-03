@@ -26,7 +26,7 @@
         $toc[] = ['level' => 2, 'id' => 'examples', 'text' => 'Examples'];
     }
     if ($entry['see_also']) {
-        $toc[] = ['level' => 2, 'id' => 'see-also', 'text' => 'See also'];
+        $toc[] = ['level' => 2, 'id' => 'see-also', 'text' => 'Related reference'];
     }
     $h2 = 'mt-10 scroll-mt-24 text-xl font-semibold tracking-tight text-slate-900 dark:text-white';
     $code = 'mt-4 overflow-x-auto rounded-xl bg-slate-900 p-4 font-mono text-sm text-slate-50 shadow-sm dark:bg-slate-800/60 dark:ring-1 dark:ring-slate-300/10';
@@ -164,7 +164,7 @@
         @endif
 
         @if ($entry['see_also'])
-            <h2 id="see-also" class="{{ $h2 }}">See also</h2>
+            <h2 id="see-also" class="{{ $h2 }}">Related reference</h2>
             <ul role="list" class="mt-4 flex flex-wrap gap-2">
                 @foreach ($entry['see_also'] as $link)
                     <li><a href="{{ $link['url'] }}" class="inline-block rounded-lg border border-slate-200 px-3 py-1.5 font-mono text-sm text-sky-600 hover:border-sky-500 dark:border-slate-700 dark:text-sky-400">{{ $link['title'] }}</a></li>

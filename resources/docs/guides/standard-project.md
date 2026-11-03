@@ -39,7 +39,7 @@ Additional directories are created on first use:
 
 ## Workflow
 
-### 1. Set Up Environment
+### 1. Environment setup
 
 Start each session by running scaffold:
 
@@ -53,7 +53,7 @@ This loads:
 - Custom functions from `functions/`
 - Project configuration
 
-### 2. Create Notebooks
+### 2. Notebooks
 
 Create analysis notebooks:
 
@@ -62,7 +62,7 @@ make_notebook("exploration")
 make_notebook("modeling", subdir = "analysis")
 ```
 
-### 3. Manage Data
+### 3. Data management
 
 Define data in `settings.yml`:
 
@@ -79,7 +79,7 @@ Load and process:
 sales <- data_read("inputs.raw.sales")
 ```
 
-### 4. Cache Results
+### 4. Cached results
 
 Cache expensive computations:
 
@@ -91,7 +91,7 @@ model_results <- cache_remember("sales_model", {
 
 ## Best Practices
 
-### Organize Notebooks
+### Notebook organization
 
 Number notebooks to indicate order:
 ```
@@ -103,7 +103,7 @@ notebooks/
 └── 05-reporting.qmd
 ```
 
-### Use Subdirectories
+### Subdirectories
 
 For complex projects:
 ```r
@@ -111,7 +111,7 @@ make_notebook("eda", subdir = "exploration")
 make_notebook("regression", subdir = "modeling")
 ```
 
-### Separate Raw from Processed
+### Raw and processed data
 
 Never modify raw data:
 ```

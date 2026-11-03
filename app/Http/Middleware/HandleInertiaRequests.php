@@ -42,7 +42,7 @@ class HandleInertiaRequests extends Middleware
             // utility items (You) at the bottom. Packages may append items here.
             'nav' => array_values(array_filter([
                 ['label' => 'Project defaults', 'href' => '/settings/language', 'match' => '/settings'],
-                ['label' => 'Published documents', 'href' => '/published'],
+                ['label' => 'Artifacts', 'href' => '/published'],
                 ['label' => 'Blueprints', 'href' => '/blueprints', 'section' => 'Framework'],
                 ['label' => 'Project structures', 'href' => '/structures', 'section' => 'Framework'],
                 ['label' => 'Package sets', 'href' => '/package-sets', 'section' => 'Framework'],

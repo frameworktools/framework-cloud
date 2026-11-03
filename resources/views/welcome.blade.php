@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Framework Cloud: rigorous, responsible, and reproducible data science for the AI age</title>
-    <meta name="description" content="Framework brings project structure, AI guidance, data integrity checks, and safeguards for sensitive data into your R workflow. Framework Cloud helps you set up these practices and reuse them across projects.">
+    <meta name="description" content="Set up consistent research projects and share your results. Publish reports, books, figures, tables, and model outputs with version histories, password protection, and project collections.">
     <link rel="icon" type="image/png" href="/images/favicon.png">
     <x-theme-script />
     @vite(['resources/css/app.css'])
@@ -13,20 +13,20 @@
 
     @php
         $features = [
-            ['anchor' => 'structure', 'icon' => 'heroicon-o-square-3-stack-3d', 'heading' => 'Start with a clear project structure', 'body' => 'Give data, code, notebooks, and results a consistent place.'],
-            ['anchor' => 'ai', 'icon' => 'heroicon-o-sparkles', 'heading' => 'Guide AI assistants', 'body' => 'Give assistants project context and task-specific instructions that follow your research workflow.'],
-            ['anchor' => 'data', 'icon' => 'heroicon-o-shield-check', 'heading' => 'Help protect sensitive data', 'body' => 'Set up private folders, assistant restrictions, and Git checks that help reduce accidental data exposure.'],
-            ['anchor' => 'integrity', 'icon' => 'heroicon-o-finger-print', 'heading' => 'Check data integrity', 'body' => 'Record file fingerprints and check whether a cataloged dataset has changed since it was recorded.'],
-            ['anchor' => 'environments', 'icon' => 'heroicon-o-cube', 'heading' => 'Manage reproducible environments', 'body' => 'List project packages, install them automatically, and use optional version snapshots to restore them.'],
-            ['anchor' => 'cli', 'icon' => 'heroicon-o-command-line', 'heading' => 'Work from the command line', 'body' => 'The `fw` command-line tool gives you and your AI agents the platform from a terminal, with JSON output for scripts.'],
-            ['anchor' => 'copy', 'icon' => 'heroicon-o-document-duplicate', 'heading' => 'Copy and share project setups', 'body' => 'Adapt a colleague\'s blueprint, or share a reusable setup with your lab or team.'],
-            ['anchor' => 'github', 'icon' => 'icon-github', 'heading' => 'Create projects on GitHub', 'body' => 'Create a GitHub repository with your project files committed and ready to clone.'],
-            ['anchor' => 'publishing', 'icon' => 'heroicon-o-paper-airplane', 'heading' => 'Publish and share notebooks', 'body' => 'Publish Quarto notebooks as web pages that collaborators can open from a link.'],
+            ['anchor' => 'structure', 'icon' => 'heroicon-o-square-3-stack-3d', 'heading' => 'Project structure', 'body' => 'Give data, code, notebooks, and results a consistent place.'],
+            ['anchor' => 'ai', 'icon' => 'heroicon-o-sparkles', 'heading' => 'AI assistant guidance', 'body' => 'Give assistants project context and task-specific instructions that follow your research workflow.'],
+            ['anchor' => 'data', 'icon' => 'heroicon-o-shield-check', 'heading' => 'Sensitive data protection', 'body' => 'Set up private folders, assistant restrictions, and Git checks that help reduce accidental data exposure.'],
+            ['anchor' => 'integrity', 'icon' => 'heroicon-o-finger-print', 'heading' => 'Data integrity', 'body' => 'Record file fingerprints and check whether a cataloged dataset has changed since it was recorded.'],
+            ['anchor' => 'environments', 'icon' => 'heroicon-o-cube', 'heading' => 'Reproducible environments', 'body' => 'List project packages, install them automatically, and use optional version snapshots to restore them.'],
+            ['anchor' => 'cli', 'icon' => 'heroicon-o-command-line', 'heading' => 'Command-line tools', 'body' => 'The `fw` command-line tool gives you and your AI agents the platform from a terminal, with JSON output for scripts.'],
+            ['anchor' => 'copy', 'icon' => 'heroicon-o-document-duplicate', 'heading' => 'Reusable project setups', 'body' => 'Adapt a colleague\'s blueprint, or share a reusable setup with your lab or team.'],
+            ['anchor' => 'github', 'icon' => 'icon-github', 'heading' => 'GitHub projects', 'body' => 'Create a GitHub repository with your project files committed and ready to clone.'],
+            ['anchor' => 'publishing', 'icon' => 'heroicon-o-paper-airplane', 'heading' => 'Research publishing', 'body' => 'Publish figures, sortable tables, and model results. Assemble text and artifacts into a report, or curate a collection for collaborators and reviewers.'],
         ];
 
         $screens = [
             ['key' => 'blueprints', 'label' => 'Blueprints', 'caption' => 'Each blueprint lists the folders, skills, and files a new project receives.', 'alt' => 'The Blueprints page, with the Standard Project Structure blueprint expanded to show its folders, skills, and files.'],
-            ['key' => 'new-project', 'label' => 'New project', 'caption' => 'Choose a blueprint, name the project, and choose how you get it: a download, a GitHub repository, or set up on your computer.', 'alt' => 'The New project page, with a list of blueprints to choose from and a summary of the next steps.'],
+            ['key' => 'new-project', 'label' => 'New project', 'caption' => 'Choose a blueprint and project name. Download a ZIP, create a GitHub repository, or set up locally.', 'alt' => 'The New project page, with a list of blueprints to choose from and a summary of the next steps.'],
             ['key' => 'skills', 'label' => 'Skills', 'caption' => 'Skills are instruction files for AI assistants. Copy Framework\'s or import your own from GitHub.', 'alt' => 'The Skills page, listing Framework\'s skills for data, outputs, packages, sensitive data, and workflow.'],
             ['key' => 'profile', 'label' => 'Author profile', 'caption' => 'Your author details go into the front matter of new notebooks, reports, and slides.', 'alt' => 'The Profile settings page, with name, email, ORCID iD, website, and an affiliation filled in.'],
         ];
@@ -52,9 +52,14 @@
                     Rigorous, responsible, and reproducible data science for the AI age
                 </h1>
                 <p class="mt-6 max-w-2xl text-lg leading-relaxed text-slate-700 dark:text-slate-200">
-                    Framework Cloud helps you build and share consistent research workflows in R,
-                    with reusable project setups, instructions for AI assistants, and tools for
-                    managing data integrity and sensitive data.
+                    Framework Cloud provides consistent research workflows in R. Reuse project
+                    setups and instructions for AI assistants. Track data integrity and
+                    configure sensitive data safeguards.
+                </p>
+                <p class="mt-4 max-w-2xl text-lg leading-relaxed text-slate-700 dark:text-slate-200">
+                    Share the results as well. Give a figure, table, report, or rendered book its
+                    own page, with a version history and optional password protection.
+                    Assemble text and artifacts into a report in your browser.
                 </p>
                 <p class="mt-4 max-w-2xl text-lg leading-relaxed text-slate-700 dark:text-slate-200">
                     It works with the
@@ -75,7 +80,7 @@
 
         {{-- Ways to start: for beginners, people new to Git, and the command line --}}
         <section id="start" class="scroll-mt-6 py-12 sm:py-16">
-            <h2 class="text-center {{ $h2 }}">Beginner or expert, start a project in minutes</h2>
+            <h2 class="text-center {{ $h2 }}">Project setup for beginners and experts</h2>
             <p class="mx-auto mt-4 max-w-xl text-center text-slate-600 dark:text-slate-400">
                 Framework sets up your project to follow good research practices from the first
                 day. Pick the way that suits you. Each one gives you the same project.
@@ -84,18 +89,18 @@
                 @foreach ([
                     [
                         'icon' => 'heroicon-o-arrow-down-tray',
-                        'heading' => 'Download it',
+                        'heading' => 'ZIP download',
                         'body' => 'Pick a blueprint and download your project as a zip. Open the folder in your preferred editor and start working. There is nothing to install first.',
                     ],
                     [
                         'icon' => 'icon-github',
-                        'heading' => 'Start on GitHub',
+                        'heading' => 'GitHub repository',
                         'body' => 'Connect GitHub, and Framework Cloud creates a repository with your project in it. Clone it in your preferred editor and start working.',
                     ],
                     [
                         'icon' => 'heroicon-o-command-line',
-                        'heading' => 'Use the command line',
-                        'body' => 'Run `fw new` in our CLI tool, answer a few questions, and get to work. Or have your agent do it.',
+                        'heading' => 'Command line',
+                        'body' => 'Run `fw new` and answer a few questions. Your agent can also set up the project.',
                     ],
                 ] as $way)
                     <div class="flex flex-col rounded-xl border border-slate-200 p-6 dark:border-slate-800">
@@ -124,7 +129,7 @@
                         {{-- Bodies are fixed strings here; backticks mark code such as `fw` --}}
                         <p class="mt-2 flex-1 text-sm leading-normal text-slate-600 dark:text-slate-400 [&_code]:font-mono [&_code]:text-[0.9em] [&_code]:text-slate-800 dark:[&_code]:text-slate-200">{!! Str::inlineMarkdown($feature['body']) !!}</p>
                         <span aria-hidden="true" class="mt-4 text-sm font-medium text-sky-600 dark:text-sky-400">
-                            How it works <span class="inline-block transition-transform group-hover:translate-x-0.5">&rarr;</span>
+                            Details <span class="inline-block transition-transform group-hover:translate-x-0.5">&rarr;</span>
                         </span>
                     </div>
                 @endforeach
@@ -133,7 +138,7 @@
 
         {{-- Screens from the application --}}
         <section id="screens" class="border-t border-slate-200 py-12 sm:py-16 dark:border-slate-800" data-carousel>
-            <h2 class="text-center {{ $h2 }}">In the app</h2>
+            <h2 class="text-center {{ $h2 }}">App preview</h2>
             <div class="mt-6 flex flex-wrap justify-center gap-2" role="tablist" aria-label="Screens">
                 @foreach ($screens as $i => $screen)
                     <button type="button" role="tab" data-slide-tab="{{ $i }}" aria-selected="{{ $i === 0 ? 'true' : 'false' }}"
@@ -194,7 +199,7 @@
         <section id="structure" class="{{ $section }}">
             <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16 [&>*]:min-w-0">
                 <div>
-                    <h2 class="{{ $h2 }}">Start with a clear project structure</h2>
+                    <h2 class="{{ $h2 }}">Project structure</h2>
                     <div class="{{ $prose }}">
                         <p>
                             A blueprint is a reusable project setup. It defines a project's
@@ -242,7 +247,7 @@ my-study/
         <section id="ai" class="{{ $section }}">
             <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16 [&>*]:min-w-0">
                 <div class="lg:order-2">
-                    <h2 class="{{ $h2 }}">Guide AI assistants</h2>
+                    <h2 class="{{ $h2 }}">AI assistant guidance</h2>
                     <div class="{{ $prose }}">
                         <p>
                             Framework adds written guidance to each project for AI coding
@@ -287,7 +292,7 @@ description: <span class="{{ $s }}">Use whenever reading or writing data files i
         <section id="data" class="{{ $section }}">
             <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16 [&>*]:min-w-0">
                 <div>
-                    <h2 class="{{ $h2 }}">Help protect sensitive data</h2>
+                    <h2 class="{{ $h2 }}">Sensitive data protection</h2>
                     <div class="{{ $prose }}">
                         <p>
                             The blueprint for sensitive data separates private and public folders.
@@ -331,7 +336,7 @@ framework::git_hooks_enable(<span class="{{ $s }}">"data_security"</span>)</x-co
         <section id="integrity" class="{{ $section }}">
             <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16 [&>*]:min-w-0">
                 <div class="lg:order-2">
-                    <h2 class="{{ $h2 }}">Check data integrity</h2>
+                    <h2 class="{{ $h2 }}">Data integrity</h2>
                     <div class="{{ $prose }}">
                         <p>
                             Framework helps you check that you are using the dataset you expect.
@@ -375,7 +380,7 @@ framework::ledger_push()</x-code-panel>
         <section id="environments" class="{{ $section }}">
             <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16 [&>*]:min-w-0">
                 <div>
-                    <h2 class="{{ $h2 }}">Manage reproducible environments</h2>
+                    <h2 class="{{ $h2 }}">Reproducible environments</h2>
                     <div class="{{ $prose }}">
                         <p>
                             A project lists its R packages in
@@ -413,7 +418,7 @@ framework::packages_restore()   <span class="{{ $c }}"># reinstall them</span></
         <section id="cli" class="{{ $section }}">
             <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16 [&>*]:min-w-0">
                 <div class="lg:order-2">
-                    <h2 class="{{ $h2 }}">Work from the command line</h2>
+                    <h2 class="{{ $h2 }}">Command-line tools</h2>
                     <div class="{{ $prose }}">
                         <p>
                             <code class="{{ $code }}">fw</code> is a single program for macOS, Linux,
@@ -459,7 +464,7 @@ Link: https://framework.pub/d/lh2hr0gjulf3vj1fzhmscgr2</x-code-panel>
         <section id="copy" class="{{ $section }}">
             <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16 [&>*]:min-w-0">
                 <div>
-                    <h2 class="{{ $h2 }}">Copy and share project setups</h2>
+                    <h2 class="{{ $h2 }}">Reusable project setups</h2>
                     <div class="{{ $prose }}">
                         <p>
                             Copy any blueprint you can see, then change its folders, packages,
@@ -491,7 +496,7 @@ Link: https://framework.pub/d/lh2hr0gjulf3vj1fzhmscgr2</x-code-panel>
         <section id="github" class="{{ $section }}">
             <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16 [&>*]:min-w-0">
                 <div class="lg:order-2">
-                    <h2 class="{{ $h2 }}">Create projects on GitHub</h2>
+                    <h2 class="{{ $h2 }}">GitHub projects</h2>
                     <div class="{{ $prose }}">
                         <p>
                             Connect GitHub and install the Framework app on your account or
@@ -524,23 +529,61 @@ Link: https://framework.pub/d/lh2hr0gjulf3vj1fzhmscgr2</x-code-panel>
         <section id="publishing" class="{{ $section }}">
             <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-16 [&>*]:min-w-0">
                 <div>
-                    <h2 class="{{ $h2 }}">Publish and share notebooks</h2>
+                    <h2 class="{{ $h2 }}">Research publishing</h2>
                     <div class="{{ $prose }}">
                         <p>
-                            <code class="{{ $code }}">publish()</code> renders a Quarto notebook and
-                            uploads it. Publishing the same file again updates the page at the
-                            same link.
+                            A single figure can explain a finding. A table can summarize a model.
+                            A rendered Quarto report or book can tell the full story. Publish each
+                            as an artifact with its own reader page and shareable link.
                         </p>
                         <p>
-                            The Published page in Framework Cloud lists your notebooks. If a
-                            project has its own S3 bucket, <code class="{{ $code }}">publish()</code>
-                            uploads there instead.
+                            Bring related artifacts together in a project collection. Share a set
+                            of findings with collaborators, organize supplementary materials, or
+                            pin exact versions for a reviewer to read.
+                        </p>
+                        <p>
+                            Build a report in your browser by arranging text, figures, tables, and
+                            model results. Add explanations and captions as you go. You do not
+                            need Quarto. Publishing a report preserves the artifact versions and
+                            labels it includes, so an update to your analysis does not change an
+                            earlier report.
+                        </p>
+                        <p>
+                            Readers can search and sort data tables, explore model coefficients
+                            and confidence intervals, and download the published representation.
+                            Each output gets a display suited to its type.
+                        </p>
+                        <p>
+                            Publish an update at the same link while keeping earlier versions
+                            available. Add a password to an artifact or collection when you want
+                            readers to enter one before opening it.
+                        </p>
+                        <p>
+                            Hosted publishing is an optional paid feature on Framework Public
+                            Cloud. Upload from your browser or publish from R, Python, or the CLI.
+                            You can also use your own storage bucket or GitHub Pages.
                         </p>
                     </div>
                 </div>
-<x-code-panel title="R console" wrap>
-framework::publish(<span class="{{ $s }}">"notebooks/analysis.qmd"</span>)
-<span class="{{ $c }}">#> Published: https://framework.pub/d/q7w2k9m4x8c1v5b3n6z0p2rt</span></x-code-panel>
+                <div class="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800" aria-label="Example research collection">
+                    <div class="border-b border-slate-200 bg-slate-50 p-6 dark:border-slate-800 dark:bg-slate-900">
+                        <p class="text-xs text-slate-500">Example collection</p>
+                        <h3 class="mt-2 text-xl font-semibold">Study findings</h3>
+                        <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">Reports, figures, and supporting results for review.</p>
+                    </div>
+                    <dl class="divide-y divide-slate-200 dark:divide-slate-800">
+                        @foreach ([
+                            ['Analysis report', 'Rendered Quarto book', 'Version 3'],
+                            ['Treatment effects', 'Figure', 'Version 2'],
+                            ['Adjusted model', 'Model summary table', 'Version 1'],
+                        ] as [$title, $type, $version])
+                            <div class="flex items-center justify-between gap-4 px-6 py-5">
+                                <div><dt class="font-medium">{{ $title }}</dt><dd class="mt-1 text-sm text-slate-500">{{ $type }}</dd></div>
+                                <span class="shrink-0 rounded-full bg-sky-50 px-2.5 py-1 text-xs text-sky-700 dark:bg-sky-950 dark:text-sky-300">{{ $version }}</span>
+                            </div>
+                        @endforeach
+                    </dl>
+                </div>
             </div>
         </section>
 

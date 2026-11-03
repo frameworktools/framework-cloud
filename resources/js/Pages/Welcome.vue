@@ -80,15 +80,15 @@ const problems = computed(() => ({
 }));
 
 const steps = computed(() => [
-    { key: 'language', title: 'Which language do you use most?' },
-    { key: 'project', title: 'Which project structure do you prefer?' },
+    { key: 'language', title: 'Primary language' },
+    { key: 'project', title: 'Project structure' },
     ...(draft.language === 'stata' ? [] : [
-        { key: 'workflow', title: 'How do you prefer to work?' },
-        { key: 'editors', title: 'Which editors do you use?' },
+        { key: 'workflow', title: 'Notebook workflow' },
+        { key: 'editors', title: 'Editors' },
     ]),
-    { key: 'git', title: 'Should new projects use Git?' },
-    { key: 'agents', title: 'Which coding agents do you use?' },
-    { key: 'review', title: 'Review your defaults' },
+    { key: 'git', title: 'Git version control' },
+    { key: 'agents', title: 'Coding agents' },
+    { key: 'review', title: 'Default settings' },
 ]);
 const index = ref(restored?.index ?? 0);
 const step = computed(() => steps.value[Math.min(index.value, steps.value.length - 1)]);
@@ -223,12 +223,12 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
 </script>
 
 <template>
-    <Head title="Set up your defaults" />
+    <Head title="Project defaults" />
 
     <AppLayout bleed>
         <div class="mx-auto flex max-w-5xl flex-col gap-8 px-6 py-10 lg:px-12">
             <div>
-                <p class="text-sm text-slate-500">{{ step.key === 'review' ? 'Review' : `Question ${index + 1} of ${steps.length - 1}` }}</p>
+                <p class="text-sm text-slate-500">{{ step.key === 'review' ? 'Review' : `Step ${index + 1} of ${steps.length - 1}` }}</p>
                 <h1 class="mt-1 text-2xl font-semibold text-slate-900 dark:text-white">{{ step.title }}</h1>
                 <p v-if="index === 0" :class="note" class="mt-2">Your answers set the defaults for new projects. You can change them later in Project defaults.</p>
             </div>
@@ -239,7 +239,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
 
                 <div v-else-if="step.key === 'project'" class="flex flex-col gap-3">
                     <p :class="note">These recommended structures organize your files from a small analysis to a larger project. Choose a default here; you can use a different structure for each project.</p>
-                    <p class="text-sm text-slate-500 dark:text-slate-400">Prefer your own arrangement? Choose Bare. You can later <Link href="/structures/create" class="text-sky-600 hover:underline dark:text-sky-400" @click="remember">create a custom project structure</Link>.</p>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">Choose Bare for a custom folder layout. You can also <Link href="/structures/create" class="text-sky-600 hover:underline dark:text-sky-400" @click="remember">create a custom project structure</Link>.</p>
                     <p v-if="problems.project" class="text-sm text-amber-800 dark:text-amber-300" role="alert">{{ problems.project }}</p>
                     <!-- The chosen structure's folders beside the choices -->
                     <div class="grid gap-8 lg:grid-cols-[minmax(0,28rem)_minmax(0,1fr)]">
@@ -267,7 +267,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                     <p :class="note">Select all that apply.</p>
                     <UiCheckboxCards v-model="agents" :legend="step.title" hide-legend :options="agentOptions" />
                     <details class="max-w-md text-sm text-slate-600 dark:text-slate-400">
-                        <summary class="cursor-pointer text-sky-700 hover:underline dark:text-sky-400">What each one adds</summary>
+                        <summary class="cursor-pointer text-sky-700 hover:underline dark:text-sky-400">Agent files</summary>
                         <ul class="mt-2 flex list-disc flex-col gap-1 pl-5">
                             <li>Every choice except None adds AGENTS.md, the project's instructions, and Framework's skills.</li>
                             <li>Claude Code: a CLAUDE.md that imports AGENTS.md, with skills in .claude/skills.</li>
@@ -292,7 +292,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                         </div>
                     </dl>
                     <section class="flex flex-col gap-3">
-                        <h2 :class="heading">What new projects include</h2>
+                        <h2 :class="heading">Project contents</h2>
                         <div class="rounded-lg border border-slate-200 p-4 dark:border-slate-700">
                             <BlueprintPreview v-if="blueprint && savable" :blueprint="blueprint" :language="draft.language" :values="previewValues" />
                         </div>

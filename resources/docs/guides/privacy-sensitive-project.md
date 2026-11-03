@@ -41,7 +41,7 @@ Additional directories are created on first use:
 
 ## Privacy Controls
 
-### What Gets Gitignored
+### Git exclusions
 
 The privacy sensitive `.gitignore` template excludes:
 - `inputs/private/` - All private input data
@@ -63,14 +63,14 @@ save_table(summary_stats, "summary", public = TRUE)
 
 ## Workflow
 
-### 1. Set Up Environment
+### 1. Environment setup
 
 ```r
 library(framework)
 scaffold()
 ```
 
-### 2. Organize Data by Sensitivity
+### 2. Data classification
 
 Place sensitive data in private directories:
 
@@ -88,7 +88,7 @@ data:
     type: csv
 ```
 
-### 3. Work with Private Data
+### 3. Private data analysis
 
 ```r
 # Load private data
@@ -103,7 +103,7 @@ demographics <- patients |>
 data_save(demographics, "inputs.public.final.demographics")
 ```
 
-### 4. Generate Public Outputs
+### 4. Public outputs
 
 ```r
 # Private analysis output
@@ -148,7 +148,7 @@ default:
 
 ## Best Practices
 
-### Lock Sensitive Source Data
+### Source data protection
 
 Use `locked: true` to ensure source data hasn't changed:
 
@@ -160,7 +160,7 @@ data:
     locked: true  # Error if file changes
 ```
 
-### De-identify Before Publishing
+### De-identification
 
 Always aggregate or de-identify data before moving to public directories:
 
@@ -176,7 +176,7 @@ public_summary <- raw_patient_data |>
 save_table(public_summary, "summary", public = TRUE)
 ```
 
-### Review Before Committing
+### Commit review
 
 Check `git status` before committing to ensure no private data is staged:
 

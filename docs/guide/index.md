@@ -3,16 +3,16 @@
 Framework Cloud is the web companion to the
 [Framework](https://framework.table1.org) packages for R and Python. It holds
 your blueprints, your author details, and your project definitions. It can
-create projects on GitHub and host the notebooks you publish.
+create projects on GitHub and host published artifacts and collections.
 
 Framework Cloud is open source. You can use it in two ways:
 
 - **Framework Public Cloud (framework.pub).** Create a free account and start
-  working. Hosting published notebooks there is an optional paid add-on.
+  working. Hosting published research outputs there is an optional paid add-on.
 - **Your own server.** Run Framework Cloud for yourself, a lab, or an
   institution. Every feature is included.
 
-## Using Framework Cloud
+## Framework Cloud
 
 - [Getting started](getting-started.md): create an account, connect R, and
   start your first project.
@@ -21,9 +21,10 @@ Framework Cloud is open source. You can use it in two ways:
   and build, borrow, and remix blueprints.
 - [GitHub integration](github.md): sign in with GitHub and create projects as
   repositories.
-- [Publishing notebooks](publishing.md): share rendered notebooks at a link.
+- [Publishing artifacts](publishing.md): share reports, figures, tables, model
+  outputs, and collections with version histories and optional passwords.
 
-## Running your own server
+## Self-hosting
 
 - [Self-hosting overview](self-hosting.md): which setup to choose.
 - [Install with Docker](install-docker.md): the recommended way to run a

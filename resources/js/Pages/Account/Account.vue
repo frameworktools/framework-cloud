@@ -35,7 +35,7 @@ const destroy = () => deleteForm.delete('/account/account');
         <UiPanel title="Details">
         <form id="account-form" class="flex flex-col gap-4" @submit.prevent="save">
             <UiInput v-model="form.name" label="Name" required :error="form.errors.name" />
-            <UiInput v-model="form.email" label="Sign-in email" type="email" required description="Private. Used to sign in and for messages about your account. It is never shown on your work." :error="form.errors.email" />
+            <UiInput v-model="form.email" label="Sign-in email" type="email" required description="Private address for sign-in and account messages." :error="form.errors.email" />
             <UiInput
                 v-model="form.handle"
                 label="Handle"
@@ -55,13 +55,13 @@ const destroy = () => deleteForm.delete('/account/account');
             </template>
         </UiPanel>
 
-        <UiPanel title="Delete account" description="Deletes your settings, projects, tokens, and published documents.">
+        <UiPanel title="Account deletion" description="Deletes your settings, projects, tokens, and published documents.">
             <template #actions>
                 <UiButton variant="danger" @click="showDelete = true">Delete account</UiButton>
             </template>
         </UiPanel>
 
-        <UiModal v-model="showDelete" title="Are you sure you want to delete your account?">
+        <UiModal v-model="showDelete" title="Account deletion">
             <p class="text-sm text-slate-600 dark:text-slate-400">
                 All of your resources will be permanently deleted. Type your account
                 email to confirm.

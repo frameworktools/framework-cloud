@@ -70,7 +70,7 @@ class LibraryTest extends TestCase
     {
         $counts = Facet::whereNull('user_id')->get()->countBy('kind')->all();
         $this->assertEquals(['structure' => 5, 'workflow' => 3, 'tool' => 7, 'setting' => 1, 'skill_set' => 2, 'package_set' => 1], $counts);
-        $this->assertSame(7, Skill::whereNull('user_id')->count());
+        $this->assertSame(8, Skill::whereNull('user_id')->count());
         $this->assertSame(5, Blueprint::systemTypes()->count());
 
         $versions = FacetVersion::count() + BlueprintVersion::count() + SkillVersion::count();
@@ -406,7 +406,8 @@ class LibraryTest extends TestCase
         // A user skill travels into a skill set as a copy
         $this->actingAs($user)->post('/skill-sets', ['name' => 'IRB', 'visibility' => 'private', 'skills' => [['name' => 'x', 'skill_id' => $skill->id]]]);
         $layer = Facet::where('user_id', $user->id)->firstOrFail()->latestVersion->layer;
-        $this->assertSame(['content' => $content], $layer['skills']['irb-checklist']);
+        $this->assertSame($content, $layer['skills']['irb-checklist']['content']);
+        $this->assertSame($skill->sync_id, $layer['skills']['irb-checklist']['sync']['skill_id']);
     }
 
     public function test_a_skill_shows_its_metadata_title_and_falls_back_to_its_name(): void
@@ -439,7 +440,7 @@ class LibraryTest extends TestCase
         $this->actingAs($user)->get('/structures/create')->assertInertia(fn (Assert $page) => $page
             ->component('Pieces/Edit')->where('kind', 'structure')->where('values.settings_yaml', "type: project\n"));
         $this->actingAs($user)->get('/facets')->assertRedirect('/structures');
-        $this->actingAs($user)->get('/skills')->assertInertia(fn (Assert $page) => $page->component('Skills/Index')->has('skills', 7));
+        $this->actingAs($user)->get('/skills')->assertInertia(fn (Assert $page) => $page->component('Skills/Index')->has('skills', 8));
 
         $system = $this->system(Blueprint::class, 'project_sensitive');
         $this->actingAs($user)->get("/blueprints/{$system->id}")->assertInertia(fn (Assert $page) => $page

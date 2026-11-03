@@ -108,9 +108,9 @@ const choiceClass = (on) => on
         <p v-if="form.errors.package_sets" class="text-xs text-red-600 dark:text-red-400">{{ form.errors.package_sets }}</p>
     </UiPanel>
 
-    <UiPanel id="ai" title="Agents" class="scroll-mt-6" :description="agentPicker ? null : 'Skills teach agents such as Claude Code and Codex how to work in the project. Which agents get files is each person\'s own choice.'">
+    <UiPanel id="ai" title="Agents" class="scroll-mt-6" :description="agentPicker ? null : 'Skills provide project instructions for coding agents. Agent selection is a personal setting.'">
         <UiCheckboxCards v-if="agentPicker" v-model="agentModel" legend="Agents" hide-legend :options="agentOptions" />
-        <UiSwitch v-else v-model="form.settings.ai" label="Set the project up for agents" description="Adds AGENTS.md and the skills below. Turn off for no agent files at all." />
+        <UiSwitch v-else v-model="form.settings.ai" label="Agent files" description="Adds AGENTS.md and the selected skills." />
         <template v-if="agentsOn || agentPicker">
             <p v-if="!agentsOn" class="text-xs text-slate-500">With None, the project gets no skills. These are kept if you choose an agent again.</p>
             <fieldset :disabled="!agentsOn" class="flex flex-col gap-3" :class="agentsOn ? '' : 'opacity-60'">

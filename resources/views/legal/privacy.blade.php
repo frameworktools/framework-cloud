@@ -17,22 +17,21 @@
         <p class="mt-2 text-sm text-slate-500">Draft — last updated {{ date('F j, Y') }}. Plain-language summary; formal review before launch.</p>
 
         <div class="prose prose-neutral mt-8 dark:prose-invert">
-            <h2>What we store</h2>
+            <h2>Stored data</h2>
             <p>Your name, email, settings document (with revision history), project
             definitions, hashed authentication tokens and passkey public keys, and the
             documents you publish. Settings pushes record which device sent them.</p>
 
-            <h2>What we never store</h2>
-            <p>Passwords — there are none. Plain-text tokens — only hashes. The
-            server-side deny-list strips secret-shaped keys from synced settings.</p>
+            <h2>Credential protection</h2>
+            <p>Passwords and tokens are stored as hashes. The server-side deny-list
+            removes secret-shaped keys from synced settings.</p>
 
             <h2>Analytics</h2>
-            <p>Published documents count views. No third-party trackers, no ad tech,
-            anywhere.</p>
+            <p>Published artifacts count views. We use no third-party trackers or advertising technology.</p>
 
             <h2>Sharing</h2>
-            <p>Nothing is public unless you make it so: published document URLs are
-            unguessable capability links you choose to share. We do not sell or share
+            <p>You choose each artifact’s visibility. Unlisted artifacts use
+            unguessable links. Public artifacts can also use readable links. We do not sell or share
             your data with anyone.</p>
 
             <h2>Deletion</h2>

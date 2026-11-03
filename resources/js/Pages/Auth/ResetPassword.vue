@@ -11,9 +11,9 @@ const save = () => form.post('/reset-password', { onFinish: () => form.reset('pa
 </script>
 
 <template>
-    <Head title="Choose a new password" />
+    <Head title="New password" />
 
-    <AuthLayout title="Choose a new password" :description="email">
+    <AuthLayout title="New password" :description="email">
         <form class="flex flex-col gap-4" @submit.prevent="save">
             <UiInput
                 v-model="form.password" label="New password" type="password" autocomplete="new-password" required autofocus

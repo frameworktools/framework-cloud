@@ -5,10 +5,17 @@ namespace App\Http\Controllers;
 use App\Models\Document;
 use App\Models\DocumentVersion;
 use App\Models\User;
+use App\Support\ArtifactContentAccess;
+use App\Support\ArtifactPreview;
 use App\Support\BundleExtractor;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
+use Phiz\Assets;
+use Phiz\Html;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -67,8 +74,104 @@ class DocumentViewController extends Controller
         return $this->serveAsset($this->version($this->byKey($key), $number), $path);
     }
 
+    /** Bearer access stays in the path so relative module and fetch URLs inherit it. */
+    public function content(string $key, int $number, string $access, string $path = ''): StreamedResponse|RedirectResponse
+    {
+        $version = $this->version($this->byKey($key), $number);
+        abort_unless(ArtifactContentAccess::accepts($version, $access), 403);
+        abort_unless($version->isBundle() && ! $version->usesExternalUrl(), 404);
+        abort_if(str_contains($path, '..') || str_contains($path, '\\') || str_contains($path, "\0") || str_starts_with($path, '/'), 404);
+        $disk = Storage::disk($version->disk());
+        $full = $version->disk_path.'/'.$path;
+        if ($path === '' || $disk->directoryExists($full)) {
+            $entry = $path === '' ? $version->entrypoint : rtrim($path, '/').'/index.html';
+            abort_unless($disk->fileExists($version->disk_path.'/'.$entry), 404);
+
+            return redirect()->route('documents.content', [
+                'key' => $key, 'number' => $number, 'access' => $access, 'path' => $entry,
+            ])->header('Cache-Control', 'private, no-store');
+        }
+        abort_unless($disk->fileExists($full), 404);
+
+        return $disk->response($full, basename($path), [
+            'Content-Type' => BundleExtractor::contentType($path),
+            'Access-Control-Allow-Origin' => '*',
+            'X-Content-Type-Options' => 'nosniff',
+            'Content-Security-Policy' => "sandbox allow-scripts allow-downloads; frame-ancestors 'self'",
+            'Referrer-Policy' => 'no-referrer',
+            'Cache-Control' => 'private, no-store',
+        ]);
+    }
+
+    public function unlock(Request $request, string $key): RedirectResponse
+    {
+        $document = $this->byKey($key);
+        $validated = $request->validate(['password' => ['required', 'string', 'max:200'], 'version' => ['sometimes', 'nullable', 'integer', 'min:1']]);
+        if (! $document->isPasswordProtected() || ! Hash::check($validated['password'], $document->password_hash)) {
+            throw ValidationException::withMessages(['password' => 'The password is incorrect.']);
+        }
+        $request->session()->put($document->passwordSessionKey(), $document->password_hash);
+
+        return redirect()->to(isset($validated['version']) ? $this->version($document, $validated['version'])->url() : $document->publicUrl());
+    }
+
+    public function download(string $key): StreamedResponse
+    {
+        return $this->serveDownload($this->byKey($key)->latestVersion());
+    }
+
+    public function versionDownload(string $key, int $number): StreamedResponse
+    {
+        return $this->serveDownload($this->version($this->byKey($key), $number));
+    }
+
+    private function serveDownload(DocumentVersion $version): StreamedResponse
+    {
+        abort_unless($version->document->canRead(), 403, 'Enter the artifact password on its page.');
+        $disk = Storage::disk($version->disk());
+        $path = $version->source_path ?? $version->entryPath();
+        abort_unless($disk->exists($path), 404);
+        $filename = $version->source_path
+            ? ($version->original_filename ?? $version->document->slug.'.zip')
+            : ($version->isBundle() ? basename($version->entrypoint) : ($version->original_filename ?? $version->document->slug.'.html'));
+
+        return $disk->download($path, $filename, [
+            'Content-Type' => $version->source_path ? 'application/zip' : $version->content_type,
+            'X-Content-Type-Options' => 'nosniff',
+            'Cache-Control' => 'private, no-store',
+        ]);
+    }
+
+    /**
+     * A Vega-Lite chart, drawn in an opaque sandbox: a specification can run Vega expressions and name data
+     * URLs, so it gets no access to this origin and no network beyond the pinned chart libraries.
+     */
+    public function chart(Request $request, string $key, int $number, string $access): Response
+    {
+        $version = $this->version($this->byKey($key), $number);
+        abort_unless(ArtifactContentAccess::accepts($version, $access), 403);
+        abort_unless(ArtifactPreview::isVegaLite($version->original_filename) && ! $version->isBundle() && ! $version->usesExternalUrl(), 404);
+        $spec = ArtifactPreview::vegaLiteSpec($version) ?? abort(404);
+        $dark = $request->boolean('dark');
+
+        return response()->view('documents.chart', [
+            'container' => Html::container($spec, ['actions' => false, 'theme' => 'auto', 'config' => ['background' => 'transparent']], ['style' => 'width:100%']),
+            'scripts' => Assets::cdn()->scripts(),
+            'dark' => $dark,
+        ])->withHeaders([
+            'Content-Security-Policy' => "sandbox allow-scripts; default-src 'none'; script-src https://cdn.jsdelivr.net 'unsafe-inline' 'unsafe-eval'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; frame-ancestors 'self'",
+            'X-Content-Type-Options' => 'nosniff',
+            'Referrer-Policy' => 'no-referrer',
+            'Cache-Control' => 'private, no-store',
+        ]);
+    }
+
     private function page(Document $document, ?int $number = null, bool $readable = false): Response
     {
+        if (! $document->canRead()) {
+            return response()->view('documents.password', ['document' => $document, 'number' => $number], 200)->header('Cache-Control', 'private, no-store');
+        }
+
         $version = $number ? $this->version($document, $number) : $document->latestVersion();
         $versions = $document->versions()->get(['number', 'created_at']);
         $latest = $versions->first()?->number ?? 1;
@@ -85,13 +188,14 @@ class DocumentViewController extends Controller
             'project' => $document->project,
             'version' => $version,
             'latest' => $latest,
+            'preview' => ArtifactPreview::forVersion($version),
             'versions' => $versions->map(fn ($v) => ['number' => $v->number, 'date' => $v->created_at, 'url' => $link($v->number)]),
-        ]);
+        ])->header('Cache-Control', 'private, no-store');
     }
 
     private function byKey(string $key): Document
     {
-        return Document::where('key', $key)->with('project.user')->firstOrFail();
+        return Document::where('key', $key)->whereHas('project')->with('project.user')->firstOrFail();
     }
 
     private function byReadable(string $handle, string $project, string $slug): Document
@@ -112,37 +216,49 @@ class DocumentViewController extends Controller
 
     private function serveEntry(DocumentVersion $version): StreamedResponse|RedirectResponse
     {
-        // Content lives on the documents domain in production
-        if (config('framework.documents_base_url')) {
+        abort_unless($version->document->canRead(), 403, 'Enter the artifact password on its page.');
+        if ($version->usesExternalUrl()) {
             return redirect()->away($version->contentUrl());
         }
 
-        $disk = Storage::disk(config('framework.documents_disk'));
+        if ($version->isBundle() && dirname($version->entrypoint) !== '.') {
+            return redirect()->to($version->contentUrl());
+        }
+
+        $disk = Storage::disk($version->disk());
         abort_unless($disk->exists($version->entryPath()), 404);
 
-        return $disk->response($version->entryPath(), $version->document->slug.'.html', [
+        return $disk->response($version->entryPath(), $version->original_filename ?? $version->document->slug.'.html', [
             'Content-Type' => $version->content_type,
             'X-Frame-Options' => 'SAMEORIGIN',
-        ]);
+            'X-Content-Type-Options' => 'nosniff',
+            'Content-Security-Policy' => "sandbox allow-scripts allow-downloads; frame-ancestors 'self'",
+            'Cache-Control' => 'private, no-store',
+        ], (str_starts_with($version->content_type, 'text/') || str_starts_with($version->content_type, 'image/') || in_array($version->content_type, ['application/pdf', 'application/xhtml+xml'])) ? 'inline' : 'attachment');
     }
 
     private function serveAsset(DocumentVersion $version, string $path): StreamedResponse|RedirectResponse
     {
+        abort_unless($version->document->canRead(), 403, 'Enter the artifact password on its page.');
         abort_unless($version->isBundle(), 404);
-        abort_if(str_contains($path, '..') || str_starts_with($path, '/'), 404);
+        abort_if(str_contains($path, '..') || str_contains($path, '\\') || str_starts_with($path, '/'), 404);
 
-        if ($base = config('framework.documents_base_url')) {
+        if ($version->usesExternalUrl()) {
+            $base = config('framework.documents_base_url');
+
             return redirect()->away(rtrim($base, '/').'/'.$version->disk_path.'/'.$path);
         }
 
-        $disk = Storage::disk(config('framework.documents_disk'));
+        $disk = Storage::disk($version->disk());
         $full = $version->disk_path.'/'.$path;
         abort_unless($disk->exists($full), 404);
 
         return $disk->response($full, basename($path), [
             'Content-Type' => BundleExtractor::contentType($path),
             'X-Frame-Options' => 'SAMEORIGIN',
-            'Cache-Control' => 'public, max-age=3600',
+            'X-Content-Type-Options' => 'nosniff',
+            'Content-Security-Policy' => "sandbox allow-scripts allow-downloads; frame-ancestors 'self'",
+            'Cache-Control' => 'private, no-store',
         ]);
     }
 }

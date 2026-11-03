@@ -18,7 +18,9 @@
         "laravel/tinker": "^3.0",
         "league/flysystem-aws-s3-v3": "^3.35",
         "opis/json-schema": "^2.4",
+        "phpstats/phiz": "^0.6.3",
         "spatie/laravel-passkeys": "^1.8",
+        "symfony/html-sanitizer": "^7.4",
         "symfony/yaml": "^8.1"
     },
     "require-dev": {

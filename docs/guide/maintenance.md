@@ -1,6 +1,6 @@
 # Maintenance
 
-## Upgrade
+## Upgrades
 
 With Docker, from the folder with `compose.yml`:
 
@@ -31,7 +31,7 @@ php artisan config:cache
 php artisan queue:restart
 ```
 
-## Back up
+## Backups
 
 Back up three things:
 
@@ -65,7 +65,7 @@ docker compose up -d
 Run these with `php artisan` on the server. With Docker, put
 `docker compose exec app` in front.
 
-| Command | What it does |
+| Command | Description |
 |---|---|
 | `fw:login-link <email>` | Prints a one-time sign-in link. `--create` creates the account first. |
 | `fw:password <email>` | Sets an account's password. `--create` creates the account first. |

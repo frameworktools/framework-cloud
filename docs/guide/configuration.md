@@ -7,7 +7,7 @@ restart with `docker compose up -d`. Without Docker, run
 
 ## Server
 
-| Variable | Default | What it does |
+| Variable | Default | Description |
 |---|---|---|
 | `APP_KEY` | none | Encryption key. Required. Generate it once and back it up. |
 | `APP_PREVIOUS_KEYS` | none | Old keys, comma-separated, so saved credentials stay readable after you change `APP_KEY`. |
@@ -17,10 +17,11 @@ restart with `docker compose up -d`. Without Docker, run
 | `FW_ADMIN_NAME` | from the email | The admin's name when the account is created. |
 | `FW_REGISTRATION` | `open` | `closed` stops new sign-ups. Admins can still create accounts with `fw:login-link --create`. |
 | `FW_DOCUMENTS_DISK` | `local` | Storage for published notebooks. Becomes `bucket` when a bucket is saved on the setup page. |
+| `FW_ARTIFACTS_DISK` | `local` | Private storage for new artifacts. Must not have public bucket or web access. Use shared storage for multiple app nodes. |
 
 ## Sign-in
 
-| Variable | Default | What it does |
+| Variable | Default | Description |
 |---|---|---|
 | `FW_PASSWORDS` | `true` when `FW_MODE=self` | Allows password sign-in alongside email links, passkeys, and GitHub. |
 | `FW_SINGLE_USER` | `false` | Signs every local request in as the admin. See [Run it on your own computer](running-at-home.md). |
@@ -30,7 +31,7 @@ restart with `docker compose up -d`. Without Docker, run
 
 These apply only to the Docker setup.
 
-| Variable | Default | What it does |
+| Variable | Default | Description |
 |---|---|---|
 | `FRAMEWORK_CLOUD_VERSION` | `latest` | The release to run, such as `1.2.0`. |
 | `SERVER_NAME` | none | The domain to get an HTTPS certificate for. `:80` serves plain HTTP. |
@@ -50,7 +51,7 @@ in the connection details for its own database container.
 ## Server credentials
 
 Each of these can be set here or on the Server setup page. A variable that is
-set wins. See [Server setup](server-setup.md#where-credentials-are-kept).
+set wins. See [Server setup](server-setup.md#credential-storage).
 
 | Credential | Variables |
 |---|---|
@@ -64,12 +65,19 @@ The scaffold workflow installs a pinned version of the tool that builds the
 project, so every repository scaffolded from the same server gets the same
 result.
 
-| Variable | Default | What it does |
+| Variable | Default | Description |
 |---|---|---|
 | `GITHUB_FRAMEWORK_SHA` | a tested commit | The framework R package commit that builds R projects. A full 40-character SHA. Empty turns GitHub scaffolding off. |
 | `GITHUB_FRAMEWORK_PY_SHA` | a tested commit | The framework-py commit that builds Python projects. A full 40-character SHA. Empty turns off Python projects on GitHub. |
 | `GITHUB_FW_VERSION` | a tested release | The `fw` release that builds Stata projects, such as `0.3.0`. Empty turns off Stata projects on GitHub. They can still be set up on a computer. |
-| `GITHUB_FW_SHA256` | the tested release's checksum | The SHA-256 checksum of the `fw` Linux download. It applies only to the default release. For another release, set it or leave it empty. Empty makes the workflow check the download against the release's checksums file. |
+| `GITHUB_FW_SHA256` | release checksums file | Optional SHA-256 checksum of the `fw` Linux download. Empty makes the workflow verify the download against the release's checksums file. |
+
+## Private storage
+
+`FW_LOCAL_STORAGE_ROOT` sets the private local filesystem directory. The default
+is `storage/app/private`. Atomic deployments need a persistent directory outside
+individual releases. Copy existing private files into that directory before
+changing the setting. Back it up with the database. Keep it outside the web root.
 
 ## Downloads
 
@@ -77,9 +85,9 @@ People can download a new project as a zip. The scaffolder container builds
 it with the same tools that build projects on GitHub and on people's own
 computers. The Docker install runs it for you.
 
-| Variable | Default | What it does |
+| Variable | Default | Description |
 |---|---|---|
-| `SCAFFOLDER_URL` | `http://scaffolder:8000` with Docker, otherwise empty | Where the app reaches the scaffolder. Empty turns downloads off. |
+| `SCAFFOLDER_URL` | `http://scaffolder:8000` with Docker, otherwise empty | Scaffolder address. Empty disables downloads. |
 | `SCAFFOLDER_TOKEN` | empty | A shared secret the app sends to the scaffolder. Set the same value for both when the scaffolder is reachable from other machines. |
 | `SCAFFOLDER_TIMEOUT` | `200` | Seconds the app waits for a build. |
 
@@ -94,15 +102,15 @@ content once it is imported with `php artisan fw:docs-import`, which reads
 come with Framework Cloud, and the other two show a page saying the
 documentation is not published yet.
 
-| Variable | Default | What it does |
+| Variable | Default | Description |
 |---|---|---|
 | `FW_DOCS_HOST_R` | `r.framework.test` | The host name of the R package documentation, such as `r.framework.pub`. |
 | `FW_DOCS_HOST` | none | The older name for `FW_DOCS_HOST_R`. It is used when `FW_DOCS_HOST_R` is not set. |
 | `FW_DOCS_HOST_PY` | `py.framework.test` | The host name of the Python package documentation. |
 | `FW_DOCS_HOST_CLI` | `cli.framework.test` | The host name of the `fw` documentation. |
 | `FW_DOCS_REPO_R`, `FW_DOCS_REPO_PY`, `FW_DOCS_REPO_CLI` | `frameworktools/framework`, `frameworktools/framework-py`, `frameworktools/framework-cli` | The GitHub repository whose releases `fw:docs-import --release` reads. |
-| `FW_DOCS_PRERELEASE_R`, `FW_DOCS_PRERELEASE_PY`, `FW_DOCS_PRERELEASE_CLI` | `fallback` | Which release `--release` takes. `fallback` takes the newest release with `docs-site.tar.gz`, and a pre-release only when no other release has the file. `always` takes the newest release of either kind. `never` skips pre-releases. |
-| `FW_DOCS_PATH` | `storage/app/docs` | Where imported documentation is kept. |
+| `FW_DOCS_PRERELEASE_R`, `FW_DOCS_PRERELEASE_PY`, `FW_DOCS_PRERELEASE_CLI` | `fallback` | Release selection for `--release`. `fallback` takes the newest release with `docs-site.tar.gz`, and a pre-release only when no other release has the file. `always` takes the newest release of either kind. `never` skips pre-releases. |
+| `FW_DOCS_PATH` | `storage/app/docs` | Imported documentation directory. |
 
 Each host name needs a DNS record that points at the server and a
 certificate that covers it.

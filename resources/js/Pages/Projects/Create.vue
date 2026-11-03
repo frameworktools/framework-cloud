@@ -187,18 +187,18 @@ const create = () => form
 const destinations = computed(() => [
     ...(props.downloads ? [{
         key: 'download',
-        title: 'Download a zip',
+        title: 'ZIP download',
         text: 'Framework builds the project and your browser downloads it. Unzip it and open the folder. You need no Git and no Framework packages.',
     }] : []),
     ...(props.github.enabled ? [{
         key: 'github',
-        title: 'Create it on GitHub',
+        title: 'GitHub repository',
         text: githubBlocked.value ?? 'Framework creates a repository on your GitHub account and sets the project up there. Open it in VS Code, Positron, or RStudio by cloning it.',
         disabled: !!githubBlocked.value,
     }] : []),
     {
         key: 'local',
-        title: 'Set it up on your computer',
+        title: 'Local setup',
         text: form.language === 'stata'
             ? 'In a terminal, run fw login, then fw new with the project\'s name. Git is set up for you.'
             : form.language === 'python'
@@ -216,7 +216,7 @@ const items = computed(() => [
     { label: 'Blueprint', anchor: 'blueprint' },
     ...(form.customized ? [{ label: 'Pieces', anchor: 'structure' }] : []),
     { label: 'Name', anchor: 'name' },
-    { label: 'How you get it', anchor: 'where' },
+    { label: 'Delivery method', anchor: 'where' },
 ]);
 </script>
 
@@ -224,7 +224,7 @@ const items = computed(() => [
     <Head title="New project" />
 
     <SectionLayout heading="New project" :back="{ label: 'Back to all projects', href: '/projects' }" :items="items">
-        <PageHeader title="New project" description="Pick what kind of project it is, name it, and choose how you get it: a download, a GitHub repository, or set up on your computer." />
+        <PageHeader title="New project" description="Choose a blueprint and project name. Download a ZIP, create a GitHub repository, or set up locally." />
 
         <form id="create-form" class="mt-8 flex flex-col gap-8" @submit.prevent="create">
             <UiPanel id="blueprint" title="Blueprint" class="scroll-mt-6">
@@ -301,7 +301,7 @@ const items = computed(() => [
                     <div class="flex flex-col gap-3 rounded-md bg-white p-3 dark:bg-slate-900" :class="current ? '' : 'opacity-60'">
                         <ProjectTreeView v-if="(current ?? resolved)?.tree" :entries="(current ?? resolved).tree" />
                         <div v-if="(current ?? resolved)?.render_dirs?.length" class="text-xs text-slate-600 dark:text-slate-400">
-                            <div class="font-medium text-slate-900 dark:text-white">Rendered documents go to</div>
+                            <div class="font-medium text-slate-900 dark:text-white">Render destinations</div>
                             <ul class="mt-1 font-mono">
                                 <li v-for="d in (current ?? resolved).render_dirs" :key="d.from">{{ d.from }}/ → {{ d.to }}/</li>
                             </ul>
@@ -332,7 +332,7 @@ const items = computed(() => [
                 </div>
             </UiPanel>
 
-            <UiPanel id="where" title="How you get it" class="scroll-mt-6">
+            <UiPanel id="where" title="Delivery method" class="scroll-mt-6">
                 <div class="grid gap-3" :class="destinations.length === 3 ? 'lg:grid-cols-3' : 'sm:grid-cols-2'">
                     <button
                         v-for="d in destinations" :key="d.key"
@@ -412,7 +412,7 @@ const items = computed(() => [
             </div>
         </template>
 
-        <UiModal v-model="confirming" title="Switch blueprint?">
+        <UiModal v-model="confirming" title="Blueprint change">
             <p class="text-sm text-slate-600 dark:text-slate-400">You changed this project's pieces. Switching to {{ blueprints.find((b) => b.id === pendingBlueprint)?.name }} starts from that blueprint and discards those changes. The name, description, and where it's set up stay.</p>
             <div class="flex justify-end gap-3">
                 <UiButton variant="outline" @click="confirming = false">Keep editing</UiButton>

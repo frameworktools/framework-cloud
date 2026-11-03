@@ -97,7 +97,7 @@ data_save(merged, "inputs.final.merged")  # Automatically registers in the catal
 
 Framework automatically tracks data integrity using file hashes. When you read or save data, Framework computes a SHA-256 hash of the file and stores it in the project database.
 
-**How it works:**
+**Data workflow:**
 
 1. On first read, Framework records the file's hash
 2. On subsequent reads, it compares the current hash against the stored hash

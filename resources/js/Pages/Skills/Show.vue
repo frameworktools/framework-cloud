@@ -78,12 +78,13 @@ const pill = (on) => on
                         {{ languageNames[l] }}
                     </button>
                 </div>
-                <span v-if="variants.length > 1" class="text-xs text-slate-500">What {{ languageNames[language] }} projects get</span>
+                <span v-if="variants.length > 1" class="text-xs text-slate-500">{{ languageNames[language] }} project instructions</span>
                 <button type="button" class="ml-auto inline-flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white" @click="copy">
                     <component :is="copied ? CheckIcon : ClipboardDocumentIcon" class="size-4" />{{ copied ? 'Copied' : 'Copy source' }}
                 </button>
             </div>
 
+            <p v-if="skill.parent" class="text-sm text-slate-500">Forked from <Link :href="`/skills/${skill.parent.id}`" class="underline">{{ skill.parent.name }}</Link>, version {{ skill.parent.version }}.</p>
             <article v-if="view === 'read'" class="skill-prose" v-html="html" />
             <pre v-else class="max-w-[90ch] overflow-x-auto whitespace-pre-wrap break-words rounded-lg bg-slate-50 p-4 font-mono text-[0.8125rem] leading-relaxed text-slate-800 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-200 dark:ring-slate-800">{{ source }}</pre>
 

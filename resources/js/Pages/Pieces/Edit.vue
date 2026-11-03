@@ -101,7 +101,7 @@ const errorFor = (prefix) => Object.entries(form.errors).filter(([k]) => k.start
                 <UiInput v-model="form.name" label="Name" required :error="form.errors.name" />
                 <UiTextarea v-model="form.description" label="Description" :rows="2" :error="form.errors.description" />
                 <UiSelect v-if="!isStructure" v-model="form.language" label="Language" :options="languageOptions" :error="form.errors.language" />
-                <UiSelect v-model="form.visibility" label="Who can see it" :options="visibilityOptions" :error="form.errors.visibility" />
+                <UiSelect v-model="form.visibility" label="Visibility" :options="visibilityOptions" :error="form.errors.visibility" />
             </UiPanel>
 
             <template v-if="isStructure">
@@ -167,7 +167,7 @@ const errorFor = (prefix) => Object.entries(form.errors).filter(([k]) => k.start
             </UiPanel>
 
             <UiPanel v-if="facet" id="versions" title="Versions" class="scroll-mt-6">
-                <UiInput v-model="form.notes" label="What changed (optional)" placeholder="Shown in the version history" :error="form.errors.notes" />
+                <UiInput v-model="form.notes" label="Version notes (optional)" placeholder="Shown in the version history" :error="form.errors.notes" />
                 <div v-if="facet.versions?.length" class="flex flex-col gap-1">
                     <div v-for="v in [...facet.versions].reverse()" :key="v.id" class="text-sm">
                         <span class="font-mono">v{{ v.version }}</span>

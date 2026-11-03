@@ -5,11 +5,11 @@ section: getting_started
 position: 5
 description: 'Create a new Framework project'
 ---
-## Create a Project
+## Project setup
 
 After running `setup()`, create a new project from the GUI or command line.
 
-### Using the GUI
+### Graphical interface
 
 Click **+ New Project** in the GUI sidebar, or run:
 
@@ -19,7 +19,7 @@ framework::gui()
 
 ![New Project GUI](/images/new-project-gui.png)
 
-### Using the Command Line
+### Command line
 
 ```r
 framework::new_project()
@@ -69,7 +69,7 @@ Structured for teaching materials with slides, assignments, and modules:
 new_course("stats-101")
 ```
 
-## What Gets Created
+## Project contents
 
 When you create a project, Framework:
 

@@ -2,7 +2,7 @@
 // What one layer adds or removes, as the server describes it (App\Support\LayerSummary).
 defineProps({
     sections: { type: Array, default: () => [] },
-    empty: { type: String, default: 'Changes nothing on its own.' },
+    empty: { type: String, default: 'No standalone changes.' },
 });
 </script>
 

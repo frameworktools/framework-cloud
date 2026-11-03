@@ -1,99 +1,259 @@
-# Publishing notebooks
+# Publishing artifacts and collections
 
-Publishing renders a Quarto notebook and posts it as a web page. Every
-notebook gets a private link that only people you share it with can find. You
-can also give it a readable link.
+Publish a research output to give it a reader page and a link. An artifact can
+be a rendered Quarto report or book, a figure, a table, a model summary, or a
+file for readers to download. You can publish one output without publishing a
+notebook or your project code.
 
-## Publish from R or Python
+Hosting artifacts is an optional paid feature on Framework Public Cloud.
+Self-hosted servers include publishing.
 
-Run this from inside a project that was set up from Framework Cloud:
+## Browser uploads
+
+Open a project's **Artifacts** page and choose **Publish an artifact**, or use the
+**Published** page. Select a file and enter an optional title and description.
+
+For a rendered book or website, zip the contents of the output folder and select
+**This is a zip of rendered HTML and its supporting files**. Enter the entry
+page's path inside the zip, usually `index.html`. Upload rendered outputs rather
+than the project folder, which may contain data, credentials, and source files.
+
+An artifact's name identifies it within the project. Uploading with the same name
+adds a version at the same link. Its display title can change independently.
+
+Uploads currently allow up to 50 MiB. Rendered bundles may contain up to 4,000
+entries and 200 MiB of expanded files.
+
+## R, Python, and CLI publishing
+
+From a project connected to Framework Cloud:
 
 ```r
-framework::publish("notebooks/analysis.qmd")
+framework::publish("outputs/figures/effect.png", to = "cloud", slug = "effect")
 ```
 
 ```python
 import framework
 
-framework.publish("notebooks/analysis.qmd")
+framework.publish("outputs/figures/effect.png", to="cloud", slug="effect")
 ```
 
-Framework renders the notebook, uploads it, and prints the version number and link. `publish()`
-also accepts a rendered `.html` file, an `.html` file with its `_files`
-folder, or a folder of rendered output.
+```sh
+fw publish outputs/figures/effect.png --slug effect
+```
 
-Notebooks go to the server the project was set up from, which is recorded in
-the project's `.env` file. If the project has its own storage bucket
-configured in Framework, `publish()` uploads there instead.
+The R and Python packages also accept rendered HTML, rendered directories, and
+Quarto documents through their existing notebook publishing functions. The CLI
+accepts rendered files and folders; render source documents before uploading.
 
-`publish_notebook()` works the same way. If the project has
-neither a bucket nor a Framework Cloud project token, it stops with an error
-that explains how to add one.
+Explicit `to = "cloud"` in R or `to="cloud"` in Python selects Framework Cloud
+even when the project has a storage bucket. Existing calls that omit `to` keep
+their bucket-first behavior. Use `to = "bucket"` or `to="bucket"` for a bucket,
+or `to = "github"` or `to="github"` for rendered content on GitHub Pages.
 
-## Private and readable links
+`publish()` accepts these objects in R and Python:
 
-The private link looks like `https://framework.pub/d/q7w2k9m4x8c1v5b3n6z0p2rt`.
-It can't be guessed, so only people you give it to can open the notebook.
+| Object | R | Python | Shown as |
+|---|---|---|---|
+| Data | data frames, tibbles, data.tables, matrices, `table` and `xtabs` | pandas and polars data frames and series, numpy arrays, crosstabs | A table with a profile of each column |
+| Hypothesis tests | `t.test`, `chisq.test`, `wilcox.test`, `cor.test`, and other `htest` results | scipy.stats results such as `ttest_ind`, `pearsonr`, and `chi2_contingency` | The statistic, p-value, and confidence interval, with an interval chart |
+| Regression models | `lm`, `glm`, `aov`, `glm.nb`, `polr`, `multinom`, lme4, `coxph`, `survreg`, fixest, and `mgcv::gam` | statsmodels results, including GLM, discrete models, MixedLM, and QuantReg | Coefficients, a forest plot, and fit statistics |
+| ANOVA tables | `anova()` and `summary(aov)` | `anova_lm` | A table |
+| Machine learning models | none | scikit-learn linear and tree models, xgboost, and lightgbm | Coefficients or feature importance, and the model's settings |
+| Figures | ggplot and patchwork, base graphics from `recordPlot()`, and lattice | matplotlib and seaborn | An SVG image, or a PNG for very large plots |
+| Interactive figures | plotly and other htmlwidgets | plotly figures and altair charts | The interactive figure |
+| Formatted tables | gt, gtsummary, and flextable | pandas `Styler` | HTML |
 
-A readable link uses your handle, the project, and a slug you choose:
+For Cloud, data, tests, and models become a typed JSON representation. Tables
+retain supplied rows, column names, types, and missing values, and each column
+carries a summary computed over all its rows before publishing: missing values,
+distinct values, summary statistics with a histogram for numbers, and the most
+frequent values otherwise. Model summaries include coefficients, standard
+errors, confidence intervals, aggregate fit statistics, and a formula when
+available. The forest plot leaves out the intercept. For logistic, count, and
+survival models it shows odds, rate, hazard, or time ratios on a log scale,
+with a switch back to the model's own scale. Mixed models add their random
+effects, and tree-based models show feature importance.
+
+Data files publish too. A CSV or TSV becomes the same kind of table: Cloud
+infers each column's type (numbers, dates, true/false values, or text, with
+IDs such as `007` kept as text) and summarizes every column over all its rows.
+Readers see the first 1,000 rows and can download the original file. Files
+with more than 500,000 rows or 200 columns show a plain preview instead. Excel,
+Parquet, Feather, Stata, SPSS, SAS, and RDS files are shared for download.
+
+altair charts are drawn in an isolated frame that has no access to the rest of
+Framework Cloud and can't fetch data from other sites, so a chart's data must be
+inlined in its specification. altair inlines it when you publish.
+
+Readers can sort columns, search cells, change pages, and export the loaded
+preview as CSV. Numeric sorting respects numeric values and keeps missing
+values last. Large integer identifiers are displayed as text to retain their
+exact digits. The downloaded JSON retains the full representation. Table
+previews load up to 1,000 rows and 50 columns; notices identify omitted data
+and other preview limits. Representations over 8 MiB remain downloadable.
+
+Model summaries do not automatically upload the original model object or
+observation-level data. Publishing a data frame uploads all the rows supplied
+to that function. To share a saved model object, publish its file explicitly;
+readers can download it, and Cloud does not execute it.
+
+## Artifact management
+
+Each artifact has its own page. Open it with **Manage** from **Published
+outputs** or a project's **Outputs** tab. The page links back to its project
+and has four tabs:
+
+- **Overview** shows what readers see, with the artifact's size, views, and the
+  collections and reports that use it.
+- **Versions** lists every version with its own link, and deletes versions.
+- **Sharing** sets who can open it, shows its links, and sets a password.
+- **Settings** changes the title and description, merges another artifact in,
+  and takes the artifact down.
+
+## Links and passwords
+
+New artifacts are **unlisted**. Anyone with their link can open them. Unlisted
+links are not authenticated private access.
+
+Enable a readable link on the artifact's **Sharing** tab, or use the existing `slug`
+option from a package. A readable link looks like:
 
 ```text
 https://framework.pub/@ada/nhanes-study/main-results
 ```
 
-Anyone who knows or guesses it can open the notebook. To get one, give the
-notebook a slug when you publish it:
+A readable link needs a handle, set in **Account > Account details**. The
+unlisted link continues to work when readable links are turned off.
 
-```r
-framework::publish("notebooks/analysis.qmd", slug = "main-results")
+Add a password on the artifact's **Sharing** tab to require readers to unlock the page.
+The password also gates originals, downloads, supporting assets, and earlier
+versions. Passwords need at least eight characters. Changing a password revokes
+existing reader sessions. Owners can open their artifacts while signed in.
 
-# Or use the file name as the slug
-framework::publish("notebooks/analysis.qmd", slug = TRUE)
-```
+Older artifacts may have files already exposed on a separate public storage
+host. Cloud refuses to add a password while those external versions remain;
+a password on the reader page cannot revoke a public file URL.
 
-```python
-import framework
+## Versions and merging
 
-framework.publish("notebooks/analysis.qmd", slug="main-results")
-
-# Or use the file name as the slug
-framework.publish("notebooks/analysis.qmd", slug=True)
-```
-
-Publishing without `slug` keeps a notebook's current setting. To turn its
-readable link off, use `slug = FALSE` in R or `slug=False` in Python.
-
-On a storage bucket, `slug` is ignored, and `dest` sets the file's path.
-
-Readable links need a handle, which you set in **Account > Account details**. You can
-also turn a notebook's readable link on or off on the **Published** page. The
-private link keeps working either way.
-
-## Versions
-
-Each publish adds a version. The links always show the newest version, and
-earlier versions stay available:
+Each successful publish adds a version. The stable artifact link opens the
+newest remaining version. A version-specific link identifies that exact version:
 
 ```text
 https://framework.pub/d/q7w2k9m4x8c1v5b3n6z0p2rt/versions/2
-https://framework.pub/@ada/nhanes-study/main-results/versions/2
 ```
 
-Readers can switch between versions from the bar at the top of the page.
-Versions are kept until you delete them. On the **Published** page you can
-delete one version or take down the whole notebook. Deleting the newest
-version makes the one before it current.
+Deleting a version takes down its links. Deleting the newest version makes the
+previous one current. Version numbers are never reused. Deleting the only
+version takes down the artifact.
 
-## Manage published notebooks
+On an artifact's **Settings** tab, use **Merge another artifact into this one** to
+append another artifact's versions to the destination's history. Both artifacts
+must belong to the same project. The source retains its original links and
+versions, and future publishing uses the destination. The copied versions use
+the destination's sharing settings. Merging combines version histories; it does
+not combine the contents of two reports or statistical models.
 
-The **Published** page lists your notebooks with their links, versions, views,
-and sizes. Each notebook page also has a **View raw** link to the HTML itself.
+## Collections
 
-## Framework Public Cloud and self-hosted servers
+Open **Collections** within a project to create a collection. The title and
+introduction save as you type. **Add artifact** searches the project's
+published artifacts. Each entry's edit button sets its caption and version.
+Drag an entry by its handle to reorder it, or focus the handle and use the up
+and down arrow keys. An artifact can appear in several collections without
+duplicating its files.
 
-On Framework Public Cloud, hosting published notebooks is an optional,
-low-cost paid add-on. Everything else is free.
+R, Python, and the CLI can attach a publication to an existing collection by ID
+or slug using `collection` or `--collection`. To share an unlisted artifact
+through an unlisted collection, explicitly pass `share_unlisted = TRUE`,
+`share_unlisted=True`, or `--share-unlisted`. Collections are not created
+automatically. If attachment fails after a successful publication, the client
+returns the artifact URL and explains how to attach it from the web interface.
 
-On your own server, everyone can publish. Notebooks are stored on the
-server's disk unless an admin adds a storage bucket (see
-[Server setup](server-setup.md#published-notebooks)).
+Each entry can follow the latest artifact version or pin an existing version.
+Pin versions when you want reviewers to read a particular set of results.
+A deleted pinned version becomes unavailable; its entry never silently advances
+to another version.
+
+Collections start **private**, visible only to their owner. You can share them
+as **unlisted** or **public** and optionally set a collection password.
+Sharing changes apply when you choose **Save sharing**.
+
+A shared collection's link can expire after a day, a week, 30 or 90 days, or
+on a date you choose. It works through the end of that day in your time zone.
+After that, readers see a page saying the link has expired. You can still
+open the collection, and clearing the expiry restores the link.
+Public collections require public artifacts. Sharing an unlisted artifact in
+an unlisted collection requires explicit consent for that entry.
+
+A collection's password protects its listing. Individual artifacts retain
+their own access rules. Protect an artifact itself if its direct link and files
+also need a password. Unlocking a collection never unlocks its artifacts.
+
+A collection can organize materials for collaboration, peer review, or
+publication. It does not currently provide reviewer accounts, comments, DOI
+registration, or an archival guarantee.
+
+## Report builder
+
+Open **Reports** within a project and create a report. The editor shows the
+report as readers will see it: a title, an introduction, and sections of text
+and artifacts in order.
+
+- **Text.** The toolbar at the top of the report formats whichever text
+  section you are writing in: headings, bold, italic, underline,
+  strikethrough, inline code, links, bulleted and numbered lists, and quotes.
+  **More** adds superscript and subscript (for R² or H₂O), code blocks,
+  dividers, and clearing formatting. Selecting text also shows a small menu
+  for the common marks. Markdown works as you type: `##` starts a heading,
+  `-` a list, `1.` a numbered list, `>` a quote, and `**bold**` or
+  `*italic*` format text. Quotes and dashes become typographic ones.
+- **Artifacts.** **Add artifact** opens a search of the project's published
+  figures, tables, models, tests, and documents. Each artifact section shows a
+  live preview, a version menu, and a caption.
+- **Arranging.** Hover between sections to insert text or an artifact there.
+  Drag a section by the handle in its left margin, or focus the handle and
+  use the up and down arrow keys. The right margin has buttons to move,
+  duplicate, and remove a section. The outline beside the report jumps to
+  any section.
+
+| Shortcut | Mac | Windows and Linux |
+|---|---|---|
+| Bold, italic, underline | ⌘B, ⌘I, ⌘U | Ctrl+B, Ctrl+I, Ctrl+U |
+| Link | ⌘K | Ctrl+K |
+| Heading, subheading, body text | ⌘⌥2, ⌘⌥3, ⌘⌥0 | Ctrl+Alt+2, Ctrl+Alt+3, Ctrl+Alt+0 |
+| Bulleted and numbered list | ⌘⇧8, ⌘⇧7 | Ctrl+Shift+8, Ctrl+Shift+7 |
+| Save now | ⌘S | Ctrl+S |
+
+Drafts save automatically a moment after you stop typing. A new or removed
+password is the exception: it applies only when you choose **Save draft**.
+Use **Preview** to read the saved draft as readers will.
+
+Saving a draft updates the editor. Publishing creates a numbered report
+version containing the current text, introduction, captions, and selected
+artifact versions. When an artifact section follows the latest version in
+the draft, publishing pins the version available at that moment. Artifact
+labels and kinds are also preserved. Later changes to the analysis or draft
+do not alter an existing published report.
+
+Reports start private. You can publish them as unlisted or public and set a
+report password. Public reports require public artifacts. Unlisted artifacts
+require explicit permission to share them with report readers. Artifact
+passwords continue to apply separately, including inside a report.
+
+Changing a report password revokes existing report reader sessions. Leaving
+its replacement field blank keeps the current password; select the explicit
+removal option to remove protection. A removed artifact version shows as
+unavailable in older reports, without substituting a newer result.
+
+The report reader provides section navigation, formatted text, interactive
+artifact displays, download links, and access to earlier report versions.
+Hosted report publishing uses the same paid entitlement as artifacts.
+
+## Storage
+
+New artifact files live on a private filesystem disk and are served through
+Framework Cloud. Metadata, version histories, collections, and password hashes
+live in the database. See [Server setup](server-setup.md#published-artifacts)
+for the private storage configuration and backup requirements.

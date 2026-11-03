@@ -23,19 +23,19 @@ const error = computed(() => form.errors.code ?? props.error);
 </script>
 
 <template>
-    <Head title="Sign in fw" />
+    <Head title="CLI sign-in" />
 
     <AppLayout>
         <div class="flex max-w-2xl flex-col gap-8">
             <PageHeader>
-                <template #title>Sign in <code class="font-mono">fw</code></template>
+                <template #title><code class="font-mono">fw</code> sign-in</template>
                 <template #description>
                     <code class="font-mono">fw login</code> shows a code in your terminal. Check that it matches the
                     code here, then approve it to sign <code class="font-mono">fw</code> in to your account.
                 </template>
             </PageHeader>
 
-            <UiCallout v-if="result === 'device-approved'" variant="success" heading="fw is signed in">
+            <UiCallout v-if="result === 'device-approved'" variant="success" heading="CLI connection">
                 <p>You can close this tab and return to the terminal.</p>
             </UiCallout>
 
@@ -45,7 +45,7 @@ const error = computed(() => form.errors.code ?? props.error);
 
             <UiPanel
                 v-else-if="request"
-                title="Approve this sign-in?"
+                title="Device authorization"
                 description="Approving creates an API token for this device. You can revoke it on the API tokens page."
             >
                 <dl class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
@@ -65,7 +65,7 @@ const error = computed(() => form.errors.code ?? props.error);
                 </template>
             </UiPanel>
 
-            <UiPanel v-else title="Enter the code from your terminal">
+            <UiPanel v-else title="Device code">
                 <form class="flex flex-col gap-2" @submit.prevent="lookup">
                     <label for="device-code" class="text-sm font-medium text-slate-800 dark:text-slate-200">Code</label>
                     <div class="flex gap-3">

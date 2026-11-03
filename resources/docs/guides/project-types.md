@@ -16,7 +16,7 @@ Framework supports four project types, each optimized for different workflows:
 | **Course/Teaching** | Academic courses with lectures and assignments |
 | **Presentation** | Slides and presentations |
 
-## Choosing a Project Type
+## Project types
 
 ### Standard Project (Default)
 
@@ -105,9 +105,9 @@ my-presentation/
 
 Optional directories available in the GUI: `data/`, `functions/`, `outputs/`, `scripts/`
 
-## Creating Projects
+## Project creation
 
-### Using the GUI
+### Graphical interface
 
 The easiest way to create projects is through the GUI:
 

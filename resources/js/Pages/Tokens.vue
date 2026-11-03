@@ -39,19 +39,20 @@ const revoke = (id) => {
         <div class="flex flex-col gap-8">
             <PageHeader title="API tokens">
                 <template #description>
-                    A token lets the framework R package read and sync your settings.
-                    Create one per machine so you can revoke them individually.
+                    Tokens connect R, Python, and the CLI to your account.
+                    Revoke each device’s token separately.
                 </template>
             </PageHeader>
 
-            <UiPanel title="Create a token" description="Name it after the computer it's for.">
+            <UiPanel title="New token" description="A device name, such as work-laptop.">
                 <form class="flex flex-wrap items-end gap-3" @submit.prevent="create">
                     <div class="w-full max-w-xs"><UiInput v-model="form.name" label="Token name" placeholder="e.g. work-laptop" :error="form.errors.name" /></div>
                     <UiButton type="submit" :disabled="form.processing">Create token</UiButton>
                 </form>
             </UiPanel>
 
-            <UiCallout v-if="plainToken" variant="success" heading="Copy your token now — it won't be shown again">
+            <UiCallout v-if="plainToken" variant="success" heading="New token">
+                <p>Copy this token now. It is shown only once.</p>
                 <code class="break-all font-mono text-sm">{{ plainToken }}</code>
                 <div>
                     <div class="text-slate-500">Connect this machine. In R:</div>
@@ -67,7 +68,7 @@ const revoke = (id) => {
             </UiCallout>
 
             <section class="flex flex-col gap-4">
-                <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Your tokens</h2>
+                <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Tokens</h2>
                 <div v-if="tokens.length" class="flex flex-col gap-3">
                     <UiCard v-for="token in tokens" :key="token.id" hover>
                         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -86,7 +87,7 @@ const revoke = (id) => {
                         </div>
                     </UiCard>
                 </div>
-                <EmptyState v-else :icon="KeyIcon" title="No tokens yet." description="Create a token above, then run cloud_login() with it on your computer." />
+                <EmptyState v-else :icon="KeyIcon" title="No tokens" description="Create a token above, then run cloud_login() with it on your computer." />
             </section>
         </div>
     </SectionLayout>

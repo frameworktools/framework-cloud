@@ -10,10 +10,10 @@ const confirm = () => form.post(`/auth/magic/${props.token}`);
 </script>
 
 <template>
-    <Head :title="isNewAccount ? 'Confirm your account' : 'Sign in'" />
+    <Head :title="isNewAccount ? 'Account confirmation' : 'Sign in'" />
 
     <AuthLayout
-        :title="isNewAccount ? 'Confirm your account' : 'Sign in'"
+        :title="isNewAccount ? 'Account confirmation' : 'Sign in'"
         :description="`as ${email}`"
     >
         <form @submit.prevent="confirm">

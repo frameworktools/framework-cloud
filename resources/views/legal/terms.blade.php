@@ -17,7 +17,7 @@
         <p class="mt-2 text-sm text-slate-500">Draft — last updated {{ date('F j, Y') }}. Plain-language summary; formal review before launch.</p>
 
         <div class="prose prose-neutral mt-8 dark:prose-invert">
-            <h2>The service</h2>
+            <h2>Service</h2>
             <p>Framework Cloud stores your Framework settings, project definitions, and
             published documents, and serves them back to you and to links you share.
             Your local projects are yours: nothing here claims ownership of your code,
@@ -31,7 +31,7 @@
             <p>No malware, no impersonation, no scraping other users' content, no using
             published documents as a general-purpose file host.</p>
 
-            <h2>Your content</h2>
+            <h2>Content ownership</h2>
             <p>You keep all rights to what you publish. You grant us only the license
             needed to store it and serve it at the URLs you create. Delete a project or
             document and its tokens and links stop working.</p>
@@ -40,7 +40,7 @@
             <p>You are responsible for the machines that hold your tokens. Revoke tokens
             for lost machines at Settings → API tokens.</p>
 
-            <h2>The free tier</h2>
+            <h2>Free tier</h2>
             <p>Settings, blueprints, and project definitions are free. Fair-use ceilings
             exist to prevent abuse; a human doing research will not hit them.</p>
 

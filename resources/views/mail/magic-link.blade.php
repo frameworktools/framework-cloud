@@ -1,5 +1,5 @@
 @php
-    $heading = $isNewAccount ? 'Confirm your account' : 'Sign in to Framework Cloud';
+    $heading = $isNewAccount ? 'Account confirmation' : 'Framework Cloud sign-in';
     $action = $isNewAccount ? 'Confirm and sign in' : 'Sign in';
     $minutes = \App\Models\LoginToken::LIFETIME_MINUTES;
     $font = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
@@ -37,7 +37,7 @@
 
                             <p style="margin: 0 0 28px; font-size: 15px; line-height: 24px; color: #404040;">
                                 @if ($isNewAccount)
-                                    Confirm your email to finish creating your account. After that, you can add a passkey in Settings to sign in with one touch.
+                                    Confirm your email to create your account. Add a passkey in account settings for future sign-ins.
                                 @else
                                     Use the button below to sign in. The link works once and expires in {{ $minutes }} minutes.
                                 @endif

@@ -104,7 +104,7 @@ const items = [
     { label: 'Packages', anchor: 'packages' },
     { label: 'Agents', anchor: 'ai' },
     { label: 'Settings', anchor: 'settings' },
-    { label: 'Name and share', anchor: 'name' },
+    { label: 'Details and visibility', anchor: 'name' },
 ];
 </script>
 
@@ -114,8 +114,8 @@ const items = [
     <SectionLayout heading="Blueprint" :items="items">
         <PageHeader :title="editing ? `Edit ${blueprint.name}` : 'New blueprint'">
             <template #description>
-                A blueprint is a saved set of choices for new projects: a project structure, tools, packages, skills, and settings.
-                Saving makes a new version; projects keep the version they were made from.
+                A blueprint defines project structure, tools, packages, skills, and settings.
+                Each save creates a version. Existing projects keep their original version.
             </template>
         </PageHeader>
 
@@ -125,7 +125,7 @@ const items = [
                 <template #structure-preview>
                     <div class="flex flex-col gap-3 rounded-md bg-white p-3 dark:bg-slate-900">
                         <UiSelect
-                            v-if="workflowChoices.length > 1" v-model="previewWorkflow" label="Preview with"
+                            v-if="workflowChoices.length > 1" v-model="previewWorkflow" label="Preview workflow"
                             :options="workflowChoices.map((w) => ({ value: w, label: `${languageNames[form.language]}, ${workflowNames[w]}` }))"
                         />
                         <p v-else-if="previewWorkflow" class="text-xs text-slate-500">{{ languageNames[form.language] }}, {{ workflowNames[previewWorkflow] }}</p>
@@ -133,7 +133,7 @@ const items = [
                             <p v-if="shown?.problem" class="text-xs text-red-600 dark:text-red-400">{{ shown.problem }}</p>
                             <ProjectTreeView v-else-if="shown?.tree" :entries="shown.tree" />
                             <div v-if="shown?.render_dirs?.length" class="text-xs text-slate-600 dark:text-slate-400">
-                                <div class="font-medium text-slate-900 dark:text-white">Rendered documents go to</div>
+                                <div class="font-medium text-slate-900 dark:text-white">Render destinations</div>
                                 <ul class="mt-1 font-mono">
                                     <li v-for="d in shown.render_dirs" :key="d.from">{{ d.from }}/ → {{ d.to }}/</li>
                                 </ul>
@@ -144,7 +144,7 @@ const items = [
                     </div>
                 </template>
                 <template #after-structure>
-                    <UiPanel id="supports" title="Languages and workflows" description="What projects made from this blueprint can use." class="scroll-mt-6">
+                    <UiPanel id="supports" title="Languages and workflows" description="Supported project languages and workflows." class="scroll-mt-6">
                         <UiCheckboxCards v-model="form.languages" legend="Languages" :options="languageOptions" />
                         <p v-if="form.errors.languages" class="text-xs text-red-600 dark:text-red-400">{{ form.errors.languages }}</p>
                         <UiCheckboxCards v-model="form.workflows" legend="Notebook workflows" :options="workflowOptions" />
@@ -153,11 +153,11 @@ const items = [
                 </template>
             </ChoicesEditor>
 
-            <UiPanel id="name" title="Name and share it" class="scroll-mt-6">
+            <UiPanel id="name" title="Details and visibility" class="scroll-mt-6">
                 <UiInput v-model="form.name" label="Name" placeholder="e.g. R01 secondary analysis" required :error="form.errors.name" />
                 <UiTextarea v-model="form.description" label="Description" :rows="2" :error="form.errors.description" />
-                <UiSelect v-model="form.visibility" label="Who can see it" :options="visibilityOptions" :error="form.errors.visibility" />
-                <UiInput v-if="editing" v-model="form.notes" label="What changed (optional)" placeholder="Shown in the version history" :error="form.errors.notes" />
+                <UiSelect v-model="form.visibility" label="Visibility" :options="visibilityOptions" :error="form.errors.visibility" />
+                <UiInput v-if="editing" v-model="form.notes" label="Version notes (optional)" placeholder="Shown in the version history" :error="form.errors.notes" />
 
                 <div>
                     <button type="button" class="text-sm text-slate-600 hover:underline dark:text-slate-400" @click="showAdvanced = !showAdvanced">

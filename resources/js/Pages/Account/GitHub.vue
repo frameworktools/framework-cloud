@@ -35,8 +35,8 @@ const disconnect = () => {
         <p v-if="!available" class="text-sm text-slate-500">GitHub is not set up on this server.</p>
 
         <UiPanel
-            v-else-if="!account" title="Connect GitHub"
-            description="Framework uses a GitHub App. You choose which accounts and organizations it can reach, and it can only work in repositories it creates or that you give it."
+            v-else-if="!account" title="GitHub connection"
+            description="Framework uses a GitHub App. You choose its accounts, organizations, and repositories."
         >
             <div class="w-60"><GitHubButton label="Connect GitHub" /></div>
         </UiPanel>
@@ -52,7 +52,7 @@ const disconnect = () => {
             </div>
             </UiPanel>
 
-            <UiPanel title="Where Framework can create repositories">
+            <UiPanel title="Repository access">
             <div class="flex flex-col gap-2">
                 <p v-if="installations === null" class="text-sm text-slate-500">GitHub could not be reached. Reload to try again.</p>
                 <div v-else class="flex flex-col divide-y divide-slate-200 dark:divide-slate-700">

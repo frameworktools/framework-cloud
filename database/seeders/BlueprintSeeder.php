@@ -98,24 +98,31 @@ class BlueprintSeeder extends Seeder
      */
     private function seedSkills(string $dir): void
     {
-        foreach (File::files($dir) as $position => $file) {
+        $registry = File::exists(dirname($dir).'/skill-bundles.json') ? $this->json(dirname($dir).'/skill-bundles.json') : [];
+        $sources = [];
+        foreach (File::files($dir) as $file) {
             $content = File::get($file->getPathname());
+            $key = Skill::frontmatter($content, 'content')['key'];
+            $sources[$key] = $content;
+        }
+        foreach ($registry as $key => $variants) {
+            $default = $variants['r'] ?? reset($variants);
+            $sources[$key] = base64_decode(collect($default['bundle'])->firstWhere('path', 'SKILL.md')['content']);
+        }
+        foreach ($sources as $key => $content) {
             $frontmatter = Skill::frontmatter($content, 'content');
-            $python = File::exists($path = "{$dir}/python/{$frontmatter['key']}.md") ? File::get($path) : null;
-
-            $skill = Skill::updateOrCreate(
-                ['user_id' => null, 'key' => $frontmatter['key']],
-                [
-                    'name' => $frontmatter['title'],
-                    'description' => $frontmatter['description'],
-                    'summary' => $frontmatter['summary'],
-                    'language' => $python ? ['r', 'python'] : ['r'],
-                    'visibility' => 'public',
-                    'position' => $position,
-                ],
-            );
-
-            $skill->publishVersion(['content' => $content, 'variants' => $python ? ['python' => $python] : null, 'files' => []]);
+            $texts = []; $files = [];
+            foreach ($registry[$key] ?? [] as $variant => $snapshot) {
+                $texts[$variant] = base64_decode(collect($snapshot['bundle'])->firstWhere('path', 'SKILL.md')['content']);
+                $files[$variant] = array_values(array_filter($snapshot['bundle'], fn ($f) => $f['path'] !== 'SKILL.md'));
+            }
+            if (! $texts && File::exists($path = "{$dir}/python/{$key}.md")) $texts['python'] = File::get($path);
+            $skill = Skill::updateOrCreate(['user_id' => null, 'key' => $key], [
+                'name' => $frontmatter['title'], 'description' => $frontmatter['description'], 'summary' => $frontmatter['summary'],
+                'language' => isset($registry[$key]) ? array_keys($registry[$key]) : ($texts ? array_keys($texts + ['r' => $content]) : ['r']), 'visibility' => 'public',
+            ]);
+            unset($texts['r']);
+            $skill->publishVersion(['content' => $content, 'variants' => $texts ?: null, 'files' => [], 'bundle_files' => $files ?: null]);
         }
     }
 

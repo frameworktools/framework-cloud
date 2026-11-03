@@ -1,14 +1,18 @@
 <script setup>
-defineProps({ hover: Boolean, padded: { type: Boolean, default: true } });
+defineProps({
+    padded: { type: Boolean, default: true },
+    hover: Boolean,
+    size: { type: String, default: 'md' }, // md | sm
+});
 </script>
 
-<!-- A bordered white card for one item in a list, as in the Framework GUI -->
 <template>
     <div
-        class="rounded-lg border border-slate-200 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900 dark:shadow-none"
+        class="border border-slate-200 bg-white dark:border-white/10 dark:bg-white/5"
         :class="[
-            padded ? 'p-5' : '',
-            hover ? 'transition hover:border-slate-300 hover:shadow-sm dark:hover:border-slate-700' : '',
+            size === 'sm' ? 'rounded-lg' : 'rounded-xl',
+            padded ? (size === 'sm' ? 'p-4' : 'p-6') : '',
+            hover ? 'transition-colors hover:border-slate-300 dark:hover:border-white/20' : '',
         ]"
     >
         <slot />

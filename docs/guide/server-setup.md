@@ -1,7 +1,7 @@
 # Server setup
 
 Admins see **Server administration** in the sidebar. It holds the server's three
-credentials: email, GitHub, and storage for published notebooks. Each one is
+credentials: email, GitHub, and storage for published content. Each one is
 optional, but sign-in links need email.
 
 ## Email
@@ -27,7 +27,23 @@ GitHub lets people sign in with GitHub and create projects as repositories.
 
 Each user then connects their own GitHub account in **Account > GitHub**.
 
-## Published notebooks
+## Published artifacts
+
+New artifacts are stored on the private `local` filesystem disk by default.
+Framework Cloud serves their reader pages, originals, and supporting files
+through application routes so passwords apply to every request. Uploaded HTML
+runs with a sandbox policy that isolates it from the application's origin.
+
+`FW_ARTIFACTS_DISK` selects another disk defined in `config/filesystems.php`.
+It must be private, without a public bucket endpoint or web-accessible storage
+directory. For multiple application nodes, use shared private storage. Back up
+this disk together with the database; the database holds metadata and version
+history, while the disk holds the actual outputs.
+
+The storage credentials in Server administration configure the older
+`FW_DOCUMENTS_DISK` path. They do not change `FW_ARTIFACTS_DISK`.
+
+### Existing published notebooks
 
 By default, published notebooks are stored on the server's disk. For more
 than a few people, use an S3-compatible bucket: Amazon S3, Cloudflare R2,
@@ -37,7 +53,7 @@ MinIO, or Backblaze B2.
 2. Click **Test connection**. It writes, reads, and deletes a small file.
 3. Save.
 
-### Serve notebooks from a separate domain
+### Existing notebooks on a separate domain
 
 A published notebook is a web page that someone uploaded, and it can contain
 scripts. On a server that more than one person uses, serve notebooks from a
@@ -45,7 +61,7 @@ separate domain, such as `files.example.edu`. Attach that domain to the
 bucket and enter it as the **Public address**. Notebooks then load from that
 domain instead of the server's own.
 
-## Where credentials are kept
+## Credential storage
 
 Each credential has an environment variable, and the setup page shows its
 name next to the field. The server looks for a credential in this order:
@@ -63,7 +79,7 @@ Saving on the setup page takes effect right away and restarts the queue
 worker. After you change an environment variable, restart the containers, or
 run `php artisan config:cache` without Docker.
 
-## Keep APP_KEY safe
+## Application key protection
 
 Values saved on the setup page are encrypted with `APP_KEY`. If the key
 changes, saved values can't be read. The setup page then lists them so you can

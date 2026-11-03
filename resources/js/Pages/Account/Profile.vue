@@ -51,15 +51,15 @@ const yaml = computed(() => {
 
     <AccountLayout
         heading="Profile"
-        subheading="How you appear as an author. Framework puts this in the front matter of new notebooks, reports, and slides."
+        subheading="Author details for new notebooks, reports, and slides."
     >
         <form id="settings-form" class="flex flex-col gap-8" @submit.prevent="save">
-            <UiPanel title="You">
-                <UiInput v-model="form.name" label="Name" description="As it should appear on a byline." required :error="form.errors.name" />
+            <UiPanel title="Author details">
+                <UiInput v-model="form.name" label="Name" description="Name for bylines." required :error="form.errors.name" />
                 <UiInput v-model="form.email" label="Public email" type="email" description="Shown on your work. Your sign-in email under Settings > Account stays private." :error="form.errors.email" />
                 <div class="grid gap-4 sm:grid-cols-2">
-                    <UiInput v-model="form.orcid" label="ORCID iD" placeholder="0000-0002-1825-0097" :error="form.errors.orcid" />
                     <UiInput v-model="form.url" label="Website" type="url" placeholder="https://" :error="form.errors.url" />
+                    <UiInput v-model="form.orcid" label="ORCID iD" placeholder="0000-0002-1825-0097" :error="form.errors.orcid" />
                 </div>
             </UiPanel>
 
@@ -88,7 +88,7 @@ const yaml = computed(() => {
                 </div>
             </UiPanel>
 
-            <UiPanel title="In Quarto" description="How new notebooks will list you.">
+            <UiPanel title="Quarto front matter" description="Author metadata for new notebooks.">
                 <pre class="overflow-x-auto rounded-lg border border-slate-200 bg-white p-4 font-mono text-xs leading-5 text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">{{ yaml }}</pre>
             </UiPanel>
         </form>

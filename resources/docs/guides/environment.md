@@ -30,7 +30,7 @@ S3_SECRET_KEY=...
 
 Framework's `.gitignore` templates automatically exclude `.env` files to prevent accidental exposure.
 
-### Using env() in Configuration
+### Environment references
 
 Reference environment variables in `settings.yml` using `env()`:
 
@@ -81,7 +81,7 @@ S3_SESSION_TOKEN=
 
 ## R Session Management
 
-### Clear Environment
+### Environment cleanup
 
 Reset your R session while optionally keeping specific objects:
 
@@ -140,7 +140,7 @@ Memory in use: 234.5 MB
 
 ## Best Practices
 
-### Never Hardcode Secrets
+### Secret management
 
 ```yaml
 # Bad - secrets in config
@@ -150,7 +150,7 @@ password: "my_secret_password"
 password: env("DB_PASSWORD")
 ```
 
-### Check .gitignore
+### Git exclusions
 
 Framework warns if `.env` isn't gitignored:
 
@@ -161,7 +161,7 @@ Warning: .env is NOT in .gitignore!
 
 All Framework project templates include `.env` in `.gitignore` by default.
 
-### Use Descriptive Variable Names
+### Variable names
 
 ```bash
 # Good - clear purpose
@@ -174,7 +174,7 @@ PASSWORD=...
 KEY=...
 ```
 
-### Document Required Variables
+### Required variables
 
 Add comments to your `.env` template:
 

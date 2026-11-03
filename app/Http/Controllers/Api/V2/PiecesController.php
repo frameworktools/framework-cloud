@@ -59,6 +59,7 @@ class PiecesController extends Controller
             ->orderByRaw('user_id is not null')->orderBy('position')->orderBy('name')->get()
             ->map(fn (Skill $s) => [
                 'key' => $s->handle,
+                'skill_id' => $s->sync_id,
                 'name' => $s->name,
                 'description' => $s->description,
                 // The languages it's for (none means any), as the resolver applies them

@@ -14,19 +14,20 @@ class GuideController extends Controller
 {
     /** Sidebar order: section => [slug => title] */
     public const PAGES = [
-        'Using Framework Cloud' => [
+        'Framework Cloud' => [
             'index' => 'Overview',
             'getting-started' => 'Getting started',
             'signing-in' => 'Signing in',
             'projects-and-blueprints' => 'Projects and blueprints',
             'github' => 'GitHub integration',
-            'publishing' => 'Publishing notebooks',
+            'skill-sync' => 'Skill sync',
+            'publishing' => 'Publishing artifacts',
         ],
-        'Running your own server' => [
+        'Self-hosting' => [
             'self-hosting' => 'Self-hosting overview',
-            'install-docker' => 'Install with Docker',
-            'running-at-home' => 'Run it on your own computer',
-            'install-manual' => 'Install without Docker',
+            'install-docker' => 'Docker installation',
+            'running-at-home' => 'Local installation',
+            'install-manual' => 'Manual installation',
             'server-setup' => 'Server setup',
             'configuration' => 'Configuration reference',
             'maintenance' => 'Maintenance',
@@ -60,6 +61,7 @@ class GuideController extends Controller
         );
 
         $html = self::languageTabs($html);
+        $html = str_replace(['<table>', '</table>'], ['<div class="overflow-x-auto"><table>', '</table></div>'], $html);
 
         return view('guide', [
             'title' => $title,

@@ -22,7 +22,7 @@ framework::scaffold()
 
 That's it. You're ready to work.
 
-## What scaffold() Does
+## Scaffold behavior
 
 When you call `scaffold()`, it:
 

@@ -5,18 +5,18 @@ export const pieceCopy = {
         title: 'Project structures',
         noun: 'project structure',
         description: 'Folders and core files for your projects.',
-        empty: "You haven't made a project structure yet.",
+        empty: "No custom project structures.",
     },
     package_set: {
         title: 'Package sets',
         noun: 'package set',
         description: 'Packages to start R and Python projects with.',
-        empty: "You haven't made a package set yet.",
+        empty: "No custom package sets.",
     },
     skill_set: {
         title: 'Skill sets',
         noun: 'skill set',
         description: 'Skills that belong together, with the packages they need.',
-        empty: "You haven't made a skill set yet.",
+        empty: "No custom skill sets.",
     },
 };

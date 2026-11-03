@@ -6,6 +6,13 @@ import UiButton from '@/Components/UiButton.vue';
 import UiCallout from '@/Components/UiCallout.vue';
 import UiBadge from '@/Components/UiBadge.vue';
 import UiPanel from '@/Components/UiPanel.vue';
+import UiSection from '@/Components/UiSection.vue';
+import UiTable from '@/Components/UiTable.vue';
+import EmptyState from '@/Components/EmptyState.vue';
+import { artifactKind } from '@/report-artifacts.js';
+import { ArrowTopRightOnSquareIcon, LockClosedIcon } from '@heroicons/vue/20/solid';
+import { GlobeAltIcon } from '@heroicons/vue/24/outline';
+import ArtifactUpload from '@/Components/ArtifactUpload.vue';
 import CodeChip from '@/Components/CodeChip.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import { ChevronRightIcon } from '@heroicons/vue/24/outline';
@@ -13,9 +20,10 @@ import { clientUrl, useServerArg, useServerFlag, useSetupCommand } from '@/cloud
 import { languageNames } from '@/library.js';
 import { statusLabel, statusVariant, typeName } from '@/projects.js';
 
-const props = defineProps({ project: Object, section: String, setup: Object, downloads: Boolean });
+const props = defineProps({ project: Object, section: String, setup: Object, downloads: Boolean, canPublish: Boolean });
+const publishing = ref(false);
 
-const sectionTitles = { overview: 'Overview', setup: 'Project setup', github: 'GitHub & Pages', published: 'Published documents', computers: 'Computers & tokens' };
+const sectionTitles = { overview: 'Overview', setup: 'Project setup', github: 'GitHub & Pages', published: 'Artifacts', computers: 'Computers & tokens' };
 const kindTitles = { structure: 'Project structure', tool: 'Tools', package_set: 'Package sets', skill_set: 'Skill sets', setting: 'Settings' };
 const piecePaths = { structure: 'structures', package_set: 'package-sets', skill_set: 'skill-sets' };
 const pieceGroups = computed(() => Object.keys(kindTitles)
@@ -124,7 +132,7 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
             </PageHeader>
 
             <UiCallout v-if="downloadError" variant="danger" heading="Download">{{ downloadError }}</UiCallout>
-            <UiCallout v-else-if="justCreated && section === 'overview'" variant="success" heading="Your project is downloading">
+            <UiCallout v-else-if="justCreated && section === 'overview'" variant="success" heading="Project download">
                 <p class="text-sm">
                     Unzip <span class="font-mono text-xs">{{ project.slug }}.zip</span> and open the folder in RStudio, Positron, VS Code, or Stata.
                     If the download doesn't start, use Download zip.
@@ -217,7 +225,7 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                         <dt :class="termClass">Published</dt>
                         <dd class="text-sm text-slate-700 dark:text-slate-300">
                             <Link :href="`/projects/${project.slug}/published`" class="hover:underline">
-                                {{ project.documents.length ? `${project.documents.length} ${project.documents.length === 1 ? 'document' : 'documents'}` : 'Nothing yet' }}
+                                {{ project.documents.length ? `${project.documents.length} ${project.documents.length === 1 ? 'artifact' : 'artifacts'}` : 'Nothing yet' }}
                             </Link>
                         </dd>
                     </div>
@@ -231,7 +239,7 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                 </details>
             </UiPanel>
 
-            <UiPanel v-if="section === 'setup'" title="What the project is made of">
+            <UiPanel v-if="section === 'setup'" title="Project components">
                 <template #header>
                     <UiBadge v-if="setup.customized">Customized</UiBadge>
                 </template>
@@ -317,19 +325,41 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                 <p v-else class="text-sm text-slate-600 dark:text-slate-400">This project was set up for a computer, so it has no repository here.</p>
             </UiPanel>
 
-            <UiPanel v-if="section === 'published'" title="Published documents">
-                <template #header>
-                    <Link v-if="project.documents.length" href="/published" class="text-sm text-slate-600 hover:text-slate-900 hover:underline dark:text-slate-400 dark:hover:text-slate-100">Manage</Link>
+            <UiSection v-if="section === 'published'" title="Published artifacts" description="Figures, tables, models, data, and documents published from this project. Each has a reader page and a version history.">
+                <template #actions>
+                    <UiButton v-if="canPublish" :variant="publishing ? 'outline' : 'primary'" @click="publishing = !publishing">{{ publishing ? 'Close' : 'Publish an artifact' }}</UiButton>
                 </template>
-                <ul v-if="project.documents.length" class="flex flex-col divide-y divide-slate-200 text-sm dark:divide-slate-700/70">
-                    <li v-for="doc in project.documents" :key="doc.id" class="flex flex-wrap items-center gap-x-3 gap-y-1 py-2 first:pt-0 last:pb-0">
-                        <a :href="doc.url" class="font-medium text-slate-900 hover:underline dark:text-white">{{ doc.title }}</a>
-                        <UiBadge v-if="!doc.readable">Private link</UiBadge>
-                        <span class="flex-1 text-xs text-slate-500">{{ doc.versions || 1 }} {{ doc.versions > 1 ? 'versions' : 'version' }} · updated {{ date(doc.updated_at) }}</span>
-                    </li>
-                </ul>
-                <p v-else class="text-sm text-slate-600 dark:text-slate-400">Documents you publish from this project appear here.</p>
-            </UiPanel>
+                <ArtifactUpload v-if="canPublish && publishing" :project-id="project.id" />
+                <UiTable v-if="project.documents.length" label="Published artifacts">
+                    <thead>
+                        <tr><th>Name</th><th class="max-sm:hidden">Kind</th><th class="max-xl:hidden">Sharing</th><th class="max-sm:hidden">Updated</th><th class="actions"><span class="sr-only">Actions</span></th></tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="doc in project.documents" :key="doc.id">
+                            <td class="strong max-w-80 truncate">
+                                <span class="flex items-center gap-2.5">
+                                    <component :is="artifactKind(doc.kind).icon" class="size-4 shrink-0 text-slate-400" aria-hidden="true" />
+                                    <Link :href="`/artifacts/${doc.id}`" class="truncate hover:underline hover:underline-offset-4">{{ doc.title }}</Link>
+                                </span>
+                            </td>
+                            <td class="max-sm:hidden">{{ artifactKind(doc.kind).label }}</td>
+                            <td class="max-xl:hidden"><span class="inline-flex items-center gap-1.5">{{ doc.readable ? 'Public' : 'Anyone with the link' }}<LockClosedIcon v-if="doc.password_protected" class="size-3.5" aria-label="Password protected" /></span></td>
+
+                            <td class="max-sm:hidden">{{ date(doc.updated_at) }}</td>
+                            <td class="actions">
+                                <div class="flex justify-end gap-1">
+                                    <UiButton :href="doc.url" external variant="ghost" size="sm" square :aria-label="`View ${doc.title}`" title="View"><ArrowTopRightOnSquareIcon aria-hidden="true" /></UiButton>
+                                    <UiButton :href="`/artifacts/${doc.id}`" variant="outline" size="sm">Manage</UiButton>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </UiTable>
+                <EmptyState v-else :icon="GlobeAltIcon" title="No published artifacts" compact>
+                    Publish a figure, table, model, data file, or rendered report to give it a reader page and version history.
+                </EmptyState>
+                <p v-if="!canPublish" class="text-sm text-slate-500 dark:text-slate-400">Hosting artifacts on Framework Cloud is part of a paid plan. You can also publish to your own bucket or GitHub Pages.</p>
+            </UiSection>
 
             <UiPanel v-if="section === 'computers'" title="Computers & tokens" description="A project token lets a computer set this project up and pull its settings.">
                 <template #header>
@@ -358,7 +388,7 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                 </ul>
             </UiPanel>
 
-            <UiPanel v-if="section === 'setup'" title="Delete this project" description="Copies on computers and on GitHub are not affected, but the project's tokens stop working.">
+            <UiPanel v-if="section === 'setup'" title="Project deletion" description="Copies on computers and on GitHub are not affected, but the project's tokens stop working.">
                 <div><UiButton variant="danger" @click="destroy">Delete project</UiButton></div>
             </UiPanel>
         </div>

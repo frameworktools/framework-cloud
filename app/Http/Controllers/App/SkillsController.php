@@ -104,7 +104,8 @@ class SkillsController extends Controller
             'skill' => Library::skill($skill->load('owner'), $request->user()) + [
                 'versions' => $skill->versions()->get(['id', 'version', 'notes', 'created_at']),
             ],
-            'content' => $skill->latestVersion->content,
+            'content' => $skill->latestVersion->contentFor($request->query('language', $skill->language[0] ?? 'r')),
+            'variant' => $request->query('language', $skill->language[0] ?? 'r'),
         ]);
     }
 
@@ -115,11 +116,17 @@ class SkillsController extends Controller
         $data = $this->validated($request, $skill);
 
         DB::transaction(function () use ($skill, $data) {
+            $skill = Skill::whereKey($skill->id)->lockForUpdate()->firstOrFail();
+            if (isset($data['expected_version']) && $skill->latestVersion->version !== $data['expected_version']) {
+                throw ValidationException::withMessages(['content' => 'The skill changed. Reload before saving.']);
+            }
             // A skill with text per language keeps its languages and variants
             $variants = $skill->latestVersion->variants;
             $skill->update(['name' => $data['title'], 'description' => $data['description'], 'summary' => $data['summary'], 'visibility' => $data['visibility']]
                 + ($variants ? [] : ['language' => $data['language']]));
-            $skill->publishVersion(['content' => $data['content'], 'variants' => $variants, 'files' => $skill->latestVersion->files ?? [], 'notes' => $data['notes']]);
+            $content = $data['content'];
+            if ($data['variant'] !== 'r') { $variants = $variants ?? []; $variants[$data['variant']] = $content; $content = $skill->latestVersion->content; }
+            $skill->publishVersion(['content' => $content, 'variants' => $variants, 'files' => $skill->latestVersion->files ?? [], 'bundle_files' => $skill->latestVersion->bundle_files, 'base_version_id' => $skill->latestVersion->id, 'notes' => $data['notes']]);
         });
 
         return back()->with('status', 'skill-saved');
@@ -149,10 +156,27 @@ class SkillsController extends Controller
             'content' => $source->content,
             'variants' => $source->variants,
             'files' => $source->files ?? [],
+            'bundle_files' => $source->bundle_files,
             'notes' => "Forked from {$skill->handle} v{$source->version}",
         ]);
 
         return to_route('skills.edit', $copy)->with('status', 'skill-forked');
+    }
+
+    public function restore(Request $request, Skill $skill): RedirectResponse
+    {
+        abort_unless($skill->isEditableBy($request->user()), 403);
+        $data = $request->validate(['version' => ['required', 'integer', 'min:1'], 'expected_version' => ['required', 'integer', 'min:1']]);
+        DB::transaction(function () use ($skill, $data) {
+            $skill = Skill::whereKey($skill->id)->lockForUpdate()->firstOrFail();
+            $head = $skill->latestVersion;
+            if ($head->version !== $data['expected_version']) throw ValidationException::withMessages(['content' => 'The skill changed. Reload before restoring.']);
+            $source = $skill->versions()->where('version', $data['version'])->firstOrFail();
+            $skill->publishVersion($source->only(['content', 'variants', 'files', 'bundle_files']) + [
+                'base_version_id' => $head->id, 'notes' => 'Restored version '.$source->version,
+            ]);
+        });
+        return back()->with('status', 'skill-saved');
     }
 
     public function destroy(Request $request, Skill $skill): RedirectResponse
@@ -177,11 +201,13 @@ class SkillsController extends Controller
             'visibility' => ['required', Rule::in(Skill::VISIBILITIES)],
             'language' => ['nullable', Rule::in(['r', 'python'])],
             'notes' => ['nullable', 'string', 'max:500'],
+            'expected_version' => ['sometimes', 'integer', 'min:1'],
+            'variant' => ['sometimes', Rule::in(['r', 'python', 'stata'])],
         ]);
 
         ['key' => $key, 'description' => $description, 'title' => $title, 'summary' => $summary] = Skill::frontmatter($data['content'], 'content');
 
-        if ($skill && $key !== $skill->key) {
+        if ($skill && $key !== Skill::frontmatter($skill->latestVersion->contentFor($data['variant'] ?? ($skill->language[0] ?? 'r')), 'content')['key']) {
             throw ValidationException::withMessages(['content' => "This skill is named {$skill->key}. Fork it to make one with a new name."]);
         }
 
@@ -194,6 +220,8 @@ class SkillsController extends Controller
             'visibility' => $data['visibility'],
             'language' => filled($data['language'] ?? null) ? [$data['language']] : null,
             'notes' => $data['notes'] ?? null,
+            'expected_version' => $data['expected_version'] ?? null,
+            'variant' => $data['variant'] ?? ($skill?->language[0] ?? 'r'),
         ];
     }
 

@@ -52,7 +52,7 @@ class PublishTest extends TestCase
         $this->get('/d/'.$document->key)
             ->assertOk()
             ->assertSee($document->title)
-            ->assertSee('published with Framework Cloud');
+            ->assertSee('Published with Framework Cloud');
 
         $this->get('/d/'.$document->key.'/raw')
             ->assertOk()
@@ -98,13 +98,13 @@ class PublishTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_non_html_uploads_are_rejected(): void
+    public function test_binary_files_can_be_published_as_artifacts(): void
     {
         Storage::fake('local');
         $project = Project::factory()->create();
 
         $this->withToken($project->issuePullToken())
             ->post('/api/v1/documents', ['file' => UploadedFile::fake()->create('data.zip', 10, 'application/zip')], ['Accept' => 'application/json'])
-            ->assertStatus(422);
+            ->assertCreated();
     }
 }

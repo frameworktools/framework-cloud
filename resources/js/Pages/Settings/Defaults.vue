@@ -69,9 +69,9 @@ const editorOptions = [
     { value: 'vscode', label: 'Positron / VS Code', description: 'Adds a .code-workspace file.' },
 ];
 const hooks = [
-    { key: 'data_security', label: 'Block secrets', description: 'Stops a commit that looks like it contains passwords, keys, or other secrets.' },
-    { key: 'check_sensitive_dirs', label: 'Warn about private folders', description: "Warns when a private folder isn't in .gitignore. The commit still goes ahead." },
-    { key: 'check_notebook_outputs', label: 'Block notebook outputs', description: 'Stops a commit of a Jupyter notebook that still has outputs, which can contain data.' },
+    { key: 'data_security', label: 'Secret detection', description: 'Stops a commit that looks like it contains passwords, keys, or other secrets.' },
+    { key: 'check_sensitive_dirs', label: 'Private folder warnings', description: "Warns when a private folder isn't in .gitignore. The commit still goes ahead." },
+    { key: 'check_notebook_outputs', label: 'Notebook output checks', description: 'Stops a commit of a Jupyter notebook that still has outputs, which can contain data.' },
 ];
 
 const form = useForm({
@@ -200,7 +200,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
             <template #actions>
                 <Link href="/welcome" class="text-sm text-slate-500 hover:text-slate-900 hover:underline dark:hover:text-white">Run guided setup</Link>
                 <Link href="/blueprints" class="ml-3 text-sm text-slate-500 hover:text-slate-900 hover:underline dark:hover:text-white">Edit blueprints</Link>
-                <a href="/docs/projects-and-blueprints#how-defaults-apply" class="ml-3 text-sm text-slate-500 hover:text-slate-900 hover:underline dark:hover:text-white">Documentation</a>
+                <a href="/docs/projects-and-blueprints#default-precedence" class="ml-3 text-sm text-slate-500 hover:text-slate-900 hover:underline dark:hover:text-white">Documentation</a>
             </template>
         </PageHeader>
         <PageHeader v-else :title="current.label" />
@@ -289,16 +289,16 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
             </section>
 
             <section v-else-if="section === 'git'" class="flex max-w-xl flex-col gap-5">
-                <UiSwitch v-model="form.use_git" label="Set up Git" description="Makes each new project a git repository." />
+                <UiSwitch v-model="form.use_git" label="Git initialization" description="Makes each new project a git repository." />
                 <p :class="note"><Link href="/settings/hooks" preserve-state :class="link">Data safety hooks</Link> can check each commit for secrets and private folders.</p>
             </section>
 
             <template v-else-if="section === 'agents'">
                 <section class="flex flex-col gap-3">
-                    <h2 :class="heading">Which coding agents do you use?</h2>
+                    <h2 :class="heading">Coding agents</h2>
                     <UiCheckboxCards v-model="agentChoices" legend="Coding agents" hide-legend :options="agentOptions" />
                     <details class="max-w-md text-sm text-slate-600 dark:text-slate-400">
-                        <summary class="cursor-pointer text-sky-700 hover:underline dark:text-sky-400">What each one adds</summary>
+                        <summary class="cursor-pointer text-sky-700 hover:underline dark:text-sky-400">Agent files</summary>
                         <ul class="mt-2 flex list-disc flex-col gap-1 pl-5">
                             <li>Every choice except None adds AGENTS.md, the project's instructions, and the skills below.</li>
                             <li>Claude Code: a CLAUDE.md that imports AGENTS.md, with skills in .claude/skills.</li>
@@ -335,7 +335,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                     @update:model-value="(on) => (form.hooks = { ...form.hooks, [hook.key]: on })"
                 />
                 <p :class="note">
-                    Which folders count as private comes from the project's blueprint. Every project, sensitive or not,
+                    The project’s blueprint defines its private folders. Every project, sensitive or not,
                     also warns before it uploads or publishes a file whose path contains "private".
                 </p>
             </section>
@@ -353,7 +353,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                     <h2 :class="heading">Stata</h2>
                     <p :class="note">Scripts only, with master.do running the do-files in order.</p>
                 </section>
-                <p :class="note">A project can hold notebooks in other formats too. <a href="/docs/projects-and-blueprints#notebook-workflows" :class="link">How notebooks are created and rendered</a></p>
+                <p :class="note">A project can hold notebooks in other formats too. <a href="/docs/projects-and-blueprints#notebook-workflows" :class="link">Notebook creation and rendering</a></p>
             </template>
 
             <section v-else-if="section === 'jupyter'" class="flex max-w-xl flex-col gap-5">
@@ -403,7 +403,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                             <SettingRow v-slot="{ id, labelledby, describedby }" label="Table of contents" description="A table of contents beside the document.">
                                 <UiToggle :id="id" v-model="form.quarto.html.toc" :aria-labelledby="labelledby" :aria-describedby="describedby" />
                             </SettingRow>
-                            <SettingRow v-if="form.quarto.html.toc" v-slot="{ id, describedby }" label="Depth" description="How many heading levels it lists.">
+                            <SettingRow v-if="form.quarto.html.toc" v-slot="{ id, describedby }" label="Depth" description="Number of heading levels.">
                                 <input :id="id" v-model.number="form.quarto.html.toc_depth" type="number" min="1" max="6" :aria-describedby="describedby" :class="rowNumber">
                             </SettingRow>
                         </SettingGroup>
@@ -416,7 +416,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                             </SettingRow>
                         </SettingGroup>
                         <SettingGroup title="File portability">
-                            <SettingRow more="The HTML file holds its images, styles, and scripts, so you can email it or upload it as one file. Files are larger. Off, the HTML needs the folder of supporting files rendered beside it." v-slot="{ id, labelledby, describedby }" label="Embed resources" description="Each HTML file opens on its own.">
+                            <SettingRow more="Includes images, styles, and scripts in one HTML file. Increases file size. When disabled, the supporting files folder must accompany the HTML." v-slot="{ id, labelledby, describedby }" label="Embed resources" description="Each HTML file opens on its own.">
                                 <UiToggle :id="id" v-model="form.quarto.html.embed_resources" :aria-labelledby="labelledby" :aria-describedby="describedby" />
                             </SettingRow>
                         </SettingGroup>
@@ -449,7 +449,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                             <SettingRow v-slot="{ id, labelledby, describedby }" label="Navigation controls" description="Arrows for moving between slides.">
                                 <UiToggle :id="id" v-model="form.quarto.revealjs.controls" :aria-labelledby="labelledby" :aria-describedby="describedby" />
                             </SettingRow>
-                            <SettingRow v-slot="{ id, labelledby, describedby }" label="Progress bar" description="A bar along the bottom that shows how far along the talk is.">
+                            <SettingRow v-slot="{ id, labelledby, describedby }" label="Progress bar" description="Presentation progress along the bottom of each slide.">
                                 <UiToggle :id="id" v-model="form.quarto.revealjs.progress" :aria-labelledby="labelledby" :aria-describedby="describedby" />
                             </SettingRow>
                         </SettingGroup>
@@ -457,12 +457,12 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                             <SettingRow v-slot="{ id, labelledby, describedby }" label="Incremental bullets" description="List items appear one at a time.">
                                 <UiToggle :id="id" v-model="form.quarto.revealjs.incremental" :aria-labelledby="labelledby" :aria-describedby="describedby" />
                             </SettingRow>
-                            <SettingRow v-slot="{ id, describedby }" label="Slide transition" description="How one slide gives way to the next.">
+                            <SettingRow v-slot="{ id, describedby }" label="Slide transition" description="Animation between slides.">
                                 <select :id="id" v-model="form.quarto.revealjs.transition" :aria-describedby="describedby" :class="rowSelect">
                                     <option v-for="t in quartoChoices.transition" :key="t" :value="t">{{ themeLabel(t) }}</option>
                                 </select>
                             </SettingRow>
-                            <SettingRow v-slot="{ id, describedby }" label="Background transition" description="How slide backgrounds change.">
+                            <SettingRow v-slot="{ id, describedby }" label="Background transition" description="Animation between slide backgrounds.">
                                 <select :id="id" v-model="form.quarto.revealjs.background_transition" :aria-describedby="describedby" :class="rowSelect">
                                     <option v-for="t in quartoChoices.transition" :key="t" :value="t">{{ themeLabel(t) }}</option>
                                 </select>
@@ -472,7 +472,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
 
                     <div v-show="quartoTab === 'setup'" id="quarto-panel-setup" role="tabpanel" aria-labelledby="quarto-tab-setup" tabindex="0" class="flex flex-col gap-6 focus-visible:outline-none">
                         <SettingGroup title="Project files">
-                            <SettingRow v-if="tool('quarto')" v-slot="{ id, labelledby, describedby }" label="Add Quarto to projects using Scripts only" description="Included automatically with the Quarto, R Markdown, and Jupyter workflows.">
+                            <SettingRow v-if="tool('quarto')" v-slot="{ id, labelledby, describedby }" label="Quarto for script projects" description="Included automatically with the Quarto, R Markdown, and Jupyter workflows.">
                                 <UiToggle :id="id" :model-value="!!form.tools.quarto" :aria-labelledby="labelledby" :aria-describedby="describedby" @update:model-value="(on) => setTool('quarto', on)" />
                             </SettingRow>
                         </SettingGroup>

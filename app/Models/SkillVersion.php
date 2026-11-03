@@ -11,7 +11,7 @@ class SkillVersion extends Model
 
     protected function casts(): array
     {
-        return ['files' => 'array', 'variants' => 'array'];
+        return ['files' => 'array', 'variants' => 'array', 'bundle_files' => 'array', 'client' => 'array'];
     }
 
     /**

@@ -1,9 +1,10 @@
 @props(['overlay' => false])
 
-{{-- Public site header. With overlay, the hero's background shows through it. --}}
+{{-- Public site header. Overlay keeps a 90% surface over the hero. --}}
 <header @class([
-    'relative border-b border-sky-900/10 text-slate-900 dark:border-white/10 dark:text-slate-50',
+    'relative text-slate-900 dark:text-slate-50',
     'bg-white dark:bg-slate-950' => ! $overlay,
+    'bg-white/90 dark:bg-slate-950/90' => $overlay,
 ])>
     <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3">
         <a href="{{ route('home') }}" class="font-semibold tracking-tight"><span class="inline-flex items-center gap-2"><img src="/images/logo.png" alt="" class="h-9 w-auto"><span>Framework <span class="text-sky-600 dark:text-sky-500">Cloud</span></span></span></a>

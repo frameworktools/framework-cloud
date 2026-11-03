@@ -1,4 +1,4 @@
-# Run it on your own computer
+# Local installation
 
 You can run Framework Cloud on your own computer for yourself alone. Your
 blueprints, settings, and published notebooks then stay on your machine.
@@ -6,7 +6,7 @@ blueprints, settings, and published notebooks then stay on your machine.
 Single-user mode removes the sign-in screen. Every visit from your own
 computer is signed in as you.
 
-## With Docker
+## Docker installation
 
 Download the Compose file and the settings template, and generate a key:
 
@@ -53,7 +53,7 @@ framework.cloud_login("<your token>", url="http://localhost:8080")
 
 Both packages allow plain `http` only for localhost addresses.
 
-### Why HTTP_BIND matters
+### Network binding
 
 Inside Docker, requests from your browser arrive from the Docker network's
 gateway instead of from 127.0.0.1. The container finds that address when it
@@ -68,7 +68,7 @@ Anything that reaches the port arrives from that same address, so
 single-user mode is on. Check it with `docker compose ps`, which should show
 `127.0.0.1:8080->80/tcp`.
 
-## Without Docker
+## Manual installation
 
 Install the app as in [Install without Docker](install-manual.md), then set
 these in `.env`:
@@ -90,7 +90,7 @@ php artisan serve
 `php artisan serve` listens only on 127.0.0.1, so the default networks are
 enough. Run `php artisan queue:work` in a second terminal for background jobs.
 
-## How single-user mode decides
+## Single-user authentication
 
 A request is signed in automatically only when all of these are true:
 

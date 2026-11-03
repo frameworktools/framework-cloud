@@ -74,16 +74,16 @@ const testMail = () => router.post('/admin/setup/mail/test', {}, { preserveScrol
 
 // Getting started for the admin's own account, while anything is left
 const stepCopy = {
-    profile: { title: 'Fill in your profile', text: 'Your name and affiliation go on the notebooks and reports you create.', href: '/account/profile' },
-    machine: { title: 'Connect your computer', text: 'Make a token, then run cloud_login() once in R or Python, or fw login in a terminal.', href: '/tokens' },
-    github: { title: 'Connect GitHub', text: 'Create projects as GitHub repositories, ready to clone.', href: '/account/github' },
-    project: { title: 'Create a project', text: 'Pick a blueprint and set it up on GitHub or your computer.', href: '/projects/create' },
+    profile: { title: 'Author profile', text: 'Your name and affiliation go on the notebooks and reports you create.', href: '/account/profile' },
+    machine: { title: 'Computer connection', text: 'Make a token, then run cloud_login() once in R or Python, or fw login in a terminal.', href: '/tokens' },
+    github: { title: 'GitHub connection', text: 'Create projects as GitHub repositories, ready to clone.', href: '/account/github' },
+    project: { title: 'New project', text: 'Pick a blueprint and set it up on GitHub or your computer.', href: '/projects/create' },
 };
 const remaining = computed(() => props.steps.filter((s) => !s.done).length);
 const needCopy = { mail: { label: 'email', anchor: 'mail' }, github: { label: 'GitHub', anchor: 'github' } };
 
 const items = [
-    ...(props.steps.some((s) => !s.done) ? [{ label: 'Get started', anchor: 'start' }] : []),
+    ...(props.steps.some((s) => !s.done) ? [{ label: 'Account setup', anchor: 'start' }] : []),
     { label: 'GitHub App', anchor: 'github' },
     { label: 'Storage', anchor: 'storage' },
     { label: 'Email', anchor: 'mail' },
@@ -101,7 +101,7 @@ const pill = (ready) => (ready
     <SectionLayout heading="Server administration" :items="items">
         <PageHeader
             title="Server setup"
-            description="This server's own credentials: the GitHub App, where published documents are stored, and how email is sent. Fill them in here, or with environment variables. A variable that is set always wins over a value saved here."
+            description="GitHub, artifact storage, and email credentials. Environment variables override saved values."
         />
 
         <div class="mt-8 flex flex-col gap-8">
@@ -111,7 +111,7 @@ const pill = (ready) => (ready
                 set up.
             </p>
 
-            <UiPanel v-if="remaining" id="start" title="Get started" :description="`${steps.length - remaining} of ${steps.length} done`" class="scroll-mt-6">
+            <UiPanel v-if="remaining" id="start" title="Account setup" :description="`${steps.length - remaining} of ${steps.length} done`" class="scroll-mt-6">
                 <ol class="-mx-1 flex flex-col divide-y divide-slate-200 dark:divide-slate-800">
                     <li v-for="(step, index) in steps" :key="step.key">
                         <Link :href="stepCopy[step.key].href" class="flex items-start gap-3 rounded-md px-1 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50">
@@ -125,14 +125,14 @@ const pill = (ready) => (ready
                 </ol>
             </UiPanel>
 
-            <UiCallout v-if="broken.length" variant="danger" heading="Some saved values can't be read">
+            <UiCallout v-if="broken.length" variant="danger" heading="Unreadable credentials">
                 <p>
                     APP_KEY has changed since they were saved: {{ broken.join(', ') }}. Enter them again, or put the old key in
                     <span class="font-mono">APP_PREVIOUS_KEYS</span>.
                 </p>
             </UiCallout>
 
-            <UiCallout v-if="mode === 'self'" heading="Back up your APP_KEY">
+            <UiCallout v-if="mode === 'self'" heading="Application key backup">
                 <p>
                     Values saved on this page are encrypted with this server's <span class="font-mono">APP_KEY</span>.
                     Keep a copy of it with your backups. If it changes or is lost, these values can't be read and must be entered again.
@@ -206,7 +206,7 @@ const pill = (ready) => (ready
             </UiPanel>
 
             <!-- Storage -->
-            <UiPanel id="storage" title="Published documents" class="scroll-mt-6">
+            <UiPanel id="storage" title="Artifact storage" class="scroll-mt-6">
                 <template #header>
                     <span class="rounded-full px-2 py-0.5 text-xs" :class="pill(usingBucket)">
                         {{ usingBucket ? `Bucket (${status.storage})` : "This server's disk" }}
@@ -214,15 +214,15 @@ const pill = (ready) => (ready
                 </template>
                 <div class="-mt-4 flex flex-col gap-2 text-sm text-slate-600 dark:text-slate-400">
                     <p>
-                        Where notebooks published with <span class="font-mono">framework::publish()</span> are stored. Without a bucket they go on this
-                        server's disk, which is fine for a small group. Any S3-compatible bucket works: Amazon S3, Cloudflare R2, MinIO, or Backblaze B2.
+                        Published artifacts use this server’s disk by default. For shared storage, use an S3-compatible bucket:
+                        Amazon S3, Cloudflare R2, MinIO, or Backblaze B2.
                     </p>
                     <p v-if="documentsDiskFromEnv">
                         <span class="font-mono">FW_DOCUMENTS_DISK</span> is set, so the environment picks the disk. A bucket saved here is used only if it names <span class="font-mono">bucket</span>.
                     </p>
                 </div>
 
-                <UiCallout v-if="flash === 'storage-tested'" variant="success" heading="The bucket works">A test file was written, read back, and deleted.</UiCallout>
+                <UiCallout v-if="flash === 'storage-tested'" variant="success" heading="Storage verified">A test file was written, read back, and deleted.</UiCallout>
                 <UiCallout v-if="errors.storage" variant="danger" heading="Storage">{{ errors.storage }}</UiCallout>
 
                 <form id="storage-form" class="flex flex-col gap-4" @submit.prevent="save('storage')">

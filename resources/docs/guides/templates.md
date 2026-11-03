@@ -9,7 +9,7 @@ description: 'Customizing notebook, script, and project templates'
 
 Framework uses templates to generate new notebooks, scripts, and project files. You can customize these templates to match your workflow.
 
-## Using the GUI
+## Graphical interface
 
 The easiest way to edit templates is through the GUI. Run `setup()` and click **Templates** in the sidebar:
 
@@ -45,7 +45,7 @@ Framework manages several template types:
 - **gitignore**: `.gitignore` files per project type
 - **ai_canonical**: AI assistant instruction files (CLAUDE.md, etc.)
 
-## Where Templates Live
+## Template locations
 
 Templates are stored in `~/.config/framework/templates/`. Framework copies default templates here on first use, then uses your customized versions.
 

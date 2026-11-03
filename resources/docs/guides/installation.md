@@ -3,7 +3,7 @@ id: installation
 title: Installation
 section: getting_started
 position: 1
-description: 'How to install Framework'
+description: 'Framework installation'
 ---
 ## Requirements
 
@@ -12,7 +12,7 @@ description: 'How to install Framework'
 
 Framework works well with [Positron](https://positron.posit.co/) (we built Framework with it!), [VS Code](https://code.visualstudio.com/), and [RStudio](https://posit.co/products/open-source/rstudio/)
 
-## Install from GitHub
+## GitHub installation
 
 Framework is currently only available via GitHub. Install using the `remotes` package:
 
@@ -21,7 +21,7 @@ install.packages("remotes")
 remotes::install_github("frameworktools/framework")
 ```
 
-## Verify Installation
+## Installation verification
 
 After installation, verify Framework is working:
 

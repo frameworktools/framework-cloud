@@ -5,9 +5,11 @@ namespace App\Http\Controllers\App;
 use App\Http\Controllers\Controller;
 use App\Jobs\ScaffoldOnGitHub;
 use App\Models\Blueprint;
+use App\Models\Collection;
 use App\Models\Document;
 use App\Models\Facet;
 use App\Models\Project;
+use App\Models\Report;
 use App\Models\Skill;
 use App\Services\GitHub\GitHubNotConnected;
 use App\Services\GitHub\Installations;
@@ -44,9 +46,36 @@ class ProjectsController extends Controller
             return redirect()->route('welcome');
         }
 
+        $projectIds = $request->user()->projects()->select('id');
+
         return Inertia::render('Projects', [
             'projects' => $request->user()->projects()->latest()->with('blueprintVersion.blueprint')->get()
                 ->map(fn (Project $p) => self::summary($p)),
+            'canPublish' => $request->user()->canPublish(),
+            'recentArtifacts' => Document::whereIn('project_id', $projectIds)->with(['project.user'])->withCount('versions')
+                ->latest('updated_at')->orderByDesc('id')->limit(6)->get()->map(fn (Document $document) => [
+                    ...$document->only('id', 'kind', 'visibility', 'updated_at'),
+                    'title' => $document->title ?? $document->slug, 'url' => $document->shareUrl(),
+                    'management_url' => '/artifacts/'.$document->id,
+                    'password_protected' => $document->isPasswordProtected(),
+                    'version_count' => max(1, $document->versions_count),
+                    'project' => $document->project->only('id', 'name', 'slug'),
+                ]),
+            'recentCollections' => Collection::whereIn('project_id', $projectIds)->with('project')->withCount('items')
+                ->latest('updated_at')->orderByDesc('id')->limit(4)->get()->map(fn ($collection) => [
+                    ...$collection->only('id', 'title', 'description', 'visibility', 'updated_at'),
+                    'url' => $collection->shareUrl(), 'management_url' => '/collections/'.$collection->id.'/edit',
+                    'password_protected' => filled($collection->password_hash), 'item_count' => $collection->items_count,
+                    'project' => $collection->project->only('id', 'name', 'slug'),
+                ]),
+            'recentReports' => Report::whereIn('project_id', $projectIds)->with('project')->withCount('versions')
+                ->latest('updated_at')->orderByDesc('id')->limit(4)->get()->map(fn ($report) => [
+                    ...$report->only('id', 'title', 'description', 'visibility', 'updated_at'),
+                    'url' => $report->versions_count ? $report->shareUrl() : null,
+                    'management_url' => '/reports/'.$report->id.'/edit',
+                    'password_protected' => filled($report->password_hash), 'version_count' => $report->versions_count,
+                    'project' => $report->project->only('id', 'name', 'slug'),
+                ]),
         ]);
     }
 
@@ -61,6 +90,7 @@ class ProjectsController extends Controller
         return Inertia::render('Projects/Show', [
             'section' => $section,
             'downloads' => ProjectZip::enabled(),
+            'canPublish' => $request->user()->canPublish(),
             'setup' => fn () => $section === 'setup' ? self::setup($project) : null,
             'project' => self::summary($project) + [
                 'tokens' => $project->tokens->sortByDesc('id')->values()
@@ -75,6 +105,11 @@ class ProjectsController extends Controller
                         'title' => $d->title ?? $d->slug,
                         'url' => $d->readableUrl() ?? $d->shareUrl(),
                         'readable' => $d->isReadable(),
+                        'kind' => $d->kind,
+                        'visibility' => $d->visibility,
+                        'views' => $d->views,
+                        'size_bytes' => $d->size_bytes,
+                        'password_protected' => (bool) $d->password_hash,
                         'versions' => $d->versions->count(),
                         'updated_at' => $d->updated_at,
                     ]),

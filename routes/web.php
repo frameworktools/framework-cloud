@@ -2,18 +2,22 @@
 
 use App\Http\Controllers\Admin\SetupController;
 use App\Http\Controllers\App\BlueprintsController;
+use App\Http\Controllers\App\CollectionsController;
 use App\Http\Controllers\App\DeviceController;
 use App\Http\Controllers\App\DocumentsController;
 use App\Http\Controllers\App\FacetsController;
 use App\Http\Controllers\App\GitHubLibraryController;
 use App\Http\Controllers\App\ProjectsController;
+use App\Http\Controllers\App\ReportsController;
 use App\Http\Controllers\App\SkillsController;
 use App\Http\Controllers\App\TokensController;
 use App\Http\Controllers\App\WelcomeController;
 use App\Http\Controllers\Auth\PasskeyPromptController;
+use App\Http\Controllers\CollectionViewController;
 use App\Http\Controllers\DocsController;
 use App\Http\Controllers\DocumentViewController;
 use App\Http\Controllers\GuideController;
+use App\Http\Controllers\ReportViewController;
 use App\Http\Controllers\Settings\AccountController;
 use App\Http\Controllers\Settings\AuthorController;
 use App\Http\Controllers\Settings\DefaultsController;
@@ -68,15 +72,29 @@ Route::view('privacy', 'legal.privacy')->name('privacy');
 // Published documents. Private links use the key; versions are kept until
 // their owner deletes them.
 Route::get('d/{key}', [DocumentViewController::class, 'show'])->name('documents.show');
+Route::post('d/{key}/unlock', [DocumentViewController::class, 'unlock'])->middleware('throttle:10,1')->name('documents.unlock');
+Route::get('d/{key}/download', [DocumentViewController::class, 'download'])->name('documents.download');
 Route::get('d/{key}/raw', [DocumentViewController::class, 'raw'])->name('documents.raw');
 Route::get('d/{key}/versions/{number}', [DocumentViewController::class, 'showVersion'])
     ->whereNumber('number')->name('documents.version');
 Route::get('d/{key}/versions/{number}/raw', [DocumentViewController::class, 'versionRaw'])
     ->whereNumber('number')->name('documents.version.raw');
+Route::get('d/{key}/versions/{number}/download', [DocumentViewController::class, 'versionDownload'])
+    ->whereNumber('number')->name('documents.version.download');
+Route::get('d/{key}/content/{number}/{access}/{path?}', [DocumentViewController::class, 'content'])
+    ->whereNumber('number')->where('path', '.*')->name('documents.content');
+Route::get('d/{key}/chart/{number}/{access}', [DocumentViewController::class, 'chart'])
+    ->whereNumber('number')->name('documents.chart');
 Route::get('d/{key}/versions/{number}/{path}', [DocumentViewController::class, 'versionAsset'])
     ->whereNumber('number')->where('path', '.*')->name('documents.version.asset');
 Route::get('d/{key}/{path}', [DocumentViewController::class, 'asset'])
     ->where('path', '.*')->name('documents.asset');
+
+Route::get('c/{key}', [CollectionViewController::class, 'show'])->name('collections.show');
+Route::post('c/{key}/unlock', [CollectionViewController::class, 'unlock'])->middleware('throttle:10,1')->name('collections.unlock');
+Route::get('r/{key}', [ReportViewController::class, 'show'])->name('reports.show');
+Route::get('r/{key}/versions/{number}', [ReportViewController::class, 'showVersion'])->whereNumber('number')->name('reports.version');
+Route::post('r/{key}/unlock', [ReportViewController::class, 'unlock'])->middleware('throttle:10,1')->name('reports.unlock');
 
 // Readable links for public documents: /@{handle}/{project}/{slug}
 Route::get('/@{handle}/{project}/{slug}', [DocumentViewController::class, 'readable'])
@@ -96,9 +114,28 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('welcome/skip', [WelcomeController::class, 'skip'])->name('welcome.skip');
     Route::get('projects', [ProjectsController::class, 'index'])->name('projects');
     Route::get('published', [DocumentsController::class, 'index'])->name('published');
+    Route::get('artifacts/{document}', [DocumentsController::class, 'show'])->whereNumber('document')->name('artifacts.show');
     Route::delete('published/{document}', [DocumentsController::class, 'destroy']);
     Route::patch('published/{document}', [DocumentsController::class, 'update']);
+    Route::post('published/{document}/merge', [DocumentsController::class, 'merge']);
     Route::delete('published/{document}/versions/{number}', [DocumentsController::class, 'destroyVersion'])->whereNumber('number');
+    Route::post('projects/{project}/artifacts', [DocumentsController::class, 'store'])->whereNumber('project')->middleware('throttle:20,1');
+    Route::get('projects/{project}/collections', [CollectionsController::class, 'index'])->whereNumber('project')->name('collections.index');
+    Route::post('projects/{project}/collections', [CollectionsController::class, 'store'])->whereNumber('project')->name('collections.store');
+    Route::get('collections/{collection}/edit', [CollectionsController::class, 'edit'])->name('collections.edit');
+    Route::patch('collections/{collection}', [CollectionsController::class, 'update'])->name('collections.update');
+    Route::delete('collections/{collection}', [CollectionsController::class, 'destroy'])->name('collections.destroy');
+    Route::post('collections/{collection}/items', [CollectionsController::class, 'storeItem'])->name('collections.items.store');
+    Route::patch('collections/{collection}/items/{item}', [CollectionsController::class, 'updateItem'])->name('collections.items.update');
+    Route::delete('collections/{collection}/items/{item}', [CollectionsController::class, 'destroyItem'])->name('collections.items.destroy');
+    Route::put('collections/{collection}/order', [CollectionsController::class, 'reorder'])->name('collections.order');
+    Route::get('projects/{project}/reports', [ReportsController::class, 'index'])->whereNumber('project')->name('reports.index');
+    Route::post('projects/{project}/reports', [ReportsController::class, 'store'])->whereNumber('project')->name('reports.store');
+    Route::get('reports/{report}/edit', [ReportsController::class, 'edit'])->name('reports.edit');
+    Route::get('reports/{report}/preview', [ReportViewController::class, 'preview'])->name('reports.preview');
+    Route::patch('reports/{report}', [ReportsController::class, 'update'])->name('reports.update');
+    Route::post('reports/{report}/publish', [ReportsController::class, 'publish'])->name('reports.publish');
+    Route::delete('reports/{report}', [ReportsController::class, 'destroy'])->name('reports.destroy');
     Route::get('projects/create', [ProjectsController::class, 'create'])->name('projects.create');
     Route::post('projects', [ProjectsController::class, 'store']);
     Route::post('projects/preview', [ProjectsController::class, 'preview'])->name('projects.preview');
@@ -141,6 +178,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('blueprints/{blueprint}/preview', [BlueprintsController::class, 'previewBlueprint'])->middleware('throttle:120,1')->name('blueprints.preview-one');
     Route::post('blueprints/{blueprint}/default', [BlueprintsController::class, 'makeDefault'])->name('blueprints.default');
     Route::resource('blueprints', BlueprintsController::class);
+    Route::post('skills/{skill}/restore', [SkillsController::class, 'restore']);
     Route::resource('skills', SkillsController::class);
 
     Route::get('tokens', [TokensController::class, 'index'])->name('tokens');

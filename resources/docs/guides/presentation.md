@@ -19,7 +19,7 @@ my-presentation/
 
 Optional directories available in the GUI: `data/`, `functions/`, `outputs/`, `scripts/`
 
-## Creating a Presentation
+## Presentation setup
 
 ```r
 new_presentation("quarterly-report", "~/presentations/q4")
@@ -47,14 +47,14 @@ default:
 
 ## Workflow
 
-### 1. Set Up
+### 1. Project setup
 
 ```r
 library(framework)
 scaffold()
 ```
 
-### 2. Edit Presentation
+### 2. Presentation content
 
 Work directly in `presentation.qmd`:
 
@@ -76,7 +76,7 @@ sales_plot
 ```
 ````
 
-### 3. Render
+### 3. Rendering
 
 ```bash
 quarto render presentation.qmd
@@ -114,11 +114,11 @@ format: docx
 
 ## Best Practices
 
-### Keep It Focused
+### Presentation scope
 
 The presentation type is for single deliverables. For multi-document projects, use the standard **Project** type.
 
-### Use Functions
+### Reusable functions
 
 Even in minimal projects, extract reusable code by enabling the `functions/` directory:
 
@@ -131,7 +131,7 @@ create_revenue_chart <- function(data) {
 }
 ```
 
-### Cache Computations
+### Cached computations
 
 Speed up rendering:
 
@@ -142,7 +142,7 @@ summary_stats <- cache_remember("summary", {
 })
 ```
 
-## When to Use
+## Use cases
 
 **Good for:**
 - Conference talks

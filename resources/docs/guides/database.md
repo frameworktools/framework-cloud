@@ -11,14 +11,14 @@ Once your connections are defined (see the [Connections guide](/docs/connections
 
 ## Running Queries
 
-### Get Data
+### Query results
 
 ```r
 # Query and return results
 users <- db_query("SELECT * FROM users WHERE active = true", "analytics")
 ```
 
-### Execute Statements
+### SQL execution
 
 ```r
 # Execute without returning data

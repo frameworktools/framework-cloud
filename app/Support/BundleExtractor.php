@@ -46,7 +46,7 @@ class BundleExtractor
                 continue; // directory entry
             }
 
-            if (str_contains($name, '..') || str_starts_with($name, '/') || preg_match('/^[a-zA-Z]:/', $name)) {
+            if ($name === '.source.zip' || str_contains($name, '..') || str_contains($name, '\\') || str_contains($name, "\0") || str_starts_with($name, '/') || preg_match('/^[a-zA-Z]:/', $name)) {
                 $archive->close();
                 throw new RuntimeException("Unsafe path in bundle: {$name}");
             }
@@ -66,15 +66,19 @@ class BundleExtractor
                 $archive->close();
                 throw new RuntimeException("Could not read bundle entry: {$name}");
             }
-            Storage::disk($disk)->put($prefix.'/'.$name, $stream);
+            $written = Storage::disk($disk)->put($prefix.'/'.$name, $stream);
             if (is_resource($stream)) {
                 fclose($stream);
+            }
+            if (! $written) {
+                $archive->close();
+                throw new RuntimeException("Could not store bundle entry: {$name}");
             }
         }
 
         $archive->close();
 
-        return ['files' => count($entries), 'bytes' => $total];
+        return ['files' => count($entries), 'bytes' => $total, 'manifest' => array_map(fn ($name) => ['path' => $name, 'content_type' => self::contentType($name)], $entries)];
     }
 
     /**
@@ -98,6 +102,8 @@ class BundleExtractor
             'ttf' => 'font/ttf',
             'otf' => 'font/otf',
             'map' => 'application/json',
+            'csv' => 'text/csv; charset=utf-8',
+            'tsv' => 'text/tab-separated-values; charset=utf-8',
             'txt' => 'text/plain; charset=utf-8',
             'pdf' => 'application/pdf',
             default => 'application/octet-stream',

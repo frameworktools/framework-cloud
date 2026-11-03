@@ -5,7 +5,7 @@ section: getting_started
 position: 2
 description: 'Configure Framework defaults using the GUI'
 ---
-## Launch the Setup GUI
+## Setup interface
 
 Framework ships with a graphical user interface (GU) to help manage your settings and projects. This GUI is powered by a lightweight [plumber](https://www.rplumber.io/) server and [VueJS](https://vuejs.org) web application. 
 
@@ -36,7 +36,7 @@ When using the GUI, you can always access the global settings by clicking **New 
 
 Click **Save Changes** to persist your defaults.
 
-## Where Settings Are Stored
+## Settings storage
 
 Global default settings are stored in `~/.config/framework/`:
 

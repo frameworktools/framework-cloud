@@ -15,13 +15,13 @@ const send = () => form.post('/auth/magic-link');
 </script>
 
 <template>
-    <Head title="Create an account" />
+    <Head title="Account registration" />
 
     <AuthLayout
-        title="Create an account"
+        title="Account registration"
         :description="page.props.githubSignIn ? 'Sign up with GitHub or your email address. There is no password to set.' : 'Sign up with your email address. There is no password to set.'"
     >
-        <UiCallout v-if="sent" variant="success" heading="Check your email">
+        <UiCallout v-if="sent" variant="success" heading="Confirmation email">
             Your confirmation link is on its way. It works once and expires in 15
             minutes. Once you're in, add a passkey in Settings for one-touch sign-in.
         </UiCallout>
@@ -39,7 +39,7 @@ const send = () => form.post('/auth/magic-link');
             <UiInput v-model="form.name" label="Name" placeholder="Full name" autocomplete="name" required autofocus :error="form.errors.name" />
             <UiInput
                 v-model="form.email" label="Email address" type="email" placeholder="you@example.com" autocomplete="email" required
-                description="Use the email address you prefer for signing in. Once you are signed in, you can choose a different public email address in Settings > Profile."
+                description="Sign-in address. Your author profile can use a different public email."
                 :error="form.errors.email"
             />
             <UiButton type="submit" class="w-full" :disabled="form.processing">Send me a sign-in link</UiButton>

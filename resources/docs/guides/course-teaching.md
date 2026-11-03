@@ -24,7 +24,7 @@ my-course/
 
 Optional directories available in the GUI: `functions/`, `modules/`, `scripts/`
 
-## Creating Course Content
+## Course content
 
 ### Slides
 
@@ -97,7 +97,7 @@ slides/
 
 ## Teaching Workflow
 
-### 1. Prepare Lectures
+### 1. Lecture preparation
 
 Create slides in `slides/`:
 
@@ -105,7 +105,7 @@ Create slides in `slides/`:
 make_notebook("data-wrangling", subdir = "slides/week-03")
 ```
 
-### 2. Create Assignments
+### 2. Assignments
 
 Build assignments with instructions:
 
@@ -115,7 +115,7 @@ assignments/assignment-01/
 └── solution.qmd      # Answer key
 ```
 
-### 3. Render Materials
+### 3. Rendering
 
 Slides render to `rendered/slides/`, assignments to `rendered/assignments/`.
 

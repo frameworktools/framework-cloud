@@ -4,7 +4,7 @@ GitHub integration lets you sign in with GitHub and create projects as GitHub
 repositories. It is free on Framework Public Cloud. On your own server, an admin sets
 it up first (see [Server setup](server-setup.md#github)).
 
-## Connect your account
+## Account connection
 
 1. Open **Account > GitHub** and connect your GitHub account. If you signed
    up with GitHub, it is already connected.
@@ -13,10 +13,10 @@ it up first (see [Server setup](server-setup.md#github)).
    reach. The app can only work in repositories it creates or that you give
    it.
 
-## Create a project on GitHub
+## GitHub projects
 
 1. Open **Projects > New project** and choose a blueprint.
-2. Under **Where to set it up**, choose **On GitHub**.
+2. Under **Delivery method**, choose **On GitHub**.
 3. Pick the account or organization, name the repository, and choose whether
    it is private. Blueprints for restricted data require a private
    repository.
@@ -31,7 +31,7 @@ the repository and start working:
 git clone https://github.com/you/your-project.git
 ```
 
-## Disconnecting
+## Disconnection
 
 **Account > GitHub > Disconnect** removes the connection. Your repositories
 stay on GitHub. To remove the app's access completely, uninstall it in your

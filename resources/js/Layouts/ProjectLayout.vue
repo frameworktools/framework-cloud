@@ -9,7 +9,9 @@ const items = [
     { label: 'Overview', href: base, exact: true },
     { label: 'Project setup', href: `${base}/setup` },
     { label: 'GitHub & Pages', href: `${base}/github` },
-    { label: 'Published documents', href: `${base}/published` },
+    { label: 'Artifacts', href: `${base}/published` },
+    { label: 'Collections', href: `/projects/${props.project.id}/collections` },
+    { label: 'Reports', href: `/projects/${props.project.id}/reports` },
     { label: 'Computers & tokens', href: `${base}/computers` },
 ];
 </script>

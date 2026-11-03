@@ -76,7 +76,7 @@ updated <- cache_remember("my_analysis", {
 ```
 
 
-## Store a Value
+## Cache storage
 
 ```r
 # Manually cache a value
@@ -86,21 +86,21 @@ cache("processed_results", my_data)
 cache("temp_results", my_data, expire_after = 24)
 ```
 
-## Retrieve a Value
+## Cache retrieval
 
 ```r
 # Get cached value (returns NULL if not found or expired)
 cached <- cache_get("processed_results")
 ```
 
-## Delete a Cached Item
+## Cache deletion
 
 ```r
 # Remove a specific cache
 cache_forget("my_analysis")
 ```
 
-## List All Cached Items
+## Cache inventory
 
 ```r
 cache_list()
@@ -108,7 +108,7 @@ cache_list()
 ```
 
 
-## Clear All Cached Items
+## Cache cleanup
 
 ```r
 # Remove all cached items
@@ -117,7 +117,7 @@ cache_flush()
 
 ## Best Practices
 
-### 1. Use Descriptive Names
+### 1. Cache names
 
 ```r
 # Good
@@ -127,7 +127,7 @@ cache_remember("sales_2024_by_region", ...)
 cache_remember("data1", ...)
 ```
 
-### 2. Cache at the Right Level
+### 2. Cache scope
 
 Cache expensive operations, not simple ones:
 
@@ -141,7 +141,7 @@ results <- cache_remember("quarterly_report", {
 # x <- cache_remember("add", { 1 + 1 })
 ```
 
-### 3. Use Expiration for Live Data
+### 3. Live data expiration
 
 ```r
 # Good: External data should expire

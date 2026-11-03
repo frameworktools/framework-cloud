@@ -66,7 +66,7 @@ const date = (value) => new Date(value).toLocaleDateString();
 
             <div class="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_15rem]">
                 <section class="flex flex-col gap-4">
-                    <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Pieces, in the order they apply</h2>
+                    <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Component order</h2>
                     <ol class="flex flex-col gap-3">
                         <li v-for="(fragment, index) in fragments" :key="fragment.id">
                             <UiCard>

@@ -41,7 +41,7 @@ its folders and files, packages, agent skills, tools, and settings, for R,
 Python, or Stata. The preview is resolved the same way a new project is,
 with the values in the form, including changes you haven't saved.
 
-#### How defaults apply
+#### Default precedence
 
 Every way of creating a project resolves it the same way: the New project
 page, R's and Python's `new()`, and `fw new`. When you're signed in, R,
@@ -56,11 +56,11 @@ workflow, it uses its own and says so.
 
 Settings combine in one order, highest first:
 
-1. **What the blueprint requires**, such as Quarto for the Course blueprint.
+1. **Blueprint requirements**, such as Quarto for the Course blueprint.
    Nothing overrides a requirement. Choosing something that conflicts with
    one, such as turning Quarto off in a course, is refused before the
    project is created.
-2. **What you choose for this project.**
+2. **Project choices.**
 3. **Your defaults.** Only the ones you changed from Framework's own count,
    so a blueprint's values show through everywhere else.
 4. **The blueprint's own values.**
@@ -122,14 +122,14 @@ choose by name.
 `save_notebook()` renders a notebook, Quarto or Jupyter, with Quarto, into
 the project structure's render folder, such as `outputs/notebooks/`. It
 renders the outputs saved in the notebook, so run the notebook first.
-Notebook outputs can contain data. The **Block notebook outputs** data
+Notebook outputs can contain data. The **Notebook output checks** data
 safety hook stops a commit until they're cleared.
 
 The project's `_quarto.yml` at the root holds the shared HTML and slide
 settings. A folder that renders differently, such as a course's slides, has
 its own `_metadata.yml`.
 
-#### What scaffold() does
+#### Scaffold behavior
 
 `scaffold()` runs at the top of every notebook and script:
 
@@ -141,12 +141,12 @@ its own `_metadata.yml`.
 
 #### Guided setup
 
-New accounts start with six questions: language, typical project, workflow,
+Account setup covers language, project structure, workflow,
 editors, Git, and AI agents. The answers become your defaults, and a summary
 shows what new projects will include before you save. Run it again from
 **Project defaults > Blueprint > Run guided setup**.
 
-### Borrowing and remixing
+### Forks and customization
 
 To start from someone else's blueprint, structure, or set, click **Copy and
 edit**. You get your own copy, and you can change anything in it. Saving
@@ -216,9 +216,12 @@ The project token also lets that project publish notebooks. It is saved in
 the project's `.env` file, which Git ignores, together with the server's
 address.
 
-## What Framework Cloud keeps
+## Cloud storage
 
-Framework Cloud keeps project settings, blueprints, and templates. It never
-receives your data or your analysis code. Connection details for databases
-and storage refer to environment variables on your computer, such as
-`env("DB_PASSWORD")`. Their values are never sent.
+Framework Cloud stores project settings, blueprints, and templates. Project
+setup leaves analysis files on your computer. Publishing uploads the selected
+artifacts and their supporting files. These can include data and code.
+
+Database and storage credentials use local environment references, such as
+`env("DB_PASSWORD")`. Settings sync preserves the reference. Credential values
+remain local.

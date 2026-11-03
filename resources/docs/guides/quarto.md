@@ -3,7 +3,7 @@ id: quarto
 title: Quarto Integration
 section: features
 position: 7
-description: 'How Framework integrates with Quarto for notebooks and presentations'
+description: 'Quarto integration for notebooks and presentations'
 ---
 ## Overview
 
@@ -13,13 +13,13 @@ Framework thoughtfully integrates with [Quarto](https://quarto.org), the open-so
 
 A key design principle in Framework is the separation of source files from rendered output. When you create a notebook or presentation, the `.qmd` source stays in its directory while rendered HTML/PDF output goes to a dedicated render directory.
 
-**Why separate source from output?**
+**Source and output separation**
 - Keep your working directories clean
 - Rendered files are typically gitignored (they're regenerated)
 - Easy to find rendered output in a consistent location
 - Multiple formats can coexist without clutter
 
-### How It Works
+### Rendering workflow
 
 When you enable notebooks in a project, Framework creates both directories:
 
@@ -46,7 +46,7 @@ format:
 
 Framework generates `_quarto.yml` files with sensible defaults. These files are **yours to customize**. Framework only creates them once and won't overwrite your changes.
 
-### Using the GUI
+### Graphical interface
 
 Configure Quarto defaults through the GUI. Run `setup()` and navigate to **Settings** → **Quarto**:
 

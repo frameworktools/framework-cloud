@@ -39,6 +39,11 @@ return [
 
     'documents_disk' => env('FW_DOCUMENTS_DISK', 'local'),
 
+    // New artifacts are streamed through the application so passwords apply
+    // to originals, previews, and assets. This disk must have no public URL
+    // or public bucket access. Use a private shared disk for multiple app nodes.
+    'artifacts_disk' => env('FW_ARTIFACTS_DISK', 'local'),
+
     /*
     | Public base URL for document content (the R2 custom domain, e.g.
     | https://files.framework.pub). When set, the /d/{key} wrapper iframes

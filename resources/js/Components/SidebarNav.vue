@@ -25,7 +25,7 @@ const linkClass = (active) => active
 <template>
     <nav class="flex flex-col gap-6">
         <div class="flex flex-col gap-0.5">
-            <Link href="/projects" class="rounded-md px-2 py-1.5 text-sm" :class="linkClass(projectsCurrent)">Projects</Link>
+            <Link href="/projects" class="rounded-md px-2 py-1.5 text-sm" :class="linkClass(projectsCurrent)">Your artifacts</Link>
             <Link
                 v-for="item in mainNav" :key="item.href" :href="item.href"
                 class="rounded-md px-2 py-1.5 text-sm" :class="linkClass(current(item))"

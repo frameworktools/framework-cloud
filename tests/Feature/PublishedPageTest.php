@@ -72,4 +72,34 @@ class PublishedPageTest extends TestCase
 
         $this->assertModelExists($document);
     }
+
+    public function test_an_artifact_has_its_own_page_outside_its_project(): void
+    {
+        Storage::fake('local');
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $project = Project::factory()->for($user)->create(['name' => 'Pilot']);
+        $document = $this->publish($project);
+        $other = $this->publish($project, 'second.html');
+        $collection = \App\Models\Collection::create(['project_id' => $project->id, 'title' => 'Review set', 'slug' => 'review', 'key' => 'k'.str_repeat('a', 23), 'visibility' => 'private']);
+        $collection->items()->create(['document_id' => $document->id, 'position' => 0]);
+
+        $this->actingAs($user)->get("/artifacts/{$document->id}")->assertInertia(fn (Assert $page) => $page
+            ->component('Artifacts/Show')
+            ->where('artifact.id', $document->id)->where('project.name', 'Pilot')
+            ->has('versions', 1)->where('usedIn.0.title', 'Review set')
+            ->has('mergeSources', 1)->where('mergeSources.0.id', $other->id)
+            ->missing('artifact.password_hash'));
+
+        $this->actingAs(User::factory()->create())->get("/artifacts/{$document->id}")->assertNotFound();
+    }
+
+    public function test_taking_down_from_the_artifact_page_returns_to_the_list(): void
+    {
+        Storage::fake('local');
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $document = $this->publish(Project::factory()->for($user)->create());
+
+        $this->actingAs($user)->delete("/published/{$document->id}?then=list")->assertRedirect(route('published'));
+        $this->assertModelMissing($document);
+    }
 }

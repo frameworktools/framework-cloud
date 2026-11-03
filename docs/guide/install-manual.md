@@ -1,4 +1,4 @@
-# Install without Docker
+# Manual installation
 
 Use this setup on a server where you already run PHP applications, or with a
 service such as Laravel Forge.
@@ -13,7 +13,7 @@ service such as Laravel Forge.
 - A web server with HTTPS, such as Caddy or nginx with PHP-FPM
 - A process manager for the queue worker, such as Supervisor or systemd
 
-## Install
+## Installation
 
 ```sh
 git clone https://github.com/frameworktools/framework-cloud.git
@@ -44,7 +44,7 @@ php artisan config:cache
 
 Point the web server's document root at the `public` folder.
 
-## Run the queue worker
+## Queue worker
 
 Background jobs, such as creating GitHub repositories and sending email, run
 in a queue worker. Keep this command running with your process manager:
@@ -67,7 +67,7 @@ docker run -d --name framework-scaffolder --restart unless-stopped \
 Then set `SCAFFOLDER_URL=http://127.0.0.1:8100` and the same
 `SCAFFOLDER_TOKEN` in `.env`. Without them, the download choice is hidden.
 
-## Sign in
+## Sign-in
 
 Print a sign-in link on the server:
 

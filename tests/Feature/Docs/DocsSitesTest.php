@@ -49,8 +49,8 @@ class DocsSitesTest extends DocsTestCase
 
     public function test_products_not_imported_yet_say_so(): void
     {
-        $this->docs('py')->assertOk()->assertSee('Documentation is not published yet');
-        $this->docs('cli')->assertOk()->assertSee('Documentation is not published yet');
+        $this->docs('py')->assertOk()->assertSee('Documentation unavailable');
+        $this->docs('cli')->assertOk()->assertSee('Documentation unavailable');
         $this->docs('cli', '/guides/install')->assertNotFound();
         $this->docs('cli', '/reference')->assertNotFound();
     }

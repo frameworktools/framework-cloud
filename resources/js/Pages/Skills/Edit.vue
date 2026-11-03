@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { router, useForm, usePage } from '@inertiajs/vue3';
 import SectionLayout from '@/Layouts/SectionLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
+import UiTable from '@/Components/UiTable.vue';
 import UiPanel from '@/Components/UiPanel.vue';
 import GitHubMark from '@/Components/GitHubMark.vue';
 import UiButton from '@/Components/UiButton.vue';
@@ -13,7 +14,7 @@ import UiSelect from '@/Components/UiSelect.vue';
 import UiTextarea from '@/Components/UiTextarea.vue';
 import { visibilityOptions } from '@/library.js';
 
-const props = defineProps({ skill: Object, content: String });
+const props = defineProps({ skill: Object, content: String, variant: String });
 
 const page = usePage();
 const saved = computed(() => ['skill-saved', 'skill-forked'].includes(page.props.flash.status));
@@ -25,6 +26,8 @@ const form = useForm({
     // One language, or empty for any
     language: props.skill?.language?.length === 1 ? props.skill.language[0] : '',
     notes: '',
+    expected_version: props.skill?.version,
+    variant: props.variant ?? 'r',
 });
 const languageOptions = [
     { value: '', label: 'Any language' },
@@ -36,10 +39,22 @@ const canPublish = computed(() => !!props.skill && !!page.props.githubSignIn);
 const items = computed(() => [
     { label: 'SKILL.md', anchor: 'content' },
     ...(!readOnly.value ? [{ label: 'Details', anchor: 'details' }] : []),
-    ...(canPublish.value ? [{ label: 'Publish to GitHub', anchor: 'publish' }] : []),
+    ...(canPublish.value ? [{ label: 'GitHub publishing', anchor: 'publish' }] : []),
 ]);
 
-const save = () => (props.skill ? form.put(`/skills/${props.skill.id}`, { preserveScroll: true }) : form.post('/skills'));
+const save = () => (props.skill ? form.put(`/skills/${props.skill.id}`, { preserveScroll: true, onSuccess: () => { form.expected_version = props.skill.version; } }) : form.post('/skills'));
+const restore = (version) => {
+    if (confirm(`Restore version ${version} as a new version?`)) {
+        router.post(`/skills/${props.skill.id}/restore`, { version, expected_version: props.skill.version }, {
+            preserveScroll: true,
+            onSuccess: () => {
+                form.content = props.content;
+                form.expected_version = props.skill.version;
+                form.notes = '';
+            },
+        });
+    }
+};
 const fork = () => router.post(`/skills/${props.skill.id}/fork`);
 const destroy = () => {
     if (confirm(`Delete ${props.skill.name}? Skill sets and blueprints that already copied it keep their copy.`)) router.delete(`/skills/${props.skill.id}`);
@@ -53,25 +68,27 @@ const destroy = () => {
         <Link href="/skills" class="text-sm text-slate-500 hover:underline">Skills</Link>
         <PageHeader :title="skill ? skill.name : 'New skill'">
             <template #description>
-                The frontmatter <code class="font-mono">name</code> is the skill's official name, which assistants use. The
-                <code class="font-mono">description</code> tells an assistant when to load it, and
-                <code class="font-mono">metadata.title</code> is the readable name shown here.
+                <code class="font-mono">name</code> identifies the skill to assistants.
+                <code class="font-mono">description</code> tells assistants when to load the skill.
+                <code class="font-mono">metadata.title</code> sets its display name.
                 <template v-if="skill?.is_system"> Framework skills ship with the R package, so projects use the installed copy.</template>
             </template>
         </PageHeader>
+        <p v-if="skill?.parent" class="mt-3 text-sm text-slate-500">Forked from <Link :href="`/skills/${skill.parent.id}`" class="underline">{{ skill.parent.name }}</Link>, version {{ skill.parent.version }}.</p>
         <div v-if="skill" class="mt-2 font-mono text-xs text-slate-500">{{ skill.handle }} · v{{ skill.version }}</div>
 
         <UiCallout v-if="saved" variant="success" heading="Saved" class="mt-8">Version {{ skill?.version }} is saved.</UiCallout>
 
         <form id="skill-form" class="mt-8 flex flex-col gap-8" @submit.prevent="save">
             <UiPanel id="content" class="scroll-mt-6">
+                <UiSelect v-if="skill?.language?.length > 1" v-model="form.variant" label="Content language" :options="skill.language.map(value => ({ value, label: value === 'r' ? 'R' : value === 'python' ? 'Python' : 'Stata' }))" @update:model-value="value => router.get(`/skills/${skill.id}/edit`, { language: value })" />
                 <UiTextarea v-model="form.content" code :rows="24" label="SKILL.md" :error="form.errors.content" />
             </UiPanel>
 
             <UiPanel v-if="!readOnly" id="details" title="Details" class="scroll-mt-6">
                 <UiSelect v-if="!skill?.is_system && !(skill?.language?.length > 1)" v-model="form.language" label="Language" :options="languageOptions" :error="form.errors.language" />
-                <UiSelect v-model="form.visibility" label="Who can see it" :options="visibilityOptions" :error="form.errors.visibility" />
-                <UiInput v-if="skill" v-model="form.notes" label="What changed (optional)" :error="form.errors.notes" />
+                <UiSelect v-model="form.visibility" label="Visibility" :options="visibilityOptions" :error="form.errors.visibility" />
+                <UiInput v-if="skill" v-model="form.notes" label="Version notes (optional)" :error="form.errors.notes" />
                 <p v-if="skill?.source_url" class="text-sm text-slate-500">
                     Imported from <a :href="skill.source_url" class="underline">{{ skill.source_url }}</a>
                 </p>
@@ -85,6 +102,16 @@ const destroy = () => {
                 <GitHubPublish v-if="skill" :action="`/skills/${skill.id}/publish`" :path="`skills/${skill.key}/SKILL.md`" />
             </UiPanel>
         </form>
+
+        <UiPanel v-if="skill?.versions?.length" title="Version history" class="mt-8">
+            <UiTable label="Skill versions">
+                <thead><tr><th>Version</th><th>Notes</th><th class="actions"><span class="sr-only">Actions</span></th></tr></thead>
+                <tbody><tr v-for="version in [...skill.versions].reverse()" :key="version.id">
+                    <td class="font-mono">{{ version.version }}</td><td class="max-w-64 truncate">{{ version.notes || '—' }}</td>
+                    <td class="actions"><UiButton v-if="version.version !== skill.version && !readOnly" variant="ghost" size="sm" @click="restore(version.version)">Restore</UiButton><span v-else-if="version.version === skill.version" class="text-xs">Current</span></td>
+                </tr></tbody>
+            </UiTable>
+        </UiPanel>
 
         <template #actions>
             <template v-if="!readOnly">

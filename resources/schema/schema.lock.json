@@ -1,17 +1,17 @@
 {
-    "commit": "f526b1dd8cd753ee9919190c34cb84b3772c006d",
+    "commit": "c8bb65019fdad5eada84453e1ba88b1a35ddb113",
     "files": {
         "layer.v1.json": {
             "source": "inst/schema/layer.v1.json",
-            "sha256": "10bc25ba31da0f19c8902a4c39b07221bda6adba78cbfa870e8d340cc80de48e"
+            "sha256": "74c6e41efd3b064adedfc774ecb3d9534bbd197906039659436d68d894e3cb8b"
         },
         "layers.v1.json": {
             "source": "inst/schema/layers.v1.json",
-            "sha256": "ed7223a59101ab54cf17afa81f80e41d579d86fa0e89c616da6fa513f21a6a46"
+            "sha256": "8d7839d5602012459997d5a5e3df65ae5942ca7cd50ae9ad09a821f95dc800b9"
         },
         "spec.v1.json": {
             "source": "inst/schema/spec.v1.json",
-            "sha256": "62d4071bbcd93a1fc9a6f78701f886011a22b1917a341354019200a6c6916d4b"
+            "sha256": "5323ccd0d20e1a3e1bd7e5af0c46565a02b5bfc7678642ff64f6f3448bd33bec"
         },
         "docs-reference.v1.json": {
             "source": "inst/schema/docs-reference.v1.json",

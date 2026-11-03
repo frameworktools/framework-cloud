@@ -14,10 +14,10 @@ const send = () => form.post('/forgot-password');
 </script>
 
 <template>
-    <Head title="Reset your password" />
+    <Head title="Password reset" />
 
-    <AuthLayout title="Reset your password" description="We'll email you a link to choose a new one.">
-        <UiCallout v-if="sent" variant="success" heading="Check your email">
+    <AuthLayout title="Password reset" description="We'll email you a link to choose a new one.">
+        <UiCallout v-if="sent" variant="success" heading="Password reset email">
             If an account exists for that address, a reset link is on its way. It
             expires in 60 minutes.
         </UiCallout>

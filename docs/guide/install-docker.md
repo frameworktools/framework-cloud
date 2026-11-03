@@ -1,4 +1,4 @@
-# Install with Docker
+# Docker installation
 
 Framework Cloud releases are published as a Docker image,
 `ghcr.io/frameworktools/framework-cloud`. A Compose file runs it as four
@@ -25,7 +25,7 @@ volumes, so they survive restarts and upgrades.
 To run it only on your own computer instead, see
 [Run it on your own computer](running-at-home.md).
 
-## Install
+## Installation
 
 Make a folder for the server and download the Compose file and the settings
 template:
@@ -65,7 +65,7 @@ The first start downloads the images, creates the database tables, and adds
 the built-in blueprints and your admin account. Check progress with
 `docker compose ps` and `docker compose logs -f app`.
 
-## Behind a reverse proxy
+## Reverse proxy configuration
 
 If another web server already handles HTTPS on the machine, such as nginx,
 Traefik, or Nginx Proxy Manager, let it pass requests to Framework Cloud over
@@ -82,7 +82,7 @@ proxy's forwarded host and scheme, so it builds `https://` links. Use `*` only
 when nothing but the proxy can reach the port. Otherwise list the proxy's
 address, such as `TRUSTED_PROXIES=192.168.1.10`.
 
-## Sign in
+## Sign-in
 
 Email isn't set up yet, so print a sign-in link on the server:
 
@@ -99,7 +99,7 @@ You can also set a password and sign in with it:
 docker compose exec app php artisan fw:password you@example.edu
 ```
 
-## Who can sign up
+## Account registration
 
 By default anyone who can reach the server can create an account. To stop new
 sign-ups, set `FW_REGISTRATION=closed` and restart. Admins can still create
@@ -115,7 +115,7 @@ docker compose exec app php artisan fw:login-link someone@example.edu --create
 - [Maintenance](maintenance.md): upgrades and backups
 - [Configuration reference](configuration.md)
 
-## Build the image yourself
+## Custom Docker images
 
 To run code that isn't in a release, such as your own changes, build the image
 from a clone of the repository:
