@@ -3,8 +3,9 @@
 ## Scope
 
 The first implementation spans `framework-cloud`, `framework`, `framework-py`,
-and `framework-cli`. Changes remain uncommitted. Existing artifact, report,
-design, and copy changes remain in place.
+and `framework-cli`. Coordinated releases are published and deployed. See
+[release verification](2026-11-03-coordinated-release.md) for versions, commits,
+and production checks.
 
 Cloud now stores stable skill identities, exact bundle snapshots, conditional
 versions, request receipts, and source-version fork edges. Canonical snapshots
@@ -91,6 +92,9 @@ Directory moves require updating the recorded path; paths never infer identity.
 Version history currently lists versions and notes. Companion files can be
 published through packages; the web editor edits `SKILL.md`.
 
-Cross-client tests ran on macOS. Windows replacement behavior still requires
-platform verification. Crashed processes can leave a local lock directory;
+Cross-client live tests ran on macOS. CLI CI passed on Windows, macOS, and
+Linux. Python Windows and Linux CI passed; its remaining macOS matrix jobs were
+still finishing during release verification. Windows installs retain portable
+executable-mode metadata in the excluded `.framework-skill.json` file. Dedicated
+R Windows verification remains future work. Crashed processes can leave a local lock directory;
 the user must confirm no sync process remains before removing it.
