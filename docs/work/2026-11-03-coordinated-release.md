@@ -67,8 +67,7 @@ files were removed too.
 - Python: 499 local tests passed. Optional adapters and external staging tests
   without their dependencies or credentials were skipped. Lint, formatting,
   strict types, documentation, and shared asset checks passed. Windows 3.11–3.14
-  and Linux CI passed. Remaining macOS matrix jobs were still finishing at the
-  time of the production checks.
+  and Linux CI passed. The complete macOS matrix also passed before handoff.
 - CLI: full race tests, vet, and lint passed. GitHub CI passed on Windows,
   macOS, and Linux, including credential interoperability.
 - R: full development tests passed. The release tarball passed R CMD check
@@ -79,6 +78,9 @@ The first CLI tag failed a stale assertion. An intermediate 0.4.1 release was
 marked as superseded after Windows CI found replacement and mode issues.
 Version 0.4.2 contains the fixes. Python 0.1.0.dev6 supersedes dev5 for Windows.
 No published tags were moved.
+
+Production queue workers received a restart signal after deployment. The public
+login page and its referenced frontend assets passed HTTP checks.
 
 The unrelated local `polyscope.json` edit was preserved and excluded from the
 release commits.

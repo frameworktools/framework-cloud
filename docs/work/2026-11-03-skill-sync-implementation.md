@@ -93,8 +93,8 @@ Version history currently lists versions and notes. Companion files can be
 published through packages; the web editor edits `SKILL.md`.
 
 Cross-client live tests ran on macOS. CLI CI passed on Windows, macOS, and
-Linux. Python Windows and Linux CI passed; its remaining macOS matrix jobs were
-still finishing during release verification. Windows installs retain portable
+Linux. Python CI passed across Windows, Linux, and macOS on Python 3.11–3.14.
+Windows installs retain portable
 executable-mode metadata in the excluded `.framework-skill.json` file. Dedicated
 R Windows verification remains future work. Crashed processes can leave a local lock directory;
 the user must confirm no sync process remains before removing it.
