@@ -54,9 +54,12 @@ class PiecesController extends Controller
     public function skills(Request $request): JsonResponse
     {
         $user = $this->user($request);
+        $language = $request->query('language');
 
         return response()->json(['skills' => Skill::visibleTo($user)->with('owner', 'latestVersion')
             ->orderByRaw('user_id is not null')->orderBy('position')->orderBy('name')->get()
+            // ?language= keeps skills for that language and skills for any language
+            ->filter(fn (Skill $s) => ! is_string($language) || $language === '' || $s->fits($language))
             ->map(fn (Skill $s) => [
                 'key' => $s->handle,
                 'skill_id' => $s->sync_id,

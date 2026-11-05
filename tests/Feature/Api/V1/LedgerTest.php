@@ -92,4 +92,16 @@ class LedgerTest extends TestCase
             ->postJson('/api/v1/ledger', $this->entry(['hash' => 'not-a-hash!']))
             ->assertStatus(422);
     }
+
+    public function test_recorded_at_with_an_offset_is_stored_as_utc(): void
+    {
+        $project = Project::factory()->create();
+        $token = $project->issuePullToken();
+
+        $this->withToken($token)->postJson('/api/v1/ledger', $this->entry(['recorded_at' => '2026-11-05T15:55:44-0500']))
+            ->assertCreated();
+
+        $this->assertSame('2026-11-05 20:55:44', LedgerEntry::first()->getRawOriginal('recorded_at'));
+        $this->assertStringStartsWith('2026-11-05T20:55:44', $this->withToken($token)->getJson('/api/v1/ledger')->json('entries.0.recorded_at'));
+    }
 }

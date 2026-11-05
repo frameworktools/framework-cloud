@@ -7,6 +7,7 @@ use App\Models\LedgerEntry;
 use App\Models\Project;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class LedgerController extends Controller
@@ -41,7 +42,8 @@ class LedgerController extends Controller
                 'algo' => $validated['algo'] ?? 'sha256',
                 'hash' => strtolower($validated['hash']),
                 'size_bytes' => $validated['size_bytes'] ?? null,
-                'recorded_at' => $validated['recorded_at'] ?? now(),
+                // The column has no zone, so store UTC. A client's offset would otherwise be dropped.
+                'recorded_at' => isset($validated['recorded_at']) ? Carbon::parse($validated['recorded_at'])->utc() : now(),
                 'client' => $validated['client'] ?? null,
                 'created_at' => now(),
             ]);

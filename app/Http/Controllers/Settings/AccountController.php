@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\AccountDeletion;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -67,7 +68,7 @@ class AccountController extends Controller
     /**
      * Passwordless account deletion: confirmed by typing the account email.
      */
-    public function destroy(Request $request): RedirectResponse
+    public function destroy(Request $request, AccountDeletion $deletion): RedirectResponse
     {
         $request->validate([
             'confirm_email' => ['required', 'string', 'in:'.$request->user()->email],
@@ -78,7 +79,7 @@ class AccountController extends Controller
         $user = $request->user();
 
         Auth::logout();
-        $user->delete();
+        $deletion->delete($user);
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

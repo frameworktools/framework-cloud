@@ -17,7 +17,9 @@ class DocumentsController extends Controller
      *
      * `slug` names the document within the project. `readable` turns on the
      * readable URL, /@{handle}/{project}/{slug}. Leaving it out keeps the
-     * document's current setting (new artifacts start unlisted).
+     * document's current setting (new artifacts start unlisted). An explicit
+     * `visibility` wins over `readable`, and `readable` never opens a private
+     * artifact.
      */
     public function store(Request $request): JsonResponse
     {

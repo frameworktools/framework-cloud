@@ -291,4 +291,18 @@ class PiecesTest extends TestCase
         $layers = collect($this->withToken($token)->postJson('/api/v2/resolve', ['name' => 'S', 'blueprint' => 'framework/project', 'settings' => ['git' => false]])->json('layers'));
         $this->assertArrayNotHasKey('hooks', $layers->firstWhere('kind', 'settings')['layer']['git'] ?? []);
     }
+
+    public function test_skills_filter_by_language(): void
+    {
+        $token = $this->token();
+        $all = collect($this->withToken($token)->getJson('/api/v2/skills')->json('skills'));
+        $python = collect($this->withToken($token)->getJson('/api/v2/skills?language=python')->assertOk()->json('skills'));
+
+        $this->assertNotEmpty($python);
+        $this->assertLessThan($all->count(), $python->count());
+        foreach ($python as $skill) {
+            $this->assertTrue(! $skill['language'] || in_array('python', $skill['language'], true), $skill['key']);
+        }
+        $this->assertNotContains('framework/framework-stata', $python->pluck('key'));
+    }
 }
