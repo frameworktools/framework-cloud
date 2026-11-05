@@ -54,11 +54,14 @@ const pill = (on) => on
                     <p v-if="skill.summary" class="mt-2 text-base text-slate-700 dark:text-slate-300">{{ skill.summary }}</p>
                     <details class="group mt-2 text-sm">
                         <summary class="cursor-pointer list-none text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 [&::-webkit-details-marker]:hidden">
-                            <span class="group-open:hidden">When agents load it ›</span><span class="hidden group-open:inline">When agents load it ⌄</span>
+                            <span class="group-open:hidden">Agent instructions ›</span><span class="hidden group-open:inline">Agent instructions ⌄</span>
                         </summary>
                         <p class="mt-1 text-slate-600 dark:text-slate-400">{{ skill.descriptions?.[language] ?? skill.description }}</p>
                     </details>
                     <p class="mt-2 text-xs text-slate-500">{{ languageScope(skill.language) }}</p>
+                    <div v-if="skill.tags?.length" class="mt-3 flex flex-wrap gap-3">
+                        <Link v-for="tag in skill.tags" :key="tag.id" :href="`/skills?tag=${tag.key}`" class="text-xs text-slate-500 underline underline-offset-4">{{ tag.name }}</Link>
+                    </div>
                 </div>
                 <div class="flex shrink-0 gap-2">
                     <Link v-if="skill.editable" :href="`/skills/${skill.id}/edit`"><UiButton size="sm" variant="outline">Edit</UiButton></Link>

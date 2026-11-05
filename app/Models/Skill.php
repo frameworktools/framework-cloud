@@ -4,8 +4,10 @@ namespace App\Models;
 
 use App\Models\Concerns\HasVersions;
 use App\Models\Concerns\Shareable;
+use App\Support\SkillBundle;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -26,11 +28,22 @@ class Skill extends Model
         static::creating(function (Skill $skill) {
             $skill->sync_id ??= $skill->user_id === null ? 'framework:'.$skill->key : (string) Str::uuid();
         });
+        static::created(function (Skill $skill) {
+            if ($skill->forked_from_id) {
+                $parent = SkillVersion::find($skill->forked_from_id)?->skill()->withTrashed()->first();
+                $skill->tags()->sync($parent?->tags()->pluck('skill_tags.id')->all() ?? []);
+            }
+        });
         static::updating(function (Skill $skill) {
             if ($skill->isDirty(['sync_id', 'forked_from_id'])) {
                 throw ValidationException::withMessages(['skill' => 'Skill identity and fork ancestry cannot change.']);
             }
         });
+    }
+
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(SkillTag::class)->orderBy('position')->orderBy('name');
     }
 
     protected $guarded = [];
@@ -87,9 +100,9 @@ class Skill extends Model
         $version = $this->latestVersion;
         $entry = ['content' => $version->contentFor($language)];
         $variant = $language ?? 'r';
-        $entry['bundle'] = \App\Support\SkillBundle::files($version, $variant);
+        $entry['bundle'] = SkillBundle::files($version, $variant);
         $entry['sync'] = ['skill_id' => $this->sync_id, 'version' => $version->version,
-            'hash' => \App\Support\SkillBundle::hash($entry['bundle']), 'variant' => $variant, 'server' => url('/')];
+            'hash' => SkillBundle::hash($entry['bundle']), 'variant' => $variant, 'server' => url('/')];
 
         if (! empty($version->files)) {
             $entry['files'] = $version->files;

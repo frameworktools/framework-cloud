@@ -4,10 +4,12 @@ namespace Tests\Feature;
 
 use App\Models\Project;
 use App\Models\Skill;
+use App\Models\SkillTag;
 use App\Models\User;
 use App\Support\SkillBundle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class SkillSyncTest extends TestCase
@@ -24,7 +26,7 @@ class SkillSyncTest extends TestCase
             try {
                 $child->update([$field => $value]);
                 $this->fail('Identity or ancestry changed.');
-            } catch (\Illuminate\Validation\ValidationException $error) {
+            } catch (ValidationException $error) {
                 $this->assertArrayHasKey('skill', $error->errors());
             }
             $child->refresh();
@@ -65,12 +67,14 @@ class SkillSyncTest extends TestCase
     public function test_canonical_changes_fork_the_exact_source_and_preserve_variants_and_lineage(): void
     {
         $system = Skill::create(['key' => 'example', 'name' => 'Example', 'visibility' => 'public']);
+        $system->tags()->attach(SkillTag::where('key', 'framework')->sole());
         $source = $system->publishVersion(['content' => base64_decode($this->bundle()[0]['content']), 'variants' => ['python' => 'Python source'], 'files' => ['references/readme.txt' => 'reference']]);
         $this->actingAs($user = User::factory()->create());
         $this->push(SkillBundle::files($source, 'r'), $system->sync_id, 1)->assertOk()->assertJsonPath('skill_id', $system->sync_id);
         $this->assertDatabaseCount('skills', 1);
         $fork = $this->push($this->bundle('Custom'), $system->sync_id, 1)->assertOk()->json();
         $child = Skill::where('sync_id', $fork['skill_id'])->firstOrFail();
+        $this->assertEqualsCanonicalizing(['framework'], $child->tags->pluck('key')->all());
         $this->assertSame($source->id, $child->forked_from_id);
         $this->assertSame('Python source', $child->latestVersion->variants['python']);
         $this->push($this->bundle('Python edit'), $child->sync_id, 1, 'python')->assertOk();

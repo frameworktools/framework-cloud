@@ -14,7 +14,7 @@ import UiSelect from '@/Components/UiSelect.vue';
 import UiTextarea from '@/Components/UiTextarea.vue';
 import { visibilityOptions } from '@/library.js';
 
-const props = defineProps({ skill: Object, content: String, variant: String });
+const props = defineProps({ skill: Object, content: String, variant: String, language: String, tagOptions: Array });
 
 const page = usePage();
 const saved = computed(() => ['skill-saved', 'skill-forked'].includes(page.props.flash.status));
@@ -24,7 +24,8 @@ const form = useForm({
     content: props.content,
     visibility: props.skill?.visibility ?? 'private',
     // One language, or empty for any
-    language: props.skill?.language?.length === 1 ? props.skill.language[0] : '',
+    language: props.skill ? (props.skill.language?.length === 1 ? props.skill.language[0] : '') : props.language,
+    tags: props.skill?.tags?.map(tag => tag.id) ?? [],
     notes: '',
     expected_version: props.skill?.version,
     variant: props.variant ?? 'r',
@@ -33,6 +34,7 @@ const languageOptions = [
     { value: '', label: 'Any language' },
     { value: 'r', label: 'R only' },
     { value: 'python', label: 'Python only' },
+    { value: 'stata', label: 'Stata only' },
 ];
 
 const canPublish = computed(() => !!props.skill && !!page.props.githubSignIn);
@@ -71,7 +73,7 @@ const destroy = () => {
                 <code class="font-mono">name</code> identifies the skill to assistants.
                 <code class="font-mono">description</code> tells assistants when to load the skill.
                 <code class="font-mono">metadata.title</code> sets its display name.
-                <template v-if="skill?.is_system"> Framework skills ship with the R package, so projects use the installed copy.</template>
+                <template v-if="skill?.is_system"> Framework skills use the canonical copy for each environment.</template>
             </template>
         </PageHeader>
         <p v-if="skill?.parent" class="mt-3 text-sm text-slate-500">Forked from <Link :href="`/skills/${skill.parent.id}`" class="underline">{{ skill.parent.name }}</Link>, version {{ skill.parent.version }}.</p>
@@ -88,6 +90,16 @@ const destroy = () => {
             <UiPanel v-if="!readOnly" id="details" title="Details" class="scroll-mt-6">
                 <UiSelect v-if="!skill?.is_system && !(skill?.language?.length > 1)" v-model="form.language" label="Language" :options="languageOptions" :error="form.errors.language" />
                 <UiSelect v-model="form.visibility" label="Visibility" :options="visibilityOptions" :error="form.errors.visibility" />
+                <fieldset class="flex flex-col gap-3">
+                    <legend class="mb-2 text-sm font-medium text-slate-800 dark:text-white">Tags</legend>
+                    <div class="flex flex-wrap gap-x-6 gap-y-3">
+                        <label v-for="tag in tagOptions" :key="tag.id" class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                            <input v-model="form.tags" type="checkbox" :value="tag.id" class="size-4 accent-sky-700" />{{ tag.name }}
+                        </label>
+                    </div>
+                    <p class="text-xs text-slate-500">Curated tags. Select all that apply.</p>
+                    <p v-if="form.errors.tags || Object.keys(form.errors).some(key => key.startsWith('tags.'))" class="text-sm text-red-600">Select tags from the curated list.</p>
+                </fieldset>
                 <UiInput v-if="skill" v-model="form.notes" label="Version notes (optional)" :error="form.errors.notes" />
                 <p v-if="skill?.source_url" class="text-sm text-slate-500">
                     Imported from <a :href="skill.source_url" class="underline">{{ skill.source_url }}</a>

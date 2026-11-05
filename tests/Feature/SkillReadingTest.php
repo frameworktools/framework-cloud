@@ -53,7 +53,7 @@ class SkillReadingTest extends TestCase
             ->where('language', 'python')
             ->where('variants', ['r', 'python'])
             ->where('source', $workflow->latestVersion->contentFor('python'))
-            ->where('html', fn (string $html) => str_contains($html, '<pre><code class="language-python">') && ! str_contains($html, 'name: framework-workflow')));
+            ->where('html', fn (string $html) => str_contains($html, '<pre class="phiki language-python"') && ! str_contains($html, 'name: framework-workflow')));
 
         $this->actingAs($user)->get("/skills/{$workflow->id}?language=r&from=skill-sets")->assertInertia(fn (Assert $page) => $page
             ->where('language', 'r')->where('from', 'skill-sets')
