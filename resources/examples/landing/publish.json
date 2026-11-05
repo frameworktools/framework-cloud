@@ -1,0 +1,190 @@
+{
+ "r": {
+  "label": "R",
+  "path": "scripts/analysis.R",
+  "code": "publish(model, slug = \"ZZSLUGZZ\")",
+  "message": "Published version 2: ",
+  "source": "R · lm()",
+  "formula": "body_mass_g ~ flipper_length_mm + species",
+  "rows": [
+   [
+    "(Intercept)",
+    -4031.47689069363,
+    584.151339929479,
+    2.55145337072339e-11
+   ],
+   [
+    "flipper_length_mm",
+    40.7054007772805,
+    3.07101973140904,
+    1.4015999361108e-32
+   ],
+   [
+    "speciesChinstrap",
+    -206.51012033972,
+    57.7306463106237,
+    0.000398098593915655
+   ],
+   [
+    "speciesGentoo",
+    266.809603179219,
+    95.2637405154544,
+    0.00539180762555945
+   ]
+  ],
+  "raw": [
+   "> summary(model)",
+   "…",
+   "Coefficients:",
+   "                   Estimate Std. Error t value Pr(>|t|)    ",
+   "(Intercept)       -4031.477    584.151  -6.901 2.55e-11 ***",
+   "flipper_length_mm    40.705      3.071  13.255  < 2e-16 ***",
+   "speciesChinstrap   -206.510     57.731  -3.577 0.000398 ***",
+   "speciesGentoo       266.810     95.264   2.801 0.005392 ** ",
+   "---",
+   "Multiple R-squared:  0.7826,\tAdjusted R-squared:  0.7807",
+   "…"
+  ]
+ },
+ "python": {
+  "label": "Python",
+  "path": "scripts/analysis.py",
+  "code": "fw.publish(model, slug=\"ZZSLUGZZ\")",
+  "message": "Published version 2: ",
+  "source": "Python · statsmodels OLS",
+  "formula": "body_mass_g ~ flipper_length_mm + species",
+  "rows": [
+   [
+    "(Intercept)",
+    -4031.4768906936356,
+    584.1513399294811,
+    2.5514533707235893e-11
+   ],
+   [
+    "species[T.Chinstrap]",
+    -206.51012033973484,
+    57.73064631062387,
+    0.00039809859391530013
+   ],
+   [
+    "species[T.Gentoo]",
+    266.80960317921154,
+    95.26374051545471,
+    0.005391807625560876
+   ],
+   [
+    "flipper_length_mm",
+    40.70540077728473,
+    3.071019731409042,
+    1.401599936094312e-32
+   ]
+  ],
+  "raw": [
+   ">>> print(model.summary())",
+   "OLS Regression Results",
+   "Dep. Variable:            body_mass_g   R-squared: 0.783",
+   "…",
+   "                           coef    std err          t      P>|t|",
+   "----------------------------------------------------------------",
+   "Intercept            -4031.4769    584.151     -6.901      0.000",
+   "species[T.Chinstrap]  -206.5101     57.731     -3.577      0.000",
+   "species[T.Gentoo]      266.8096     95.264      2.801      0.005",
+   "flipper_length_mm       40.7054      3.071     13.255      0.000",
+   "…"
+  ]
+ },
+ "stata": {
+  "label": "Stata",
+  "path": "analysis.do",
+  "code": "fw_publish, estimates slug(ZZSLUGZZ)",
+  "message": "Published to cloud (version 2): ",
+  "source": "Stata · regress",
+  "formula": "regress body_mass_g flipper_length_mm i.species_id",
+  "rows": [
+   [
+    "flipper_length_mm",
+    40.70540077728075,
+    3.0710197314090077,
+    1.40159993610846e-32
+   ],
+   [
+    "2.species_id",
+    -206.5101203397226,
+    57.7306463106237,
+    0.0003980985939155963
+   ],
+   [
+    "3.species_id",
+    266.8096031792107,
+    95.26374051545366,
+    0.005391807625560511
+   ],
+   [
+    "(Intercept)",
+    -4031.476890693668,
+    584.1513399294739,
+    2.55145337072138e-11
+   ]
+  ],
+  "raw": [
+   ". regress body_mass_g flipper_length_mm i.species_id",
+   "…",
+   "    Residual |  47666988.2       338  141026.592   R-squared       =    0.7826",
+   "----------------------------------------------------------",
+   "      body_mass_g | Coefficient  Std. err.      t    P>|t|",
+   "------------------+---------------------------------------",
+   "flipper_length_mm |    40.7054    3.07102    13.25   0.000",
+   "       species_id |",
+   "       Chinstrap  |  -206.5101   57.73065    -3.58   0.000",
+   "          Gentoo  |   266.8096   95.26374     2.80   0.005",
+   "            _cons |  -4031.477   584.1513    -6.90   0.000",
+   "----------------------------------------------------------"
+  ]
+ },
+ "cli": {
+  "label": "CLI",
+  "path": "Terminal",
+  "code": "fw publish outputs/models/ZZSLUGZZ.json",
+  "message": "Published penguin-body-mass, version 2. Link: ",
+  "source": "R · lm(), saved as JSON",
+  "formula": "body_mass_g ~ flipper_length_mm + species",
+  "rows": [
+   [
+    "(Intercept)",
+    -4031.47689069363,
+    584.151339929479,
+    2.55145337072339e-11
+   ],
+   [
+    "flipper_length_mm",
+    40.7054007772805,
+    3.07101973140904,
+    1.4015999361108e-32
+   ],
+   [
+    "speciesChinstrap",
+    -206.51012033972,
+    57.7306463106237,
+    0.000398098593915655
+   ],
+   [
+    "speciesGentoo",
+    266.809603179219,
+    95.2637405154544,
+    0.00539180762555945
+   ]
+  ],
+  "raw": [
+   "$ cat outputs/models/penguin-body-mass.json",
+   "{",
+   "  \"schema\": \"framework.artifact/v1\",",
+   "  \"kind\": \"model\",",
+   "  \"source\": {\"language\": \"r\", \"class\": [\"lm\"]},",
+   "  \"formula\": \"body_mass_g ~ flipper_length_mm + species\",",
+   "  \"tables\": [{\"title\": \"Coefficients\", \"rows\": [",
+   "    [\"(Intercept)\", -4031.47689069363, 584.151339929479, …],",
+   "    [\"flipper_length_mm\", 40.7054007772805, 3.07101973140904, …],",
+   "  …"
+  ]
+ }
+}

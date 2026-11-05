@@ -1,0 +1,35 @@
+{
+  "description": "Model fitted to the Palmer penguins data",
+  "formula": "body_mass_g ~ flipper_length_mm + species",
+  "coefficients": [
+    {
+      "Estimate": -4031.4769,
+      "Std. Error": 584.1513,
+      "t value": -6.9014,
+      "Pr(>|t|)": 0,
+      "_row": "(Intercept)"
+    },
+    {
+      "Estimate": 40.7054,
+      "Std. Error": 3.071,
+      "t value": 13.2547,
+      "Pr(>|t|)": 0,
+      "_row": "flipper_length_mm"
+    },
+    {
+      "Estimate": -206.5101,
+      "Std. Error": 57.7306,
+      "t value": -3.5771,
+      "Pr(>|t|)": 0.0004,
+      "_row": "speciesChinstrap"
+    },
+    {
+      "Estimate": 266.8096,
+      "Std. Error": 95.2637,
+      "t value": 2.8007,
+      "Pr(>|t|)": 0.0054,
+      "_row": "speciesGentoo"
+    }
+  ],
+  "r_squared": 0.7826
+}

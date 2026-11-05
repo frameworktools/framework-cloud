@@ -6,7 +6,9 @@
             <a href="{{ route('privacy') }}" class="hover:text-slate-900 dark:hover:text-slate-100">Privacy</a>
             <a href="{{ route('self-hosting') }}" class="hover:text-slate-900 dark:hover:text-slate-100">Self-hosting</a>
             <a href="{{ route('guide') }}" class="hover:text-slate-900 dark:hover:text-slate-100">Documentation</a>
-            <a href="https://framework.table1.org" class="hover:text-slate-900 dark:hover:text-slate-100">R package</a>
+            <a href="{{ \App\Support\Docs\Products::publicUrl('r') }}" class="hover:text-slate-900 dark:hover:text-slate-100">R package</a>
+            <a href="{{ \App\Support\Docs\Products::publicUrl('py') }}" class="hover:text-slate-900 dark:hover:text-slate-100">Python package</a>
+            <a href="{{ \App\Support\Docs\Products::publicUrl('cli') }}" class="hover:text-slate-900 dark:hover:text-slate-100">CLI</a>
             <a href="https://github.com/frameworktools/framework-cloud" class="hover:text-slate-900 dark:hover:text-slate-100">Source code</a>
             <x-theme-toggle class="sm:hidden" />
         </nav>

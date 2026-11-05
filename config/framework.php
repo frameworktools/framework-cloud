@@ -3,6 +3,7 @@
 use App\Support\Credentials;
 
 return [
+    'publish_storage_limit_bytes' => env('FW_PUBLISH_STORAGE_LIMIT_BYTES'),
 
     /*
     | The spec's tools, settings_layout, and core_files keys (framework
@@ -54,8 +55,25 @@ return [
     'documents_base_url' => env('FW_DOCUMENTS_BASE_URL'),
 
     /*
-    | Hostnames of the three docs sites (Route::domain groups), by product:
-    | the R package, framework-py, and the fw command line tool. Herd
+    | The homepage's worked example: a public artifact published by
+    | `php artisan fw:homepage-example`. Unset, the homepage shows a labeled
+    | preview image instead of the live reader page.
+    */
+    'homepage_example_url' => env('FW_HOMEPAGE_EXAMPLE_URL'),
+
+    // A public starter repository (owner/name) the homepage's GitHub card shows. Unset, the card
+    // shows the clone command for a repository you create from New project.
+    'starter_repository' => env('FW_STARTER_REPOSITORY'),
+
+    /*
+    | Show the Stata package on public pages (header menu, homepage tabs).
+    | Off until the Stata package is released.
+    */
+    'stata_package' => (bool) env('FW_STATA_PACKAGE', false),
+
+    /*
+    | Hostnames of the docs sites (Route::domain groups), by product: the R
+    | package, framework-py, the fw command line tool, and the Stata package. Herd
     | resolves any subdomain of a linked site, so *.framework.test works
     | locally; production is r., py., and cli.framework.pub. FW_DOCS_HOST
     | is the older name for the R host and still works.
@@ -64,6 +82,7 @@ return [
         'r' => env('FW_DOCS_HOST_R', env('FW_DOCS_HOST', 'r.framework.test')),
         'py' => env('FW_DOCS_HOST_PY', 'py.framework.test'),
         'cli' => env('FW_DOCS_HOST_CLI', 'cli.framework.test'),
+        'stata' => env('FW_DOCS_HOST_STATA', 'stata.framework.test'),
     ],
 
     /*
@@ -85,6 +104,10 @@ return [
         'cli' => [
             'repository' => env('FW_DOCS_REPO_CLI', 'frameworktools/framework-cli'),
             'prerelease' => env('FW_DOCS_PRERELEASE_CLI', 'fallback'),
+        ],
+        'stata' => [
+            'repository' => env('FW_DOCS_REPO_STATA', 'frameworktools/framework-stata'),
+            'prerelease' => env('FW_DOCS_PRERELEASE_STATA', 'fallback'),
         ],
     ],
 

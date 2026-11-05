@@ -1,0 +1,88 @@
+[
+  {
+    "key": "project",
+    "label": "Analysis",
+    "name": "penguin-study",
+    "description": "Data, code, notebooks, and results in a standard analysis structure.",
+    "icon": "folder",
+    "files": {
+      "r": {
+        "settings.yml": "default:\n  scaffold:\n    seed_on_scaffold: true\n    seed: 123\n",
+        "scripts/analysis.R": "library(framework)\nscaffold()\npenguins <- data_read(\"inputs.raw.penguins\")\n",
+        "notebooks/report.qmd": "---\ntitle: Study report\nformat: html\n---\n\n## Overview\n\nStart your analysis here.\n"
+      },
+      "py": {
+        "settings.yml": "default:\n  scaffold:\n    seed_on_scaffold: true\n    seed: 123\n",
+        "scripts/analysis.py": "import framework as fw\nfw.scaffold()\npenguins = fw.data_read(\"inputs.raw.penguins\")\n",
+        "notebooks/report.qmd": "---\ntitle: Study report\nformat: html\njupyter: python3\n---\n\n## Overview\n\nStart your analysis here.\n"
+      },
+      "stata": {
+        "master.do": "* master.do: runs every step in order\nversion 16\nclear all\ndo \"settings.do\"\ndo \"do/analysis.do\"\n",
+        "do/analysis.do": "fw_project\nfw_use inputs.raw.penguins, clear\nregress body_mass_g flipper_length_mm i.species\n",
+        "settings.yml": "default:\n  language: stata\n  directories:\n    do: do\n    logs: logs\n"
+      }
+    }
+  },
+  {
+    "key": "project_sensitive",
+    "label": "Sensitive data",
+    "name": "patient-study",
+    "description": "Private and public folders keep sensitive inputs apart from reviewed results.",
+    "icon": "shield-check",
+    "files": {
+      "r": {
+        ".gitignore": "/inputs/private/\n/outputs/private/\n.env\nframework.db\n",
+        "settings/data.yml": "default:\n  data:\n    inputs:\n      private:\n        penguins:\n          path: inputs/private/raw/penguins.csv\n          type: csv\n          locked: true\n",
+        "inputs/private/README.md": "# Private inputs\n\nraw/           Original data\nintermediate/  Working data\nfinal/         Analysis-ready data\n\nKeep identifiable data in these ignored folders.\n"
+      },
+      "py": {
+        ".gitignore": "/inputs/private/\n/outputs/private/\n.env\nframework.db\n",
+        "settings/data.yml": "default:\n  data:\n    inputs:\n      private:\n        penguins:\n          path: inputs/private/raw/penguins.csv\n          type: csv\n          locked: true\n",
+        "inputs/private/README.md": "# Private inputs\n\nraw/           Original data\nintermediate/  Working data\nfinal/         Analysis-ready data\n\nKeep identifiable data in these ignored folders.\n"
+      },
+      "stata": {
+        ".gitignore": "/inputs/private/\n/outputs/private/\n.env\nframework.db\n",
+        "settings/data.yml": "default:\n  data:\n    inputs:\n      private:\n        penguins:\n          path: inputs/private/raw/penguins.dta\n          type: stata\n          locked: true\n",
+        "inputs/private/README.md": "# Private inputs\n\nraw/           Original data\nintermediate/  Working data\nfinal/         Analysis-ready data\n\nKeep identifiable data in these ignored folders.\n"
+      }
+    }
+  },
+  {
+    "key": "course",
+    "label": "Course",
+    "name": "research-methods",
+    "description": "Modules, assignments, readings, and slides for a course.",
+    "icon": "academic-cap",
+    "files": {
+      "r": {
+        "modules/01-introduction.qmd": "---\ntitle: Introduction\nformat: html\n---\n\n## Overview\n\nStart your analysis here.\n",
+        "assignments/01-exercise.qmd": "---\ntitle: Exercise 1\nformat: html\n---\n\n## Overview\n\nStart your analysis here.\n",
+        "course_docs/syllabus.md": "# Research methods\n\n## Weekly plan\n\n1. Project setup\n2. Data management\n3. Analysis and reporting\n"
+      },
+      "py": {
+        "modules/01-introduction.qmd": "---\ntitle: Introduction\nformat: html\njupyter: python3\n---\n\n## Overview\n\nStart your analysis here.\n",
+        "assignments/01-exercise.qmd": "---\ntitle: Exercise 1\nformat: html\njupyter: python3\n---\n\n## Overview\n\nStart your analysis here.\n",
+        "course_docs/syllabus.md": "# Research methods\n\n## Weekly plan\n\n1. Project setup\n2. Data management\n3. Analysis and reporting\n"
+      }
+    }
+  },
+  {
+    "key": "presentation",
+    "label": "Presentation",
+    "name": "study-results",
+    "description": "A Quarto presentation with space for its supporting data.",
+    "icon": "presentation-chart-bar",
+    "files": {
+      "r": {
+        "presentation.qmd": "---\ntitle: Study results\nformat: revealjs\n---\n\n## Overview\n\nStart your analysis here.\n",
+        "settings.yml": "default:\n  quarto:\n    revealjs:\n      theme: simple\n      slide_number: true\n      transition: fade\n",
+        "data/example.csv": "species,flipper_length_mm,body_mass_g\nAdelie,181,3750\nGentoo,215,5150\nChinstrap,197,4150\n"
+      },
+      "py": {
+        "presentation.qmd": "---\ntitle: Study results\nformat: revealjs\njupyter: python3\n---\n\n## Overview\n\nStart your analysis here.\n",
+        "settings.yml": "default:\n  quarto:\n    revealjs:\n      theme: simple\n      slide_number: true\n      transition: fade\n",
+        "data/example.csv": "species,flipper_length_mm,body_mass_g\nAdelie,181,3750\nGentoo,215,5150\nChinstrap,197,4150\n"
+      }
+    }
+  }
+]

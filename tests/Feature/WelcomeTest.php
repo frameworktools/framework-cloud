@@ -35,7 +35,7 @@ class WelcomeTest extends TestCase
             ->where('values.workflows.python', 'jupyter')
             ->where('blueprints.0.key', 'project'));
 
-        $this->actingAs($user)->post('/welcome/skip')->assertRedirect('/projects');
+        $this->actingAs($user)->post('/welcome/skip')->assertRedirect('/dashboard');
         $this->assertNotNull($user->fresh()->setup_completed_at);
         $this->actingAs($user)->get('/projects')->assertOk();
     }
@@ -47,7 +47,7 @@ class WelcomeTest extends TestCase
         $this->actingAs($user)->post('/welcome', [
             'language' => 'python', 'project_type' => 'project_sensitive', 'workflow' => 'scripts',
             'editors' => ['vscode'], 'git' => false, 'ai' => true, 'agents' => ['claude', 'codex'],
-        ])->assertRedirect('/projects');
+        ])->assertRedirect('/dashboard');
 
         $user->refresh();
         $doc = $user->globalSettings()->document;
@@ -114,7 +114,7 @@ class WelcomeTest extends TestCase
         $user = $this->newcomer();
         $before = $user->globalSettings()->document;
 
-        $this->actingAs($user)->post('/welcome/skip')->assertRedirect('/projects');
+        $this->actingAs($user)->post('/welcome/skip')->assertRedirect('/dashboard');
 
         $this->assertSame($before, $user->fresh()->globalSettings()->document);
         $this->assertNull($user->fresh()->project_defaults['language'] ?? null);

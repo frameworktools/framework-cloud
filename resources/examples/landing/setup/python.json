@@ -1,0 +1,29 @@
+{
+ "data": [
+  "       species     island  bill_length_mm  ...  body_mass_g     sex  year",
+  "0       Adelie  Torgersen            39.1  ...       3750.0    male  2007",
+  "1       Adelie  Torgersen            39.5  ...       3800.0  female  2007",
+  "2       Adelie  Torgersen            40.3  ...       3250.0  female  2007",
+  "…",
+  "[344 rows x 8 columns]"
+ ],
+ "table": [
+  "             n  mean_mass_g",
+  "species                    ",
+  "Adelie     152  3700.662252",
+  "Chinstrap   68  3733.088235",
+  "Gentoo     124  5076.016260"
+ ],
+ "model": [
+  "OLS Regression Results",
+  "Dep. Variable:            body_mass_g   R-squared: 0.783",
+  "…",
+  "                           coef    std err          t      P>|t|",
+  "----------------------------------------------------------------",
+  "Intercept            -4031.4769    584.151     -6.901      0.000",
+  "species[T.Chinstrap]  -206.5101     57.731     -3.577      0.000",
+  "species[T.Gentoo]      266.8096     95.264      2.801      0.005",
+  "flipper_length_mm       40.7054      3.071     13.255      0.000",
+  "…"
+ ]
+}

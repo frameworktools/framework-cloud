@@ -37,8 +37,8 @@
         }
     }
     // The intercept is usually on another scale and squeezes the other terms, as in phiz's coefplot()
-    $isIntercept = fn (string $term) => in_array($term, ['(Intercept)', 'Intercept', 'const'], true)
-        || (bool) preg_match('/: (\(Intercept\)|Intercept|const)$/', $term);
+    $isIntercept = fn (string $term) => in_array($term, ['(Intercept)', 'Intercept', 'const', '_cons'], true)
+        || (bool) preg_match('/: (\(Intercept\)|Intercept|const|_cons)$/', $term);
     $withIntercept = $rows;
     $rows = array_values(array_filter($rows, fn ($row) => ! $isIntercept($row['term'])));
     $interceptHidden = count($rows) < count($withIntercept) && $rows !== [];

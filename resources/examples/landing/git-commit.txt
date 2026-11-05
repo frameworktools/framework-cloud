@@ -1,0 +1,11 @@
+$ git add inputs/private/raw/penguins.csv
+$ git commit -m "Add study data"
+
+✗ FAIL: gitignore coverage (2 issues)
+✗ FAIL: private data exposure (1 issue)
+...
+  inputs/private/raw/penguins.csv
+  Reason: Private data file not in .gitignore
+...
+✗ AUDIT FAILED - Critical security issues found
+✗ Data security check failed

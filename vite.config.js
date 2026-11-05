@@ -9,7 +9,7 @@ export default defineConfig({
     },
     plugins: [
         laravel({
-            input: ['resources/css/app.css', 'resources/css/docs.css', 'resources/js/app.js', 'resources/js/artifact-reader.js'],
+            input: ['resources/css/app.css', 'resources/css/docs.css', 'resources/js/app.js', 'resources/js/artifact-reader.js', 'resources/js/static-artifact-reader.js', 'resources/js/landing-hero.js'],
             refresh: [`resources/views/**/*`],
         }),
         tailwindcss(),
