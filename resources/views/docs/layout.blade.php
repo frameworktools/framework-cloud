@@ -51,7 +51,7 @@
                 {{ $siteTitle }}@if (! empty($site['version']) && $site['version'] !== 'docs.db') · version {{ $site['version'] }}@endif
             </div>
             <div class="flex flex-wrap items-center gap-x-5 gap-y-2">
-                @foreach (Products::LABELS as $other => $label)
+                @foreach (Products::listed($product) as $other => $label)
                     @if ($other !== $product)
                         <a href="{{ Products::url($other) }}" class="hover:text-slate-900 dark:hover:text-white">{{ $label }} documentation</a>
                     @endif

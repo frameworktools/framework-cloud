@@ -1,7 +1,7 @@
 # Local installation
 
-You can run Framework Cloud on your own computer for yourself alone. Your
-blueprints, settings, and published notebooks then stay on your machine.
+Framework Cloud can run on your own computer for one person. Your
+blueprints, settings, and published notebooks stay on your machine.
 
 Single-user mode removes the sign-in screen. Every visit from your own
 computer is signed in as you.
@@ -64,13 +64,13 @@ Single-user mode: signing in requests from 192.168.148.1
 ```
 
 Anything that reaches the port arrives from that same address, so
-`HTTP_BIND=127.0.0.1` is what keeps other machines out. Keep it set whenever
+`HTTP_BIND=127.0.0.1` keeps other machines out. Keep it set whenever
 single-user mode is on. Check it with `docker compose ps`, which should show
 `127.0.0.1:8080->80/tcp`.
 
 ## Manual installation
 
-Install the app as in [Install without Docker](install-manual.md), then set
+Install the app as in [Manual installation](install-manual.md), then set
 these in `.env`:
 
 ```sh
@@ -107,4 +107,4 @@ set. In single-user mode, **Sign out** is hidden, because the next page would
 sign you back in.
 
 To share the server with other people later, turn single-user mode off, give
-the server a domain, and follow [Install with Docker](install-docker.md).
+the server a domain, and follow [Docker installation](install-docker.md).

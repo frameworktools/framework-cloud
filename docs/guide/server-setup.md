@@ -37,13 +37,13 @@ runs with a sandbox policy that isolates it from the application's origin.
 `FW_ARTIFACTS_DISK` selects another disk defined in `config/filesystems.php`.
 It must be private, without a public bucket endpoint or web-accessible storage
 directory. For multiple application nodes, use shared private storage. Back up
-this disk together with the database; the database holds metadata and version
-history, while the disk holds the actual outputs.
+this disk together with the database. The database holds metadata and version
+history. The disk holds the outputs.
 
 The storage credentials in Server administration configure the older
 `FW_DOCUMENTS_DISK` path. They do not change `FW_ARTIFACTS_DISK`.
 
-### Existing published notebooks
+### Notebook bucket
 
 By default, published notebooks are stored on the server's disk. For more
 than a few people, use an S3-compatible bucket: Amazon S3, Cloudflare R2,
@@ -53,7 +53,7 @@ MinIO, or Backblaze B2.
 2. Click **Test connection**. It writes, reads, and deletes a small file.
 3. Save.
 
-### Existing notebooks on a separate domain
+### Notebook domain
 
 A published notebook is a web page that someone uploaded, and it can contain
 scripts. On a server that more than one person uses, serve notebooks from a

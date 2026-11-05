@@ -22,8 +22,8 @@ volumes, so they survive restarts and upgrades.
 - Docker with the Compose plugin
 - A domain whose DNS points at the machine, with ports 80 and 443 open
 
-To run it only on your own computer instead, see
-[Run it on your own computer](running-at-home.md).
+For a single-user server on your own computer, see
+[Local installation](running-at-home.md).
 
 ## Installation
 

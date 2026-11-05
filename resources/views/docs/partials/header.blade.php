@@ -18,7 +18,7 @@
             </a>
 
             @if ($site)
-                <nav class="hidden lg:flex lg:items-center lg:gap-1" aria-label="Sections">
+                <nav class="hidden xl:flex xl:items-center xl:gap-1" aria-label="Sections">
                     @foreach ($site['sections'] as $section)
                         @php
                             $items = $section['reference']
@@ -60,7 +60,7 @@
 
         <div class="flex shrink-0 items-center gap-2">
             <nav class="hidden items-center gap-0.5 rounded-lg bg-slate-100 p-0.5 text-sm md:flex dark:bg-slate-800" aria-label="Products">
-                @foreach (Products::LABELS as $other => $label)
+                @foreach (Products::listed($product) as $other => $label)
                     <a href="{{ Products::url($other) }}" @if ($other === $product) aria-current="page" @endif
                        @class([
                            'rounded-md px-2.5 py-1 font-medium',
@@ -96,7 +96,7 @@
                     </summary>
                     <div class="absolute right-0 z-50 mt-2 max-h-[75vh] w-72 overflow-y-auto rounded-xl bg-white p-4 text-sm shadow-lg ring-1 ring-slate-900/5 dark:bg-slate-800 dark:ring-white/10">
                         <div class="mb-4 flex gap-1 md:hidden">
-                            @foreach (Products::LABELS as $other => $label)
+                            @foreach (Products::listed($product) as $other => $label)
                                 <a href="{{ Products::url($other) }}" @class(['rounded-md px-2.5 py-1 font-medium', 'bg-slate-100 dark:bg-slate-700' => $other === $product, 'text-slate-500' => $other !== $product])>{{ $label }}</a>
                             @endforeach
                         </div>

@@ -81,5 +81,5 @@ letters, numbers, periods, underscores, and hyphens. Symlinks, parent paths,
 Git metadata, environment files, private keys, and generated caches are excluded
 or rejected. `SKILL.md` must be a regular, nonexecutable file.
 
-Package skill updates preserve local edits and account forks. Sync is explicit;
-background synchronization is unavailable.
+Package skill updates preserve local edits and account forks. Sync runs only
+when you call it. Background synchronization is unavailable.

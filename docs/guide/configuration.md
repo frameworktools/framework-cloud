@@ -24,7 +24,7 @@ restart with `docker compose up -d`. Without Docker, run
 | Variable | Default | Description |
 |---|---|---|
 | `FW_PASSWORDS` | `true` when `FW_MODE=self` | Allows password sign-in alongside email links, passkeys, and GitHub. |
-| `FW_SINGLE_USER` | `false` | Signs every local request in as the admin. See [Run it on your own computer](running-at-home.md). |
+| `FW_SINGLE_USER` | `false` | Signs every local request in as the admin. See [Local installation](running-at-home.md). |
 | `FW_SINGLE_USER_NETWORKS` | `127.0.0.1/32,::1/128` | Addresses that count as this computer in single-user mode, comma-separated. The Docker setup adds its network's gateway when this is unset. |
 
 ## Docker
@@ -115,7 +115,7 @@ documentation is not published yet.
 Each host name needs a DNS record that points at the server and a
 certificate that covers it.
 
-## R
+## Package server selection
 
 The R and Python packages find the server in this order:
 

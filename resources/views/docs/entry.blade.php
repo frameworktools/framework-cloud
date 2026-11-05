@@ -86,7 +86,7 @@
 
         @if ($entry['usage'])
             <h2 id="usage" class="{{ $h2 }}">Usage</h2>
-            <pre class="{{ $code }} whitespace-pre-wrap [overflow-wrap:anywhere]"><code>{{ $entry['usage'] }}</code></pre>
+            <pre class="{{ $code }} whitespace-pre-wrap [overflow-wrap:anywhere]"><code>@if (! empty($entry['usage_html'])){!! $entry['usage_html'] !!}@else{{ $entry['usage'] }}@endif</code></pre>
         @endif
 
         @if ($entry['parameters'])
@@ -159,7 +159,7 @@
                         @endif
                     </p>
                 @endif
-                <pre class="{{ $code }}"><code>{{ $example['code'] }}</code></pre>
+                <pre class="{{ $code }}"><code>@if (! empty($example['html'])){!! $example['html'] !!}@else{{ $example['code'] }}@endif</code></pre>
             @endforeach
         @endif
 

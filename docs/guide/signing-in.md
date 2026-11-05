@@ -15,8 +15,7 @@ asked for it, you are signed in directly. Anywhere else, you see a page with a
 
 ## Passkeys
 
-A passkey signs you in with your fingerprint, face, or device PIN, and there
-is nothing to type. Add one in **Account > Passkeys** after your first
+A passkey signs you in with your fingerprint, face, or device PIN. Add one in **Account > Passkeys** after your first
 sign-in. You can add one for each device you use.
 
 ## GitHub
@@ -36,8 +35,8 @@ After that you can sign in with your email address and password. If you
 forget it, use **Forgot your password?** on the sign-in page to get a reset
 link by email.
 
-An admin can set a password from the server, which helps when email isn't set
-up yet:
+An admin can set a password from the server. This works before email is set
+up:
 
 ```sh
 php artisan fw:password you@example.edu

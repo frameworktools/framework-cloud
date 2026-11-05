@@ -1,84 +1,91 @@
 @extends('docs.layout')
 
-@section('hero', 'dark-blue')
+@section('description', $site['tagline'] ?: 'Documentation for '.$site['title'].'.')
 
-@section('full')
-    @php
-        $first = collect($site['sections'])->pluck('guides')->flatten()->first();
-    @endphp
-    <div class="overflow-hidden bg-blue-950">
-        <div class="mx-auto max-w-8xl px-6 py-16 sm:px-8 lg:px-12 lg:py-20">
-            <div class="grid grid-cols-1 items-center gap-x-12 gap-y-10 lg:grid-cols-2">
-                <div>
-                    <h1 @class(["text-5xl font-semibold tracking-tight text-white", "font-mono" => $site['title'] === 'fw'])>{{ $site['title'] }}</h1>
-                    @if ($site['tagline'])
-                        <p class="mt-4 text-2xl tracking-tight text-blue-200/80">{{ $site['tagline'] }}</p>
-                    @endif
-                    <div class="mt-8 flex flex-wrap gap-4">
-                        @if ($first)
-                            <a href="/guides/{{ $first }}" class="rounded-full bg-sky-500 px-4 py-2 text-sm font-medium text-white hover:bg-sky-600">Get started</a>
-                        @endif
-                        @if ($site['categories'] !== [])
-                            <a href="/reference" class="rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-blue-50 ring-1 ring-white/15 hover:bg-white/15">Reference</a>
-                        @endif
-                        @if ($site['repository'])
-                            <a href="{{ $site['repository'] }}" class="rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-blue-100/80 ring-1 ring-white/15 hover:bg-white/15 hover:text-blue-50">View on GitHub</a>
-                        @endif
+@php
+    // The home page reads like a guide: the sidebar, a title, the install
+    // command, then each section's pages with their descriptions.
+    $first = collect($site['sections'])->pluck('guides')->flatten()->first();
+    $groups = collect($site['sections'])
+        ->map(fn ($section) => [
+            'id' => str_replace('_', '-', $section['id']),
+            'title' => $section['title'],
+            'reference' => $section['reference'],
+            'items' => $section['reference']
+                ? collect($site['categories'])->map(fn ($c) => ['url' => '/reference#'.$c['id'], 'title' => $c['title'], 'text' => $c['description']])->all()
+                : collect($section['guides'])->map(fn ($id) => ['url' => '/guides/'.$id, 'title' => $site['guides'][$id]['title'], 'text' => $site['guides'][$id]['description']])->all(),
+        ])
+        ->filter(fn ($group) => $group['items'] !== [])
+        ->values();
+    $toc = [
+        ...($site['install'] ? [['level' => 2, 'id' => 'install', 'text' => 'Install']] : []),
+        ...$groups->map(fn ($g) => ['level' => 2, 'id' => $g['id'], 'text' => $g['title']])->all(),
+    ];
+@endphp
+
+@section('content')
+    <article>
+        <header class="mb-9">
+            <p class="font-display text-sm font-medium text-sky-500">Overview</p>
+            <h1 @class(['mt-2 text-3xl font-semibold tracking-tight text-slate-900 dark:text-white', 'font-mono' => $site['title'] === 'fw'])>{{ $site['title'] }}</h1>
+            @if ($site['tagline'])
+                <p class="mt-3 text-lg text-slate-600 dark:text-slate-400">{{ $site['tagline'] }}</p>
+            @endif
+        </header>
+
+        <div class="docs-prose">
+            @if ($site['install'])
+                <h2 id="install">Install</h2>
+                <div class="relative my-6">
+                    <pre class="my-0! pr-28"><code id="docs-install">{{ $site['install'] }}</code></pre>
+                    {{-- A solid strip at the right edge, so a long command scrolls under the button --}}
+                    <div class="absolute inset-y-0 right-0 z-10 flex items-start rounded-r-xl bg-linear-to-l from-slate-900 from-70% to-transparent pt-2.5 pr-2.5 pl-8 dark:from-[#1a2233]">
+                        <button type="button" data-copy="docs-install" class="rounded-lg bg-slate-700 px-3 py-1 text-xs font-medium text-slate-100 ring-1 ring-white/10 hover:bg-slate-600 hover:text-white"><span data-copy-label>Copy</span></button>
                     </div>
                 </div>
+                <p>
+                    @if ($first)
+                        <a href="/guides/{{ $first }}">Read {{ $site['guides'][$first]['title'] }}</a> for the requirements and setup.
+                    @endif
+                    @if ($site['repository'])
+                        The source is <a href="{{ $site['repository'] }}">on GitHub</a>.
+                    @endif
+                </p>
+            @endif
 
-                @if ($site['install'])
-                    <div class="relative">
-                        <div class="absolute inset-0 rounded-2xl bg-gradient-to-tr from-sky-300 via-sky-300/70 to-blue-300 opacity-10 blur-lg"></div>
-                        <div class="relative rounded-2xl bg-black/25 ring-1 ring-white/10">
-                            <div class="absolute -top-px right-11 left-20 h-px bg-gradient-to-r from-sky-300/0 via-sky-300/70 to-sky-300/0"></div>
-                            <div class="flex items-center justify-between px-5 pt-4">
-                                <span class="text-xs font-medium text-blue-200/70">Install</span>
-                                <button type="button" data-copy="docs-install" class="rounded-lg bg-white/10 px-3 py-1 text-xs font-medium text-blue-100/80 hover:bg-white/15 hover:text-blue-50"><span data-copy-label>Copy</span></button>
-                            </div>
-                            <pre class="overflow-x-auto px-5 pt-3 pb-6 text-sm"><code id="docs-install" class="text-slate-50">{{ $site['install'] }}</code></pre>
+            @foreach ($groups as $group)
+                <h2 id="{{ $group['id'] }}">
+                    @if ($group['reference'])
+                        <a href="/reference" class="text-inherit!">{{ $group['title'] }}</a>
+                    @else
+                        {{ $group['title'] }}
+                    @endif
+                </h2>
+                <dl class="not-prose mt-4 divide-y divide-slate-100 dark:divide-slate-800">
+                    @foreach ($group['items'] as $item)
+                        <div class="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
+                            <dt><a href="{{ $item['url'] }}" class="font-medium text-sky-600 hover:underline dark:text-sky-400">{{ $item['title'] }}</a></dt>
+                            <dd class="mt-1 text-slate-600 sm:col-span-2 sm:mt-0 dark:text-slate-400">{{ $item['text'] }}</dd>
                         </div>
-                    </div>
-                @endif
-            </div>
-        </div>
-    </div>
-
-    <div class="mx-auto max-w-8xl px-6 py-16 sm:px-8 lg:px-12">
-        <div class="gap-6 md:columns-2 xl:columns-3">
-            @foreach ($site['sections'] as $section)
-                @if ($section['reference'])
-                    @continue($site['categories'] === [])
-                    <section class="mb-6 break-inside-avoid rounded-xl border border-slate-200 p-6 dark:border-slate-700">
-                        <h2 class="text-lg font-semibold tracking-tight text-slate-900 dark:text-white"><a href="/reference" class="hover:text-sky-600 dark:hover:text-sky-400">{{ $section['title'] }}</a></h2>
-                        <ul role="list" class="mt-4 space-y-3">
-                            @foreach ($site['categories'] as $category)
-                                <li>
-                                    <a href="/reference#{{ $category['id'] }}" class="text-sm font-medium text-sky-600 hover:underline dark:text-sky-400">{{ $category['title'] }}</a>
-                                    @if ($category['description'])
-                                        <p class="text-sm text-slate-500 dark:text-slate-400">{{ $category['description'] }}</p>
-                                    @endif
-                                </li>
-                            @endforeach
-                        </ul>
-                    </section>
-                @else
-                    @continue($section['guides'] === [])
-                    <section class="mb-6 break-inside-avoid rounded-xl border border-slate-200 p-6 dark:border-slate-700">
-                        <h2 class="text-lg font-semibold tracking-tight text-slate-900 dark:text-white">{{ $section['title'] }}</h2>
-                        <ul role="list" class="mt-4 space-y-3">
-                            @foreach ($section['guides'] as $id)
-                                <li>
-                                    <a href="/guides/{{ $id }}" class="text-sm font-medium text-sky-600 hover:underline dark:text-sky-400">{{ $site['guides'][$id]['title'] }}</a>
-                                    @if ($site['guides'][$id]['description'])
-                                        <p class="text-sm text-slate-500 dark:text-slate-400">{{ $site['guides'][$id]['description'] }}</p>
-                                    @endif
-                                </li>
-                            @endforeach
-                        </ul>
-                    </section>
+                    @endforeach
+                </dl>
+                @if ($group['reference'])
+                    <p><a href="/reference">All {{ count($site['entries']) }} entries</a></p>
                 @endif
             @endforeach
         </div>
-    </div>
+    </article>
+
+    @if ($first)
+        <nav class="mt-12 flex border-t border-slate-200 pt-6 dark:border-slate-800" aria-label="Next">
+            <div class="ml-auto text-right">
+                <p class="font-display text-sm font-medium text-slate-900 dark:text-white">Next</p>
+                <a href="/guides/{{ $first }}" class="mt-1 block text-base font-semibold text-slate-500 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-300">{{ $site['guides'][$first]['title'] }} <span aria-hidden="true">→</span></a>
+            </div>
+        </nav>
+    @endif
+@endsection
+
+@section('toc')
+    @include('docs.partials.toc', ['items' => $toc])
 @endsection

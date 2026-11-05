@@ -29,7 +29,7 @@ class Importer
     public function import(string $product, string $source): array
     {
         if (! Products::exists($product)) {
-            throw new InvalidSite(["Unknown product \"{$product}\". Use r, py, or cli."]);
+            throw new InvalidSite(["Unknown product \"{$product}\". Use r, py, cli, or stata."]);
         }
 
         $work = $this->workDir();

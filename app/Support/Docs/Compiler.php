@@ -34,6 +34,8 @@ class Compiler
     /** @var list<string> */
     private array $problems = [];
 
+    private string $product = '';
+
     /**
      * @param  array<string, array{guides: array<string, list<string>>, entries: array<string, list<string>>}>  $others  link targets of the other imported products
      */
@@ -45,6 +47,7 @@ class Compiler
     public function compile(string $dir, string $product): array
     {
         $dir = rtrim($dir, '/');
+        $this->product = $product;
         $this->warnings = [];
         $this->problems = [];
 
@@ -409,6 +412,7 @@ class Compiler
             'summary' => Markdown::plain($entry['summary']),
             'summary_html' => Markdown::inline($entry['summary'], $links),
             'usage' => $entry['usage'] ?? null,
+            'usage_html' => isset($entry['usage']) ? CodeBlocks::tokens($entry['usage'], CodeBlocks::PRODUCT_LANGUAGES[$this->product] ?? '') : null,
             'description' => Markdown::html($entry['description'] ?? null, $links),
             'details' => Markdown::html($entry['details'] ?? null, $links),
             'returns' => Markdown::html($entry['returns'] ?? null, $links),
@@ -434,6 +438,7 @@ class Compiler
             'examples' => array_map(fn ($e) => [
                 'title' => $e['title'] ?? null,
                 'code' => $e['code'],
+                'html' => CodeBlocks::tokens($e['code'], CodeBlocks::PRODUCT_LANGUAGES[$this->product] ?? ''),
                 'runnable' => $e['runnable'] ?? true,
             ], $entry['examples'] ?? []),
             'see_also' => array_map(

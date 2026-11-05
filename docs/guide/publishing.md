@@ -5,8 +5,35 @@ be a rendered Quarto report or book, a figure, a table, a model summary, or a
 file for readers to download. You can publish one output without publishing a
 notebook or your project code.
 
-Hosting artifacts is an optional paid feature on Framework Public Cloud.
+Framework Public Cloud includes free publishing with 1 GB of artifact storage per account. All versions share this limit.
 Self-hosted servers include publishing.
+
+## Publishing destinations
+
+Publish to Framework Cloud, GitHub Pages, a local or mounted folder, or object
+storage. Named destinations are set in project settings:
+
+```yaml
+publish:
+  default: lab
+  destinations:
+    lab:
+      driver: folder
+      path: /Volumes/lab/published
+      visibility: private
+```
+
+Use `to="lab"` in R or Python, or `fw publish --to lab <file>`. Explicit
+destinations override the project default. The account's Publishing settings
+seed the destination for new projects.
+
+Folder bundles include a reader page and retained versions. They work offline.
+Folder access follows filesystem or web-server permissions. GitHub Pages sites
+are public unless the destination API confirms restricted access. Private
+repositories alone do not restrict Pages.
+
+Cloud tracks external publication metadata when a project token is available.
+It stores no external files or local paths. Access settings stay at the destination.
 
 ## Browser uploads
 
@@ -44,7 +71,7 @@ fw publish outputs/figures/effect.png --slug effect
 
 The R and Python packages also accept rendered HTML, rendered directories, and
 Quarto documents through their existing notebook publishing functions. The CLI
-accepts rendered files and folders; render source documents before uploading.
+accepts rendered files and folders. Render source documents before uploading.
 
 Explicit `to = "cloud"` in R or `to="cloud"` in Python selects Framework Cloud
 even when the project has a storage bucket. Existing calls that omit `to` keep
@@ -90,13 +117,13 @@ Readers can sort columns, search cells, change pages, and export the loaded
 preview as CSV. Numeric sorting respects numeric values and keeps missing
 values last. Large integer identifiers are displayed as text to retain their
 exact digits. The downloaded JSON retains the full representation. Table
-previews load up to 1,000 rows and 50 columns; notices identify omitted data
+previews load up to 1,000 rows and 50 columns. Notices identify omitted data
 and other preview limits. Representations over 8 MiB remain downloadable.
 
 Model summaries do not automatically upload the original model object or
 observation-level data. Publishing a data frame uploads all the rows supplied
-to that function. To share a saved model object, publish its file explicitly;
-readers can download it, and Cloud does not execute it.
+to that function. To share a saved model object, publish its file explicitly.
+Readers can download it. Cloud does not execute it.
 
 ## Artifact management
 
@@ -116,7 +143,7 @@ and has four tabs:
 New artifacts are **unlisted**. Anyone with their link can open them. Unlisted
 links are not authenticated private access.
 
-Enable a readable link on the artifact's **Sharing** tab, or use the existing `slug`
+Enable a readable link on the artifact's **Sharing** tab, or use the `slug`
 option from a package. A readable link looks like:
 
 ```text
@@ -132,8 +159,8 @@ versions. Passwords need at least eight characters. Changing a password revokes
 existing reader sessions. Owners can open their artifacts while signed in.
 
 Older artifacts may have files already exposed on a separate public storage
-host. Cloud refuses to add a password while those external versions remain;
-a password on the reader page cannot revoke a public file URL.
+host. Cloud refuses to add a password while those external versions remain.
+A password on the reader page cannot revoke a public file URL.
 
 ## Versions and merging
 
@@ -152,8 +179,8 @@ On an artifact's **Settings** tab, use **Merge another artifact into this one** 
 append another artifact's versions to the destination's history. Both artifacts
 must belong to the same project. The source retains its original links and
 versions, and future publishing uses the destination. The copied versions use
-the destination's sharing settings. Merging combines version histories; it does
-not combine the contents of two reports or statistical models.
+the destination's sharing settings. Merging combines version histories only.
+The contents of two reports or statistical models are not combined.
 
 ## Collections
 
@@ -173,8 +200,8 @@ returns the artifact URL and explains how to attach it from the web interface.
 
 Each entry can follow the latest artifact version or pin an existing version.
 Pin versions when you want reviewers to read a particular set of results.
-A deleted pinned version becomes unavailable; its entry never silently advances
-to another version.
+A deleted pinned version becomes unavailable. Its entry does not move to
+another version.
 
 Collections start **private**, visible only to their owner. You can share them
 as **unlisted** or **public** and optionally set a collection password.
@@ -212,7 +239,7 @@ and artifacts in order.
 - **Artifacts.** **Add artifact** opens a search of the project's published
   figures, tables, models, tests, and documents. Each artifact section shows a
   live preview, a version menu, and a caption.
-- **Arranging.** Hover between sections to insert text or an artifact there.
+- **Section order.** Hover between sections to insert text or an artifact there.
   Drag a section by the handle in its left margin, or focus the handle and
   use the up and down arrow keys. The right margin has buttons to move,
   duplicate, and remove a section. The outline beside the report jumps to
@@ -226,8 +253,8 @@ and artifacts in order.
 | Bulleted and numbered list | ⌘⇧8, ⌘⇧7 | Ctrl+Shift+8, Ctrl+Shift+7 |
 | Save now | ⌘S | Ctrl+S |
 
-Drafts save automatically a moment after you stop typing. A new or removed
-password is the exception: it applies only when you choose **Save draft**.
+Drafts save automatically a moment after you stop typing. Adding or removing
+a password applies only when you choose **Save draft**.
 Use **Preview** to read the saved draft as readers will.
 
 Saving a draft updates the editor. Publishing creates a numbered report
@@ -243,13 +270,13 @@ require explicit permission to share them with report readers. Artifact
 passwords continue to apply separately, including inside a report.
 
 Changing a report password revokes existing report reader sessions. Leaving
-its replacement field blank keeps the current password; select the explicit
+its replacement field blank keeps the current password. Select the explicit
 removal option to remove protection. A removed artifact version shows as
 unavailable in older reports, without substituting a newer result.
 
 The report reader provides section navigation, formatted text, interactive
 artifact displays, download links, and access to earlier report versions.
-Hosted report publishing uses the same paid entitlement as artifacts.
+Hosted report publishing is free.
 
 ## Storage
 

@@ -22,6 +22,7 @@ class GuideController extends Controller
             'github' => 'GitHub integration',
             'skill-sync' => 'Skill sync',
             'publishing' => 'Publishing artifacts',
+            'stata' => 'Framework for Stata',
         ],
         'Self-hosting' => [
             'self-hosting' => 'Self-hosting overview',

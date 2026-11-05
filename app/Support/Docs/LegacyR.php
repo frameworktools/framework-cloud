@@ -28,8 +28,8 @@ class LegacyR
         $hasReference = self::hasDatabase();
 
         $sections = [
-            ['id' => 'getting_started', 'title' => 'Getting Started'],
-            ['id' => 'project_types', 'title' => 'Project Types'],
+            ['id' => 'getting_started', 'title' => 'Getting started'],
+            ['id' => 'project_types', 'title' => 'Project types'],
             ['id' => 'features', 'title' => 'Features'],
         ];
         if ($hasReference) {

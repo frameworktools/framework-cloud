@@ -19,11 +19,12 @@ ghcr.io/frameworktools/framework-cloud
 ```
 
 The image holds the web server and the application. A Compose file runs it as
-three containers:
+four containers:
 
 - **app**: the web server, which gets an HTTPS certificate for your domain
 - **worker**: background jobs, such as creating GitHub repositories and
   sending email
+- **scaffolder**: builds the projects that people download as a zip
 - **postgres**: the database
 
 You download two files, `compose.yml` and `.env.example`, fill in the settings,
@@ -33,9 +34,9 @@ and start it. You don't need to clone the repository or build anything.
 
 | Setup | For | Sign-in |
 |---|---|---|
-| [Install with Docker](install-docker.md) | A lab, department, or institution | Accounts, with email links, passkeys, passwords, or GitHub |
-| [Run it on your own computer](running-at-home.md) | One person | None: single-user mode signs you in |
-| [Install without Docker](install-manual.md) | Servers that already run PHP, or Laravel Forge | Accounts |
+| [Docker installation](install-docker.md) | A lab, department, or institution | Accounts, with email links, passkeys, passwords, or GitHub |
+| [Local installation](running-at-home.md) | One person | None: single-user mode signs you in |
+| [Manual installation](install-manual.md) | Servers that already run PHP, or Laravel Forge | Accounts |
 
 ## Requirements
 

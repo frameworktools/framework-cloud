@@ -1,0 +1,11 @@
+product: stata
+title: Framework for Stata
+tagline: Structured research projects in Stata
+repository: https://github.com/frameworktools/framework-stata
+install: net install framework, from("https://example.org/framework-stata") replace
+sections:
+  - id: getting_started
+    title: Getting Started
+  - id: reference
+    title: Reference
+    reference: true

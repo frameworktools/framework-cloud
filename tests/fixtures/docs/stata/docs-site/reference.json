@@ -1,0 +1,11 @@
+{
+  "schema": "docs-reference.v1",
+  "product": "stata",
+  "version": "0.1.0",
+  "categories": [
+    {"id": "data", "title": "Data", "description": "Named datasets and integrity checks", "position": 1, "common": ["fw_use"]}
+  ],
+  "entries": [
+    {"id": "fw_use", "name": "fw_use", "kind": "command", "category": "data", "summary": "Load a named dataset and check its integrity", "usage": "fw_use name [, clear]"}
+  ]
+}

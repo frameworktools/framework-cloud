@@ -3,7 +3,7 @@
 namespace Tests\Feature\Docs;
 
 /**
- * The three docs hosts and what their pages show once a site is imported.
+ * The docs hosts and what their pages show once a site is imported.
  */
 class DocsSitesTest extends DocsTestCase
 {
@@ -21,29 +21,77 @@ class DocsSitesTest extends DocsTestCase
         $this->docs('cli', '/guides/install')->assertOk()->assertSee('Install fw');
     }
 
+    public function test_the_home_page_reads_like_a_guide(): void
+    {
+        $this->import('py');
+
+        $this->docs('py')
+            ->assertOk()
+            // The sidebar, the install command, and "Contents" as on every other page
+            ->assertSee('aria-label="Sidebar"', false)
+            ->assertSee('<h2 id="install">Install</h2>', false)
+            ->assertSee('uv add framework-py')
+            ->assertSee('<h2 id="getting-started">', false)
+            ->assertSeeInOrder(['Installation', 'Install framework-py with uv or pip'])
+            ->assertSee('Contents')
+            ->assertDontSee('bg-blue-950', false);
+    }
+
+    public function test_stata_joins_the_switcher_once_its_docs_are_imported(): void
+    {
+        config(['framework.stata_package' => false]);
+        $this->docs('r')->assertDontSee('href="http://stata.framework.test/"', false);
+        $this->docs('stata')->assertOk()->assertSee('Documentation unavailable');
+
+        $this->import('stata');
+
+        $this->docs('r')->assertSee('href="http://stata.framework.test/"', false);
+        $this->docs('stata')
+            ->assertOk()
+            ->assertSee('Framework for Stata')
+            ->assertSee('net install framework');
+        $this->docs('stata', '/guides/installation')
+            ->assertOk()
+            ->assertSee('href="http://r.framework.test/guides/installation"', false);
+        $this->docs('stata', '/reference/fw_use')->assertOk()->assertSee('fw_use name');
+    }
+
     public function test_the_apex_still_serves_the_app(): void
     {
         $this->get('http://framework.test/')
             ->assertOk()
-            ->assertSee('Rigorous, responsible, and reproducible data science');
+            ->assertSee('Structured data science workflows');
     }
 
     public function test_fw_docs_host_is_still_the_r_host(): void
     {
-        $config = require config_path('framework.php');
-        $this->assertSame('r.framework.test', $config['docs_hosts']['r']);
+        // phpunit.xml pins FW_DOCS_HOST_R; set and clear it everywhere env() reads
+        $env = function (string $name, ?string $value): void {
+            if ($value === null) {
+                putenv($name);
+                unset($_ENV[$name], $_SERVER[$name]);
+            } else {
+                putenv("{$name}={$value}");
+                $_ENV[$name] = $_SERVER[$name] = $value;
+            }
+        };
+        $pinned = getenv('FW_DOCS_HOST_R') ?: null;
 
-        putenv('FW_DOCS_HOST=docs.example.edu');
         try {
+            $env('FW_DOCS_HOST_R', null);
+            $config = require config_path('framework.php');
+            $this->assertSame('r.framework.test', $config['docs_hosts']['r']);
+
+            $env('FW_DOCS_HOST', 'docs.example.edu');
             $config = require config_path('framework.php');
             $this->assertSame('docs.example.edu', $config['docs_hosts']['r']);
 
-            putenv('FW_DOCS_HOST_R=r.example.edu');
+            $env('FW_DOCS_HOST_R', 'r.example.edu');
             $config = require config_path('framework.php');
             $this->assertSame('r.example.edu', $config['docs_hosts']['r']);
         } finally {
-            putenv('FW_DOCS_HOST');
-            putenv('FW_DOCS_HOST_R');
+            $env('FW_DOCS_HOST', null);
+            $env('FW_DOCS_HOST_R', $pinned);
         }
     }
 
@@ -77,6 +125,9 @@ class DocsSitesTest extends DocsTestCase
         $this->docs('py', '/guides/installation')
             ->assertOk()
             ->assertSee('<h2 id="requirements">Requirements</h2>', false)
+            // Fenced code is colored at import, on the docs' own background
+            ->assertSee('<pre class="phiki language-', false)
+            ->assertDontSee('style="background-color:', false)
             ->assertSee('class="callout callout-note"', false)
             ->assertSee('class="callout callout-warning"', false)
             ->assertDontSee('[!NOTE]')
@@ -116,7 +167,9 @@ class DocsSitesTest extends DocsTestCase
             ->assertOk()
             ->assertSee('data_read()')
             ->assertSee('Read a data file from the catalog')
-            ->assertSee('data_read(name, *, delimiter=&#039;auto&#039;)', false)
+            ->assertSeeText("data_read(name, *, delimiter='auto')")
+            // Usage and examples are colored as Python
+            ->assertSee('<span class="token" style="color:', false)
             ->assertSeeInOrder(['Arguments', 'Name', 'Type', 'Default', 'Description', 'delimiter', 'str', "'auto'"])
             ->assertSee('Formats')
             ->assertSee('Delimiters are detected.')

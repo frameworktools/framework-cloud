@@ -6,6 +6,7 @@ use League\CommonMark\Environment\Environment;
 use League\CommonMark\Event\DocumentParsedEvent;
 use League\CommonMark\Extension\CommonMark\CommonMarkCoreExtension;
 use League\CommonMark\Extension\CommonMark\Node\Block\BlockQuote;
+use League\CommonMark\Extension\CommonMark\Node\Block\FencedCode;
 use League\CommonMark\Extension\CommonMark\Node\Inline\Image;
 use League\CommonMark\Extension\CommonMark\Node\Inline\Link;
 use League\CommonMark\Extension\GithubFlavoredMarkdownExtension;
@@ -17,7 +18,8 @@ use League\CommonMark\Node\Inline\Text;
 
 /**
  * Renders docs-site Markdown: CommonMark with GFM, ids on headings, GitHub
- * alerts (> [!NOTE]) as callouts, and link targets rewritten by Links.
+ * alerts (> [!NOTE]) as callouts, colored code (CodeBlocks), and link
+ * targets rewritten by Links.
  */
 class Markdown
 {
@@ -47,6 +49,7 @@ class Markdown
         $environment->addExtension(new CommonMarkCoreExtension);
         $environment->addExtension(new GithubFlavoredMarkdownExtension);
         $environment->addExtension(new HeadingPermalinkExtension);
+        $environment->addRenderer(FencedCode::class, new CodeBlocks, 10);
         $environment->addEventListener(DocumentParsedEvent::class, function (DocumentParsedEvent $event) use ($links) {
             // Collect first: alert() detaches nodes, which upsets a live walk
             $nodes = iterator_to_array($event->getDocument()->iterator(), false);

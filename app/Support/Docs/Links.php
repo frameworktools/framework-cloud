@@ -48,7 +48,7 @@ class Links
             return $target;
         }
 
-        if (preg_match('#^(?:(r|py|cli):)?(guide|ref):([^\#]+)(\#.*)?$#', $target, $m)) {
+        if (preg_match('#^(?:(r|py|cli|stata):)?(guide|ref):([^\#]+)(\#.*)?$#', $target, $m)) {
             return $this->page($m[1] ?: $this->product, $m[2], $m[3], $m[4] ?? '', $target);
         }
 
@@ -80,7 +80,7 @@ class Links
      */
     public function seeAlso(string $item): array
     {
-        if (preg_match('#^(?:(r|py|cli):)?(guide|ref):([^\#]+)#', $item, $m)) {
+        if (preg_match('#^(?:(r|py|cli|stata):)?(guide|ref):([^\#]+)#', $item, $m)) {
             $other = $m[1] !== '' && $m[1] !== $this->product ? ' ('.Products::LABELS[$m[1]].')' : '';
 
             return ['title' => $m[3].$other, 'url' => $this->resolve($item)];

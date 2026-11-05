@@ -79,11 +79,11 @@ by name:
   blueprint has it. A tool the workflow or the blueprint requires stays. A
   tool chosen for the project wins over your default.
 
-Your editor files and AI agents are yours alone, so no blueprint sets them.
+Editor files and AI agents are personal settings, so no blueprint sets them.
 Sensitive data comes from the blueprint and its project structure, and
 Privacy Sensitive turns it on.
 
-- **Agent setup.** Off, a project gets no agent files and no skill sets.
+- **Agent setup.** When it is off, a project gets no agent files and no skill sets.
 - **Data safety hooks.** They need Git, so they're skipped when Git is off.
 
 A project keeps the configuration it was created with. Changing your
@@ -178,7 +178,7 @@ data provenance unless you turn it on.
 1. Choose a blueprint. It starts as your default blueprint. Click **Change
    pieces** to change its structure, tools, packages, skills, or settings for
    this project only.
-2. Give the project a name and, if you like, a description.
+2. Name the project and add an optional description.
 3. Choose the language. It starts as the blueprint's language.
 4. Choose where to set it up:
    - **On your computer.** Framework Cloud gives you a project token. In R,
@@ -199,10 +199,10 @@ Python uses the server you connected to with `cloud_login()`.
 
 Each project has one language: R, Python, or Stata. The R package builds R
 projects, and the Python package builds Python projects. The `fw`
-command-line tool builds Stata projects. Stata support covers
-scaffolding only: Framework creates the folders, files, and Git setup, and it
-has no Stata commands for the analysis itself. A blueprint has a language too,
-which new projects start with.
+command-line tool builds Stata projects. In Stata, the framework package sets
+the project's paths, loads and saves data with integrity checks, and publishes
+results. See [Framework for Stata](stata.md). Package sets don't apply to
+Stata. A blueprint has a language too, which new projects start with.
 
 Stata projects can use the standard, privacy-sensitive, or bare structure.
 The course and presentation structures are for R only. A Stata project leaves
