@@ -82,7 +82,7 @@ class GitHubTest extends TestCase
     {
         $this->fakeSocialite(42, 'ada', 'Ada@Example.org');
 
-        $this->get('/auth/github/callback?code=x&state=y')->assertRedirect('/projects');
+        $this->get('/auth/github/callback?code=x&state=y')->assertRedirect('/dashboard');
 
         $user = User::where('email', 'ada@example.org')->firstOrFail();
         $this->assertAuthenticatedAs($user);
@@ -97,7 +97,7 @@ class GitHubTest extends TestCase
         $user = User::factory()->create(['email' => 'ada@example.org']);
         $this->fakeSocialite(42, 'ada', 'ada@example.org');
 
-        $this->get('/auth/github/callback?code=x&state=y')->assertRedirect('/projects');
+        $this->get('/auth/github/callback?code=x&state=y')->assertRedirect('/dashboard');
 
         $this->assertAuthenticatedAs($user);
         $this->assertSame(1, User::count());

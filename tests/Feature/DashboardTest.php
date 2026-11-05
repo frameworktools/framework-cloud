@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class DashboardTest extends TestCase
@@ -21,7 +22,8 @@ class DashboardTest extends TestCase
         $user = User::factory()->create();
         $this->actingAs($user);
 
-        $this->get('/dashboard')->assertRedirect('/projects');
+        $this->get('/dashboard')->assertInertia(fn (Assert $page) => $page->component('Dashboard')->where('counts.projects', 0)->has('recentArtifacts', 0));
+        $this->get('/')->assertSee(route('dashboard'), false)->assertSee('Open dashboard');
         $this->get('/projects')->assertOk();
     }
 }

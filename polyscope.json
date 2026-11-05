@@ -1,17 +1,9 @@
 {
   "scripts": {
-    "setup": [
-      "projectctl workspace-herd-link fwapp \"{{folder}}.test\" \"$PWD\" --secure",
-      "composer install --no-interaction --prefer-dist --optimize-autoloader",
-      "php artisan migrate --force --no-interaction",
-      "npm install",
-      "rm -f public/hot",
-      "npm run build",
-      "rm -f public/hot"
-    ],
+    "setup": "$HOME/.bin/laravel-workspace-setup fwcloud",
     "archive": [
       "herd unsecure",
-      "projectctl workspace-herd-unlink fwapp \"{{folder}}.test\" --keep-databases"
+      "projectctl workspace-herd-unlink fwcloud \"{{folder}}.test\" --keep-databases"
     ]
   },
   "preview": {

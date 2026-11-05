@@ -21,7 +21,7 @@
             <p>Framework Cloud stores your Framework settings, project definitions, and
             published documents, and serves them back to you and to links you share.
             Your local projects are yours: nothing here claims ownership of your code,
-            data, or results, and the framework R package works fully without an account.</p>
+            data, or results, and the Framework R and Python packages and CLI work without an account.</p>
 
             <h2>Acceptable use</h2>
             <p><strong>Do not upload protected health information (PHI), personally
@@ -39,10 +39,6 @@
             <h2>Accounts and tokens</h2>
             <p>You are responsible for the machines that hold your tokens. Revoke tokens
             for lost machines at Settings → API tokens.</p>
-
-            <h2>Free tier</h2>
-            <p>Settings, blueprints, and project definitions are free. Fair-use ceilings
-            exist to prevent abuse; a human doing research will not hit them.</p>
 
             <h2>Warranty</h2>
             <p>Provided as-is, without warranty. We work to keep published URLs stable

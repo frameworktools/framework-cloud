@@ -102,13 +102,13 @@ class WelcomeController extends Controller
             'setup_completed_at' => now(),
         ])->save();
 
-        return redirect()->route('projects')->with('status', 'setup-complete');
+        return redirect()->route('dashboard')->with('status', 'setup-complete');
     }
 
     public function skip(Request $request): RedirectResponse
     {
         $request->user()->forceFill(['setup_completed_at' => $request->user()->setup_completed_at ?? now()])->save();
 
-        return redirect()->route('projects');
+        return redirect()->route('dashboard');
     }
 }

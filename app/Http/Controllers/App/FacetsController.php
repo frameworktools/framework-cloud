@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Facet;
 use App\Models\Project;
 use App\Models\Skill;
+use App\Support\GitignoreTemplate;
 use App\Support\Layer;
 use App\Support\Library;
 use App\Support\ProjectDefaults;
@@ -82,6 +83,7 @@ class FacetsController extends Controller
         return Inertia::render('Pieces/Structures', [
             'structures' => $pieces->map(fn (Facet $f) => Library::facet($f, $user) + [
                 'preview' => StructurePreview::of($f->latestVersion?->layer ?? []),
+                'gitignore_content' => $f->latestVersion?->layer['git']['gitignore_content'] ?? '',
             ]),
         ]);
     }
@@ -222,15 +224,23 @@ class FacetsController extends Controller
         $user = $request->user();
         $layer = $facet?->latestVersion?->layer ?? ($kind === 'structure' ? ['type' => 'project'] : []);
 
+        $settings = Arr::except($layer, ['files', 'skills', 'packages']);
+        Arr::forget($settings, 'git.gitignore_content');
+        if (($settings['git'] ?? null) === []) {
+            unset($settings['git']);
+        }
+
         return Inertia::render('Pieces/Edit', [
             'kind' => $kind,
             'path' => self::PATHS[$kind],
+            'language' => $kind === 'package_set' && SkillsController::preferredLanguage($user) === 'stata' ? 'r' : SkillsController::preferredLanguage($user),
             'facet' => $facet ? Library::facet($facet->load('owner'), $user) + [
                 'language' => $facet->language,
                 'versions' => $facet->versions()->get(['id', 'version', 'notes', 'created_at']),
             ] : null,
             'values' => [
-                'settings_yaml' => Layer::toYaml(Arr::except($layer, ['files', 'skills', 'packages'])),
+                'settings_yaml' => Layer::toYaml($settings),
+                'gitignore_content' => $layer['git']['gitignore_content'] ?? ($facet ? '' : GitignoreTemplate::for('project')),
                 'packages' => collect($layer['packages']['default_packages'] ?? [])->map(fn ($spec, $name) => ($spec['source'] ?? null) === 'github' && ! empty($spec['repo']) ? $spec['repo'] : $name)->sort(SORT_NATURAL | SORT_FLAG_CASE)->implode("\n"),
                 'files' => collect($layer['files'] ?? [])->map(fn ($file, $path) => [
                     'path' => $path,
@@ -242,7 +252,7 @@ class FacetsController extends Controller
                     'entry' => $entry,
                 ])->values(),
             ],
-            'library' => $kind === 'skill_set' ? Skill::listedFor($user)->with(['owner', 'latestVersion'])->orderByRaw('user_id is not null')
+            'library' => $kind === 'skill_set' ? Skill::listedFor($user)->with(['owner', 'latestVersion', 'tags'])->orderByRaw('user_id is not null')
                 ->orderBy('position')->orderBy('key')->get()->map(fn ($s) => Library::skill($s, $user)) : [],
         ]);
     }
@@ -264,6 +274,7 @@ class FacetsController extends Controller
             'language' => $kind === 'package_set' ? ['required', Rule::in(['r', 'python'])] : ['nullable', Rule::in(Project::LANGUAGES)],
             'requirements' => ['nullable', 'string', 'max:1000'],
             'settings_yaml' => ['nullable', 'string'],
+            'gitignore_content' => ['nullable', 'string', 'max:65536'],
             'packages' => ['nullable', 'string', 'max:5000'],
             'files' => ['array'],
             'files.*.path' => ['required', 'string', 'max:255', 'distinct'],
@@ -285,6 +296,10 @@ class FacetsController extends Controller
             }
             if (array_intersect_key($layer, ['files' => 1, 'skills' => 1, 'packages' => 1])) {
                 throw ValidationException::withMessages(['settings_yaml' => 'A project structure holds folders, settings, and files. Put packages in a package set and skills in a skill set.']);
+            }
+
+            if (array_key_exists('gitignore_content', $data)) {
+                $layer['git']['gitignore_content'] = $data['gitignore_content'] ?? '';
             }
 
             foreach ($data['files'] ?? [] as $file) {

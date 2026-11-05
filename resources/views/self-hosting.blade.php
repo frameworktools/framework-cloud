@@ -20,7 +20,7 @@
 
         $includes = [
             ['heroicon-o-square-3-stack-3d', 'Blueprints and projects', 'Built-in and custom blueprints, skills, and project setup. Projects can be local or on GitHub.'],
-            ['heroicon-o-paper-airplane', 'Artifact publishing', 'Every account can publish artifacts. Framework Public Cloud requires a paid publishing plan.'],
+            ['heroicon-o-paper-airplane', 'Artifact publishing', 'Every account can publish artifacts. Framework Public Cloud includes 1 GB of artifact storage.'],
             ['heroicon-o-user-circle', 'Account management', 'Email links, passkeys, passwords, and optional GitHub sign-in. Registration is configurable.'],
             ['heroicon-o-computer-desktop', 'Single-user mode', 'Local installation with no sign-in screen. Requests from that computer are signed in as you.'],
         ];
@@ -34,12 +34,12 @@
         ];
 
         $docs = [
-            ['install-docker', 'Install with Docker', 'Requirements, configuration, and the first sign-in.'],
+            ['install-docker', 'Docker installation', 'Requirements, configuration, and the first sign-in.'],
             ['running-at-home', 'Local installation', 'A private, single-user setup.'],
             ['server-setup', 'Server setup', 'Email, GitHub, and artifact storage.'],
             ['configuration', 'Configuration reference', 'Every environment variable.'],
             ['maintenance', 'Maintenance', 'Upgrades, backups, and admin commands.'],
-            ['install-manual', 'Install without Docker', 'For servers that already run PHP.'],
+            ['install-manual', 'Manual installation', 'For servers that already run PHP.'],
         ];
     @endphp
 
@@ -54,7 +54,7 @@
                 <h1 class="text-4xl font-semibold tracking-tight text-balance sm:text-5xl">Self-hosted Framework Cloud</h1>
                 <p class="mt-6 text-lg leading-relaxed text-slate-700 dark:text-slate-300">
                     Framework Cloud is open source. Host it for your lab, department, or institution.
-                    Run it on your own computer for personal use.
+                    A single-user installation runs on a personal computer.
                 </p>
                 <p class="mt-4 text-slate-600 dark:text-slate-400">
                     A self-hosted server includes the same features as Framework Public Cloud.
@@ -189,7 +189,7 @@ docker compose up -d</x-code-panel>
             <h2 class="text-xl font-semibold tracking-tight">Framework Public Cloud</h2>
             <p class="mx-auto mt-3 max-w-xl {{ $muted }}">
                 Framework Public Cloud at framework.pub is free to use. We run and update the
-                server. Artifact publishing requires a paid plan.
+                server. Each account includes 1 GB of artifact storage.
             </p>
             <a href="{{ route('register') }}" class="mt-6 inline-block rounded-md border border-slate-300 px-5 py-2.5 font-medium text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-900">Create an account on Framework Public Cloud</a>
         </section>

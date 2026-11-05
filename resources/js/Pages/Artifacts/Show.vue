@@ -1,4 +1,5 @@
 <script setup>
+import { pageClass } from '@/ui.js';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -22,6 +23,8 @@ const breadcrumbItems = computed(() => {
     const collections = props.usedIn.filter(item => item.type === 'Collection').map(item => ({ label: item.title, href: item.href, icon: 'collection' }));
     return [{ label: 'Artifacts', href: '/published' }, ...(collections.length === 1 ? collections : collections.length ? [{ links: collections }] : [])];
 });
+const external = computed(() => props.artifact.driver && props.artifact.driver !== 'cloud');
+const hasUrl = computed(() => !external.value || !!props.artifact.external_url);
 const base = `/published/${props.artifact.id}`;
 const kind = computed(() => artifactKind(props.artifact.kind));
 // R and Python send models, tests, and data frames as a JSON summary they name themselves
@@ -33,7 +36,7 @@ const chosenFile = computed(() => props.artifact.original_filename
 const tabs = computed(() => [
     { label: 'Overview', value: 'overview' },
     { label: 'Versions', value: 'versions', count: props.versions.length },
-    { label: 'Sharing', value: 'sharing' },
+    ...(!external.value ? [{ label: 'Sharing', value: 'sharing' }] : []),
     { label: 'Settings', value: 'settings' },
 ]);
 const initial = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '').get('tab');
@@ -89,7 +92,7 @@ const details = useForm({ title: props.artifact.title, description: props.artifa
 const saveDetails = () => details.patch(base, { preserveScroll: true, onSuccess: () => details.defaults() });
 
 // Sharing
-const sharing = useForm({ visibility: props.artifact.readable ? 'public' : 'unlisted', password: '', removePassword: false });
+const sharing = useForm({ visibility: props.artifact.visibility ?? (props.artifact.readable ? 'public' : 'unlisted'), password: '', removePassword: false });
 const passwordChanging = ref(false);
 function saveSharing() {
     sharing.transform(data => {
@@ -112,13 +115,21 @@ function mergeIn() {
 }
 function destroyVersion(version) {
     const last = props.versions.length === 1;
+    if (external.value) {
+        if (confirm(`Remove version ${version.number} from Framework Cloud? Files at the publishing destination stay available.`)) router.delete(`${base}/versions/${version.number}?then=list`, { preserveScroll: true });
+        return;
+    }
     if (!confirm(last ? `Delete version ${version.number}? It is the only version, so “${props.artifact.title}” is taken down.` : `Delete version ${version.number}? Its links stop working.`)) return;
     router.delete(`${base}/versions/${version.number}?then=list`, { preserveScroll: true });
 }
 function destroy() {
+    if (external.value) {
+        if (confirm(`Remove “${props.artifact.title}” from Framework Cloud? Files at the publishing destination stay available.`)) router.delete(`${base}?then=list`);
+        return;
+    }
     if (confirm(`Take down “${props.artifact.title}”? Every version and link stops working for everyone.`)) router.delete(`${base}?then=list`);
 }
-const sharingText = { unlisted: 'Anyone with the link', public: 'Public' };
+const sharingText = { unlisted: 'Anyone with the link', public: 'Public', private: 'Private' };
 </script>
 
 <template>
@@ -126,7 +137,7 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public' };
     <AppLayout bleed>
         <div class="min-h-full">
 
-            <div class="mx-auto max-w-5xl px-5 py-8 sm:px-8">
+            <div :class="pageClass">
                 <UiBreadcrumbs inline trailing :items="breadcrumbItems" class="mb-3" />
                 <header class="flex flex-wrap items-start gap-x-6 gap-y-4">
                     <div class="min-w-0 flex-1 basis-72">
@@ -142,10 +153,10 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public' };
                         </p>
                     </div>
                     <div class="flex shrink-0 items-center gap-2">
-                        <UiButton variant="ghost" @click="copy('share', artifact.url)">
+                        <UiButton v-if="hasUrl" variant="ghost" @click="copy('share', artifact.url)">
                             <component :is="copied === 'share' ? CheckIcon : ClipboardDocumentIcon" class="text-slate-500 dark:text-slate-400" aria-hidden="true" />{{ copied === 'share' ? 'Copied' : 'Copy link' }}
                         </UiButton>
-                        <UiButton variant="primary" :href="artifact.url" external><ArrowTopRightOnSquareIcon aria-hidden="true" />View</UiButton>
+                        <UiButton v-if="hasUrl" variant="primary" :href="artifact.url" external><ArrowTopRightOnSquareIcon aria-hidden="true" />View</UiButton>
                     </div>
                 </header>
 
@@ -157,10 +168,11 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public' };
 
                 <!-- Overview -->
                 <div v-if="tab === 'overview'" class="pt-8">
+                    <UiCallout v-if="external" class="mb-6" :heading="artifact.location">Files and access are managed at the publishing destination. Framework Cloud stores publication metadata only.</UiCallout>
                     <p v-if="artifact.description" class="mb-6 max-w-2xl whitespace-pre-line text-sm text-slate-600 dark:text-slate-300">{{ artifact.description }}</p>
                     <dl class="flex flex-wrap gap-x-10 gap-y-4 text-sm">
                         <div><dt class="text-slate-500 dark:text-slate-400">Versions</dt><dd class="mt-0.5 font-medium text-slate-800 dark:text-white">{{ versions.length }}</dd></div>
-                        <div><dt class="text-slate-500 dark:text-slate-400">Views</dt><dd class="mt-0.5 font-medium text-slate-800 dark:text-white">{{ artifact.views?.toLocaleString() ?? 0 }}</dd></div>
+                        <div v-if="!external"><dt class="text-slate-500 dark:text-slate-400">Views</dt><dd class="mt-0.5 font-medium text-slate-800 dark:text-white">{{ artifact.views?.toLocaleString() ?? 0 }}</dd></div>
                         <div><dt class="text-slate-500 dark:text-slate-400">Size</dt><dd class="mt-0.5 font-medium text-slate-800 dark:text-white">{{ size(artifact.size_bytes) }}</dd></div>
                         <div v-if="chosenFile" class="min-w-0"><dt class="text-slate-500 dark:text-slate-400">File</dt><dd class="mt-0.5 break-all font-medium text-slate-800 dark:text-white">{{ artifact.original_filename }}</dd></div>
                         <div><dt class="text-slate-500 dark:text-slate-400">First published</dt><dd class="mt-0.5 font-medium text-slate-800 dark:text-white">{{ date(artifact.published_at) }}</dd></div>
@@ -174,13 +186,13 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public' };
                     </dl>
                     <!-- Two rules with a sliver of page between them, and a light shadow, lift the preview off the page.
                          It reaches out past the column so what it shows lines up with the tabs above. -->
-                    <div class="-mx-4 mt-8 rounded-[1.375rem] p-1.5 sm:-mx-[30px] shadow-lg ring-1 shadow-slate-900/[0.06] ring-slate-900/10 dark:shadow-black/20 dark:ring-white/10">
+                    <div v-if="!external" class="-mx-4 mt-8 rounded-[1.375rem] p-1.5 sm:-mx-[30px] shadow-lg ring-1 shadow-slate-900/[0.06] ring-slate-900/10 dark:shadow-black/20 dark:ring-white/10">
                     <div class="overflow-hidden rounded-2xl bg-white ring-1 ring-slate-900/10 dark:bg-slate-950 dark:ring-white/15">
                         <div class="flex items-center justify-between gap-3 border-b border-slate-800/10 py-3 pr-5 pl-4 sm:pl-6 dark:border-white/10">
                             <p class="flex items-center gap-2 text-sm"><EyeIcon class="size-4 text-slate-400" aria-hidden="true" /><span class="font-semibold text-slate-900 dark:text-white">Preview</span><span class="text-slate-500 dark:text-slate-400">Newest version, as readers see it</span></p>
-                            <a :href="artifact.url" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">Open<ArrowTopRightOnSquareIcon class="size-4" aria-hidden="true" /></a>
+                            <a v-if="hasUrl" :href="artifact.url" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">Open<ArrowTopRightOnSquareIcon class="size-4" aria-hidden="true" /></a>
                         </div>
-                        <iframe :src="previewUrl" :title="`Preview of ${artifact.title}`" scrolling="no" class="block h-96 w-full overflow-hidden border-0 bg-white dark:bg-slate-950" @load="fit" />
+                        <iframe v-if="!external" :src="previewUrl" :title="`Preview of ${artifact.title}`" scrolling="no" class="block h-96 w-full overflow-hidden border-0 bg-white dark:bg-slate-950" @load="fit" />
                     </div>
                     </div>
                 </div>
@@ -198,7 +210,7 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public' };
                                 <td class="max-sm:hidden">{{ version.merged_from ? `Merged from ${version.merged_from.title || 'another artifact'}` : (version.original_filename || '—') }}</td>
                                 <td class="actions">
                                     <div class="flex justify-end gap-1">
-                                        <UiButton :href="version.url" external variant="ghost" size="sm" square :aria-label="`View version ${version.number}`" title="View"><ArrowTopRightOnSquareIcon aria-hidden="true" /></UiButton>
+                                        <UiButton v-if="!external || version.external_url" :href="version.url" external variant="ghost" size="sm" square :aria-label="`View version ${version.number}`" title="View"><ArrowTopRightOnSquareIcon aria-hidden="true" /></UiButton>
                                         <UiButton variant="ghost" size="sm" square :aria-label="`Delete version ${version.number}`" title="Delete this version" class="hover:text-red-700 dark:hover:text-red-400" @click="destroyVersion(version)"><TrashIcon aria-hidden="true" /></UiButton>
                                     </div>
                                 </td>
@@ -208,10 +220,10 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public' };
                 </div>
 
                 <!-- Sharing -->
-                <form v-else-if="tab === 'sharing'" class="max-w-xl space-y-6 pt-6" @submit.prevent="saveSharing">
+                <form v-else-if="tab === 'sharing' && !external" class="max-w-xl space-y-6 pt-6" @submit.prevent="saveSharing">
                     <UiSelect v-model="sharing.visibility" label="Reader access" :error="sharing.errors.visibility"
-                        description="Unlisted artifacts open to anyone with the link. Public artifacts also get a readable address."
-                        :options="[{ value: 'unlisted', label: 'Anyone with the link' }, { value: 'public', label: 'Public, with a readable link' }]" />
+                        description="Private artifacts require your sign-in. Unlisted artifacts open to anyone with the link. Public artifacts also get a readable address."
+                        :options="[{ value: 'private', label: 'Private, only you' }, { value: 'unlisted', label: 'Anyone with the link' }, { value: 'public', label: 'Public, with a readable link' }]" />
                     <UiSeparator />
                     <section aria-label="Links" class="space-y-3">
                         <h2 class="text-sm font-medium text-slate-900 dark:text-white">Links</h2>
@@ -264,7 +276,7 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public' };
                             <span v-if="details.recentlySuccessful" class="text-sm text-emerald-700 dark:text-emerald-400">Saved</span>
                         </div>
                     </form>
-                    <template v-if="mergeSources.length && !artifact.merged_into">
+                    <template v-if="!external && mergeSources.length && !artifact.merged_into">
                         <UiSeparator />
                         <form class="space-y-6" @submit.prevent="mergeIn">
                             <UiSection title="Artifact merging" description="Add another artifact’s versions to this history. The source artifact keeps its links." />
@@ -276,8 +288,8 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public' };
                         </form>
                     </template>
                     <UiSeparator />
-                    <UiSection title="Artifact deletion" description="Removes every version. Its links stop working, and collections and reports show it as unavailable.">
-                        <div><UiButton variant="ghost" class="text-red-700! dark:text-red-400!" @click="destroy"><TrashIcon aria-hidden="true" />Take down artifact</UiButton></div>
+                    <UiSection :title="external ? 'Tracking removal' : 'Artifact deletion'" :description="external ? 'Removes the publication record from Framework Cloud. Files at the destination stay available.' : 'Removes every version. Its links stop working, and collections and reports show it as unavailable.'">
+                        <div><UiButton variant="ghost" class="text-red-700! dark:text-red-400!" @click="destroy"><TrashIcon aria-hidden="true" />{{ external ? 'Remove record' : 'Take down artifact' }}</UiButton></div>
                     </UiSection>
                 </div>
             </div>

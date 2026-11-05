@@ -8,7 +8,7 @@ import UiModal from '@/Components/UiModal.vue';
 import UiBreadcrumbs from '@/Components/UiBreadcrumbs.vue';
 import ReportArtifactPicker from '@/Components/ReportArtifactPicker.vue';
 import { artifactKind } from '@/report-artifacts.js';
-import { inputClass, selectClass, textareaClass } from '@/ui.js';
+import { inputClass, selectClass, textareaClass, pageClass } from '@/ui.js';
 import UiSeparator from '@/Components/UiSeparator.vue';
 import {
     ArrowTopRightOnSquareIcon, ArrowPathIcon, CheckCircleIcon, ExclamationTriangleIcon, EyeIcon, LockClosedIcon,
@@ -190,7 +190,7 @@ onBeforeUnmount(() => { clearInterval(clock); clearTimeout(timer); window.remove
     <Head :title="details.title || collection.title" />
     <AppLayout bleed>
         <div class="min-h-full">
-            <UiBreadcrumbs sticky width="max-w-6xl" :items="[{ label: project.name, href: `/projects/${project.slug}` }, { label: 'Collections', href: `/projects/${project.id}/collections` }, { label: details.title || 'Untitled collection' }]">
+            <UiBreadcrumbs sticky :items="[{ label: project.name, href: `/projects/${project.slug}` }, { label: 'Collections', href: `/projects/${project.id}/collections` }, { label: details.title || 'Untitled collection' }]">
                 <template #actions>
                     <p class="flex items-center gap-1.5 whitespace-nowrap text-xs" :class="status.tone" role="status" aria-live="polite" :title="status.text">
                         <component :is="status.icon" v-if="status.icon" class="size-4" :class="{ 'animate-spin': status.spin }" aria-hidden="true" /><span class="max-sm:sr-only">{{ status.text }}</span>
@@ -199,7 +199,7 @@ onBeforeUnmount(() => { clearInterval(clock); clearTimeout(timer); window.remove
                 </template>
             </UiBreadcrumbs>
 
-            <div class="mx-auto grid max-w-6xl gap-10 px-5 py-8 sm:px-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
+            <div :class="[pageClass, 'grid gap-10 lg:grid-cols-[minmax(0,1fr)_18rem]']">
                 <main class="min-w-0">
                     <div v-if="Object.keys(errors).length" role="alert" class="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
                         <p v-for="(error, key) in errors" :key="key">{{ error }}</p>

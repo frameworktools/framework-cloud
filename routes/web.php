@@ -10,6 +10,7 @@ use App\Http\Controllers\App\GitHubLibraryController;
 use App\Http\Controllers\App\ProjectsController;
 use App\Http\Controllers\App\ReportsController;
 use App\Http\Controllers\App\SkillsController;
+use App\Http\Controllers\App\SkillTagsController;
 use App\Http\Controllers\App\TokensController;
 use App\Http\Controllers\App\WelcomeController;
 use App\Http\Controllers\Auth\PasskeyPromptController;
@@ -29,7 +30,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-// r., py., and cli.framework.pub: the docs sites, domain-routed on the same app.
+// r., py., cli., and stata.framework.pub: the docs sites, domain-routed on the same app.
 // Domain groups must precede host-less routes: a host-less route matches any host.
 foreach (array_unique(array_filter(config('framework.docs_hosts', []))) as $docsProduct => $docsHost) {
     Route::domain($docsHost)->name("docs.{$docsProduct}.")->group(function () use ($docsProduct) {
@@ -49,6 +50,11 @@ Route::get('/', function () {
 })->name('home');
 
 Route::view('self-hosting', 'self-hosting')->name('self-hosting');
+
+// The approval page for a computer's sign-in request. Signed-out visitors see
+// the request and a way to sign in or create an account; approving needs an
+// account (routes in the auth group).
+Route::get('device', [DeviceController::class, 'show'])->middleware('throttle:30,1')->name('device');
 
 // Framework Cloud guide, rendered from docs/guide
 Route::get('docs/{page?}', [GuideController::class, 'show'])
@@ -106,8 +112,7 @@ Route::get('/@{handle}/{project}/{slug}/versions/{number}', [DocumentViewControl
 
 // The app (Inertia + Vue)
 Route::middleware(['auth', 'verified'])->group(function () {
-    // Projects are the home page; /dashboard stays for old links
-    Route::redirect('dashboard', 'projects')->name('dashboard');
+    Route::get('dashboard', [ProjectsController::class, 'dashboard'])->name('dashboard');
 
     Route::get('welcome', [WelcomeController::class, 'show'])->name('welcome');
     Route::post('welcome', [WelcomeController::class, 'store']);
@@ -120,6 +125,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('published/{document}/merge', [DocumentsController::class, 'merge']);
     Route::delete('published/{document}/versions/{number}', [DocumentsController::class, 'destroyVersion'])->whereNumber('number');
     Route::post('projects/{project}/artifacts', [DocumentsController::class, 'store'])->whereNumber('project')->middleware('throttle:20,1');
+    Route::get('collections', [CollectionsController::class, 'index'])->name('collections.all');
+    Route::get('reports', [ReportsController::class, 'index'])->name('reports.all');
     Route::get('projects/{project}/collections', [CollectionsController::class, 'index'])->whereNumber('project')->name('collections.index');
     Route::post('projects/{project}/collections', [CollectionsController::class, 'store'])->whereNumber('project')->name('collections.store');
     Route::get('collections/{collection}/edit', [CollectionsController::class, 'edit'])->name('collections.edit');
@@ -185,8 +192,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('tokens', [TokensController::class, 'store']);
     Route::delete('tokens/{tokenId}', [TokensController::class, 'destroy']);
 
-    // fw login approves here; see routes/api.php for the CLI half
-    Route::get('device', [DeviceController::class, 'show'])->middleware('throttle:30,1')->name('device');
+    // fw login, fw_login, and cloud_login() approve here; see routes/api.php
+    // for the computer's half. The page itself is public (below).
     Route::post('device/approve', [DeviceController::class, 'approve'])->middleware('throttle:30,1');
     Route::post('device/deny', [DeviceController::class, 'deny'])->middleware('throttle:30,1');
 
@@ -232,6 +239,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // This server's own credentials (GitHub App, storage, mail)
     Route::middleware('admin')->group(function () {
+        Route::get('admin/skill-tags', [SkillTagsController::class, 'index']);
+        Route::post('admin/skill-tags', [SkillTagsController::class, 'store']);
+        Route::put('admin/skill-tags/{tag}', [SkillTagsController::class, 'update']);
         Route::get('admin/setup', [SetupController::class, 'show'])->name('admin.setup');
         Route::get('admin/setup/github/callback', [SetupController::class, 'githubCallback'])->name('admin.setup.github.callback');
         Route::post('admin/setup/storage/test', [SetupController::class, 'testStorage'])->middleware('throttle:10,1');

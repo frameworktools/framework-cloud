@@ -6,6 +6,9 @@ use App\Console\Commands\SyncPiecesCommand;
 use App\Models\Blueprint;
 use App\Models\Facet;
 use App\Models\Skill;
+use App\Models\SkillTag;
+use App\Support\GitignoreTemplate;
+use App\Support\SkillTags;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\File;
@@ -24,6 +27,7 @@ class BlueprintSeeder extends Seeder
     {
         $mastersDir = database_path('seeders/masters');
 
+        SkillTags::seed();
         $this->seedSkills("$mastersDir/skills");
         $this->seedPieces('tool', $this->fromR('features', self::TOOL_ORDER));
         $this->seedPieces('setting', $this->json("$mastersDir/settings.json"));
@@ -111,16 +115,22 @@ class BlueprintSeeder extends Seeder
         }
         foreach ($sources as $key => $content) {
             $frontmatter = Skill::frontmatter($content, 'content');
-            $texts = []; $files = [];
+            $texts = [];
+            $files = [];
             foreach ($registry[$key] ?? [] as $variant => $snapshot) {
                 $texts[$variant] = base64_decode(collect($snapshot['bundle'])->firstWhere('path', 'SKILL.md')['content']);
                 $files[$variant] = array_values(array_filter($snapshot['bundle'], fn ($f) => $f['path'] !== 'SKILL.md'));
             }
-            if (! $texts && File::exists($path = "{$dir}/python/{$key}.md")) $texts['python'] = File::get($path);
+            if (! $texts && File::exists($path = "{$dir}/python/{$key}.md")) {
+                $texts['python'] = File::get($path);
+            }
             $skill = Skill::updateOrCreate(['user_id' => null, 'key' => $key], [
                 'name' => $frontmatter['title'], 'description' => $frontmatter['description'], 'summary' => $frontmatter['summary'],
                 'language' => isset($registry[$key]) ? array_keys($registry[$key]) : ($texts ? array_keys($texts + ['r' => $content]) : ['r']), 'visibility' => 'public',
             ]);
+            if ($skill->wasRecentlyCreated) {
+                $skill->tags()->sync(SkillTag::whereIn('key', SkillTags::SKILLS[$key] ?? [])->pluck('id'));
+            }
             unset($texts['r']);
             $skill->publishVersion(['content' => $content, 'variants' => $texts ?: null, 'files' => [], 'bundle_files' => $files ?: null]);
         }
@@ -169,6 +179,7 @@ class BlueprintSeeder extends Seeder
         foreach ($definitions as $key => $definition) {
             // A top-level null (bare's quarto) has nothing beneath it to remove
             $layer = ['type' => $key] + array_filter($definition['structure'] ?? [], fn ($value) => $value !== null);
+            $layer['git']['gitignore_content'] ??= GitignoreTemplate::for($key);
 
             // R keys its sensitive-project behavior on this flag
             if ($key === 'project_sensitive') {

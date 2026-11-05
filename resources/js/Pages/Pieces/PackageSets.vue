@@ -7,7 +7,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiCallout from '@/Components/UiCallout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
-import { group, groups, languageNames } from '@/library.js';
+import { group, groups, languageNames, languageTab } from '@/library.js';
 import { pieceCopy } from '@/pieces.js';
 
 // Package sets for one language at a time, each opening to its packages
@@ -23,8 +23,8 @@ const errors = computed(() => Object.values(page.props.errors ?? {}));
 const added = computed(() => (page.props.flash.status === 'package-set-added' ? page.props.flash.added : null));
 
 const languages = ['r', 'python'];
-const query = new URLSearchParams(typeof window === 'undefined' ? '' : window.location.search);
-const language = ref(languages.includes(query.get('language')) ? query.get('language') : props.language);
+const language = ref(languageTab(props.language, languages));
+watch(() => props.language, value => { language.value = languageTab(value, languages); });
 watch(language, (value) => {
     const url = new URL(window.location.href);
     url.searchParams.set('language', value);

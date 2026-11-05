@@ -106,6 +106,15 @@ class BlueprintCatalogTest extends TestCase
             ->where('start.language', 'python')->where('start.default_workflow.python', 'scripts'));
     }
 
+    public function test_new_project_opens_with_the_destination_the_homepage_links_pass(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+
+        $this->actingAs($user)->get('/projects/create?destination=github')->assertInertia(fn (Assert $page) => $page->where('start.destination', 'github'));
+        $this->actingAs($user)->get('/projects/create?destination=download')->assertInertia(fn (Assert $page) => $page->where('start.destination', 'download'));
+        $this->actingAs($user)->get('/projects/create?destination=elsewhere')->assertInertia(fn (Assert $page) => $page->where('start.destination', null));
+    }
+
     public function test_new_project_opens_with_the_language_and_workflow_and_creates_with_them(): void
     {
         $user = User::factory()->create(['email_verified_at' => now()]);

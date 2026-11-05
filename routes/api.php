@@ -10,7 +10,9 @@ use App\Http\Controllers\Api\V1\ProjectPullController;
 use App\Http\Controllers\Api\V1\ProjectsController;
 use App\Http\Controllers\Api\V1\SettingsController;
 use App\Http\Controllers\Api\V2\CollectionsController;
+use App\Http\Controllers\Api\V2\ExternalArtifactsController;
 use App\Http\Controllers\Api\V2\PiecesController;
+use App\Http\Controllers\Api\V2\SkillSyncController;
 use App\Http\Controllers\Api\V2\StructuresController;
 use App\Http\Controllers\MetricsController;
 use App\Http\Middleware\VerifyMetricsToken;
@@ -50,6 +52,7 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
 
 // Pull v2: layers envelopes for the R package and fw
 Route::prefix('v2')->middleware('auth:sanctum')->group(function () {
+    Route::post('/projects/{slug}/artifacts/external', [ExternalArtifactsController::class, 'store'])->middleware('throttle:60,1');
     Route::get('/collections', [CollectionsController::class, 'index']);
     Route::post('/collections', [CollectionsController::class, 'store'])->middleware('throttle:20,1');
     Route::post('/collections/{collection}/items', [CollectionsController::class, 'storeItem'])->middleware('throttle:60,1');
@@ -64,9 +67,9 @@ Route::prefix('v2')->middleware('auth:sanctum')->group(function () {
     }
     Route::post('/structures', [StructuresController::class, 'store']);
     Route::get('/skills', [PiecesController::class, 'skills']);
-    Route::post('/skills/sync', [App\Http\Controllers\Api\V2\SkillSyncController::class, 'store'])->middleware('throttle:60,1');
-    Route::get('/skills/sync/{id}/history', [App\Http\Controllers\Api\V2\SkillSyncController::class, 'history']);
-    Route::get('/skills/sync/{id}', [App\Http\Controllers\Api\V2\SkillSyncController::class, 'show']);
+    Route::post('/skills/sync', [SkillSyncController::class, 'store'])->middleware('throttle:60,1');
+    Route::get('/skills/sync/{id}/history', [SkillSyncController::class, 'history']);
+    Route::get('/skills/sync/{id}', [SkillSyncController::class, 'show']);
     Route::get('/defaults', [PiecesController::class, 'defaults']);
     Route::post('/resolve', [PiecesController::class, 'resolve'])->middleware('throttle:60,1');
     Route::post('/projects', [PiecesController::class, 'store'])->middleware('throttle:20,1');

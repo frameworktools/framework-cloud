@@ -24,7 +24,7 @@ class Layer
     /** Keys a facet or blueprint layer may set. Bases may also set "type". */
     public const KEYS = [
         'directories', 'extra_directories', 'render_dirs', 'packages', 'git',
-        'ai', 'scaffold', 'quarto', 'connections', 'env', 'data_hooks', 'security', 'files', 'skills',
+        'publish', 'ai', 'scaffold', 'quarto', 'connections', 'env', 'data_hooks', 'security', 'files', 'skills',
     ];
 
     public const MAX_FILE_BYTES = 64 * 1024;
@@ -98,6 +98,7 @@ class Layer
         $problems = [...$problems, ...self::schemaProblems(array_intersect_key($layer, array_flip($allowed)))];
         $problems = [...$problems, ...self::sizeProblems($layer)];
         $problems = [...$problems, ...self::credentialProblems($layer['connections'] ?? [], 'connections')];
+        $problems = [...$problems, ...self::credentialProblems($layer['publish']['destinations'] ?? [], 'publish.destinations')];
         $problems = [...$problems, ...self::envProblems($layer['env'] ?? [])];
 
         return array_values(array_unique($problems));
@@ -144,6 +145,7 @@ class Layer
         foreach ($envelope['layers'] ?? [] as $entry) {
             $layer = is_array($entry['layer'] ?? null) ? $entry['layer'] : [];
             $problems = [...$problems, ...self::credentialProblems($layer['connections'] ?? [], 'connections')];
+            $problems = [...$problems, ...self::credentialProblems($layer['publish']['destinations'] ?? [], 'publish.destinations')];
             $problems = [...$problems, ...self::envProblems($layer['env'] ?? [])];
         }
 
@@ -169,6 +171,7 @@ class Layer
 
         $array = json_decode(json_encode($spec), true);
         $problems = [...$problems, ...self::credentialProblems($array['connections'] ?? [], 'connections')];
+        $problems = [...$problems, ...self::credentialProblems($array['publish']['destinations'] ?? [], 'publish.destinations')];
         $problems = [...$problems, ...self::envProblems($array['env'] ?? [])];
 
         return array_values(array_unique($problems));

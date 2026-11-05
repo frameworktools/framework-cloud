@@ -36,6 +36,48 @@ class ResearchWorkspaceTest extends TestCase
         return compact('artifact', 'collection', 'report');
     }
 
+    public function test_research_indexes_span_owned_projects_and_exclude_other_accounts_and_deleted_projects(): void
+    {
+        $user = User::factory()->create();
+        $first = Project::factory()->for($user)->create();
+        $second = Project::factory()->for($user)->create();
+        $this->outputs($first);
+        $this->outputs($second);
+        $other = Project::factory()->create();
+        $this->outputs($other);
+        $deleted = Project::factory()->for($user)->create();
+        $this->outputs($deleted);
+        $deleted->delete();
+
+        foreach (['collections' => 'Collections/Index', 'reports' => 'Reports/Index'] as $path => $component) {
+            $this->actingAs($user)->get('/'.$path)->assertInertia(fn (Assert $page) => $page
+                ->component($component)->where('project', null)->has('projects', 2)->has($path, 2)
+                ->where($path.'.0.project.id', fn ($id) => in_array($id, [$first->id, $second->id])));
+            $this->get('/projects/'.$first->id.'/'.$path)->assertInertia(fn (Assert $page) => $page
+                ->where('project.id', $first->id)->has($path, 1));
+            $this->get('/projects/'.$other->id.'/'.$path)->assertNotFound();
+        }
+        $this->get('/dashboard')->assertInertia(fn (Assert $page) => $page
+            ->component('Dashboard')->where('counts.projects', 2)->where('counts.artifacts', 2)
+            ->where('counts.collections', 2)->where('counts.reports', 2)
+            ->has('recentArtifacts', 2)->has('recentCollections', 2)->has('recentReports', 2));
+        $this->get('/projects')->assertInertia(fn (Assert $page) => $page
+            ->where('nav', function ($nav) {
+                $links = collect($nav)->keyBy('label');
+
+                return $links->has('Default settings') && ! $links->has('Your artifacts')
+                    && collect(['Artifacts', 'Collections', 'Reports'])->every(fn ($label) => $links[$label]['section'] === 'Your research');
+            }));
+    }
+
+    public function test_empty_research_indexes_are_available_without_a_project(): void
+    {
+        $this->actingAs(User::factory()->create());
+        foreach (['collections', 'reports'] as $path) {
+            $this->get('/'.$path)->assertInertia(fn (Assert $page) => $page->where('project', null)->has('projects', 0)->has($path, 0));
+        }
+    }
+
     public function test_workspace_lists_own_outputs_reports_and_collections_without_changing_projects_schema(): void
     {
         $user = User::factory()->create();

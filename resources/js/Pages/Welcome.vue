@@ -1,4 +1,5 @@
 <script setup>
+import { pageClass } from '@/ui.js';
 import { computed, ref, watch } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -100,7 +101,7 @@ const edit = (key) => (index.value = steps.value.findIndex((s) => s.key === key)
 const languageOptions = [
     { value: 'r', label: 'R' },
     { value: 'python', label: 'Python' },
-    { value: 'stata', label: 'Stata', description: "Creates the project's files and folders. Framework doesn't manage Stata packages." },
+    { value: 'stata', label: 'Stata' },
 ];
 // What sets each structure apart; the tree beside them shows the folders
 const structureNotes = {
@@ -223,14 +224,14 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
 </script>
 
 <template>
-    <Head title="Project defaults" />
+    <Head title="Default settings" />
 
     <AppLayout bleed>
-        <div class="mx-auto flex max-w-5xl flex-col gap-8 px-6 py-10 lg:px-12">
+        <div :class="[pageClass, 'flex flex-col gap-8']">
             <div>
                 <p class="text-sm text-slate-500">{{ step.key === 'review' ? 'Review' : `Step ${index + 1} of ${steps.length - 1}` }}</p>
                 <h1 class="mt-1 text-2xl font-semibold text-slate-900 dark:text-white">{{ step.title }}</h1>
-                <p v-if="index === 0" :class="note" class="mt-2">Your answers set the defaults for new projects. You can change them later in Project defaults.</p>
+                <p v-if="index === 0" :class="note" class="mt-2">Your answers set the defaults for new projects. You can change them later in Default settings.</p>
             </div>
 
             <!-- One question at a time -->

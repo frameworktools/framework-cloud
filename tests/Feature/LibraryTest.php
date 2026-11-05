@@ -131,6 +131,29 @@ class LibraryTest extends TestCase
             ->assertSessionHasErrors('settings_yaml');
     }
 
+    public function test_structure_ignore_rules_have_a_dedicated_editor_and_round_trip_as_a_layer(): void
+    {
+        $user = $this->user();
+        $source = $this->system(Facet::class, 'course');
+        $this->assertStringContainsString('/grades/', $source->latestVersion->layer['git']['gitignore_content']);
+        $this->actingAs($user)->post("/structures/{$source->id}/fork")->assertRedirect();
+        $copy = Facet::where('user_id', $user->id)->firstOrFail();
+        $this->actingAs($user)->get("/structures/{$copy->id}/edit")->assertInertia(function (Assert $page) use (&$values) {
+            $values = $page->toArray()['props']['values'];
+            $this->assertStringContainsString('/grades/', $values['gitignore_content']);
+            $this->assertStringNotContainsString('gitignore_content', $values['settings_yaml']);
+        });
+        $rules = $values['gitignore_content']."/restricted/\n";
+        $this->actingAs($user)->put("/structures/{$copy->id}", $this->facetPayload([
+            'settings_yaml' => $values['settings_yaml'],
+            'gitignore_content' => $rules,
+            'files' => $values['files'],
+        ]))->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame($rules, $copy->fresh()->latestVersion->layer['git']['gitignore_content']);
+        $this->assertSame('course', $copy->fresh()->latestVersion->layer['type']);
+        $this->assertSame($values['gitignore_content'], $source->fresh()->latestVersion->layer['git']['gitignore_content']);
+    }
+
     public function test_package_and_skill_sets_hold_only_their_part(): void
     {
         $user = $this->user();

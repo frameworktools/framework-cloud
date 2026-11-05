@@ -21,7 +21,7 @@ use Inertia\Response;
 class DefaultsController extends Controller
 {
     /** The settings pages, in sidebar order. They share one form. */
-    public const SECTIONS = ['language', 'blueprint', 'editor', 'packages', 'scaffold', 'git', 'hooks', 'agents', 'notebooks', 'quarto', 'jupyter'];
+    public const SECTIONS = ['language', 'publishing', 'blueprint', 'editor', 'packages', 'scaffold', 'git', 'hooks', 'agents', 'notebooks', 'quarto', 'jupyter'];
 
     public function edit(Request $request, string $section): Response
     {
@@ -59,6 +59,7 @@ class DefaultsController extends Controller
         $doc = $user->globalSettings()->document;
 
         return [
+            'publish_destination' => $user->project_defaults['publish_destination'] ?? '',
             'language' => $user->project_defaults['language'] ?? ProjectDefaults::LANGUAGE,
             'project_type' => Arr::get($doc, 'defaults.project_type', ProjectDefaults::BLUEPRINT),
             // A workflow per language; R Markdown is a variant of R's Quarto workflow
@@ -179,6 +180,7 @@ class DefaultsController extends Controller
     public function update(Request $request): RedirectResponse
     {
         $validated = $request->validate([
+            'publish_destination' => ['sometimes', 'nullable', 'in:cloud,github'],
             'language' => ['sometimes', 'in:r,python,stata'],
             'project_type' => ['required', 'exists:blueprints,key'],
             'workflows' => ['array'],
@@ -248,6 +250,7 @@ class DefaultsController extends Controller
 
         // Preferred pieces stay in the cloud; renv already lives in the synced settings
         $request->user()->forceFill(['project_defaults' => [
+            'publish_destination' => array_key_exists('publish_destination', $validated) ? ($validated['publish_destination'] ?? '') : ($request->user()->project_defaults['publish_destination'] ?? ''),
             'language' => $validated['language'] ?? $request->user()->project_defaults['language'] ?? ProjectDefaults::LANGUAGE,
             // Package sets now only load packages into the lists, which hold the result
             'package_sets' => [],

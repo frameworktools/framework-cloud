@@ -30,11 +30,11 @@ class QuickLoginTest extends TestCase
         $this->withoutMiddleware(PreventRequestForgery::class); // only skipped automatically while testing
         config(['framework.quick_login' => true]);
 
-        $this->post('/login/quick/admin')->assertRedirect('/projects');
+        $this->post('/login/quick/admin')->assertRedirect('/dashboard');
         $this->assertAuthenticatedAs($admin);
 
         $this->post('/logout');
-        $this->post('/login/quick/user')->assertRedirect('/projects');
+        $this->post('/login/quick/user')->assertRedirect('/dashboard');
         $this->assertAuthenticatedAs(User::where('email', 'user@example.com')->first());
         $this->assertFalse((bool) auth()->user()->is_admin);
     }

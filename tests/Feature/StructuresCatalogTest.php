@@ -22,6 +22,11 @@ class StructuresCatalogTest extends TestCase
             $structures = collect($page->toArray()['props']['structures']);
             $this->assertSame(['Standard', 'Privacy sensitive', 'Presentation', 'Course', 'Bare'], $structures->pluck('name')->all());
 
+            foreach ($structures as $structure) {
+                $this->assertStringContainsString('**/private/**', $structure['gitignore_content']);
+                $this->assertStringContainsString('.env', $structure['gitignore_content']);
+            }
+
             $tree = fn (string $key) => collect($structures->firstWhere('key', $key)['preview']['tree'])->keyBy('path');
             $standard = $tree('project');
             $this->assertSame('R only', $standard['scaffold.R']['when']);

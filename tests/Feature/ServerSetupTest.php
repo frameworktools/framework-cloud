@@ -175,7 +175,7 @@ class ServerSetupTest extends TestCase
         $this->actingAs($this->admin())->post('/admin/setup/mail/test')->assertSessionHasErrors('mail');
     }
 
-    public function test_hosted_publishing_needs_the_paid_flag(): void
+    public function test_hosted_publishing_is_available_without_the_paid_flag(): void
     {
         Storage::fake('local');
         $project = Project::factory()->create();
@@ -184,7 +184,7 @@ class ServerSetupTest extends TestCase
         ], ['Accept' => 'application/json']);
 
         config(['framework.mode' => 'hosted']);
-        $publish()->assertStatus(402);
+        $publish()->assertCreated();
 
         $project->user->forceFill(['can_publish' => true])->save();
         $this->app['auth']->forgetGuards();

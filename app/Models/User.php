@@ -59,12 +59,11 @@ class User extends Authenticatable implements HasPasskeys, MustVerifyEmail
     }
 
     /**
-     * Publishing documents is open to everyone on a self-hosted server, and
-     * a paid feature on the hosted one (framework.pub).
+     * Publishing is available to every account. Hosted uploads share an account storage budget.
      */
     public function canPublish(): bool
     {
-        return config('framework.mode') !== 'hosted' || $this->can_publish;
+        return true;
     }
 
     public function githubAccount(): HasOne

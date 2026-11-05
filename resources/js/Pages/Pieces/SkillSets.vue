@@ -20,6 +20,7 @@ const errors = computed(() => Object.values(page.props.errors ?? {}));
 
 const language = ref(languageTab(props.language));
 watch(language, rememberLanguage);
+watch(() => props.language, value => { language.value = languageTab(value); });
 const other = computed(() => (language.value === 'r' ? 'python' : 'r'));
 
 const sections = computed(() => groups
@@ -106,7 +107,7 @@ const sourceNames = { cran: 'CRAN', bioc: 'Bioconductor', github: 'GitHub', pypi
                                 </li>
                             </ul>
                             <p v-if="skillsFor(s).length < s.skills.length" class="mt-1 text-xs text-slate-500">
-                                {{ s.skills.length - skillsFor(s).length }} more for {{ languageNames[other] }} projects only.
+                                {{ s.skills.length - skillsFor(s).length }} skills for other languages.
                             </p>
 
                             <div v-if="s.packages.length" class="mt-4">

@@ -65,7 +65,11 @@ class MagicLinkController extends Controller
         }
 
         if ($user) {
-            $url = route('magic-link.consume', ['token' => LoginToken::issue($user, $browser)]);
+            $url = route('magic-link.consume', array_filter([
+                'token' => LoginToken::issue($user, $browser),
+                // A pending computer sign-in survives an email opened in another browser.
+                'next' => self::devicePath((string) $request->session()->get('url.intended', '')),
+            ]));
             Mail::to($user->email)->send(new MagicLinkMail($url, $isNew));
         }
 
@@ -77,6 +81,10 @@ class MagicLinkController extends Controller
      */
     public function show(Request $request, string $token): Response|RedirectResponse
     {
+        if ($next = self::devicePath((string) $request->query('next', ''))) {
+            $request->session()->put('url.intended', url($next));
+        }
+
         if (LoginToken::issuedTo($token, $request->cookie(LoginToken::BROWSER_COOKIE))) {
             return $this->consume($request, $token);
         }
@@ -115,6 +123,23 @@ class MagicLinkController extends Controller
         Cookie::expire(LoginToken::BROWSER_COOKIE);
 
         return PasskeyPromptController::afterSignIn($request, $user);
+    }
+
+    /**
+     * The device approval path in a URL, or null. Only /device paths are
+     * carried through email links, so the parameter cannot redirect elsewhere.
+     */
+    public static function devicePath(string $url): ?string
+    {
+        $path = parse_url($url, PHP_URL_PATH);
+        $query = parse_url($url, PHP_URL_QUERY);
+        if ($path !== '/device') {
+            return null;
+        }
+        parse_str((string) $query, $params);
+        $code = $params['code'] ?? '';
+
+        return is_string($code) && preg_match('/^[A-Za-z0-9-]{1,20}$/', $code) ? '/device?code='.$code : '/device';
     }
 
     private function expired(): RedirectResponse

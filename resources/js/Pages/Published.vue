@@ -3,16 +3,15 @@ import { computed, ref } from 'vue';
 import ArtifactUpload from '@/Components/ArtifactUpload.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import UiButton from '@/Components/UiButton.vue';
-import UiCallout from '@/Components/UiCallout.vue';
 import UiTable from '@/Components/UiTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import { artifactKind } from '@/report-artifacts.js';
-import { ArrowTopRightOnSquareIcon, LockClosedIcon, MagnifyingGlassIcon } from '@heroicons/vue/20/solid';
+import { LockClosedIcon, MagnifyingGlassIcon } from '@heroicons/vue/20/solid';
 import { GlobeAltIcon } from '@heroicons/vue/24/outline';
 import { inputClass, selectClass } from '@/ui.js';
 
-const props = defineProps({ documents: Array, projects: { type: Array, default: () => [] }, canPublish: Boolean, handle: String });
+const props = defineProps({ documents: Array, projects: { type: Array, default: () => [] }, canPublish: Boolean, handle: String, storage: Object });
 const uploading = ref(false);
 const query = ref('');
 const project = ref('');
@@ -30,13 +29,12 @@ const date = (value) => new Date(value).toLocaleDateString(undefined, { year: 'n
     <AppLayout>
         <div class="flex flex-col gap-8">
             <PageHeader title="Artifacts" description="Published artifacts across projects. Each has a reader page and version history.">
-                <template #actions><UiButton v-if="canPublish && projects.length" :variant="uploading ? 'outline' : 'primary'" @click="uploading = !uploading">{{ uploading ? 'Close' : 'Publish an artifact' }}</UiButton></template>
+                <template #actions><UiButton v-if="canPublish && projects.length" :variant="uploading ? 'ghost' : 'primary'" @click="uploading = !uploading">{{ uploading ? 'Close' : 'Publish an artifact' }}</UiButton></template>
             </PageHeader>
 
-            <UiCallout v-if="!canPublish" heading="Publishing plan">
-                Hosted artifacts include shareable reader pages, version histories, and project collections. Your plan doesn't include publishing yet.
-                You can still publish to your own storage bucket or GitHub Pages.
-            </UiCallout>
+
+
+            <p v-if="storage?.limit" class="text-xs text-slate-500">Artifact storage: <span class="font-mono">{{ (storage.used / 1048576).toFixed(1) }} MB</span> of <span class="font-mono">{{ (storage.limit / 1073741824).toFixed(1) }} GB</span>. Versions share this limit.</p>
 
             <ArtifactUpload v-if="canPublish && uploading" :projects="projects" />
 
@@ -45,16 +43,16 @@ const date = (value) => new Date(value).toLocaleDateString(undefined, { year: 'n
                     <label class="relative min-w-0 flex-1 basis-64 sm:max-w-sm">
                         <span class="sr-only">Search</span>
                         <MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
-                        <input v-model="query" type="search" placeholder="Search by name, kind, or project" :class="[inputClass, 'pl-9']">
+                        <input v-model="query" type="search" placeholder="Search by name, type, or project" :class="[inputClass, 'pl-9']">
                     </label>
                     <label v-if="projects.length > 1" class="w-full sm:w-56"><span class="sr-only">Project</span>
                         <select v-model="project" :class="selectClass"><option value="">All projects</option><option v-for="p in projects" :key="p.id" :value="p.id">{{ p.name }}</option></select>
                     </label>
                 </div>
 
-                <UiTable label="Published artifacts">
+                <UiTable label="Published artifacts" class="artifact-results">
                     <thead>
-                        <tr><th>Name</th><th class="max-lg:hidden">Project</th><th class="max-sm:hidden">Kind</th><th class="max-2xl:hidden">Sharing</th><th class="numeric max-2xl:hidden">Views</th><th class="max-sm:hidden">Updated</th><th class="actions"><span class="sr-only">Actions</span></th></tr>
+                        <tr><th>Name</th><th class="max-sm:hidden">Type</th><th class="max-lg:hidden">Location</th><th class="max-2xl:hidden">Sharing</th><th class="numeric max-2xl:hidden">Views</th><th class="max-sm:hidden">Updated</th><th class="actions"><span class="sr-only">Actions</span></th></tr>
                     </thead>
                     <tbody>
                         <tr v-for="doc in shown" :key="doc.id">
@@ -64,16 +62,16 @@ const date = (value) => new Date(value).toLocaleDateString(undefined, { year: 'n
                                     <Link :href="`/artifacts/${doc.id}`" class="truncate hover:underline hover:underline-offset-4">{{ doc.title }}</Link>
                                     <span v-if="doc.merged_into_id" class="rounded-md bg-slate-800/5 px-1.5 text-xs font-normal text-slate-500 dark:bg-white/10">Merged</span>
                                 </span>
+                                <Link :href="`/projects/${doc.project.slug}/published`" class="mt-1 block truncate text-xs font-normal text-slate-500 hover:underline">{{ doc.project.name }}</Link>
                             </td>
-                            <td class="max-w-48 truncate max-lg:hidden"><Link :href="`/projects/${doc.project.slug}/published`" class="hover:text-slate-800 hover:underline hover:underline-offset-4 dark:hover:text-white">{{ doc.project.name }}</Link></td>
-                            <td class="max-sm:hidden">{{ artifactKind(doc.kind).label }}</td>
-                            <td class="max-2xl:hidden"><span class="inline-flex items-center gap-1.5">{{ doc.readable ? 'Public' : 'Anyone with the link' }}<LockClosedIcon v-if="doc.password_protected" class="size-3.5" aria-label="Password protected" /></span></td>
-                            <td class="numeric max-2xl:hidden">{{ doc.views.toLocaleString() }}</td>
+                            <td class="max-sm:hidden">{{ artifactKind(doc.kind).label }}</td><td class="max-lg:hidden">{{ doc.location ?? 'Framework Cloud' }}</td>
+                            <td class="max-2xl:hidden"><span class="inline-flex items-center gap-1.5">{{ doc.visibility === 'private' ? 'Private' : doc.visibility === 'public' ? 'Public' : 'Anyone with the link' }}<LockClosedIcon v-if="doc.password_protected" class="size-3.5" aria-label="Password protected" /></span></td>
+                            <td class="numeric max-2xl:hidden">{{ !doc.driver || doc.driver === 'cloud' ? doc.views.toLocaleString() : '—' }}</td>
                             <td class="max-sm:hidden">{{ date(doc.updated_at) }}</td>
                             <td class="actions">
                                 <div class="flex justify-end gap-1">
-                                    <UiButton :href="doc.url" external variant="ghost" size="sm" square :aria-label="`View ${doc.title}`" title="View"><ArrowTopRightOnSquareIcon aria-hidden="true" /></UiButton>
-                                    <UiButton :href="`/artifacts/${doc.id}`" variant="outline" size="sm">Manage</UiButton>
+                                    <UiButton v-if="!doc.driver || doc.driver === 'cloud' || doc.external_url" :href="doc.url" external variant="ghost" size="sm" :aria-label="`View ${doc.title}`">View</UiButton>
+                                    <UiButton :href="`/artifacts/${doc.id}`" variant="ghost" size="sm">Edit</UiButton>
                                 </div>
                             </td>
                         </tr>
@@ -85,10 +83,16 @@ const date = (value) => new Date(value).toLocaleDateString(undefined, { year: 'n
             <EmptyState v-else-if="canPublish" :icon="GlobeAltIcon" title="No published artifacts">
                 Publish a file from your browser, R, Python, or the CLI. Start with a single figure, a data file, or a complete rendered report.
                 <template #actions>
-                    <UiButton v-if="projects.length" @click="uploading = true">Publish your first artifact</UiButton>
-                    <UiButton v-else href="/projects/create">Create a project</UiButton>
+                    <UiButton v-if="!projects.length" href="/projects/create">Create a project</UiButton>
                 </template>
             </EmptyState>
         </div>
     </AppLayout>
 </template>
+
+<style scoped>
+@media (max-width: 639px) {
+    .artifact-results :deep(table) { width: 100%; table-layout: fixed; }
+    .artifact-results :deep(th:last-child) { width: 8rem; }
+}
+</style>

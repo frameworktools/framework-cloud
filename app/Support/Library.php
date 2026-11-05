@@ -7,6 +7,7 @@ use App\Models\BlueprintVersion;
 use App\Models\Facet;
 use App\Models\FacetVersion;
 use App\Models\Skill;
+use App\Models\SkillVersion;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
@@ -127,13 +128,15 @@ class Library
 
     public static function skill(Skill $skill, ?User $user): array
     {
-        $source = $skill->forked_from_id ? \App\Models\SkillVersion::find($skill->forked_from_id) : null;
+        $source = $skill->forked_from_id ? SkillVersion::find($skill->forked_from_id) : null;
         $parent = $source?->skill()->withTrashed()->first();
         $lineage = $parent && ! $parent->trashed() && $parent->isVisibleTo($user)
             ? ['id' => $parent->id, 'name' => $parent->name, 'version' => $source->version] : null;
+
         return [
             'id' => $skill->id,
             'sync_id' => $skill->sync_id,
+            'tags' => $skill->tags->map->only(['id', 'key', 'name'])->values(),
             'parent' => $lineage,
             'key' => $skill->key,
             'handle' => $skill->handle,

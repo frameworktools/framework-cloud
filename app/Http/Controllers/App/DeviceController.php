@@ -11,8 +11,10 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * The browser half of fw login: a signed-in user enters the code from the
- * terminal and approves or denies the request.
+ * The browser half of a computer's sign-in (fw login, Stata's fw_login, and
+ * cloud_login() in R and Python). A signed-in user checks the code and
+ * approves or denies the request. A signed-out visitor sees the request and
+ * signs in or creates an account, then comes back here.
  */
 class DeviceController extends Controller
 {
@@ -28,6 +30,18 @@ class DeviceController extends Controller
             } catch (ValidationException $e) {
                 $error = $e->getMessage();
             }
+        }
+
+        if (! $request->user()) {
+            // Sign-in, account creation, and email links all return here.
+            $request->session()->put('url.intended', $request->fullUrl());
+
+            return Inertia::render('Auth/Device', [
+                'code' => $found?->displayCode() ?? strtoupper($typed),
+                'clientName' => $found?->client_name,
+                'error' => $error,
+                'registrationOpen' => config('framework.registration') !== 'closed',
+            ]);
         }
 
         return Inertia::render('Device', [
@@ -73,9 +87,9 @@ class DeviceController extends Controller
         $code = CliDeviceCode::findByUserCode($typed);
 
         $message = match (true) {
-            ! $code => 'That code doesn\'t match a sign-in request. Check the code in your terminal and try again.',
-            $code->isExpired() => 'That code has expired. Run fw login again to get a new one.',
-            $code->status !== CliDeviceCode::PENDING => 'That code has already been used. Run fw login again to get a new one.',
+            ! $code => 'That code doesn\'t match a sign-in request. Check the code on your computer and try again.',
+            $code->isExpired() => 'That code has expired. Start the sign-in again on your computer to get a new one.',
+            $code->status !== CliDeviceCode::PENDING => 'That code has already been used. Start the sign-in again on your computer to get a new one.',
             default => null,
         };
 

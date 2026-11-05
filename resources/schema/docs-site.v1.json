@@ -7,7 +7,7 @@
   "required": ["product", "title", "sections"],
   "additionalProperties": false,
   "properties": {
-    "product": { "enum": ["r", "py", "cli"] },
+    "product": { "enum": ["r", "py", "cli", "stata"] },
     "title": { "type": "string", "minLength": 1 },
     "tagline": { "type": "string" },
     "repository": { "type": "string", "pattern": "^https://" },

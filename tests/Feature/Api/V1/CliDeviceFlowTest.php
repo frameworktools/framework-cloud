@@ -2,9 +2,12 @@
 
 namespace Tests\Feature\Api\V1;
 
+use App\Http\Controllers\Auth\MagicLinkController;
+use App\Mail\MagicLinkMail;
 use App\Models\CliDeviceCode;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -38,7 +41,7 @@ class CliDeviceFlowTest extends TestCase
         $this->assertSame(url('/device'), $start['verification_url']);
         $this->assertSame(url('/device').'?code='.$start['user_code'], $start['verification_url_complete']);
         $this->assertSame(5, $start['interval']);
-        $this->assertSame(600, $start['expires_in']);
+        $this->assertSame(CliDeviceCode::LIFETIME_SECONDS, $start['expires_in']);
 
         $row = CliDeviceCode::sole();
         $this->assertSame(hash('sha256', $start['device_code']), $row->device_code_hash);
@@ -124,13 +127,13 @@ class CliDeviceFlowTest extends TestCase
         $user = $this->user();
         $start = $this->start();
 
-        $this->travel(601)->seconds();
+        $this->travel(CliDeviceCode::LIFETIME_SECONDS + 1)->seconds();
 
         $this->actingAs($user)
             ->get('/device?code='.$start['user_code'])
             ->assertInertia(fn (Assert $page) => $page
                 ->where('request', null)
-                ->where('error', 'That code has expired. Run fw login again to get a new one.'));
+                ->where('error', 'That code has expired. Start the sign-in again on your computer to get a new one.'));
 
         $this->actingAs($user)
             ->post('/device/approve', ['code' => $start['user_code']])
@@ -143,7 +146,7 @@ class CliDeviceFlowTest extends TestCase
     public function test_expired_requests_are_pruned_when_a_new_one_starts(): void
     {
         $old = $this->start();
-        $this->travel(601)->seconds();
+        $this->travel(CliDeviceCode::LIFETIME_SECONDS + 1)->seconds();
 
         $this->start();
 
@@ -190,7 +193,7 @@ class CliDeviceFlowTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Device')
                 ->where('request', null)
-                ->where('error', 'That code doesn\'t match a sign-in request. Check the code in your terminal and try again.'));
+                ->where('error', 'That code doesn\'t match a sign-in request. Check the code on your computer and try again.'));
 
         $this->actingAs($user)
             ->post('/device/approve', ['code' => 'ZZZZ-ZZZZ'])
@@ -209,21 +212,76 @@ class CliDeviceFlowTest extends TestCase
         $this->actingAs($other)
             ->get('/device?code='.$start['user_code'])
             ->assertInertia(fn (Assert $page) => $page
-                ->where('error', 'That code has already been used. Run fw login again to get a new one.'));
+                ->where('error', 'That code has already been used. Start the sign-in again on your computer to get a new one.'));
 
         $this->actingAs($other)
             ->post('/device/approve', ['code' => $start['user_code']])
             ->assertSessionHasErrors('code');
     }
 
-    public function test_device_page_sends_guests_to_sign_in_and_back(): void
+    public function test_guests_see_the_request_and_ways_to_sign_in(): void
     {
-        $start = $this->start();
+        $start = $this->start(['client_name' => 'Stata on lab-laptop']);
 
-        $this->get('/device?code='.$start['user_code'])->assertRedirect('/login');
+        $this->get('/device?code='.$start['user_code'])->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Auth/Device')
+                ->where('code', $start['user_code'])
+                ->where('clientName', 'Stata on lab-laptop')
+                ->where('error', null)
+                ->where('registrationOpen', true));
         $this->assertSame(url('/device').'?code='.$start['user_code'], session('url.intended'));
 
+        // Approving still needs an account.
         $this->post('/device/approve', ['code' => $start['user_code']])->assertRedirect('/login');
         $this->assertSame(CliDeviceCode::PENDING, CliDeviceCode::sole()->status);
+    }
+
+    public function test_guests_see_expired_codes_and_closed_registration(): void
+    {
+        config(['framework.registration' => 'closed']);
+        $this->get('/device?code=WXYZ-1234')->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Auth/Device')
+                ->where('registrationOpen', false)
+                ->where('error', 'That code doesn\'t match a sign-in request. Check the code on your computer and try again.'));
+    }
+
+    public function test_codes_last_long_enough_to_create_an_account(): void
+    {
+        $this->assertSame(1200, $this->start()['expires_in']);
+    }
+
+    public function test_a_new_account_returns_to_the_request_before_the_passkey_prompt(): void
+    {
+        Mail::fake();
+        $start = $this->start();
+        $this->get('/device?code='.$start['user_code']);
+
+        $this->post('/auth/magic-link', ['email' => 'new@example.org', 'name' => 'New Person']);
+        $sent = null;
+        Mail::assertSent(MagicLinkMail::class, function ($mail) use (&$sent) {
+            $sent = $mail->url;
+
+            return true;
+        });
+        $this->assertStringContainsString('next=%2Fdevice%3Fcode%3D'.$start['user_code'], $sent);
+
+        // The email opens in another browser: no session, no cookie.
+        $this->flushSession();
+        $this->app['auth']->forgetGuards();
+        $path = parse_url($sent, PHP_URL_PATH).'?'.parse_url($sent, PHP_URL_QUERY);
+        $this->get($path)->assertOk();
+        $token = basename(parse_url($sent, PHP_URL_PATH));
+        $this->post('/auth/magic/'.$token)
+            ->assertRedirect(url('/device').'?code='.$start['user_code']);
+    }
+
+    public function test_email_links_only_carry_device_paths(): void
+    {
+        $this->assertSame('/device?code=ABCD-EFGH', MagicLinkController::devicePath('https://framework.pub/device?code=ABCD-EFGH'));
+        $this->assertSame('/device', MagicLinkController::devicePath('/device?code=<script>'));
+        $this->assertNull(MagicLinkController::devicePath('https://evil.example/elsewhere'));
+        $this->assertNull(MagicLinkController::devicePath('/dashboard'));
     }
 }

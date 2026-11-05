@@ -1,4 +1,5 @@
 <script setup>
+import { pageGutter } from '@/ui.js';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/vue/20/solid';
@@ -122,7 +123,7 @@ const itemClass = (item) => [
             </aside>
 
             <!-- The same margins as the project list, with the content against its left edge -->
-            <div class="min-w-0 flex-1 px-6 py-10 lg:px-12 xl:px-16">
+            <div class="min-w-0 flex-1 py-10" :class="pageGutter">
                 <div class="max-w-4xl">
                     <slot />
 

@@ -111,6 +111,7 @@ class ProjectDefaults
         $own = $user->project_defaults ?? [];
 
         return [
+            'publish_destination' => $own['publish_destination'] ?? '',
             'blueprint' => 'framework/'.Arr::get($doc, 'defaults.project_type', self::BLUEPRINT),
             // Only what the person chose: a blueprint's own language and workflow show through the rest
             'language' => in_array($own['language'] ?? null, Project::LANGUAGES, true) ? $own['language'] : null,
@@ -226,6 +227,9 @@ class ProjectDefaults
     {
         $settings = $defaults['settings'];
         $layer = [];
+        if (in_array($destination = $defaults['publish_destination'] ?? '', ['cloud', 'github'], true)) {
+            $layer['publish'] = ['default' => $destination, 'destinations' => [$destination => ['driver' => $destination]]];
+        }
 
         if ($language !== 'stata') {
             $layer['scaffold']['ide'] = $settings['ide'];
@@ -365,6 +369,7 @@ class ProjectDefaults
     public static function fromValues(array $values): array
     {
         return [
+            'publish_destination' => $values['publish_destination'] ?? '',
             'blueprint' => 'framework/'.($values['project_type'] ?? self::BLUEPRINT),
             'language' => in_array($values['language'] ?? null, Project::LANGUAGES, true) ? $values['language'] : null,
             'workflows' => self::chosenWorkflows($values['workflows'] ?? null),

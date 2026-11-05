@@ -18,7 +18,7 @@ class StructurePreview
     public static function of(array $layer): array
     {
         // Only the structure: no editor files, agents, or Git
-        $spec = ['name' => 'project'] + $layer + ['scaffold' => ['ide' => 'none'], 'ai' => ['enabled' => false], 'git' => ['use_git' => false]];
+        $spec = array_replace_recursive(['name' => 'project'], $layer, ['scaffold' => ['ide' => 'none'], 'ai' => ['enabled' => false], 'git' => ['use_git' => false]]);
         $sensitive = (bool) ($layer['security']['sensitive'] ?? false);
         $tree = fn (string $language, bool $quarto) => collect(ProjectTree::for($spec, $language, $quarto ? ['quarto'] : [], $sensitive))->keyBy('path');
 

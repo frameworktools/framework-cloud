@@ -29,7 +29,7 @@ class Project extends Model
 
     /**
      * Languages a project can use. The R package scaffolds r, the Python
-     * package scaffolds python, and fw scaffolds stata (scaffolding only).
+     * package scaffolds python, and fw scaffolds stata.
      */
     public const LANGUAGES = ['r', 'python', 'stata'];
 

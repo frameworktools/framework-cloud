@@ -38,12 +38,12 @@ class WebAppTest extends TestCase
         $this->get('/dashboard')->assertRedirect('/login');
     }
 
-    public function test_projects_are_the_home_page(): void
+    public function test_dashboard_and_projects_have_separate_pages(): void
     {
         $user = $this->user();
         $user->projects()->create(['name' => 'Survey', 'slug' => 'survey']);
 
-        $this->actingAs($user)->get('/dashboard')->assertRedirect('/projects');
+        $this->actingAs($user)->get('/dashboard')->assertInertia(fn (Assert $page) => $page->component('Dashboard'));
 
         $this->actingAs($user)->get('/projects')
             ->assertInertia(fn (Assert $page) => $page

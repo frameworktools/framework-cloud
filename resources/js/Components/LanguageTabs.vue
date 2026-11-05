@@ -1,8 +1,8 @@
 <script setup>
 import { languageNames } from '@/library.js';
 
-// R and Python (or any languages given) as tabs over a catalog
-defineProps({ languages: { type: Array, default: () => ['r', 'python'] } });
+// Environment tabs over a catalog
+defineProps({ languages: { type: Array, default: () => ['r', 'python', 'stata'] } });
 const model = defineModel({ type: String });
 const tab = (on) => on
     ? 'border-sky-600 text-sky-700 dark:border-sky-400 dark:text-sky-300'

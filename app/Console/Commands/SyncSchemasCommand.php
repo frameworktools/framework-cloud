@@ -26,7 +26,7 @@ class SyncSchemasCommand extends Command
 
     public const LOCK = 'schema/schema.lock.json';
 
-    protected $signature = 'fw:sync-schemas {repo : Path to a framework R package checkout} {ref : The full commit SHA to copy from}';
+    protected $signature = 'fw:sync-schemas {repo : Path to a framework R package checkout} {ref : The full commit SHA to copy from} {--worktree : Copy local schema edits and record their base commit}';
 
     protected $description = 'Copy the spec schemas from the framework R package and update their lock file';
 
@@ -52,12 +52,13 @@ class SyncSchemasCommand extends Command
                 return self::FAILURE;
             }
 
-            File::put(resource_path("schema/{$name}"), $show->output());
-            $files[$name] = ['source' => $source, 'sha256' => hash('sha256', $show->output())];
+            $content = $this->option('worktree') ? File::get($repo.'/'.$source) : $show->output();
+            File::put(resource_path("schema/{$name}"), $content);
+            $files[$name] = ['source' => $source, 'sha256' => hash('sha256', $content)];
         }
 
-        File::put(resource_path(self::LOCK), json_encode(['commit' => $commit, 'files' => $files], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n");
-        $this->info("Copied the schemas from {$commit}.");
+        File::put(resource_path(self::LOCK), json_encode(['commit' => $commit, 'worktree' => (bool) $this->option('worktree'), 'files' => $files], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n");
+        $this->info($this->option('worktree') ? "Copied working-tree schemas (base {$commit})." : "Copied the schemas from {$commit}.");
 
         return self::SUCCESS;
     }

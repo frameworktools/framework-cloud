@@ -23,36 +23,36 @@ const error = computed(() => form.errors.code ?? props.error);
 </script>
 
 <template>
-    <Head title="CLI sign-in" />
+    <Head title="Computer sign-in" />
 
     <AppLayout>
         <div class="flex max-w-2xl flex-col gap-8">
             <PageHeader>
-                <template #title><code class="font-mono">fw</code> sign-in</template>
+                <template #title>Computer sign-in</template>
                 <template #description>
-                    <code class="font-mono">fw login</code> shows a code in your terminal. Check that it matches the
-                    code here, then approve it to sign <code class="font-mono">fw</code> in to your account.
+                    A program on your computer shows a code. Check that it matches the code here, then approve it
+                    to connect the program to your account.
                 </template>
             </PageHeader>
 
-            <UiCallout v-if="result === 'device-approved'" variant="success" heading="CLI connection">
-                <p>You can close this tab and return to the terminal.</p>
+            <UiCallout v-if="result === 'device-approved'" variant="success" heading="Computer connected">
+                <p>You can close this tab and return to your computer.</p>
             </UiCallout>
 
             <UiCallout v-else-if="result === 'device-denied'" heading="Request denied">
-                <p><code class="font-mono">fw</code> was not signed in. You can close this tab.</p>
+                <p>The program was not connected. You can close this tab.</p>
             </UiCallout>
 
             <UiPanel
                 v-else-if="request"
                 title="Device authorization"
-                description="Approving creates an API token for this device. You can revoke it on the API tokens page."
+                description="Approving creates an API token for this computer. You can revoke it on the API tokens page."
             >
                 <dl class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
                     <dt class="text-slate-500 dark:text-slate-400">Code</dt>
                     <dd class="font-mono font-medium">{{ code }}</dd>
-                    <dt class="text-slate-500 dark:text-slate-400">Device</dt>
-                    <dd>{{ request.client_name ?? 'fw (no name given)' }}</dd>
+                    <dt class="text-slate-500 dark:text-slate-400">Program</dt>
+                    <dd>{{ request.client_name ?? 'Not named' }}</dd>
                     <dt class="text-slate-500 dark:text-slate-400">Requested</dt>
                     <dd><time :datetime="request.created_at_iso">{{ request.created_at }}</time></dd>
                 </dl>

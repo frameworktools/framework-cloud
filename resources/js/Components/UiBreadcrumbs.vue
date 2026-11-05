@@ -1,4 +1,5 @@
 <script setup>
+import { pageGutter, pageWidth } from '@/ui.js';
 import { HomeIcon, Square2StackIcon } from '@heroicons/vue/24/outline';
 import { ChevronRightIcon } from '@heroicons/vue/20/solid';
 
@@ -8,7 +9,7 @@ import { ChevronRightIcon } from '@heroicons/vue/20/solid';
 // Pages inside the three-column project layout don't use it; their second column says where you are.
 defineProps({
     items: { type: Array, required: true }, // [{ label, href }], the last one is this page
-    width: { type: String, default: 'max-w-6xl' }, // match the page's content column
+    width: { type: String, default: pageWidth }, // match the page's content column
     sticky: Boolean,
     inline: Boolean,
     trailing: Boolean,
@@ -17,11 +18,11 @@ defineProps({
 
 <template>
     <div :class="inline ? '' : ['z-20 border-b border-slate-800/10 bg-white/90 backdrop-blur dark:border-white/10 dark:bg-slate-950/90', { 'sm:sticky sm:top-0': sticky }]">
-        <div class="flex w-full flex-wrap items-center justify-between gap-x-4" :class="inline ? '' : ['mx-auto min-h-10 px-5 sm:flex-nowrap sm:px-8', width]">
+        <div class="flex w-full flex-wrap items-center justify-between gap-x-4" :class="inline ? '' : ['mx-auto min-h-10 sm:flex-nowrap', pageGutter, width]">
             <nav aria-label="Breadcrumb" class="flex min-w-0 self-stretch">
                 <ol role="list" class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-2" :class="{ 'min-h-10': !inline }">
                     <li class="flex shrink-0">
-                        <Link href="/projects" class="flex items-center text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300">
+                        <Link href="/dashboard" class="flex items-center text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300">
                             <HomeIcon class="size-4 shrink-0" aria-hidden="true" /><span class="sr-only">Home</span>
                         </Link>
                     </li>

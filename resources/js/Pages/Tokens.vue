@@ -39,8 +39,9 @@ const revoke = (id) => {
         <div class="flex flex-col gap-8">
             <PageHeader title="API tokens">
                 <template #description>
-                    Tokens connect R, Python, and the CLI to your account.
+                    Tokens connect R, Python, Stata, and the CLI to your account.
                     Revoke each device’s token separately.
+                    <code class="font-mono text-xs">cloud_login()</code> in R or Python, <code class="font-mono text-xs">fw_login</code> in Stata, and <code class="font-mono text-xs">fw login</code> create a token for you after you approve the computer in your browser. Create one here for a computer without a browser.
                 </template>
             </PageHeader>
 

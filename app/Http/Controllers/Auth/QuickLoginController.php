@@ -28,6 +28,6 @@ class QuickLoginController extends Controller
         Auth::login($user, remember: true);
         $request->session()->regenerate();
 
-        return redirect('/projects');
+        return redirect('/dashboard');
     }
 }

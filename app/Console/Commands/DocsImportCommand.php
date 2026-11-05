@@ -21,7 +21,7 @@ use Illuminate\Support\Str;
 class DocsImportCommand extends Command
 {
     protected $signature = 'fw:docs-import
-        {product : r, py, or cli}
+        {product : r, py, cli, or stata}
         {source? : A docs-site.tar.gz file or a docs-site folder}
         {--release : Download docs-site.tar.gz from the product\'s GitHub releases (see docs_repositories in config/framework.php)}
         {--legacy : (r only) Import the guides in resources/docs/guides and the reference in docs.db}';

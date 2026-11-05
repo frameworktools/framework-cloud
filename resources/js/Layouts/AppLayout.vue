@@ -1,4 +1,5 @@
 <script setup>
+import { pageClass } from '@/ui.js';
 import { computed, ref, watch } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
 import ThemeToggle from '@/Components/ThemeToggle.vue';
@@ -19,7 +20,7 @@ watch(() => page.url, () => { menuOpen.value = false; });
 <template>
     <div class="flex min-h-screen">
         <aside class="hidden w-60 shrink-0 flex-col overflow-y-auto border-r border-slate-200 bg-slate-50 p-4 md:sticky md:top-0 md:flex md:h-screen dark:border-slate-800 dark:bg-slate-900">
-            <Link href="/projects" class="px-2 py-1 font-semibold tracking-tight">
+            <Link href="/dashboard" class="px-2 py-1 font-semibold tracking-tight">
                 <span class="inline-flex items-center gap-2"><img :src="'/images/logo.png'" alt="" class="h-8 w-auto" /><span>Framework <span class="text-sky-600 dark:text-sky-500">Cloud</span></span></span>
             </Link>
 
@@ -45,7 +46,7 @@ watch(() => page.url, () => { menuOpen.value = false; });
 
         <div class="flex min-w-0 flex-1 flex-col">
             <header class="flex items-center justify-between border-b border-slate-200 px-4 py-3 md:hidden dark:border-slate-800">
-                <Link href="/projects" class="font-semibold"><span class="inline-flex items-center gap-2"><img :src="'/images/logo.png'" alt="" class="h-8 w-auto" /><span>Framework <span class="text-sky-600 dark:text-sky-500">Cloud</span></span></span></Link>
+                <Link href="/dashboard" class="font-semibold"><span class="inline-flex items-center gap-2"><img :src="'/images/logo.png'" alt="" class="h-8 w-auto" /><span>Framework <span class="text-sky-600 dark:text-sky-500">Cloud</span></span></span></Link>
                 <div class="flex items-center gap-3">
                     <ThemeToggle />
                     <button
@@ -69,7 +70,7 @@ watch(() => page.url, () => { menuOpen.value = false; });
             <main v-if="bleed" class="flex-1">
                 <slot />
             </main>
-            <main v-else class="mx-auto w-full max-w-5xl flex-1 px-6 py-10 lg:px-10">
+            <main v-else :class="[pageClass, 'flex-1']">
                 <slot />
             </main>
         </div>

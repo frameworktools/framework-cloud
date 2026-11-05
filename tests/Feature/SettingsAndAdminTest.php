@@ -64,6 +64,7 @@ class SettingsAndAdminTest extends TestCase
 
         // Preferred pieces stay in the cloud, out of the synced document; renv stays synced
         $this->assertSame([
+            'publish_destination' => '',
             'language' => 'r',
             // Sets only load packages into the lists now, so the lists are what's kept
             'package_sets' => [],

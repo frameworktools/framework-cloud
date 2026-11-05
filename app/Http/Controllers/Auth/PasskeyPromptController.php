@@ -25,8 +25,11 @@ class PasskeyPromptController extends Controller
      */
     public static function afterSignIn(Request $request, User $user): RedirectResponse
     {
-        if ($request->cookie(self::SKIP_COOKIE) || $user->passkeys()->exists()) {
-            return redirect()->intended(route('projects'));
+        // A computer waiting for approval comes first; its code expires.
+        $intended = (string) $request->session()->get('url.intended', '');
+        if ($request->cookie(self::SKIP_COOKIE) || $user->passkeys()->exists()
+            || MagicLinkController::devicePath($intended) !== null) {
+            return redirect()->intended(route('dashboard'));
         }
 
         return redirect()->route('passkey.prompt');
@@ -35,7 +38,7 @@ class PasskeyPromptController extends Controller
     public function show(Request $request): Response|RedirectResponse
     {
         if ($request->user()->passkeys()->exists()) {
-            return redirect()->intended(route('projects'));
+            return redirect()->intended(route('dashboard'));
         }
 
         return Inertia::render('Auth/AddPasskey', [
@@ -47,6 +50,6 @@ class PasskeyPromptController extends Controller
     {
         Cookie::queue(Cookie::forever(self::SKIP_COOKIE, 'skipped'));
 
-        return redirect()->intended(route('projects'));
+        return redirect()->intended(route('dashboard'));
     }
 }

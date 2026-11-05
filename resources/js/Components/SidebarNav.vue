@@ -1,13 +1,16 @@
 <script setup>
 import { computed } from 'vue';
 import { usePage } from '@inertiajs/vue3';
+import { HomeIcon, FolderIcon, AdjustmentsHorizontalIcon, PhotoIcon, Square3Stack3DIcon, DocumentTextIcon, Square2StackIcon, FolderOpenIcon, CubeIcon, SparklesIcon, RectangleStackIcon, UserCircleIcon, QuestionMarkCircleIcon, ServerStackIcon } from '@heroicons/vue/24/outline';
+const icons = { '/settings': AdjustmentsHorizontalIcon, '/published': PhotoIcon, '/collections': Square3Stack3DIcon, '/reports': DocumentTextIcon, '/blueprints': Square2StackIcon, '/structures': FolderOpenIcon, '/package-sets': CubeIcon, '/skills': SparklesIcon, '/skill-sets': RectangleStackIcon, '/account': UserCircleIcon, '/docs': QuestionMarkCircleIcon, '/admin': ServerStackIcon };
+const icon = item => icons[Object.keys(icons).find(prefix => item.href === prefix || item.href.startsWith(prefix + '/'))] ?? FolderIcon;
 
 const page = usePage();
 const nav = computed(() => page.props.nav ?? []);
 const section = (name) => nav.value.filter((i) => (i.section ?? null) === name);
 const mainNav = computed(() => section(null));
 // Headed groups in order; "You" (settings, account, server) sits last without a heading
-const groups = computed(() => [['Framework', 'Framework'], ['Agents', 'Agents'], ['You', null]]
+const groups = computed(() => [['Your research', 'Your research'], ['Framework', 'Framework'], ['Agents', 'AI Agents'], ['You', null]]
     .map(([name, heading]) => ({ heading, items: section(name) }))
     .filter((g) => g.items.length));
 
@@ -25,11 +28,12 @@ const linkClass = (active) => active
 <template>
     <nav class="flex flex-col gap-6">
         <div class="flex flex-col gap-0.5">
-            <Link href="/projects" class="rounded-md px-2 py-1.5 text-sm" :class="linkClass(projectsCurrent)">Your artifacts</Link>
+            <Link href="/dashboard" class="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm" :class="linkClass(path === '/dashboard')"><HomeIcon class="size-4 shrink-0 opacity-70" aria-hidden="true" />Dashboard</Link>
+            <Link href="/projects" class="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm" :class="linkClass(projectsCurrent)"><FolderIcon class="size-4 shrink-0 opacity-70" aria-hidden="true" />Projects</Link>
             <Link
                 v-for="item in mainNav" :key="item.href" :href="item.href"
-                class="rounded-md px-2 py-1.5 text-sm" :class="linkClass(current(item))"
-            >{{ item.label }}</Link>
+                class="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm" :class="linkClass(current(item))"
+            ><component :is="icon(item)" class="size-4 shrink-0 opacity-70" aria-hidden="true" />{{ item.label }}</Link>
         </div>
 
         <div
@@ -38,8 +42,8 @@ const linkClass = (active) => active
         >
             <div v-if="group.heading" class="mb-1 px-2 text-xs font-medium uppercase tracking-wide text-slate-500">{{ group.heading }}</div>
             <template v-for="item in group.items" :key="item.href">
-                <a v-if="item.external" :href="item.href" class="rounded-md px-2 py-1.5 text-sm" :class="linkClass(false)">{{ item.label }}</a>
-                <Link v-else :href="item.href" class="rounded-md px-2 py-1.5 text-sm" :class="linkClass(current(item))">{{ item.label }}</Link>
+                <a v-if="item.external" :href="item.href" class="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm" :class="linkClass(false)"><component :is="icon(item)" class="size-4 shrink-0 opacity-70" aria-hidden="true" />{{ item.label }}</a>
+                <Link v-else :href="item.href" class="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm" :class="linkClass(current(item))"><component :is="icon(item)" class="size-4 shrink-0 opacity-70" aria-hidden="true" />{{ item.label }}</Link>
             </template>
         </div>
     </nav>

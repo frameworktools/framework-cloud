@@ -36,7 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Library forms carry file text (SKILL.md, YAML, templates) whose
         // whitespace is content, so they skip input trimming.
         $middleware->trimStrings(except: [
-            fn (Request $request) => $request->is('blueprints*', 'facets*', 'skills*'),
+            fn (Request $request) => $request->is('blueprints*', 'facets*', 'structures*', 'skills*'),
         ]);
 
         $middleware->web(append: [

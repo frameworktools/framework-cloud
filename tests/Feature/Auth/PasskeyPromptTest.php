@@ -31,25 +31,25 @@ class PasskeyPromptTest extends TestCase
         $user = User::factory()->create();
         PasskeyFactory::new()->create(['authenticatable_id' => $user->id]);
 
-        $this->post('/auth/magic/'.LoginToken::issue($user))->assertRedirect(route('projects'));
-        $this->get('/welcome/passkey')->assertRedirect(route('projects'));
+        $this->post('/auth/magic/'.LoginToken::issue($user))->assertRedirect(route('dashboard'));
+        $this->get('/welcome/passkey')->assertRedirect(route('dashboard'));
     }
 
     public function test_not_now_continues_to_the_page_the_person_wanted_and_is_remembered(): void
     {
         $user = User::factory()->create();
 
-        // fw login sends people to /device, which needs a signed-in account
-        $this->get('/device?code=ABCD-EFGH')->assertRedirect('/login');
+        // A signed-in page sends people to sign in and back
+        $this->get('/tokens')->assertRedirect('/login');
         $this->post('/auth/magic/'.LoginToken::issue($user))->assertRedirect(route('passkey.prompt'));
 
         $this->post('/welcome/passkey/skip')
-            ->assertRedirect(url('/device').'?code=ABCD-EFGH')
+            ->assertRedirect(url('/tokens'))
             ->assertCookie(PasskeyPromptController::SKIP_COOKIE);
 
         $this->post('/logout');
         $this->withCookie(PasskeyPromptController::SKIP_COOKIE, 'skipped')
             ->post('/auth/magic/'.LoginToken::issue($user))
-            ->assertRedirect(route('projects'));
+            ->assertRedirect(route('dashboard'));
     }
 }

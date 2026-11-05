@@ -19,6 +19,7 @@ const props = defineProps({
     facet: Object, // null when creating
     values: Object,
     library: Array,
+    language: String,
 });
 
 const page = usePage();
@@ -31,9 +32,10 @@ const form = useForm({
     name: props.facet?.name ?? '',
     description: props.facet?.description ?? '',
     visibility: props.facet?.visibility ?? 'private',
-    language: props.facet?.language?.[0] ?? (new URLSearchParams(typeof window === 'undefined' ? '' : window.location.search).get('language') === 'python' ? 'python' : 'r'),
+    language: props.facet?.language?.[0] ?? props.language ?? 'r',
     requirements: props.facet?.requirements ?? '',
     settings_yaml: props.values.settings_yaml,
+    gitignore_content: props.values.gitignore_content ?? '',
     packages: props.values.packages,
     files: props.values.files.map((f) => ({ ...f })),
     skills: props.values.skills.map((s) => ({ ...s, skill_id: null })),
@@ -43,6 +45,7 @@ const form = useForm({
 const languageOptions = [
     { value: 'r', label: 'R' },
     { value: 'python', label: 'Python' },
+    ...(props.kind === 'skill_set' ? [{ value: 'stata', label: 'Stata' }] : []),
 ];
 
 const addFile = () => form.files.push({ path: '', content: '', template: false });
@@ -72,6 +75,7 @@ const items = computed(() => [
     { label: 'Details', anchor: 'details' },
     ...(isStructure.value ? [
         { label: 'Folders and settings', anchor: 'settings' },
+        { label: '.gitignore', anchor: 'gitignore' },
         { label: 'Files', anchor: 'files' },
     ] : []),
     ...(isSkillSet.value ? [{ label: 'Skills', anchor: 'skills' }] : []),
@@ -111,6 +115,14 @@ const errorFor = (prefix) => Object.entries(form.errors).filter(([k]) => k.start
                         label="Settings (YAML)"
                         description="Same keys as settings.yml: type, directories, extra_directories, render_dirs, quarto, git, scaffold, connections, and env. Set a key to null to remove it. Credentials must be env(&quot;VARIABLE&quot;) references."
                         :error="form.errors.settings_yaml"
+                    />
+                </UiPanel>
+
+                <UiPanel id="gitignore" title=".gitignore" class="scroll-mt-6">
+                    <UiTextarea
+                        v-model="form.gitignore_content" code :rows="12" label="Ignore rules"
+                        description="Keep private data, credentials, and local files out of Git. These rules follow the package defaults. Add one pattern per line; use ! to override a default. Existing tracked files stay tracked."
+                        :error="form.errors.gitignore_content"
                     />
                 </UiPanel>
 

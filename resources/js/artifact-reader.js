@@ -51,7 +51,7 @@ export function tablePage(table, { query = '', sortColumn = null, direction = 'a
     return { rows: rows.slice(start, start + pageSize).map(({ row }) => row), total: rows.length, pages, page: current, start };
 }
 
-function mountTable(container) {
+export function mountTable(container) {
     const table = JSON.parse(container.querySelector('[data-table-values]').textContent);
     const body = container.querySelector('tbody');
     const search = container.querySelector('[data-table-search]');
@@ -108,8 +108,8 @@ function mountTable(container) {
             const selected = Number(button.dataset.tableSort) === state.sortColumn;
             button.closest('th').setAttribute('aria-sort', selected ? (state.direction === 'asc' ? 'ascending' : 'descending') : 'none');
             const indicator = button.querySelector('[data-sort-indicator]');
-            indicator.querySelector('[data-sort-up]')?.setAttribute('opacity', selected && state.direction === 'desc' ? '0.2' : '1');
-            indicator.querySelector('[data-sort-down]')?.setAttribute('opacity', selected && state.direction === 'asc' ? '0.2' : '1');
+            indicator?.querySelector('[data-sort-up]')?.setAttribute('opacity', selected && state.direction === 'desc' ? '0.2' : '1');
+            indicator?.querySelector('[data-sort-down]')?.setAttribute('opacity', selected && state.direction === 'asc' ? '0.2' : '1');
         });
     }
 

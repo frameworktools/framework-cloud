@@ -1,4 +1,5 @@
 <script setup>
+import { pageClass } from '@/ui.js';
 import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -180,7 +181,7 @@ const controlClass = 'inline-flex size-7 items-center justify-center rounded-md 
     <Head :title="report.title" />
     <AppLayout bleed>
         <div class="min-h-full bg-slate-50 dark:bg-slate-950">
-            <UiBreadcrumbs sticky width="max-w-7xl" :items="[{ label: project.name, href: `/projects/${project.slug}` }, { label: 'Reports', href: `/projects/${project.id}/reports` }, { label: form.title || 'Untitled report' }]">
+            <UiBreadcrumbs sticky :items="[{ label: project.name, href: `/projects/${project.slug}` }, { label: 'Reports', href: `/projects/${project.id}/reports` }, { label: form.title || 'Untitled report' }]">
                 <template #actions>
                         <p class="flex items-center gap-1.5 whitespace-nowrap text-xs" :class="status.tone" role="status" aria-live="polite" :title="status.text">
                             <component :is="status.icon" v-if="status.icon" class="size-4" :class="{ 'animate-spin': status.spin }" aria-hidden="true" /><span class="max-sm:sr-only">{{ status.text }}</span>
@@ -191,7 +192,7 @@ const controlClass = 'inline-flex size-7 items-center justify-center rounded-md 
                 </template>
             </UiBreadcrumbs>
 
-            <div class="mx-auto grid max-w-7xl gap-8 px-5 py-8 sm:px-8 lg:grid-cols-[minmax(0,1fr)_17rem]">
+            <div :class="[pageClass, 'grid gap-8 lg:grid-cols-[minmax(0,1fr)_17rem]']">
                 <main class="min-w-0">
                     <p v-if="!canPublish" class="mx-auto mb-4 max-w-3xl rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">You can write and preview drafts. Publishing a report is part of a paid plan.</p>
                     <div v-if="Object.keys(errors).length" role="alert" class="mx-auto mb-4 max-w-3xl rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">

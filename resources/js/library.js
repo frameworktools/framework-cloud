@@ -15,12 +15,12 @@ export const groups = [
     { key: 'community', label: 'Shared by others' },
 ];
 
-// A project's language decides which tool scaffolds it. Stata support covers
-// scaffolding only. Python waits for the Python package.
+// A project's language decides which tool scaffolds it: the R package, the
+// Python package, or fw for Stata. Stata projects use the framework Stata package.
 export const languageOptions = [
     { value: 'r', label: 'R' },
     { value: 'python', label: 'Python' },
-    { value: 'stata', label: 'Stata (scaffolding only)' },
+    { value: 'stata', label: 'Stata' },
 ];
 
 // fw scaffolds only these project types for Stata
@@ -38,11 +38,8 @@ export const languageScope = (languages) => {
 // Whether something for these languages fits a project in one; none listed fits all
 export const fitsLanguage = (languages, language) => !languages?.length || languages.includes(language);
 
-// The R or Python tab a catalog shows: from the address, else the given default, kept in the address as it changes
-export const languageTab = (fallback, choices = ['r', 'python']) => {
-    const asked = typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('language');
-    return choices.includes(asked) ? asked : fallback;
-};
+// Each catalog visit starts at the saved preference, including Stata.
+export const languageTab = (preferred, choices = ['r', 'python', 'stata']) => choices.includes(preferred) ? preferred : choices[0];
 export const rememberLanguage = (language) => {
     const url = new URL(window.location.href);
     url.searchParams.set('language', language);

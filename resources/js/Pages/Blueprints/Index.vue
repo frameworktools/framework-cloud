@@ -113,7 +113,7 @@ const pill = (on) => on
 
             <UiCallout v-if="savedDefault" variant="success">
                 {{ savedDefault.name }} is your default blueprint, and new {{ languageNames[savedDefault.language] }} projects use {{ workflowNames[savedDefault.workflow] }}.
-                <Link href="/settings/blueprint" class="font-medium underline">Project defaults</Link>
+                <Link href="/settings/blueprint" class="font-medium underline">Default settings</Link>
             </UiCallout>
 
             <!-- What to browse: a language, then a workflow it has -->
@@ -137,9 +137,6 @@ const pill = (on) => on
                             {{ workflowNames[wf] }}
                         </button>
                     </div>
-                    <p v-if="language === 'stata'" class="max-w-xl text-xs text-slate-500 dark:text-slate-400">
-                        Stata projects use scripts. Framework creates the folders, files, and Git setup. It doesn't manage Stata packages.
-                    </p>
                 </div>
             </div>
 

@@ -10,3 +10,9 @@ export const textareaClass = `${controlClass} px-3 py-2 leading-relaxed`;
 export const labelClass = 'text-sm font-medium text-slate-800 dark:text-white';
 export const descriptionClass = 'text-sm text-slate-500 dark:text-slate-400';
 export const errorClass = 'text-sm text-red-600 dark:text-red-400';
+
+// Page margins. Every page outside the three-column project layout centers in pageClass; the
+// breadcrumb bar uses the same gutter so its edges line up with the content under it.
+export const pageGutter = 'px-6 sm:px-10 lg:px-16 xl:px-24';
+export const pageWidth = 'max-w-7xl';
+export const pageClass = `mx-auto w-full ${pageWidth} ${pageGutter} py-10`;

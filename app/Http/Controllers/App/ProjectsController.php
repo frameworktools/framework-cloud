@@ -38,8 +38,17 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ProjectsController extends Controller
 {
-    /** The home page: every project. */
     public function index(Request $request): Response|RedirectResponse
+    {
+        return $this->workspace($request, 'Projects');
+    }
+
+    public function dashboard(Request $request): Response|RedirectResponse
+    {
+        return $this->workspace($request, 'Dashboard');
+    }
+
+    private function workspace(Request $request, string $component): Response|RedirectResponse
     {
         // A new account starts with guided setup, once
         if (! $request->user()->setup_completed_at) {
@@ -48,14 +57,20 @@ class ProjectsController extends Controller
 
         $projectIds = $request->user()->projects()->select('id');
 
-        return Inertia::render('Projects', [
+        return Inertia::render($component, [
             'projects' => $request->user()->projects()->latest()->with('blueprintVersion.blueprint')->get()
                 ->map(fn (Project $p) => self::summary($p)),
+            'counts' => [
+                'projects' => $request->user()->projects()->count(),
+                'artifacts' => Document::whereIn('project_id', $projectIds)->count(),
+                'collections' => Collection::whereIn('project_id', $projectIds)->count(),
+                'reports' => Report::whereIn('project_id', $projectIds)->count(),
+            ],
             'canPublish' => $request->user()->canPublish(),
             'recentArtifacts' => Document::whereIn('project_id', $projectIds)->with(['project.user'])->withCount('versions')
                 ->latest('updated_at')->orderByDesc('id')->limit(6)->get()->map(fn (Document $document) => [
                     ...$document->only('id', 'kind', 'visibility', 'updated_at'),
-                    'title' => $document->title ?? $document->slug, 'url' => $document->shareUrl(),
+                    'title' => $document->title ?? $document->slug, 'url' => ($document->driver ?? 'cloud') === 'cloud' ? $document->shareUrl() : $document->external_url,
                     'management_url' => '/artifacts/'.$document->id,
                     'password_protected' => $document->isPasswordProtected(),
                     'version_count' => max(1, $document->versions_count),
@@ -103,7 +118,7 @@ class ProjectsController extends Controller
                     ->map(fn (Document $d) => [
                         'id' => $d->id,
                         'title' => $d->title ?? $d->slug,
-                        'url' => $d->readableUrl() ?? $d->shareUrl(),
+                        'url' => ($d->driver ?? 'cloud') === 'cloud' ? ($d->readableUrl() ?? $d->shareUrl()) : $d->external_url,
                         'readable' => $d->isReadable(),
                         'kind' => $d->kind,
                         'visibility' => $d->visibility,
@@ -193,6 +208,8 @@ class ProjectsController extends Controller
             'start' => [
                 'language' => in_array($request->query('language'), Project::LANGUAGES, true) ? $request->query('language') : null,
                 'workflow' => in_array($request->query('workflow'), ProjectDefaults::WORKFLOW_KEYS, true) ? $request->query('workflow') : null,
+                // How to set it up, as the homepage's Download a ZIP and Start from GitHub links pass it
+                'destination' => in_array($request->query('destination'), ['download', 'github', 'local'], true) ? $request->query('destination') : null,
             ],
             'downloads' => ProjectZip::enabled(),
             // Languages GitHub can't scaffold here, and why

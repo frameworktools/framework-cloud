@@ -13,7 +13,8 @@ use Illuminate\Support\Str;
  */
 class CliDeviceCode extends Model
 {
-    public const LIFETIME_SECONDS = 600;
+    // Long enough to create an account and confirm its email.
+    public const LIFETIME_SECONDS = 1200;
 
     public const INTERVAL_SECONDS = 5;
 

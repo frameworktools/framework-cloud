@@ -27,6 +27,7 @@ const saved = computed(() => page.props.flash.status === 'defaults-updated');
 const sections = [
     { heading: 'New projects' },
     { key: 'language', label: 'Language' },
+    { key: 'publishing', label: 'Publishing' },
     { key: 'blueprint', label: 'Blueprint' },
     { key: 'editor', label: 'Editor support' },
     { key: 'packages', label: 'Packages' },
@@ -46,11 +47,11 @@ const languageNames = { r: 'R', python: 'Python', stata: 'Stata' };
 const languageOptions = [
     { value: 'r', label: 'R' },
     { value: 'python', label: 'Python' },
-    { value: 'stata', label: 'Stata', description: 'Creates the project\'s files and folders. Framework doesn\'t manage Stata packages.' },
+    { value: 'stata', label: 'Stata' },
 ];
 // How each language's new projects write notebooks: the workflow. R Markdown
 // is R's Quarto workflow writing .Rmd notebooks, saved as Quarto plus the
-// R Markdown preference. Stata has only Scripts only.
+// R Markdown preference. Stata uses scripts.
 const workflowNames = { quarto: 'Quarto', rmarkdown: 'R Markdown', jupyter: 'Jupyter', scripts: 'Scripts only' };
 const workflowNotes = {
     quarto: 'Write notebooks as Quarto documents (.qmd).',
@@ -75,6 +76,7 @@ const hooks = [
 ];
 
 const form = useForm({
+    publish_destination: props.values.publish_destination ?? '',
     ...props.values,
     tools: { ...props.values.tools },
     hooks: { ...props.values.hooks },
@@ -162,10 +164,10 @@ const editors = computed({
 });
 
 const tool = (key) => props.catalog.tools.find((t) => t.key === key);
-const only = (piece) => (piece?.language?.length === 1 ? (piece.language[0] === 'r' ? 'R only.' : 'Python only.') : '');
+const only = (piece) => (piece?.language?.length === 1 ? `${languageNames[piece.language[0]]} only.` : '');
 // Your default language decides what these pages point out: a piece for
 // another language stays as it is, dimmed, since other projects may use it
-const fits = (piece) => (form.language === 'stata' ? false : !piece?.language?.length || piece.language.includes(form.language));
+const fits = (piece) => !piece?.language?.length || piece.language.includes(form.language);
 const notUsed = computed(() => `Not used in ${languageNames[form.language]} projects.`);
 const describe = (piece, text = piece?.description) => [text, fits(piece) ? only(piece) : notUsed.value].filter(Boolean).join(' ');
 // Settings by the languages that read them, described and dimmed the way pieces are
@@ -193,9 +195,9 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
 </script>
 
 <template>
-    <Head :title="`${current.title ?? current.label} · Project defaults`" />
+    <Head :title="`${current.title ?? current.label} · Default settings`" />
 
-    <SectionLayout heading="Project defaults" :items="items" narrow :dirty="form.isDirty">
+    <SectionLayout heading="Default settings" :items="items" narrow :dirty="form.isDirty">
         <PageHeader v-if="section === 'blueprint'" :title="current.label">
             <template #actions>
                 <Link href="/welcome" class="text-sm text-slate-500 hover:text-slate-900 hover:underline dark:hover:text-white">Run guided setup</Link>
@@ -208,6 +210,11 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
         <form id="settings-form" class="mt-8 flex max-w-3xl flex-col gap-8" @submit.prevent="save">
             <UiRadioCards v-if="section === 'language'" v-model="form.language" name="language" legend="Language" hide-legend :options="languageOptions" stacked />
 
+            <section v-else-if="section === 'publishing'" class="max-w-xl space-y-5">
+                <UiSelect v-model="form.publish_destination" label="Publishing destination" :options="[{value:'',label:'Automatic'}, {value:'cloud',label:'Framework Cloud'}, {value:'github',label:'GitHub Pages'}]" :error="form.errors.publish_destination" />
+                <p class="text-sm text-slate-500">New projects use this destination. Automatic uses a configured bucket, then Framework Cloud. Named folder and object storage destinations can be set in each project's settings.</p>
+                <p class="text-sm text-slate-500">GitHub Pages is public. Private repositories do not make Pages private.</p>
+            </section>
             <template v-else-if="section === 'blueprint'">
                 <DefaultBlueprintList v-model="form.project_type" :blueprints="blueprints" :defaults="previewDefaults" :language="previewLanguage">
                     <!-- What the preview shows; your defaults stay as they are -->

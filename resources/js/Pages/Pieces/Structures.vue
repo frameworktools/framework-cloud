@@ -109,6 +109,15 @@ const dir = (path) => (path === '.' ? 'the project folder' : `${path}/`);
                                         </p>
                                     </section>
 
+                                    <section>
+                                        <div :class="label">.gitignore template</div>
+                                        <p class="mt-1.5 text-xs">Each structure includes rules for private data, credentials, and local files. Copy and edit a structure to change its ignore rules.</p>
+                                        <details v-if="s.gitignore_content" class="mt-2">
+                                            <summary class="cursor-pointer text-xs underline underline-offset-4">View ignore rules</summary>
+                                            <pre class="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words font-mono text-xs">{{ s.gitignore_content }}</pre>
+                                        </details>
+                                    </section>
+
                                     <section v-if="s.preview.sensitive">
                                         <div :class="label">Private and public data</div>
                                         <p class="mt-1.5 text-xs">
@@ -129,7 +138,7 @@ const dir = (path) => (path === '.' ? 'the project folder' : `${path}/`);
                                                 <ChevronRightIcon class="-ml-1 size-4 transition-transform group-open:rotate-90" />Data protection
                                             </summary>
                                             <div class="mt-2 flex flex-col gap-2 text-slate-600 dark:text-slate-400">
-                                                <p>The project's .gitignore excludes every <span class="font-mono">private/</span> folder, such as <template v-for="(p, i) in s.preview.private" :key="p">{{ i ? ' and ' : '' }}<span class="font-mono">{{ p }}/</span></template>, so Git never commits them.</p>
+                                                <p>The project's .gitignore excludes every <span class="font-mono">private/</span> folder, such as <template v-for="(p, i) in s.preview.private" :key="p">{{ i ? ' and ' : '' }}<span class="font-mono">{{ p }}/</span></template>, so Git leaves untracked files there out of commits. Files already tracked by Git need to be removed from its index.</p>
                                                 <p>R, Python, and fw stop before publishing or uploading any path with "private" in it. Interactive sessions ask for confirmation. Scripts must pass include_private (or --include-private) to go ahead.</p>
                                                 <p>Agents get a skill that describes these rules. It is guidance: an agent can still read private files it is pointed to, so keep access to the data itself controlled.</p>
                                             </div>

@@ -19,18 +19,21 @@ import { group, groups, languageNames, languageOptions } from '@/library.js';
 const props = defineProps({ blueprints: Array, catalog: Object, defaults: Object, selected: Number, start: Object, github: Object, downloads: Boolean, githubUnavailable: Object });
 
 const page = usePage();
-const bare = props.blueprints.find((b) => b.handle === props.defaults.blueprint) ?? props.blueprints.find((b) => b.handle === 'framework/bare');
+// Your default blueprint, or the Standard Project when it isn't in the list
+const defaultBlueprint = props.blueprints.find((b) => b.handle === props.defaults.blueprint) ?? props.blueprints.find((b) => b.handle === 'framework/project');
 const githubReady = computed(() => props.github.enabled && props.github.login && props.github.owners?.length);
 
 const form = useForm({
     name: '',
-    blueprint_id: props.selected ?? bare?.id ?? props.blueprints[0]?.id,
+    blueprint_id: props.selected ?? defaultBlueprint?.id ?? props.blueprints[0]?.id,
     description: '',
     language: 'r',
     // Empty uses your default workflow for the language
     workflow: props.start?.workflow ?? '',
-    // download, github, or local. Downloading needs nothing installed, so it comes first
-    destination: props.downloads ? 'download' : 'local',
+    // A destination passed in the link, when it's available here; otherwise a download, which needs nothing installed
+    destination: ({ download: props.downloads, github: props.github.enabled, local: true })[props.start?.destination]
+        ? props.start.destination
+        : (props.downloads ? 'download' : 'local'),
     github: { owner: props.github.owners?.[0]?.login ?? null, name: '', private: true, nameEdited: false },
     // Changing pieces starts from the chosen blueprint's choices
     customized: false,
@@ -323,7 +326,7 @@ const items = computed(() => [
                         This blueprint doesn't support Stata.
                     </p>
                     <p v-else-if="stata" class="mt-1.5 text-xs text-slate-500">
-                        Framework creates the project's folders, files, and Git setup for Stata. It has no Stata commands for the analysis itself.
+                        Stata projects use do-files and the framework Stata package for paths, data, and publishing.
                     </p>
                 </div>
                 <div v-if="!stata">
