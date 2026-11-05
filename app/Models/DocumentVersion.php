@@ -27,6 +27,10 @@ class DocumentVersion extends Model
 
     public function downloadUrl(): string
     {
+        if (($this->driver ?? 'cloud') !== 'cloud') {
+            return $this->external_url ?? $this->document->publicUrl();
+        }
+
         return route('documents.version.download', ['key' => $this->document->key, 'number' => $this->number]);
     }
 
@@ -54,6 +58,10 @@ class DocumentVersion extends Model
 
     public function url(): string
     {
+        if (($this->driver ?? 'cloud') !== 'cloud') {
+            return $this->external_url ?? $this->document->publicUrl();
+        }
+
         return route('documents.version', ['key' => $this->document->key, 'number' => $this->number]);
     }
 
@@ -65,6 +73,9 @@ class DocumentVersion extends Model
     /** Where the content loads from: the documents domain when set, else the app. */
     public function contentUrl(): string
     {
+        if (($this->driver ?? 'cloud') !== 'cloud') {
+            return $this->external_url ?? $this->document->publicUrl();
+        }
         $base = config('framework.documents_base_url');
 
         if ($this->usesExternalUrl()) {
@@ -99,6 +110,9 @@ class DocumentVersion extends Model
 
     public function deleteFiles(): void
     {
+        if (($this->driver ?? 'cloud') !== 'cloud') {
+            return;
+        }
         $disk = Storage::disk($this->disk());
 
         if ($this->isBundle()) {

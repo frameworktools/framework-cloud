@@ -17,14 +17,16 @@ use Inertia\Inertia;
 
 class CollectionsController extends Controller
 {
-    public function index(Request $request, int $project)
+    public function index(Request $request, ?int $project = null)
     {
-        $project = $request->user()->projects()->findOrFail($project);
+        $project = $project === null ? null : $request->user()->projects()->findOrFail($project);
 
         return Inertia::render('Collections/Index', [
-            'project' => $project->only('id', 'name', 'slug'),
-            'collections' => Collection::where('project_id', $project->id)->withCount('items')->latest()->get()->map(fn ($collection) => [
+            'project' => $project?->only('id', 'name', 'slug'),
+            'projects' => $request->user()->projects()->orderBy('name')->get(['id', 'name', 'slug']),
+            'collections' => Collection::whereIn('project_id', $request->user()->projects()->select('id'))->when($project, fn ($query) => $query->where('project_id', $project->id))->with('project:id,name,slug')->withCount('items')->latest()->get()->map(fn ($collection) => [
                 ...$collection->only('id', 'title', 'description', 'visibility', 'items_count'),
+                'project' => $collection->project->only('id', 'name', 'slug'),
                 'url' => $collection->shareUrl(), 'protected' => (bool) $collection->password_hash,
                 'expires_at' => $collection->expires_at?->toIso8601String(), 'expired' => $collection->isExpired(),
                 'updated_at' => $collection->updated_at?->toIso8601String(),
@@ -105,7 +107,7 @@ class CollectionsController extends Controller
     {
         $collection = $this->owned($request, $collection);
         $data = $request->validate(['document_id' => ['required', 'integer'], 'share_unlisted' => ['sometimes', 'boolean']]);
-        $document = Document::where('project_id', $collection->project_id)->findOrFail($data['document_id']);
+        $document = Document::where('project_id', $collection->project_id)->where('driver', 'cloud')->findOrFail($data['document_id']);
         $this->validateSharing($collection, $document, $data['share_unlisted'] ?? false);
         $collection->items()->firstOrCreate(['document_id' => $document->id], [
             'share_unlisted' => $data['share_unlisted'] ?? false,

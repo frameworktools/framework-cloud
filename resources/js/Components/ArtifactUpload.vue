@@ -49,7 +49,7 @@ const fieldClass = 'w-full rounded-md border border-slate-300 bg-white px-3 py-2
             <div class="grid gap-4 sm:grid-cols-2">
                 <label class="flex flex-col gap-1.5 text-sm font-medium">Sharing
                     <select v-model="form.visibility" :class="fieldClass">
-                        <option value="unlisted">Unlisted — anyone with the link</option>
+                        <option value="private">Private, owner only</option><option value="unlisted">Unlisted — anyone with the link</option>
                         <option value="public">Public — enable a readable link</option>
                     </select>
                 </label>

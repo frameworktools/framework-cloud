@@ -131,7 +131,7 @@ class ReportPublisher
             $data = Validator::make($block, ['id' => ['required', 'string', 'max:80'],
                 'document_id' => ['required', 'integer'], 'version_number' => ['sometimes', 'nullable', 'integer', 'min:1'],
                 'caption' => ['sometimes', 'nullable', 'string', 'max:2000'], 'share_unlisted' => ['sometimes', 'boolean']])->validate();
-            $document = Document::where('project_id', $report->project_id)->find($data['document_id']);
+            $document = Document::where('project_id', $report->project_id)->where('driver', 'cloud')->find($data['document_id']);
             if (! $document) {
                 throw ValidationException::withMessages([$prefix.'.document_id' => 'Choose an artifact from this project.']);
             }

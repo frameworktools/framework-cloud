@@ -15,14 +15,15 @@ use Inertia\Inertia;
 
 class ReportsController extends Controller
 {
-    public function index(Request $request, int $project)
+    public function index(Request $request, ?int $project = null)
     {
-        $project = $request->user()->projects()->findOrFail($project);
+        $project = $project === null ? null : $request->user()->projects()->findOrFail($project);
 
         return Inertia::render('Reports/Index', [
-            'project' => $project->only('id', 'name', 'slug'),
+            'project' => $project?->only('id', 'name', 'slug'),
+            'projects' => $request->user()->projects()->orderBy('name')->get(['id', 'name', 'slug']),
             'canPublish' => $request->user()->canPublish(),
-            'reports' => Report::where('project_id', $project->id)->with('versions')->latest('updated_at')->get()->map(fn ($report) => $this->data($report)),
+            'reports' => Report::whereIn('project_id', $request->user()->projects()->select('id'))->when($project, fn ($query) => $query->where('project_id', $project->id))->with(['versions', 'project:id,name,slug'])->latest('updated_at')->get()->map(fn ($report) => $this->data($report) + ['project' => $report->project->only('id', 'name', 'slug')]),
         ]);
     }
 

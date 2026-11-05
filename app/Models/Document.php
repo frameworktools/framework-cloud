@@ -49,10 +49,30 @@ class Document extends Model
     public function canRead(?Request $request = null): bool
     {
         $request ??= request();
+        if ($this->visibility === 'private') {
+            return $request->user() instanceof User && $request->user()->id === $this->project->user_id;
+        }
 
         return ! $this->isPasswordProtected()
             || ($request->user() instanceof User && $request->user()->id === $this->project->user_id)
             || ($request->hasSession() && hash_equals($this->password_hash, (string) $request->session()->get($this->passwordSessionKey(), '')));
+    }
+
+    /**
+     * The visibility a request asks for. An explicit `visibility` wins.
+     * The older `readable` flag only switches between public and unlisted,
+     * so it never opens a private artifact.
+     */
+    public static function visibilityFor(?string $current, array $input): string
+    {
+        if (filled($input['visibility'] ?? null)) {
+            return $input['visibility'];
+        }
+        if (array_key_exists('readable', $input) && $current !== 'private') {
+            return $input['readable'] ? 'public' : 'unlisted';
+        }
+
+        return $current ?? 'unlisted';
     }
 
     public function preserveImplicitVersion(): void
@@ -111,7 +131,7 @@ class Document extends Model
 
     public function isReadable(): bool
     {
-        return $this->visibility === 'public';
+        return $this->visibility === 'public' && ($this->driver ?? 'cloud') === 'cloud';
     }
 
     /** The readable URL, when the document is public and its owner has a handle. */
@@ -133,7 +153,7 @@ class Document extends Model
     /** The link to share: readable when available, else the private link. */
     public function shareUrl(): string
     {
-        return $this->readableUrl() ?? $this->publicUrl();
+        return ($this->driver ?? 'cloud') !== 'cloud' ? ($this->external_url ?? $this->publicUrl()) : ($this->readableUrl() ?? $this->publicUrl());
     }
 
     public static function newKey(): string

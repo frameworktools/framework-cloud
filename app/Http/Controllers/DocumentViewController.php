@@ -30,22 +30,22 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class DocumentViewController extends Controller
 {
-    public function show(string $key): Response
+    public function show(string $key): Response|RedirectResponse
     {
         return $this->page($this->byKey($key));
     }
 
-    public function showVersion(string $key, int $number): Response
+    public function showVersion(string $key, int $number): Response|RedirectResponse
     {
         return $this->page($this->byKey($key), $number);
     }
 
-    public function readable(string $handle, string $project, string $slug): Response
+    public function readable(string $handle, string $project, string $slug): Response|RedirectResponse
     {
         return $this->page($this->byReadable($handle, $project, $slug), readable: true);
     }
 
-    public function readableVersion(string $handle, string $project, string $slug, int $number): Response
+    public function readableVersion(string $handle, string $project, string $slug, int $number): Response|RedirectResponse
     {
         return $this->page($this->byReadable($handle, $project, $slug), $number, readable: true);
     }
@@ -127,6 +127,7 @@ class DocumentViewController extends Controller
 
     private function serveDownload(DocumentVersion $version): StreamedResponse
     {
+        abort_unless(($version->document->driver ?? 'cloud') === 'cloud', 404);
         abort_unless($version->document->canRead(), 403, 'Enter the artifact password on its page.');
         $disk = Storage::disk($version->disk());
         $path = $version->source_path ?? $version->entryPath();
@@ -166,8 +167,15 @@ class DocumentViewController extends Controller
         ]);
     }
 
-    private function page(Document $document, ?int $number = null, bool $readable = false): Response
+    private function page(Document $document, ?int $number = null, bool $readable = false): Response|RedirectResponse
     {
+        abort_if($document->visibility === 'private' && ! $document->canRead(), 404);
+        if (($document->driver ?? 'cloud') !== 'cloud') {
+            $url = $number ? $document->findVersion($number)?->external_url : $document->external_url;
+            abort_unless($url, 404, 'This publication has no browser URL.');
+
+            return redirect()->away($url);
+        }
         if (! $document->canRead()) {
             return response()->view('documents.password', ['document' => $document, 'number' => $number], 200)->header('Cache-Control', 'private, no-store');
         }
@@ -216,6 +224,7 @@ class DocumentViewController extends Controller
 
     private function serveEntry(DocumentVersion $version): StreamedResponse|RedirectResponse
     {
+        abort_unless(($version->document->driver ?? 'cloud') === 'cloud', 404);
         abort_unless($version->document->canRead(), 403, 'Enter the artifact password on its page.');
         if ($version->usesExternalUrl()) {
             return redirect()->away($version->contentUrl());
@@ -239,6 +248,7 @@ class DocumentViewController extends Controller
 
     private function serveAsset(DocumentVersion $version, string $path): StreamedResponse|RedirectResponse
     {
+        abort_unless(($version->document->driver ?? 'cloud') === 'cloud', 404);
         abort_unless($version->document->canRead(), 403, 'Enter the artifact password on its page.');
         abort_unless($version->isBundle(), 404);
         abort_if(str_contains($path, '..') || str_contains($path, '\\') || str_starts_with($path, '/'), 404);

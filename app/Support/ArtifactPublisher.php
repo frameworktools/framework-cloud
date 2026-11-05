@@ -28,7 +28,7 @@ class ArtifactPublisher
             'title' => ['sometimes', 'nullable', 'string', 'max:200'],
             'description' => ['sometimes', 'nullable', 'string', 'max:10000'],
             'readable' => ['sometimes', 'boolean'],
-            'visibility' => ['sometimes', Rule::in(['public', 'unlisted'])],
+            'visibility' => ['sometimes', Rule::in(['public', 'unlisted', 'private'])],
             'password' => ['sometimes', 'nullable', 'string', 'min:8', 'max:200'],
             'kind' => ['sometimes', Rule::in(['html', 'image', 'chart', 'table', 'data', 'model', 'test', 'text', 'pdf', 'file'])],
         ];
@@ -82,9 +82,10 @@ class ArtifactPublisher
             $stored += ['content_type' => $type, 'original_filename' => $filename, 'storage_disk' => $disk, 'kind' => $input['kind'] ?? $representationKind ?? $this->kind($type, $filename)];
 
             return DB::transaction(function () use ($project, $slug, $stored, $input) {
+                PublishingQuota::check($project, (int) $stored['size_bytes']);
                 Project::whereKey($project->id)->lockForUpdate()->firstOrFail();
                 $document = Document::firstOrNew(['project_id' => $project->id, 'slug' => $slug]);
-                if ($document->merged_into_id || $document->merged_at) {
+                if (($document->exists && ($document->driver ?? 'cloud') !== 'cloud') || $document->merged_into_id || $document->merged_at) {
                     throw ValidationException::withMessages(['slug' => 'This artifact has been merged. Publish to the destination artifact instead.']);
                 }
                 if ($document->exists) {
@@ -92,14 +93,10 @@ class ArtifactPublisher
                 }
                 $number = max((int) $document->next_version_number, (int) $document->versions()->max('number') + 1, 1);
                 $document->fill($stored + ['key' => $document->key ?? Document::newKey(), 'title' => $input['title'] ?? $document->title ?? Str::headline($slug)]);
-                foreach (['description', 'visibility'] as $field) {
-                    if (array_key_exists($field, $input)) {
-                        $document->$field = $input[$field];
-                    }
+                if (array_key_exists('description', $input)) {
+                    $document->description = $input['description'];
                 }
-                if (array_key_exists('readable', $input)) {
-                    $document->visibility = $input['readable'] ? 'public' : 'unlisted';
-                }
+                $document->visibility = Document::visibilityFor($document->visibility, $input);
                 // Existing external publications must first be migrated through settings.
                 if (array_key_exists('password', $input)) {
                     if (filled($input['password']) && $document->exists && $document->hasUnprotectedLegacyContent()) {

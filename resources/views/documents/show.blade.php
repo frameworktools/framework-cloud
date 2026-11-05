@@ -87,7 +87,7 @@
             // Classes named differently from the function that fits them
             $sourceClass = $preview['source']['language'] === 'r' ? (['lmerMod' => 'lmer', 'glmerMod' => 'glmer', 'negbin' => 'glm.nb'][$sourceClass] ?? $sourceClass) : $sourceClass;
             $sourceLabel = $preview['source']['language'] === 'r' && in_array($sourceClass, $fittedBy, true) ? $sourceClass.'()' : $sourceClass;
-            $languageLabel = ['r' => 'R', 'python' => 'Python'][$preview['source']['language']] ?? null;
+            $languageLabel = ['r' => 'R', 'python' => 'Python', 'stata' => 'Stata'][$preview['source']['language']] ?? null;
             // A published CSV or TSV shows just its format
             if ($languageLabel === null) {
                 [$languageLabel, $sourceLabel] = [strtoupper($preview['source']['class'][0] ?? 'Data'), null];
@@ -114,6 +114,7 @@
             $tableKind = fn (array $table) => in_array($table['role'] ?? null, ['coefficients', 'random_effects', 'smooth_terms', 'anova', 'importance'], true) || $preview['kind'] !== 'table';
         @endphp
         <main class="grow overflow-auto p-4 sm:p-6">
+
             <div class="mx-auto flex {{ $embedded ? '' : 'max-w-4xl' }} flex-col gap-5">
                 <div class="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-slate-500 dark:text-slate-400">
                     <span title="{{ implode(', ', $preview['source']['class']) }}" class="rounded bg-sky-50 px-2 py-1 font-medium text-sky-700 dark:bg-sky-950 dark:text-sky-300">

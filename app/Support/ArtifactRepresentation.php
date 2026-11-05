@@ -37,7 +37,7 @@ class ArtifactRepresentation
             || ($input['schema'] ?? null) !== 'framework.artifact/v1'
             || ! in_array($input['kind'] ?? null, ['table', 'model', 'test'], true)
             || ! is_array($input['source'] ?? null)
-            || ! in_array($input['source']['language'] ?? null, ['r', 'python', 'file'], true)
+            || ! in_array($input['source']['language'] ?? null, ['r', 'python', 'stata', 'file'], true)
             || ! self::isList($input['source']['class'] ?? null)
             || ! self::isList($input['tables'] ?? null)
             || ! self::isList($input['metrics'] ?? null)) {

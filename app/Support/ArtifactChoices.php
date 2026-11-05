@@ -10,7 +10,7 @@ class ArtifactChoices
 {
     public static function for(int $projectId): Collection
     {
-        return Document::where('project_id', $projectId)->with('versions')->orderBy('title')->get()
+        return Document::where('project_id', $projectId)->where('driver', 'cloud')->with('versions')->orderBy('title')->get()
             ->map(fn (Document $document) => [...$document->only('id', 'title', 'slug', 'kind', 'visibility'),
                 'url' => $document->publicUrl(), 'password_protected' => $document->isPasswordProtected(),
                 'latest_version' => $document->latestVersion()->number,

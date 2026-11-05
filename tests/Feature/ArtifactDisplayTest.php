@@ -68,4 +68,23 @@ class ArtifactDisplayTest extends TestCase
         $this->get($version->url())->assertOk()->assertSee('North')
             ->assertDontSee('data-phiz=', false)->assertDontSee('vega-embed', false);
     }
+
+    public function test_stata_models_show_their_language_command_and_random_effects(): void
+    {
+        Storage::fake('local');
+        $project = Project::factory()->create();
+        foreach (['stata-regress' => ['Stata', 'regress', 'Linear model', 'Coefficient forest plot', 'R²'],
+            'stata-logit' => ['Stata', 'logit', 'Odds ratio'],
+            'stata-mixed' => ['Stata', 'mixed', 'Mixed-effects model', 'Random effects', 'Residual'],
+            'stata-stcox' => ['Stata', 'stcox', 'Survival model', 'Hazard ratio']] as $fixture => $expected) {
+            $json = file_get_contents(base_path("tests/fixtures/artifacts/{$fixture}.json"));
+            $version = app(ArtifactPublisher::class)->publish($project, [
+                'file' => UploadedFile::fake()->createWithContent("{$fixture}.json", $json),
+            ]);
+            $response = $this->get($version->url())->assertOk()->assertDontSee('cannot be previewed');
+            foreach ($expected as $text) {
+                $response->assertSee($text);
+            }
+        }
+    }
 }

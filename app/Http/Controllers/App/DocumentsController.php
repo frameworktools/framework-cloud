@@ -9,6 +9,8 @@ use App\Models\DocumentVersion;
 use App\Models\Project;
 use App\Models\Report;
 use App\Support\ArtifactPublisher;
+use App\Support\PublishDrivers;
+use App\Support\PublishingQuota;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -29,13 +31,16 @@ class DocumentsController extends Controller
     {
         return Inertia::render('Published', [
             'canPublish' => $request->user()->canPublish(),
+            'storage' => ['used' => PublishingQuota::used($request->user()), 'limit' => PublishingQuota::limit()],
             'handle' => $request->user()->handle,
             'projects' => $request->user()->projects()->get(['id', 'name', 'slug']),
             'documents' => $this->documents($request)->with(['project:id,user_id,name,slug', 'project.user:id,handle', 'versions'])
                 ->latest('updated_at')->get()
                 ->map(fn (Document $d) => [
                     'id' => $d->id,
-                    'kind' => $d->kind,
+                    'driver' => $d->driver ?? 'cloud', 'external_url' => $d->external_url,
+                    'location' => PublishDrivers::label($d->driver ?? 'cloud'),
+                    'kind' => $d->kind, 'visibility' => $d->visibility,
                     'description' => $d->description,
                     'original_filename' => $d->original_filename,
                     'password_protected' => $d->isPasswordProtected(),
@@ -76,7 +81,9 @@ class DocumentsController extends Controller
         return Inertia::render('Artifacts/Show', [
             'handle' => $request->user()->handle,
             'artifact' => [
-                ...$document->only('id', 'kind', 'slug', 'description', 'visibility', 'views', 'size_bytes', 'original_filename', 'merged_into_id', 'merged_at'),
+                ...$document->only('driver', 'external_url', 'id', 'kind', 'slug', 'description', 'visibility', 'views', 'size_bytes', 'original_filename', 'merged_into_id', 'merged_at'),
+                'capabilities' => PublishDrivers::capabilities($document->driver ?? 'cloud'),
+                'location' => PublishDrivers::label($document->driver ?? 'cloud'),
                 'title' => $document->title ?? $document->slug,
                 'password_protected' => $document->isPasswordProtected(),
                 'readable' => $document->isReadable(),
@@ -87,7 +94,7 @@ class DocumentsController extends Controller
             ],
             'project' => $document->project->only('id', 'name', 'slug'),
             'versions' => $versions->map(fn (DocumentVersion $v) => [
-                'number' => $v->number, 'kind' => $v->kind, 'size_bytes' => $v->size_bytes, 'created_at' => $v->created_at,
+                'external_url' => $v->external_url, 'number' => $v->number, 'kind' => $v->kind, 'size_bytes' => $v->size_bytes, 'created_at' => $v->created_at,
                 'original_filename' => $v->original_filename,
                 'url' => $document->readableUrl($v->number) ?? $v->url(),
                 'merged_from' => $v->provenance['source_document_id'] ?? null ? ['title' => Document::find($v->provenance['source_document_id'])?->title, 'version' => $v->provenance['source_version'] ?? null] : null,
@@ -97,7 +104,7 @@ class DocumentsController extends Controller
                     ->map(fn ($item) => ['type' => 'Collection', 'title' => $item->collection->title, 'href' => '/collections/'.$item->collection_id.'/edit']),
                 ...$reports->map(fn (Report $report) => ['type' => 'Report', 'title' => $report->title, 'href' => '/reports/'.$report->id.'/edit'])->values(),
             ],
-            'mergeSources' => Document::where('project_id', $document->project_id)->whereKeyNot($document->id)
+            'mergeSources' => Document::where('project_id', $document->project_id)->where('driver', 'cloud')->whereKeyNot($document->id)
                 ->whereNull('merged_into_id')->whereNull('merged_at')->orderBy('title')->get(['id', 'title', 'slug'])
                 ->map(fn ($d) => ['id' => $d->id, 'title' => $d->title ?? $d->slug]),
         ]);
@@ -116,15 +123,18 @@ class DocumentsController extends Controller
     {
         $validated = $request->validate([
             'readable' => ['sometimes', 'boolean'],
-            'visibility' => ['sometimes', Rule::in(['public', 'unlisted'])],
+            'visibility' => ['sometimes', Rule::in(['public', 'unlisted', 'private'])],
             'title' => ['sometimes', 'string', 'max:200'],
             'description' => ['sometimes', 'nullable', 'string', 'max:10000'],
             'password' => ['sometimes', 'nullable', 'string', 'min:8', 'max:200'],
         ]);
         DB::transaction(function () use ($request, $document, $validated) {
             $document = $this->lockedDocument($request, $document);
-            if (array_key_exists('readable', $validated)) {
-                $validated['visibility'] = $validated['readable'] ? 'public' : 'unlisted';
+            if (($document->driver ?? 'cloud') !== 'cloud' && array_intersect(array_keys($validated), ['readable', 'visibility', 'password'])) {
+                throw ValidationException::withMessages(['visibility' => 'Access is managed at the publishing destination.']);
+            }
+            if (array_key_exists('readable', $validated) || array_key_exists('visibility', $validated)) {
+                $validated['visibility'] = Document::visibilityFor($document->visibility, $validated);
                 unset($validated['readable']);
             }
             if (array_key_exists('password', $validated)) {
@@ -144,9 +154,9 @@ class DocumentsController extends Controller
 
     public function merge(Request $request, int $document): RedirectResponse
     {
-        $target = $this->documents($request)->findOrFail($document);
+        $target = $this->documents($request)->where('driver', 'cloud')->findOrFail($document);
         $validated = $request->validate(['source_id' => ['required', 'integer']]);
-        $source = $this->documents($request)->findOrFail($validated['source_id']);
+        $source = $this->documents($request)->where('driver', 'cloud')->findOrFail($validated['source_id']);
         app(ArtifactPublisher::class)->merge($target, $source);
 
         return back()->with('status', 'artifact-merged');
