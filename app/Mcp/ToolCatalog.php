@@ -52,6 +52,13 @@ class ToolCatalog
                 'title' => 'Show a published artifact',
                 'description' => 'One artifact and its versions. For text content (a model\'s JSON, a CSV table, Markdown), content holds the version\'s content, up to 200 KB. Take estimates and counts from here, never invent them.',
             ],
+            'artifacts_publish' => [
+                'level' => self::FULL, 'method' => 'POST', 'path' => '/projects/{slug}/artifacts', 'path_params' => $project,
+                'rename' => ['artifact' => 'slug'],
+                'body' => self::publishBody(),
+                'title' => 'Publish an artifact',
+                'description' => 'Publish a saved file to a project as an artifact: an HTML file as a notebook, a PNG or SVG as a figure, a CSV as a table, a PDF, Markdown, or a framework.artifact/v1 model JSON. A zip with an HTML entrypoint publishes a rendered site, such as Quarto output. Send text files as content and binary files as content_base64, up to 10 MB. Publishing the same artifact name again adds a version at the same link. New artifacts start private. If you can run fw publish or the R, Python, or Stata package in the project, prefer those: they check the project\'s private folders first.',
+            ],
             'reports_list' => [
                 'level' => self::READ, 'method' => 'GET', 'path' => '/projects/{slug}/reports', 'path_params' => $project,
                 'title' => 'List reports',
@@ -100,6 +107,26 @@ class ToolCatalog
             self::FULL => $access === McpConnection::ACCESS_FULL,
             default => false,
         };
+    }
+
+    /** @return array{properties: array<string, mixed>, required: list<string>} */
+    private static function publishBody(): array
+    {
+        return [
+            'properties' => [
+                'filename' => ['type' => 'string', 'description' => 'The file name with its extension, such as analysis.html, flipper-and-mass.png, or site.zip. The extension sets the kind.'],
+                'content' => ['type' => 'string', 'description' => 'The file as text, for HTML, Markdown, CSV, JSON, or SVG.'],
+                'content_base64' => ['type' => 'string', 'description' => 'The file, base64-encoded, for PNG, PDF, zip, and other binary files. Up to 10 MB before encoding.'],
+                'entrypoint' => ['type' => 'string', 'description' => 'For a zip: the HTML page to open, such as index.html.'],
+                'artifact' => ['type' => 'string', 'description' => 'The artifact name in the link, such as penguin-body-mass. Defaults to the file name. Reuse a name to add a version.'],
+                'title' => ['type' => 'string'],
+                'description' => ['type' => 'string'],
+                'visibility' => ['type' => 'string', 'enum' => ['private', 'unlisted', 'public'], 'description' => 'Who can open it. New artifacts start private. Ask the user before choosing public.'],
+                'password' => ['type' => 'string', 'minLength' => 8],
+                'kind' => ['type' => 'string', 'enum' => ['html', 'image', 'chart', 'table', 'data', 'model', 'test', 'text', 'pdf', 'file'], 'description' => 'Overrides the kind read from the file name.'],
+            ],
+            'required' => ['filename'],
+        ];
     }
 
     /** @return array{properties: array<string, mixed>, required: list<string>} */

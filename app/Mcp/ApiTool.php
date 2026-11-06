@@ -91,7 +91,11 @@ class ApiTool extends Tool
                 'method' => $call['method'],
                 'path' => '/api/v1'.$call['path'],
                 'query' => $call['query'] ?: null,
-                'body' => $call['body'],
+                // File contents are shown as their size, never echoed back
+                'body' => $call['body'] === null ? null : array_map(
+                    fn ($value) => is_string($value) && strlen($value) > 2000 ? '('.number_format(strlen($value)).' characters)' : $value,
+                    $call['body'],
+                ),
             ]);
         }
 
@@ -144,6 +148,14 @@ class ApiTool extends Tool
 
         $known = array_keys($this->tool['body']['properties'] ?? []);
         $body = $this->tool['method'] === 'GET' ? null : array_intersect_key($arguments, array_flip($known));
+
+        // A tool argument named differently from the API field, such as artifact for the body's slug
+        foreach ($this->tool['rename'] ?? [] as $from => $to) {
+            if ($body !== null && array_key_exists($from, $body)) {
+                $body[$to] = $body[$from];
+                unset($body[$from]);
+            }
+        }
 
         return ['method' => $this->tool['method'], 'path' => $path, 'query' => $query, 'body' => $body];
     }

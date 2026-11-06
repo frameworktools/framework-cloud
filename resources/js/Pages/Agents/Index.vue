@@ -122,12 +122,12 @@ const command = 'mt-2 block overflow-x-auto whitespace-nowrap rounded-lg bg-[#0c
                 <h2 class="text-base font-medium text-slate-900 dark:text-white">Access levels</h2>
                 <dl class="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-[8rem_1fr]">
                     <dt class="font-medium text-slate-800 dark:text-slate-200">Full access</dt>
-                    <dd class="text-slate-500 dark:text-slate-400">Reads projects, artifacts, and reports. Creates, edits, and publishes reports, and changes who can read them. Recommended.</dd>
+                    <dd class="text-slate-500 dark:text-slate-400">Reads projects, artifacts, and reports. Publishes saved files as artifacts, such as an HTML notebook or a PNG figure. Creates, edits, and publishes reports. Recommended.</dd>
                     <dt class="font-medium text-slate-800 dark:text-slate-200">Read only</dt>
                     <dd class="text-slate-500 dark:text-slate-400">Reads projects, artifacts, and reports.</dd>
                 </dl>
                 <p class="text-sm text-slate-500 dark:text-slate-400">
-                    Agents cannot run code or publish new artifacts. What an agent reads, including private projects and drafts, goes to the company that runs it.
+                    Agents cannot run code. Files up to 10 MB publish through an agent; use the packages or fw publish for larger files. What an agent reads, including private projects and drafts, goes to the company that runs it.
                 </p>
             </section>
 

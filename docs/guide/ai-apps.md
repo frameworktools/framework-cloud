@@ -29,11 +29,22 @@ and select Connect.
 
 | Access | Allowed actions |
 |---|---|
-| Full access (recommended) | Read projects, artifacts, and reports. Create, edit, and publish reports, and change who can read them. |
+| Full access (recommended) | Read projects, artifacts, and reports. Publish saved files as artifacts. Create, edit, and publish reports. |
 | Read only | Read projects, artifacts, and reports. |
 
-A connected app works across all your projects. It cannot run code or publish
-new artifacts. Publish results from the project on your computer first. See
+A connected app works across all your projects. It cannot run code.
+
+## Publishing files
+
+With Full access, an agent can publish a saved file you give it: an HTML file as
+a notebook, a PNG or SVG as a figure, a CSV as a table, a PDF, or a model's
+`framework.artifact/v1` JSON. A zip of rendered output with its HTML entrypoint,
+such as a Quarto site, publishes as one artifact. Files go up to 10 MB. New
+artifacts start private. Each version records which agent published it.
+
+The R, Python, and Stata packages and `fw publish` check the project's private
+folders before publishing. An agent publishing a file directly cannot. Use the
+packages for results from a project, and for files over 10 MB. See
 [Publishing artifacts](publishing.md).
 
 What the app reads, including private projects and drafts, goes to the company

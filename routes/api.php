@@ -73,6 +73,7 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::post('/ledger', [LedgerController::class, 'store']);
     Route::get('/ledger', [LedgerController::class, 'index']);
     Route::get('/projects/{slug}/artifacts', [ArtifactsController::class, 'index']);
+    Route::post('/projects/{slug}/artifacts', [ArtifactsController::class, 'store'])->middleware('throttle:30,1');
     Route::get('/projects/{slug}/artifacts/{artifact}', [ArtifactsController::class, 'show']);
     Route::post('/projects/{slug}/artifacts/external', [ExternalArtifactsController::class, 'store'])->middleware('throttle:60,1');
 

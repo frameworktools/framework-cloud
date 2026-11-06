@@ -225,6 +225,7 @@ class HostedMcpTest extends TestCase
         $this->assertNotContains('reports_create', $names);
         $this->assertNotContains('reports_update', $names);
         $this->assertNotContains('reports_publish', $names);
+        $this->assertNotContains('artifacts_publish', $names);
 
         app('auth')->forgetGuards();
         $this->withToken($token)->postJson('/mcp', ['jsonrpc' => '2.0', 'id' => 1, 'method' => 'tools/call',
@@ -363,5 +364,81 @@ class HostedMcpTest extends TestCase
 
         $this->actingAs(User::factory()->create())->get('/agents/history')
             ->assertInertia(fn (AssertableInertia $page) => $page->has('calls.data', 0));
+    }
+
+    public function test_an_agent_publishes_saved_files_as_artifacts(): void
+    {
+        $user = $this->owner();
+        $token = $this->connect($user, McpConnection::ACCESS_FULL);
+
+        $notebook = $this->tool($token, 'artifacts_publish', ['slug' => 'penguin-study', 'filename' => 'analysis.html',
+            'content' => '<html><body><h1>Penguins</h1></body></html>', 'title' => 'Penguin analysis']);
+        $this->assertFalse($notebook['error'], json_encode($notebook));
+        $this->assertSame('analysis', $notebook['body']['slug']);
+        $this->assertSame('html', $notebook['body']['kind']);
+        $this->assertSame('private', $notebook['body']['visibility']);
+        $this->assertSame(1, $notebook['body']['version']);
+
+        $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==');
+        $figure = $this->tool($token, 'artifacts_publish', ['slug' => 'penguin-study', 'filename' => 'mass.png',
+            'content_base64' => base64_encode($png), 'artifact' => 'flipper-and-mass']);
+        $this->assertFalse($figure['error'], json_encode($figure));
+        $this->assertSame('flipper-and-mass', $figure['body']['slug']);
+        $this->assertSame('image', $figure['body']['kind']);
+
+        $again = $this->tool($token, 'artifacts_publish', ['slug' => 'penguin-study', 'filename' => 'analysis.html', 'content' => '<html>v2</html>']);
+        $this->assertSame(2, $again['body']['version']);
+
+        $version = Document::where('slug', 'analysis')->sole()->versions()->first();
+        $this->assertSame(['published_by' => 'agent', 'agent' => 'Claude'], array_intersect_key($version->provenance, array_flip(['published_by', 'agent'])));
+
+        $shown = $this->tool($token, 'artifacts_show', ['slug' => 'penguin-study', 'artifact' => 'analysis']);
+        $this->assertSame('Claude', $shown['body']['versions'][0]['published_by']);
+    }
+
+    public function test_an_agent_publishes_a_rendered_site_from_a_zip(): void
+    {
+        $user = $this->owner();
+        $token = $this->connect($user, McpConnection::ACCESS_FULL);
+        $zip = tempnam(sys_get_temp_dir(), 'site');
+        $archive = new \ZipArchive;
+        $archive->open($zip, \ZipArchive::OVERWRITE);
+        $archive->addFromString('index.html', '<html><link rel="stylesheet" href="site_files/style.css">Report</html>');
+        $archive->addFromString('site_files/style.css', 'body { color: black; }');
+        $archive->close();
+
+        $site = $this->tool($token, 'artifacts_publish', ['slug' => 'penguin-study', 'filename' => 'report.zip',
+            'content_base64' => base64_encode(file_get_contents($zip)), 'entrypoint' => 'index.html', 'artifact' => 'quarto-report']);
+        @unlink($zip);
+
+        $this->assertFalse($site['error'], json_encode($site));
+        $this->assertSame('quarto-report', $site['body']['slug']);
+        $this->assertSame('index.html', Document::where('slug', 'quarto-report')->sole()->latestVersion()->entrypoint);
+    }
+
+    public function test_publishing_checks_input_and_access(): void
+    {
+        $user = $this->owner();
+        $full = $this->connect($user, McpConnection::ACCESS_FULL);
+
+        $bad = $this->tool($full, 'artifacts_publish', ['slug' => 'penguin-study', 'filename' => 'x.png', 'content_base64' => '***']);
+        $this->assertTrue($bad['error']);
+        $this->assertSame(422, $bad['body']['error']['status']);
+
+        $traversal = $this->tool($full, 'artifacts_publish', ['slug' => 'penguin-study', 'filename' => '../x.html', 'content' => 'x']);
+        $this->assertSame(422, $traversal['body']['error']['status']);
+
+        $preview = $this->tool($full, 'artifacts_publish', ['slug' => 'penguin-study', 'filename' => 'big.html', 'content' => str_repeat('a', 5000), 'dry_run' => true]);
+        $this->assertSame('(5,000 characters)', $preview['body']['body']['content']);
+        $this->assertSame(0, Document::count());
+    }
+
+    public function test_a_script_token_publishes_through_the_api(): void
+    {
+        $user = $this->owner();
+
+        $this->withToken($user->createToken('script')->plainTextToken)
+            ->postJson('/api/v1/projects/penguin-study/artifacts', ['filename' => 'table.csv', 'content' => "species,mass\nAdelie,3700\n", 'visibility' => 'unlisted'])
+            ->assertCreated()->assertJsonPath('kind', 'table')->assertJsonPath('visibility', 'unlisted');
     }
 }

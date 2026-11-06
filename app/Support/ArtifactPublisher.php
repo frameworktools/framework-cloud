@@ -107,7 +107,10 @@ class ArtifactPublisher
                 $document->next_version_number = $number + 1;
                 $document->save();
 
-                return $document->versions()->create($stored + ['number' => $number])->load('document.project.user');
+                // Who published, when it was not the project's own package (an agent over MCP)
+                $provenance = isset($input['provenance']) && is_array($input['provenance']) ? ['provenance' => $input['provenance']] : [];
+
+                return $document->versions()->create($stored + ['number' => $number] + $provenance)->load('document.project.user');
             });
         } catch (Throwable $exception) {
             Storage::disk($disk)->deleteDirectory($prefix);

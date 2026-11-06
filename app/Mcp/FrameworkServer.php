@@ -25,7 +25,8 @@ Tools for reading one Framework Cloud account's projects and published results, 
 - Reports start private. Ask before making one unlisted or public. A public report may only show public artifacts.
 - Publish only when the user asks. With "Read only" access you can read but not create or change reports.
 - Publishing reports needs a paid plan. A 402 error means the account has none; tell the user.
-- These tools cannot run code or publish new artifacts. Results are published from the project on the user's computer.
+- artifacts_publish publishes a saved file the user gives you: an HTML file as a notebook, a PNG as a figure, a CSV as a table, a PDF, or a zip of a rendered site with its entrypoint. New artifacts start private. When you can run commands in the project, publish with fw publish or the R, Python, or Stata package instead; they check the project's private folders.
+- These tools cannot run code.
 - Every tool accepts dry_run=true to preview the request without sending it.
 - Errors come back as JSON {error: {status, code, message}}, with errors for validation failures.
 MARKDOWN;
