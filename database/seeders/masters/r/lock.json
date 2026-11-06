@@ -1,5 +1,5 @@
 {
-    "commit": "f526b1dd8cd753ee9919190c34cb84b3772c006d",
+    "commit": "6755b53da142a6deedada08f449c9ad5b7e6aa9a",
     "files": {
         "conformance/create/python/bare-jupyter.json": {
             "source": "inst/conformance/create/python/bare-jupyter.json",
@@ -15,15 +15,15 @@
         },
         "conformance/create/python/course-quarto.json": {
             "source": "inst/conformance/create/python/course-quarto.json",
-            "sha256": "a819be95a8c255a0f6ded9117deb619c3b62c03e9ff81d12c8eee55f20989f04"
+            "sha256": "74fd8b3879ea4b3a1202299c933d8aca79db8ee190f098dd613f162d61d1b047"
         },
         "conformance/create/python/presentation-quarto.json": {
             "source": "inst/conformance/create/python/presentation-quarto.json",
-            "sha256": "f3b0f14bb604f47223e1905eb3caa793656fc1bc04a7d07b1d9cd146fd86577a"
+            "sha256": "4d469b75ad82182af4d814bd564f444a689e041f794171afdf870649fb3b325f"
         },
         "conformance/create/python/project-jupyter-both.json": {
             "source": "inst/conformance/create/python/project-jupyter-both.json",
-            "sha256": "c527b445be8b603d292676afd49788a5e52483069bc022959bb6dba5eb62c54e"
+            "sha256": "fc1d316c7c15b2f6835a164eb58b101abcae8b3f07f8ecaacf25c40beab65b9c"
         },
         "conformance/create/python/project-jupyter-no-agents.json": {
             "source": "inst/conformance/create/python/project-jupyter-no-agents.json",
@@ -31,35 +31,35 @@
         },
         "conformance/create/python/project-jupyter-none.json": {
             "source": "inst/conformance/create/python/project-jupyter-none.json",
-            "sha256": "cc87c1ca615c930648fa3a82062b45478d4336441a6505123d7a85c338dc2f81"
+            "sha256": "4c05ff2e8dfabe00d1d7e5768404497ed8f573559e396bd94b5a296204b3bf34"
         },
         "conformance/create/python/project-jupyter-rstudio.json": {
             "source": "inst/conformance/create/python/project-jupyter-rstudio.json",
-            "sha256": "d4f77900c3cd495cc12886cf36cd339169bb5cb74e9f582c0389e671fbc7bb46"
+            "sha256": "8d37416880d7f8e7706b4ef4fa8eae5f1122252af9b967a49dd14489949d1b0b"
         },
         "conformance/create/python/project-jupyter.json": {
             "source": "inst/conformance/create/python/project-jupyter.json",
-            "sha256": "e9212863435d0ada28d6c76c484b7337bf43e98fe051493f997842547041a4d2"
+            "sha256": "80a01c182a869f1ac0a644fbd692ae0b561fca637986bab9228c1a2f9fa8c068"
         },
         "conformance/create/python/project-quarto.json": {
             "source": "inst/conformance/create/python/project-quarto.json",
-            "sha256": "4eeebdc3204cccc7e5d025b3f6ea65a89d6a709737c24bfa811cccdb1dec7b1c"
+            "sha256": "9797c0054cb49d89878426517fdbeda20ac49bb618a1966c0052083aaac1693d"
         },
         "conformance/create/python/project-scripts.json": {
             "source": "inst/conformance/create/python/project-scripts.json",
-            "sha256": "b00e29ef1530be217bfe2511aa0a168915011b4cf452a55409ec846365e50fdd"
+            "sha256": "b5a03679de10a4dd5e2eec697533b27e341503bb7d97fdf833dbc06c061e2e09"
         },
         "conformance/create/python/project_sensitive-jupyter.json": {
             "source": "inst/conformance/create/python/project_sensitive-jupyter.json",
-            "sha256": "79ca00caceed026c74e64af65f5a9c8dc87555f30c5141d6ada5bca9cd7e1bc8"
+            "sha256": "e4c45b58b7de944393030c19870158c314c0ccfb07d68bb3dc0947a9e1e3e374"
         },
         "conformance/create/python/project_sensitive-quarto.json": {
             "source": "inst/conformance/create/python/project_sensitive-quarto.json",
-            "sha256": "acbc594faedb12b9455e47528b7b824366a71d8ba7fb19c8113bc8d0de4220a8"
+            "sha256": "56f2a2c77c9bf8ac9e6fa7a8ffb50ba4b64bda623f877c9d5a7485a6e50e514e"
         },
         "conformance/create/python/project_sensitive-scripts.json": {
             "source": "inst/conformance/create/python/project_sensitive-scripts.json",
-            "sha256": "a39b93d974595022e6edd518d0eec64aa0b3f365fc039ebaa5d9e19c547c6c11"
+            "sha256": "65e6325b7ebb1963f492c4c9e3c86d02c4d096d9134dd0c859a42d5a890126ea"
         },
         "conformance/create/r/bare-jupyter.json": {
             "source": "inst/conformance/create/r/bare-jupyter.json",
@@ -75,19 +75,19 @@
         },
         "conformance/create/r/course-quarto.json": {
             "source": "inst/conformance/create/r/course-quarto.json",
-            "sha256": "510cb61bbe151754713a8a6bfa76805258ee2f86839e025d882511a0abdf7845"
+            "sha256": "428cc7cb2cf17242ae22604e994569981b47f39edd5d31dc5117c12ce1399ea1"
         },
         "conformance/create/r/presentation-quarto.json": {
             "source": "inst/conformance/create/r/presentation-quarto.json",
-            "sha256": "c9fd64c2c9e4d7b247a70f9193c09529540996d656cf6b27977cc836c894384e"
+            "sha256": "8265e7e80799584b3c061620dcabda2c453c0370a6c504dd71e88592305565c0"
         },
         "conformance/create/r/project-jupyter.json": {
             "source": "inst/conformance/create/r/project-jupyter.json",
-            "sha256": "f3dc4a6e36b42c8b7832b41aba2b5144b5253573a40cc4b048fe08d1f192250a"
+            "sha256": "59c28cc6f8dbe7344c059aef7b2fa61b123b003dfa76ea4c916e5df37049fb56"
         },
         "conformance/create/r/project-quarto-both.json": {
             "source": "inst/conformance/create/r/project-quarto-both.json",
-            "sha256": "420ee1da70c72ec844dd20cb9601ec80f91b30e28f5c6ac0d93b304859b342cb"
+            "sha256": "3cf9f73f9735b94dc5ed33d83a8c831c509452fd79f5db68c4e7aa217a16a174"
         },
         "conformance/create/r/project-quarto-no-agents.json": {
             "source": "inst/conformance/create/r/project-quarto-no-agents.json",
@@ -95,35 +95,35 @@
         },
         "conformance/create/r/project-quarto-none.json": {
             "source": "inst/conformance/create/r/project-quarto-none.json",
-            "sha256": "cbddd0d5b5092ba5ad18f7f95be420a3509f9383745b4a901d073e8c632a355e"
+            "sha256": "a1e9b9ac4f42ef27aa82e3e5e38751bc832762abb418559aec687b21b204485d"
         },
         "conformance/create/r/project-quarto-rmarkdown.json": {
             "source": "inst/conformance/create/r/project-quarto-rmarkdown.json",
-            "sha256": "e616258dcf79f857cf84caa6fae9e65de60e5f442af4d942b9f8096b2f79f75e"
+            "sha256": "8f8d055e4703508593793b2bcbd1d4fc2dac46296fcb852ec01a6a1f3dd11a90"
         },
         "conformance/create/r/project-quarto-rstudio.json": {
             "source": "inst/conformance/create/r/project-quarto-rstudio.json",
-            "sha256": "5b867962be697c95a162218bc59d04abc29585b155aaef4b30512e0b9e85b105"
+            "sha256": "aaf8ccd087d4aa4c737f806752fca2b4be22dbfab694b401b99cbee72fa74059"
         },
         "conformance/create/r/project-quarto.json": {
             "source": "inst/conformance/create/r/project-quarto.json",
-            "sha256": "676b33ea707eeadaec9f3b6de62599f06c52b87bf9856d64299735ce66df1d4a"
+            "sha256": "6a03f36aae2c7ac58a9da248facde692048b568ab6dc3211a9908f3729ce6b2d"
         },
         "conformance/create/r/project-scripts.json": {
             "source": "inst/conformance/create/r/project-scripts.json",
-            "sha256": "23d0a7b3ed2c8c2a42ab754cc8176f8a5ef7150563d6e8b59c44093362c3fe9b"
+            "sha256": "562a2fe22cf27c739e64e0166b360e856f78002bd2b8175913106f1e806f1456"
         },
         "conformance/create/r/project_sensitive-jupyter.json": {
             "source": "inst/conformance/create/r/project_sensitive-jupyter.json",
-            "sha256": "ffd8d33dacf665580525fec823ad163bc0ffdee065d6f7ba4a979c1634b916c1"
+            "sha256": "901814a79da3bbea8c57f66e6f514cbc19828d672ddd1faa259f8b09b75ea844"
         },
         "conformance/create/r/project_sensitive-quarto.json": {
             "source": "inst/conformance/create/r/project_sensitive-quarto.json",
-            "sha256": "30f267493bed533d64e5022dd39ecd0422d71977ae59ff42a42eb63e346ae441"
+            "sha256": "1656368579f8ac07fdee4288531a5647089d3bde6e1b1295d8e3ac0ea1165ffa"
         },
         "conformance/create/r/project_sensitive-scripts.json": {
             "source": "inst/conformance/create/r/project_sensitive-scripts.json",
-            "sha256": "2b29eeca5eea84d4081e24b9fc5068b11c9e9f53649e7a6809c5afafdce78b6e"
+            "sha256": "047e7e2c04e8fe7763d372faa9536f5ba26dccd4aeb833799d3d6bc5a6e50a59"
         },
         "conformance/create/stata/bare-scripts.json": {
             "source": "inst/conformance/create/stata/bare-scripts.json",
@@ -131,7 +131,7 @@
         },
         "conformance/create/stata/project-scripts-codex-copilot.json": {
             "source": "inst/conformance/create/stata/project-scripts-codex-copilot.json",
-            "sha256": "3e96c89f2e3becd4ec0fd3c108b77dce6f18dfb1c665755d9288ba64a32943a3"
+            "sha256": "2aeb26edb35577abe517cab9f0af84263921024388abe831fd1116adc5675059"
         },
         "conformance/create/stata/project-scripts-no-agents.json": {
             "source": "inst/conformance/create/stata/project-scripts-no-agents.json",
@@ -139,11 +139,11 @@
         },
         "conformance/create/stata/project-scripts.json": {
             "source": "inst/conformance/create/stata/project-scripts.json",
-            "sha256": "f821a703225eb66c4079cf3cbc1896156fba2282d309325515dd1b2550994f12"
+            "sha256": "08d80a3bd38310e0033583d89eeed71d3634be7a12b70911e75b582704aa9abc"
         },
         "conformance/create/stata/project_sensitive-scripts.json": {
             "source": "inst/conformance/create/stata/project_sensitive-scripts.json",
-            "sha256": "eb4b59355a056a3b74e6581a421cd7e9970adb183425b5ca7b03d6d61d062b83"
+            "sha256": "8700fe3d2161ba01626d31eba7deafbc90d36d4e01aac05a5418516b214708ee"
         },
         "features/jupyter.json": {
             "source": "inst/features/jupyter.json",
@@ -172,6 +172,10 @@
         "features/uv.json": {
             "source": "inst/features/uv.json",
             "sha256": "4db22e5a58c66d974f7ab994e82dce19b4735cbe7588da2896a436ec580ca51b"
+        },
+        "sets/packages/python-data-analysis.json": {
+            "source": "inst/sets/packages/python-data-analysis.json",
+            "sha256": "d11b6029bd828c9c3d0928235630fe7971f181922ed133d15d8980345da7392b"
         },
         "sets/packages/tidyverse-analysis.json": {
             "source": "inst/sets/packages/tidyverse-analysis.json",
