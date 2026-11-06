@@ -20,6 +20,29 @@ so they can use Framework Cloud's tools and run the commands that go with
 them, such as uploading a large file. Claude and ChatGPT also work, with a few
 more steps.
 
+## Plugin
+
+The Framework Cloud plugin adds the server to Claude, Claude Code, ChatGPT,
+and Codex. Its marketplace is `frameworktools/plugins`. The plugin connects to
+framework.pub only. On a self-hosted server, use the manual setup below.
+
+- **Claude:** Customize, then Plugins, then Add and Add marketplace. Enter
+  `frameworktools/plugins`. Under Discover, choose Framework Cloud and select
+  Add. Then add `framework.pub` to Claude's allowed websites, as described
+  under Manual setup.
+- **Claude Code:** if you added the plugin in Claude, it is already there.
+  Otherwise run
+  `claude plugin marketplace add frameworktools/plugins` and
+  `claude plugin install framework-cloud@framework`, then `/mcp` in Claude
+  Code to sign in.
+- **ChatGPT:** in the desktop app, open Settings, then Plugins, then Add and
+  Add a marketplace. Enter `frameworktools/plugins`, then install Framework
+  Cloud.
+- **Codex:** run `codex plugin marketplace add frameworktools/plugins` and
+  `codex plugin add framework-cloud@framework`.
+
+## Manual setup
+
 - **Claude Code:** in the Claude desktop app, select the code button (`</>`)
   at the top of the window, or run `claude` in a terminal. If you added the
   Claude connector below, it is already there. Otherwise run
@@ -30,10 +53,14 @@ more steps.
   `codex mcp add framework --url https://framework.pub/mcp` and
   `codex mcp login framework`.
 - **Claude:** Customize, then Connectors, then Add and Custom connector.
-  Choose Sign in now and Register automatically. Claude detects both. Then, in
-  Settings, open Capabilities and add `framework.pub` exactly as shown to the
-  websites Claude may reach, so Claude can upload files. The connector also
-  works in Claude Code when you sign in to it with the same Claude account.
+  Choose Sign in now and Register automatically. Claude detects both. The
+  connector also works in Claude Code when you sign in to it with the same
+  Claude account.
+- **Claude allowed websites:** with the plugin or the connector, open Settings,
+  then Capabilities, and add `framework.pub` exactly as shown to the websites
+  Claude may reach.
+  Claude runs commands in a cloud sandbox, and without this entry the sandbox
+  cannot upload files. Start a new chat after the change.
 - **ChatGPT:** in the desktop app, open Settings, then Plugins, then Add and
   Add MCP server. Name it framework, choose Streamable HTTP (not STDIO), paste
   the address as the URL, and leave the rest empty. Save, then select

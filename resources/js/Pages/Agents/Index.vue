@@ -44,6 +44,10 @@ const apps = [
     { value: 'chatgpt', label: 'ChatGPT' },
 ];
 const host = computed(() => new URL(props.mcpUrl).host);
+// The Framework plugin connects to framework.pub only; self-hosted servers use the manual steps
+const marketplace = 'frameworktools/plugins';
+const plugin = computed(() => props.mcpUrl === 'https://framework.pub/mcp');
+const subheading = 'text-sm font-medium text-slate-900 dark:text-white';
 const step = 'flex gap-3';
 const number = 'flex size-6 shrink-0 items-center justify-center rounded-full bg-slate-800/5 text-xs font-medium tabular-nums text-slate-600 dark:bg-white/10 dark:text-slate-300';
 const chip = 'mx-0.5 inline-flex items-center gap-0.5 rounded-md bg-slate-800/5 px-1.5 py-0.5 align-middle text-xs font-medium text-slate-800 dark:bg-white/10 dark:text-slate-100';
@@ -137,20 +141,40 @@ const command = 'mt-2 block overflow-x-auto whitespace-nowrap rounded-lg bg-[#0c
                     <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
                         Claude Code and Codex are the easiest to set up. They run on your computer, so they can use Framework Cloud's tools and run the commands that go with them, such as uploading a large file.
                         Claude and ChatGPT also work, with a few more steps.
+                        <template v-if="plugin">The Framework Cloud plugin adds the server in each app. Manual setup works too.</template>
                     </p>
                 </div>
                 <UiTabs v-model="app" :tabs="apps" label="AI app" />
 
+                <template v-if="app === 'claude' && plugin">
+                    <h3 :class="subheading">Plugin</h3>
+                    <ol class="flex flex-col gap-4 text-sm text-slate-700 dark:text-slate-300">
+                        <li :class="step"><span :class="number">1</span><span>In Claude, open Customize, then Plugins. Select Add, then Add marketplace, and enter <code class="font-mono text-xs">{{ marketplace }}</code>.</span></li>
+                        <li :class="step"><span :class="number">2</span><span>Under Discover, choose Framework Cloud and select Add.</span></li>
+                        <li :class="step"><span :class="number">3</span><span>The first time Claude uses Framework Cloud, it opens Framework Cloud in your browser. Sign in, choose the agent's access, and select Connect.</span></li>
+                        <li :class="step"><span :class="number">4</span><span>Open Settings, then Capabilities. Under the websites Claude may reach, add <code class="font-mono text-xs">{{ host }}</code> exactly as shown, with no https:// and nothing after it. This lets Claude upload files to Framework Cloud. Start a new chat afterward.</span></li>
+                    </ol>
+                    <h3 :class="subheading">Manual setup</h3>
+                </template>
                 <ol v-if="app === 'claude'" class="flex flex-col gap-4 text-sm text-slate-700 dark:text-slate-300">
                     <li :class="step"><span :class="number">1</span><span>In Claude, open Customize, then Connectors.</span></li>
                     <li :class="step"><span :class="number">2</span><span>Select Add, then Custom connector. Name it Framework Cloud and paste the server address.</span></li>
                     <li :class="step"><span :class="number">3</span><span>Under Authentication, choose Sign in now. Under OAuth client, choose Register automatically. Claude detects both. Leave Request headers empty.</span></li>
                     <li :class="step"><span :class="number">4</span><span>Add the connector. Claude opens Framework Cloud. Sign in, choose the agent's access, and select Connect.</span></li>
-                    <li :class="step"><span :class="number">5</span><span>Open Settings, then Capabilities. Under the websites Claude may reach, add <code class="font-mono text-xs">{{ host }}</code> exactly as shown, with no https:// and nothing after it. This lets Claude upload files to Framework Cloud.</span></li>
+                    <li :class="step"><span :class="number">5</span><span>Open Settings, then Capabilities. Under the websites Claude may reach, add <code class="font-mono text-xs">{{ host }}</code> exactly as shown, with no https:// and nothing after it. This lets Claude upload files to Framework Cloud. Start a new chat afterward.</span></li>
                     <li :class="step"><span :class="number">6</span><span>In a chat, turn on Framework Cloud from the tools menu.</span></li>
                 </ol>
-                <p v-if="app === 'claude'" class="text-sm text-slate-500 dark:text-slate-400">The connector then works in Claude and in Claude Code when you sign in to Claude Code with the same Claude account. On Team and Enterprise plans, an owner adds custom connectors for the organization.</p>
+                <p v-if="app === 'claude'" class="text-sm text-slate-500 dark:text-slate-400">The plugin or connector then works in Claude and in Claude Code when you sign in to Claude Code with the same Claude account. On Team and Enterprise plans, an owner adds custom connectors for the organization.</p>
 
+                <template v-if="app === 'chatgpt' && plugin">
+                    <h3 :class="subheading">Plugin</h3>
+                    <ol class="flex flex-col gap-4 text-sm text-slate-700 dark:text-slate-300">
+                        <li :class="step"><span :class="number">1</span><span>In the ChatGPT desktop app, open Settings, then Plugins. Select Add, then Add a marketplace, and enter <code class="font-mono text-xs">{{ marketplace }}</code>.</span></li>
+                        <li :class="step"><span :class="number">2</span><span>Choose Framework Cloud from the Framework marketplace and install it.</span></li>
+                        <li :class="step"><span :class="number">3</span><span>Sign in here in the browser that opens, choose the agent's access, and select Connect.</span></li>
+                    </ol>
+                    <h3 :class="subheading">Manual setup</h3>
+                </template>
                 <ol v-if="app === 'chatgpt'" class="flex flex-col gap-4 text-sm text-slate-700 dark:text-slate-300">
                     <li :class="step"><span :class="number">1</span><span>In the ChatGPT desktop app, open Settings, then Plugins. Select Add, then Add MCP server.</span></li>
                     <li :class="step"><span :class="number">2</span><span>Name it framework. Next to Type, choose Streamable HTTP, not STDIO, and paste the server address as the URL. Leave everything else empty, then select Save.</span></li>
@@ -165,7 +189,8 @@ const command = 'mt-2 block overflow-x-auto whitespace-nowrap rounded-lg bg-[#0c
                         <span class="mx-0.5 inline-flex rounded-lg bg-slate-800/5 p-0.5 align-middle dark:bg-white/10" aria-hidden="true"><span class="rounded-md px-1.5 py-0.5 text-slate-500"><ChatBubbleOvalLeftIcon class="size-3.5" /></span><span class="rounded-md bg-white px-1.5 py-0.5 text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"><CodeBracketIcon class="size-3.5" /></span></span>,
                         next to the chat button. Or run <code class="font-mono text-xs">claude</code> in a terminal.
                     </span></li>
-                    <li :class="step"><span :class="number">2</span><span class="min-w-0 flex-1">If you added Framework Cloud as a connector in Claude, it is already there; you are done. Otherwise, add the server in a terminal:<code :class="command">claude mcp add --transport http framework {{ mcpUrl }}</code></span></li>
+                    <li v-if="plugin" :class="step"><span :class="number">2</span><span class="min-w-0 flex-1">If you added the plugin or connector in Claude, it is already there; you are done. Otherwise, install the plugin in a terminal:<code :class="command">claude plugin marketplace add {{ marketplace }}</code><code :class="command">claude plugin install framework-cloud@framework</code>Or add the server alone:<code :class="command">claude mcp add --transport http framework {{ mcpUrl }}</code></span></li>
+                    <li v-else :class="step"><span :class="number">2</span><span class="min-w-0 flex-1">If you added Framework Cloud as a connector in Claude, it is already there; you are done. Otherwise, add the server in a terminal:<code :class="command">claude mcp add --transport http framework {{ mcpUrl }}</code></span></li>
                     <li :class="step"><span :class="number">3</span><span>In Claude Code, run <code class="font-mono text-xs">/mcp</code>, choose framework, and authenticate.</span></li>
                     <li :class="step"><span :class="number">4</span><span>Sign in here in the browser that opens, choose the agent's access, and select Connect.</span></li>
                 </ol>
@@ -176,7 +201,8 @@ const command = 'mt-2 block overflow-x-auto whitespace-nowrap rounded-lg bg-[#0c
                         <span :class="chip" aria-hidden="true">ChatGPT<ChevronDownIcon class="size-3.5 text-slate-500" /></span>,
                         and choose Codex. Or run <code class="font-mono text-xs">codex</code> in a terminal.
                     </span></li>
-                    <li :class="step"><span :class="number">2</span><span class="min-w-0 flex-1">Add the server in a terminal, or in the ChatGPT desktop app as the ChatGPT tab shows:<code :class="command">codex mcp add framework --url {{ mcpUrl }}</code></span></li>
+                    <li v-if="plugin" :class="step"><span :class="number">2</span><span class="min-w-0 flex-1">Install the plugin in a terminal, or in the ChatGPT desktop app as the ChatGPT tab shows:<code :class="command">codex plugin marketplace add {{ marketplace }}</code><code :class="command">codex plugin add framework-cloud@framework</code>Or add the server alone:<code :class="command">codex mcp add framework --url {{ mcpUrl }}</code></span></li>
+                    <li v-else :class="step"><span :class="number">2</span><span class="min-w-0 flex-1">Add the server in a terminal, or in the ChatGPT desktop app as the ChatGPT tab shows:<code :class="command">codex mcp add framework --url {{ mcpUrl }}</code></span></li>
                     <li :class="step"><span :class="number">3</span><span class="min-w-0 flex-1">Sign in:<code :class="command">codex mcp login framework</code></span></li>
                     <li :class="step"><span :class="number">4</span><span>Sign in here in the browser that opens, choose the agent's access, and select Connect.</span></li>
                 </ol>
@@ -191,7 +217,7 @@ const command = 'mt-2 block overflow-x-auto whitespace-nowrap rounded-lg bg-[#0c
                     <dd class="text-slate-500 dark:text-slate-400">Reads projects, artifacts, reports, skills, and blueprints.</dd>
                 </dl>
                 <p class="text-sm text-slate-500 dark:text-slate-400">
-                    Agents cannot run code. Files up to 10 MB publish through an agent; use the packages or fw publish for larger files. What an agent reads, including private projects and drafts, goes to the company that runs it.
+                    Agents cannot run code. Agents publish files up to 50 MB. An agent that cannot reach Framework Cloud gives you a command to run instead. What an agent reads, including private projects and drafts, goes to the company that runs it.
                 </p>
             </section>
 
