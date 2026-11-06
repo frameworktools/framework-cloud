@@ -26,6 +26,24 @@ class Document extends Model
     // Deleted artifacts keep their files in the Trash until restored or deleted forever
     use SoftDeletes;
 
+    /**
+     * Deleted forever: each version goes through its own model so its files are removed. A
+     * document from before version rows removes its own files.
+     */
+    protected static function booted(): void
+    {
+        static::forceDeleting(function (Document $document) {
+            $versions = $document->versions()->withTrashed()->get();
+            if ($versions->isEmpty()) {
+                $files = $document->latestVersion();
+                DB::afterCommit(fn () => $files->deleteFiles());
+
+                return;
+            }
+            $versions->each->forceDelete();
+        });
+    }
+
     protected $guarded = [];
 
     protected $hidden = ['password_hash'];

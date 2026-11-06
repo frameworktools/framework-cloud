@@ -56,6 +56,19 @@ class Project extends Model
 
     protected $guarded = [];
 
+    /**
+     * Deleted forever: its artifacts go through their own models first, so their files are
+     * removed (the database would otherwise drop their rows and leave the files). Its tokens go
+     * too. Reports, collections, and ledger entries go with the row.
+     */
+    protected static function booted(): void
+    {
+        static::forceDeleting(function (Project $project) {
+            Document::withTrashed()->where('project_id', $project->id)->get()->each->forceDelete();
+            $project->tokens()->delete();
+        });
+    }
+
     protected function casts(): array
     {
         return [

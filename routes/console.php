@@ -1,8 +1,9 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote')->hourly();
+// Empty the Trash of what has been there longer than FW_TRASH_DAYS
+Schedule::command('fw:purge-trash')->dailyAt('03:30')->withoutOverlapping()->onOneServer();
+
+// Expired and revoked OAuth tokens and codes from connected agents
+Schedule::command('passport:purge')->dailyAt('03:45');

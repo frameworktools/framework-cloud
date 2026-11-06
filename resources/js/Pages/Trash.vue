@@ -9,7 +9,7 @@ import UiTable from '@/Components/UiTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
 import { TrashIcon } from '@heroicons/vue/24/outline';
 
-defineProps({ items: Array });
+defineProps({ items: Array, keepDays: Number });
 const page = usePage();
 const error = computed(() => page.props.errors?.restore);
 const labels = { project: 'Project', artifact: 'Artifact', version: 'Artifact version', report: 'Report', skill: 'Skill' };
@@ -32,6 +32,7 @@ const forever = async (item) => {
                     Projects, artifacts, reports, and skills deleted by you or a connected agent. Restore one to bring it back.
                     A deleted project's artifacts, reports, collections, and tokens stop working until the project is restored.
                     Deleted artifacts keep their files, which count toward storage until you delete them forever.
+                    <template v-if="keepDays">Everything here is deleted forever after {{ keepDays }} days.</template>
                 </template>
             </PageHeader>
 

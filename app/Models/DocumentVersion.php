@@ -7,6 +7,7 @@ use App\Support\ContentHost;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -17,6 +18,12 @@ class DocumentVersion extends Model
 {
     // A deleted version keeps its files in the Trash until restored or deleted forever
     use SoftDeletes;
+
+    /** Deleted forever, by any path: its files go too, once the deletion commits. */
+    protected static function booted(): void
+    {
+        static::forceDeleted(fn (DocumentVersion $version) => DB::afterCommit(fn () => $version->deleteFiles()));
+    }
 
     protected $guarded = [];
 

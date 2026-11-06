@@ -74,6 +74,12 @@ return [
     'agents' => env('FW_AGENTS', true),
 
     /*
+    | Days things stay in the Trash before they are deleted forever, artifact
+    | files included. 0 keeps them until emptied by hand. See App\Support\TrashPurge.
+    */
+    'trash_days' => env('FW_TRASH_DAYS', 30),
+
+    /*
     | The homepage's worked example: a public artifact published by
     | `php artisan fw:homepage-example`. Unset, the homepage shows a labeled
     | preview image instead of the live reader page.

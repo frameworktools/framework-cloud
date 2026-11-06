@@ -19,6 +19,7 @@ restart with `docker compose up -d`. Without Docker, run
 | `FW_DOCUMENTS_DISK` | `local` | Storage for published artifacts. Becomes `bucket` when a bucket is saved on the setup page. |
 | `FW_ARTIFACTS_DISK` | `local` | Private storage for new artifacts. Must not have public bucket or web access. Use shared storage for multiple app nodes. |
 | `FW_AGENTS` | `true` | `false` turns off AI agents: the MCP server at `/mcp`, its OAuth sign-in, and the agent page. Existing connections stop working until it is turned on again. Without it, Server administration can turn agents off. See [AI apps](ai-apps.md). |
+| `FW_TRASH_DAYS` | `30` | Days deleted projects, artifacts, reports, and skills stay in the Trash before they are deleted forever, artifact files included. `0` keeps them until emptied by hand. Docker runs the daily cleanup in the `scheduler` service. |
 | `FW_CONTENT_URL` | none | A host of its own for published files, such as `https://content.example.org`, pointing at this app. It serves only signed file links and sets no cookies. Unset, the app serves files. |
 | `TRUSTED_PROXIES` | loopback | Proxies trusted to report the visitor's address and https. `cloudflare` trusts Cloudflare's edge; `*` trusts any; or a comma-separated list. |
 

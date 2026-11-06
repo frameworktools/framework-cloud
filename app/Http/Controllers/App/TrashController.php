@@ -9,6 +9,7 @@ use App\Models\Project;
 use App\Models\Report;
 use App\Models\Skill;
 use App\Support\ArtifactPublisher;
+use App\Support\TrashPurge;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -28,6 +29,8 @@ class TrashController extends Controller
     public function index(Request $request): Response
     {
         $user = $request->user();
+        // What has outlived the Trash goes now, even where no scheduler runs
+        TrashPurge::run($user->id);
         $projectIds = Project::withTrashed()->where('user_id', $user->id)->pluck('id');
 
         $items = collect()
@@ -44,7 +47,7 @@ class TrashController extends Controller
             ->sortByDesc('deleted_at')->values()
             ->map(fn (array $item) => $item + ['deleted' => $item['deleted_at']->diffForHumans(), 'deleted_iso' => $item['deleted_at']->toIso8601String()]);
 
-        return Inertia::render('Trash', ['items' => $items]);
+        return Inertia::render('Trash', ['items' => $items, 'keepDays' => TrashPurge::days()]);
     }
 
     public function restore(Request $request, string $type, int $id): RedirectResponse
@@ -69,18 +72,13 @@ class TrashController extends Controller
         $userId = $request->user()->id;
 
         DB::transaction(function () use ($type, $id, $userId) {
+            // The models remove the files once this commits
             if ($type === 'artifact') {
-                $document = Document::onlyTrashed()->whereHas('project', fn ($q) => $q->withTrashed()->where('user_id', $userId))->findOrFail($id);
-                $versions = $document->versions()->withTrashed()->get();
-                $files = $versions->isEmpty() ? collect([$document->latestVersion()]) : $versions;
-                $document->forceDelete();
-                DB::afterCommit(fn () => $files->each->deleteFiles());
+                Document::onlyTrashed()->whereHas('project', fn ($q) => $q->withTrashed()->where('user_id', $userId))->findOrFail($id)->forceDelete();
 
                 return;
             }
-            $version = DocumentVersion::onlyTrashed()->whereHas('document', fn ($q) => $q->whereHas('project', fn ($p) => $p->withTrashed()->where('user_id', $userId)))->findOrFail($id);
-            $version->forceDelete();
-            DB::afterCommit(fn () => $version->deleteFiles());
+            DocumentVersion::onlyTrashed()->whereHas('document', fn ($q) => $q->whereHas('project', fn ($p) => $p->withTrashed()->where('user_id', $userId)))->findOrFail($id)->forceDelete();
         });
 
         return back()->with('status', 'deleted-forever');
