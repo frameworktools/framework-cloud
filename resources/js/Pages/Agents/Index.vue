@@ -99,7 +99,7 @@ const label = 'text-sm font-semibold text-slate-900 dark:text-white';
             <PageHeader :title="active ? 'Connected agents' : 'Connect your agent'" description="Connect Claude, ChatGPT, or another AI agent to your account. You approve each agent and choose its access." />
 
             <section class="flex flex-col gap-6">
-                <p class="text-sm text-slate-500 dark:text-slate-400">The Claude desktop app includes Claude Code, and the ChatGPT desktop app includes Codex.</p>
+                <p class="text-sm text-slate-500 dark:text-slate-400">Claude Code and Codex make it easier to work with Framework Cloud and the files on your computer. The Claude desktop app includes Claude Code, and the ChatGPT desktop app includes Codex.</p>
                 <UiTabs v-model="app" :tabs="apps" label="AI app" />
                 <p class="text-sm text-slate-500 dark:text-slate-400">
                     <template v-for="(part, i) in setup.toggle" :key="i"><template v-if="typeof part === 'string'">{{ part }}</template><code v-else class="font-mono text-xs">{{ part.code }}</code></template>
