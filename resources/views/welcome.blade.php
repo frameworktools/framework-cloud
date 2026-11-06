@@ -22,10 +22,17 @@
         <div class="relative mx-auto grid max-w-7xl items-center gap-12 px-6 py-14 sm:py-20 lg:grid-cols-[1fr_1.05fr] lg:gap-14">
             <div class="min-w-0">
                 <h1 class="text-4xl font-semibold leading-[1.06] tracking-tight text-balance sm:text-5xl xl:text-[3.5rem]">Structured data science workflows</h1>
-                <p class="mt-6 max-w-xl text-lg leading-relaxed text-slate-700 dark:text-slate-200">Framework helps you set up a data science project, keep track of the data and settings you use, and share your results. Work in R, Python, {{ isset(\App\Support\Docs\Products::listed()['stata']) ? 'Stata, ' : '' }}or the command line. Start in Framework Cloud, or connect your tools to reuse a saved setup and publish from your analysis.</p>
-                <div class="mt-8 flex flex-wrap items-center gap-3">
-                    <a href="{{ auth()->check() ? route('dashboard') : route('register') }}" class="rounded-md bg-sky-600 px-5 py-2.5 font-medium text-white hover:bg-sky-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500">{{ auth()->check() ? 'Open dashboard' : 'Create an account' }}</a>
-                    <a href="{{ route('guide') }}" class="rounded-md px-4 py-2.5 font-medium text-slate-700 hover:bg-white/50 dark:text-slate-200 dark:hover:bg-white/5">Read the docs <span aria-hidden="true">&rarr;</span></a>
+                <p class="mt-6 max-w-xl text-lg leading-relaxed text-slate-700 dark:text-slate-200">Framework helps you set up a data science project, keep track of the data and settings you use, and share your results. Start a project in Framework Cloud, or with our R, Python, {{ isset(\App\Support\Docs\Products::listed()['stata']) ? 'Stata, ' : '' }}or command-line tools.</p>
+                @php $tools = collect(['r' => 'R', 'py' => 'Python', 'stata' => 'Stata', 'cli' => 'CLI'])->only(array_keys(\App\Support\Docs\Products::listed())); @endphp
+                <div class="mt-8">
+                    <a href="{{ auth()->check() ? route('dashboard') : route('register') }}" class="inline-block rounded-md bg-sky-600 px-5 py-2.5 font-medium text-white hover:bg-sky-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500">{{ auth()->check() ? 'Open dashboard' : 'Create a Framework Cloud account' }}</a>
+                    <nav aria-label="Framework tools" class="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
+                        <span>Or use the tools:</span>
+                        @foreach ($tools as $product => $name)
+                            @unless ($loop->first)<span aria-hidden="true" class="text-slate-300 dark:text-slate-600">&middot;</span>@endunless
+                            <a href="{{ \App\Support\Docs\Products::publicUrl($product) }}" class="font-medium text-slate-700 underline decoration-slate-300 underline-offset-4 hover:decoration-slate-600 dark:text-slate-300">{{ $name }}</a>
+                        @endforeach
+                    </nav>
                 </div>
             </div>
             <div class="min-w-0 rounded-xl shadow-panel-deep dark:shadow-panel-deep-dark"><x-landing-demo /></div>
