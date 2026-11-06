@@ -25,6 +25,7 @@ use App\Http\Controllers\Settings\DefaultsController;
 use App\Http\Controllers\Settings\GitHubController;
 use App\Http\Controllers\Settings\PackageSearchController;
 use App\Http\Controllers\Settings\PasskeysController;
+use App\Models\Document;
 use App\Models\User;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Route;
@@ -69,7 +70,13 @@ Route::get('/@{handle}', function (string $handle) {
         $user->globalSettings()->document, 'author.affiliation', '',
     );
 
-    return view('profile', ['user' => $user, 'affiliation' => $affiliation]);
+    // Public work only: public artifacts without a password, newest first
+    $artifacts = Document::whereHas('project', fn ($q) => $q->where('user_id', $user->id))
+        ->where('visibility', 'public')->whereNull('password_hash')->whereNull('merged_into_id')
+        ->where(fn ($q) => $q->whereNull('driver')->orWhere('driver', 'cloud'))
+        ->with('project.user')->latest('updated_at')->limit(50)->get();
+
+    return view('profile', ['user' => $user, 'affiliation' => $affiliation, 'artifacts' => $artifacts]);
 })->where('handle', '[a-z0-9][a-z0-9-]*')->name('profile');
 
 Route::view('terms', 'legal.terms')->name('terms');

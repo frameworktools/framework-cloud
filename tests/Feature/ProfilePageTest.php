@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\Document;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class ProfilePageTest extends TestCase
@@ -25,6 +27,29 @@ class ProfilePageTest extends TestCase
             ->assertSee('Erik Westlund')
             ->assertSee('@erik')
             ->assertSee('Using Framework since');
+    }
+
+    public function test_the_profile_lists_only_public_artifacts_without_a_password(): void
+    {
+        $user = User::factory()->create(['name' => 'Ada Lovelace']);
+        $user->forceFill(['handle' => 'ada', 'profile_public' => true])->save();
+        $project = $user->projects()->create(['name' => 'Engine', 'slug' => 'engine', 'project_type' => 'project']);
+        $make = fn (string $title, string $visibility, ?string $password = null) => Document::create([
+            'project_id' => $project->id, 'title' => $title, 'slug' => Str::slug($title), 'key' => Document::newKey(),
+            'content_type' => 'text/csv', 'disk_path' => 'artifacts/p/content', 'size_bytes' => 4, 'kind' => 'table', 'visibility' => $visibility, 'password_hash' => $password ? bcrypt($password) : null,
+        ]);
+        $make('Shown table', 'public');
+        $make('Unlisted table', 'unlisted');
+        $make('Private table', 'private');
+        $make('Locked table', 'public', 'a-password-1');
+
+        $this->get('/@ada')->assertOk()
+            ->assertSee('Public artifacts')
+            ->assertSee('Shown table')
+            ->assertSee('/@ada/engine/shown-table', false)
+            ->assertDontSee('Unlisted table')
+            ->assertDontSee('Private table')
+            ->assertDontSee('Locked table');
     }
 
     public function test_private_and_unknown_profiles_404(): void

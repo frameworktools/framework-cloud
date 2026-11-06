@@ -31,6 +31,20 @@
         <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
             Using Framework since {{ $user->created_at->format('F Y') }}
         </p>
+
+        @if ($artifacts->isNotEmpty())
+            <section class="mt-12" aria-labelledby="public-work">
+                <h2 id="public-work" class="text-base font-medium">Public artifacts</h2>
+                <ul class="mt-3 divide-y divide-slate-800/10 border-t border-slate-800/10 dark:divide-white/15 dark:border-white/15">
+                    @foreach ($artifacts as $artifact)
+                        <li class="flex items-baseline justify-between gap-4 py-3">
+                            <a href="{{ $artifact->shareUrl() }}" class="font-medium text-slate-800 underline decoration-slate-300 underline-offset-2 hover:decoration-slate-500 dark:text-slate-200">{{ $artifact->title ?? $artifact->slug }}</a>
+                            <span class="shrink-0 text-sm text-slate-500 dark:text-slate-400">{{ $artifact->project->name }} · {{ $artifact->updated_at->format('M j, Y') }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+            </section>
+        @endif
     </main>
 
     <footer class="mx-auto max-w-3xl border-t border-slate-200 px-6 py-8 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">
