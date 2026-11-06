@@ -11,8 +11,8 @@
 # them; all three are public repositories under github.com/frameworktools.
 
 ARG FW_REF=1760757cc98787f74e54c8973acfcc2c916a9aa2
-ARG FRAMEWORK_REF=5f318d795c73d422657dda17267efd25978e1ff4
-ARG FRAMEWORK_PY_REF=4bb082e422190d71e587902e97cd4f6e9514c6cd
+ARG FRAMEWORK_REF=6dcfa01ed7b999198289948a3f43c80d9330d44a
+ARG FRAMEWORK_PY_REF=3ad2a04a8058f13bfb7389f3c1f731034f0788cf
 
 # 1. fw, built from source at its pin
 FROM golang:1.27 AS fw
