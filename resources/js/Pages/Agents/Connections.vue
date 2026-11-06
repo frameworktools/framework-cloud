@@ -82,7 +82,7 @@ const disconnect = async (connection) => {
                 </UiTable>
                 <p class="text-sm text-slate-500 dark:text-slate-400">To change an agent's access, disconnect it and connect it again.</p>
             </template>
-            <p v-else class="mt-3 text-xs text-slate-500 dark:text-slate-400">No connections yet. When you approve an agent, it will appear here.</p>
+            <p v-else class="mt-3 text-xs text-slate-500 dark:text-slate-400">No connections yet. Approved agents will appear here.</p>
             </section>
         </div>
     </AgentsLayout>
