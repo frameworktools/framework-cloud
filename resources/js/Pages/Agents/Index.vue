@@ -90,9 +90,10 @@ const command = 'mt-2 block overflow-x-auto whitespace-nowrap rounded-lg bg-[#0c
 
                 <ol v-if="app === 'claude'" class="flex flex-col gap-4 text-sm text-slate-700 dark:text-slate-300">
                     <li :class="step"><span :class="number">1</span><span>In Claude, open Customize, then Connectors.</span></li>
-                    <li :class="step"><span :class="number">2</span><span>Add a custom connector. Name it Framework Cloud and paste the server address.</span></li>
-                    <li :class="step"><span :class="number">3</span><span>Select Connect. Sign in here, choose the agent's access, and select Connect.</span></li>
-                    <li :class="step"><span :class="number">4</span><span>In a chat, turn on Framework Cloud from the tools menu.</span></li>
+                    <li :class="step"><span :class="number">2</span><span>Select Add, then Custom connector. Name it Framework Cloud and paste the server address.</span></li>
+                    <li :class="step"><span :class="number">3</span><span>Under Authentication, choose Sign in now. Under OAuth client, choose Register automatically. Claude detects both. Leave Request headers empty.</span></li>
+                    <li :class="step"><span :class="number">4</span><span>Add the connector. Claude opens Framework Cloud. Sign in, choose the agent's access, and select Connect.</span></li>
+                    <li :class="step"><span :class="number">5</span><span>In a chat, turn on Framework Cloud from the tools menu.</span></li>
                 </ol>
                 <p v-if="app === 'claude'" class="text-sm text-slate-500 dark:text-slate-400">On Team and Enterprise plans, an owner adds custom connectors for the organization.</p>
 

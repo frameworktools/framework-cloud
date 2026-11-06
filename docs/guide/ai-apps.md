@@ -15,7 +15,8 @@ https://framework.pub/mcp
 
 On a self-hosted server, use that server's address instead.
 
-- **Claude:** Customize, then Connectors, then add a custom connector.
+- **Claude:** Customize, then Connectors, then Add and Custom connector.
+  Choose Sign in now and Register automatically. Claude detects both.
 - **ChatGPT:** Settings, then Apps and connectors, then Create. Custom
   connectors need developer mode on some plans.
 - **Claude Code:** `claude mcp add --transport http framework https://framework.pub/mcp`
