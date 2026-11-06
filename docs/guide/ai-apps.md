@@ -32,12 +32,11 @@ more steps.
   Claude may reach.
   Claude runs commands in a cloud sandbox, and without this entry the sandbox
   cannot upload files. Start a new chat after the change.
-- **ChatGPT:** in the desktop app, open Settings, then Plugins, then Add and
-  Add MCP server. Name it framework, choose Streamable HTTP (not STDIO), paste
-  the address as the URL, and leave the rest empty. Save, then select
-  Authenticate next to framework under MCPs. On chatgpt.com, use Settings,
-  then Apps and connectors, then Create; custom connectors need developer mode
-  on some plans.
+- **ChatGPT:** in the desktop app, open Customize, then Plugins, then Add and
+  Add custom MCP server. Name it framework, select Streamable HTTP, paste the
+  address as the URL, and leave the rest empty. Save, then select Authenticate
+  next to framework. On chatgpt.com, use Settings, then Apps and connectors,
+  then Create; custom connectors need developer mode on some plans.
 - **Claude Code CLI:**
   `claude mcp add --transport http framework https://framework.pub/mcp`, then
   `/mcp` in Claude Code to sign in.
@@ -48,7 +47,7 @@ more steps.
 
 The Framework Cloud plugin adds the server to Claude, Claude Code, ChatGPT,
 and Codex. Its marketplace is `frameworktools/plugins`. The plugin connects to
-framework.pub only. On a self-hosted server, use the MCP server steps above.
+framework.pub only. On a self-hosted server, use the MCP server steps above. Connect the MCP server first; the plugin then finds it.
 
 - **Claude** (desktop app or claude.ai): Customize, then Plugins, then Add,
   Add marketplace, and Add from a repository. Enter `frameworktools/plugins`.
@@ -56,8 +55,9 @@ framework.pub only. On a self-hosted server, use the MCP server steps above.
   open Connectors, select Connect next to framework, and select Continue. It then works in chats and in Claude Code
   inside the desktop app. Add `framework.pub` to Claude's allowed websites, as
   described under MCP server.
-- **ChatGPT** (desktop app): Settings, then Plugins, then Add and Add a
-  marketplace. Enter `frameworktools/plugins`, then install Framework Cloud.
+- **ChatGPT** (desktop app): Customize, then Plugins, then Add and Add a
+  marketplace. Enter `frameworktools/plugins`, then search for Framework and
+  install Framework Cloud.
 - **Claude Code CLI:** run
   `claude plugin marketplace add frameworktools/plugins` and
   `claude plugin install framework-cloud@framework`, then `/mcp` in Claude
