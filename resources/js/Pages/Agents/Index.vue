@@ -22,13 +22,14 @@ const marketplace = 'frameworktools/plugins';
 const host = computed(() => new URL(props.mcpUrl).host);
 const signIn = 'In the browser that opens, sign in, choose the access, and select Connect.';
 
-// Each tab: how to switch to that app inside its desktop app, then plugin and manual steps
+// Each tab: how to switch to that app inside its desktop app, then the MCP server steps, then the plugin
 const setup = computed(() => {
     const url = props.mcpUrl;
     const allowHost = ['In Settings, open Capabilities and add this to the allowed websites, exactly as shown. Claude needs it to upload files.', { copy: host.value }, 'Start a new chat afterward.'];
     const claudePlugin = [
-        ['Open Customize, then Plugins. Select Add, then Add marketplace, and enter:', { copy: marketplace }],
+        ['Open Customize, then Plugins. Select Add, then Add marketplace, then Add from a repository, and enter:', { copy: marketplace }],
         ['Under Discover, add Framework Cloud.'],
+        ['Select Manage next to Framework Cloud and open Connectors. Select Connect next to framework, then Continue.'],
         [signIn],
     ];
     const claudeConnector = [
@@ -100,12 +101,12 @@ const label = 'text-sm font-semibold text-slate-900 dark:text-white';
                     <template v-for="(part, i) in setup.toggle" :key="i"><template v-if="typeof part === 'string'">{{ part }}</template><code v-else class="font-mono text-xs">{{ part.code }}</code></template>
                 </p>
 
+                <h3 :class="label">MCP server</h3>
+                <SetupSteps :steps="setup.manual" />
                 <template v-if="plugin">
-                    <h3 :class="label">Plugin</h3>
+                    <h3 :class="[label, 'mt-3']">Plugin</h3>
                     <SetupSteps :steps="setup.plugin" />
                 </template>
-                <h3 :class="[label, plugin && 'mt-3']">Manual setup</h3>
-                <SetupSteps :steps="setup.manual" />
 
                 <p v-if="setup.note" class="text-sm text-slate-500 dark:text-slate-400">{{ setup.note }}</p>
             </section>
