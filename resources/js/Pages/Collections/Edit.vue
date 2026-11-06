@@ -1,4 +1,5 @@
 <script setup>
+import { ask } from '@/confirm.js';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { router, useForm, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -134,9 +135,9 @@ const editingArtifact = computed(() => editing.value && artifactFor(editing.valu
 function saveEntry() {
     entry.patch(`${base}/items/${editing.value.id}`, { preserveScroll: true, onSuccess: () => { editing.value = null; } });
 }
-function remove(item) {
+async function remove(item) {
     const artifact = artifactFor(item);
-    if (item.caption && !confirm(`Remove “${artifact?.title || 'this artifact'}” and its caption from the collection?`)) return;
+    if (item.caption && !await ask(`Remove “${artifact?.title || 'this artifact'}” and its caption from the collection?`)) return;
     router.delete(`${base}/items/${item.id}`, { preserveScroll: true });
 }
 
@@ -176,8 +177,8 @@ function drop() {
 }
 function endDrag() { dragging.value = null; dropAt.value = null; draggable.value = null; }
 
-function destroy() {
-    if (confirm('Delete this collection? Its link stops working. The artifacts stay in the project.')) router.delete(base);
+async function destroy() {
+    if (await ask('Delete this collection? Its link stops working. The artifacts stay in the project.')) router.delete(base);
 }
 const fit = el => { el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px`; };
 const vAutosize = { mounted: el => { fit(el); el.addEventListener('input', () => fit(el)); }, updated: fit };

@@ -1,4 +1,5 @@
 <script setup>
+import { ask } from '@/confirm.js';
 import { computed } from 'vue';
 import { ChevronRightIcon, InformationCircleIcon, XMarkIcon } from '@heroicons/vue/20/solid';
 import PackageNameInput from '@/Components/PackageNameInput.vue';
@@ -43,8 +44,8 @@ const load = (preset) => {
     rows.value = [...rows.value.filter((row) => row.name), ...missing(preset).map((p) => ({ ...blank(), ...p }))];
 };
 // Replacing drops the list for the set's packages, so it asks first
-const replace = (preset) => {
-    if (window.confirm(`Replace your ${rows.value.filter((r) => r.name).length} packages with the ${preset.packages.length} in ${preset.name}?`)) {
+const replace = async (preset) => {
+    if (await ask(`Replace your ${rows.value.filter((r) => r.name).length} packages with the ${preset.packages.length} in ${preset.name}?`)) {
         rows.value = preset.packages.map((p) => ({ ...blank(), ...p }));
     }
 };

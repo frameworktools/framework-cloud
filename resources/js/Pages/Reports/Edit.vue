@@ -1,4 +1,5 @@
 <script setup>
+import { ask } from '@/confirm.js';
 import { pageClass } from '@/ui.js';
 import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
@@ -81,10 +82,10 @@ function moveAndKeepFocus(index, to) {
     if (block) nextTick(() => document.querySelector(`#block-${CSS.escape(block.id)} [data-handle]`)?.focus());
 }
 function duplicate(index) { form.blocks.splice(index + 1, 0, { ...JSON.parse(JSON.stringify(form.blocks[index])), id: newId() }); }
-function remove(index) {
+async function remove(index) {
     const block = form.blocks[index];
     const hasText = block.type === 'text' && block.text.replace(/<[^>]*>/g, '').trim();
-    if (hasText && !confirm('Remove this text section?')) return;
+    if (hasText && !await ask('Remove this text section?')) return;
     form.blocks.splice(index, 1);
 }
 
@@ -168,7 +169,7 @@ const status = computed(() => {
 });
 const errors = computed(() => ({ ...form.errors, ...publication.errors }));
 
-function destroy() { if (confirm('Delete this report and all of its published versions? Its artifacts will remain in the project.')) router.delete(base); }
+async function destroy() { if (await ask('Delete this report and all of its published versions? Its artifacts will remain in the project.')) router.delete(base); }
 function date(value) { return value ? new Date(value).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : ''; }
 // Text boxes grow with what they hold, from the start and as you type
 const fit = el => { el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px`; };

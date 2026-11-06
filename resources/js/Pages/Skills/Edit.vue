@@ -1,4 +1,5 @@
 <script setup>
+import { ask } from '@/confirm.js';
 import { computed } from 'vue';
 import { router, useForm, usePage } from '@inertiajs/vue3';
 import SectionLayout from '@/Layouts/SectionLayout.vue';
@@ -45,8 +46,8 @@ const items = computed(() => [
 ]);
 
 const save = () => (props.skill ? form.put(`/skills/${props.skill.id}`, { preserveScroll: true, onSuccess: () => { form.expected_version = props.skill.version; } }) : form.post('/skills'));
-const restore = (version) => {
-    if (confirm(`Restore version ${version} as a new version?`)) {
+const restore = async (version) => {
+    if (await ask(`Restore version ${version} as a new version?`)) {
         router.post(`/skills/${props.skill.id}/restore`, { version, expected_version: props.skill.version }, {
             preserveScroll: true,
             onSuccess: () => {
@@ -58,8 +59,8 @@ const restore = (version) => {
     }
 };
 const fork = () => router.post(`/skills/${props.skill.id}/fork`);
-const destroy = () => {
-    if (confirm(`Delete ${props.skill.name}? Skill sets and blueprints that already copied it keep their copy.`)) router.delete(`/skills/${props.skill.id}`);
+const destroy = async () => {
+    if (await ask(`Delete ${props.skill.name}? Skill sets and blueprints that already copied it keep their copy.`)) router.delete(`/skills/${props.skill.id}`);
 };
 </script>
 

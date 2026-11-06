@@ -1,4 +1,5 @@
 <script setup>
+import { ask } from '@/confirm.js';
 import { computed, ref, watch, onBeforeUnmount, onMounted } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
 import ProjectLayout from '@/Layouts/ProjectLayout.vue';
@@ -76,14 +77,14 @@ const refresh = () => router.post(`/projects/${props.project.id}/scaffold/refres
 const retry = () => router.post(`/projects/${props.project.id}/scaffold/retry`, {}, { preserveScroll: true });
 
 const pagesBusy = ref(false);
-const enablePages = () => {
+const enablePages = async () => {
     const where = github.value.private ? ' The repository is private, but the site will not be.' : '';
-    if (!confirm(`Publish the published/ folder of ${github.value.repo} with GitHub Pages? Anything in that folder will be public on the web.${where}`)) return;
+    if (!await ask(`Publish the published/ folder of ${github.value.repo} with GitHub Pages? Anything in that folder will be public on the web.${where}`)) return;
     pagesBusy.value = true;
     router.post(`/projects/${props.project.id}/pages`, {}, { preserveScroll: true, onFinish: () => { pagesBusy.value = false; } });
 };
-const disablePages = () => {
-    if (!confirm('Turn off GitHub Pages for this project? The site goes offline. The published/ folder stays in the repository.')) return;
+const disablePages = async () => {
+    if (!await ask('Turn off GitHub Pages for this project? The site goes offline. The published/ folder stays in the repository.')) return;
     pagesBusy.value = true;
     router.delete(`/projects/${props.project.id}/pages`, { preserveScroll: true, onFinish: () => { pagesBusy.value = false; } });
 };
@@ -98,13 +99,13 @@ watch(inProgress, (value) => {
 onBeforeUnmount(() => clearInterval(timer));
 
 const issueToken = () => router.post(`/projects/${props.project.id}/token`, {}, { preserveScroll: true });
-const revokeToken = (tokenId) => {
-    if (confirm('Revoke this token? Computers that use it can no longer pull settings or publish.')) {
+const revokeToken = async (tokenId) => {
+    if (await ask('Revoke this token? Computers that use it can no longer pull settings or publish.')) {
         router.delete(`/projects/${props.project.id}/tokens/${tokenId}`, { preserveScroll: true });
     }
 };
-const destroy = () => {
-    if (confirm(`Delete ${props.project.name}? Copies on computers and on GitHub are not affected, but the project's tokens stop working.`)) {
+const destroy = async () => {
+    if (await ask(`Delete ${props.project.name}? Copies on computers and on GitHub are not affected, but the project's tokens stop working.`)) {
         router.delete(`/projects/${props.project.id}`);
     }
 };

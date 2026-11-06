@@ -1,4 +1,5 @@
 <script setup>
+import { ask } from '@/confirm.js';
 import { computed } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -20,8 +21,8 @@ const kindNames = { tool: 'Tool', package_set: 'Package set', skill_set: 'Skill 
 const outdated = computed(() => fragments.value.filter((f) => f.version < f.latest_version));
 
 const fork = () => router.post(`/blueprints/${props.blueprint.id}/fork`);
-const destroy = () => {
-    if (confirm(`Delete ${props.blueprint.name}? This can't be undone.`)) {
+const destroy = async () => {
+    if (await ask(`Delete ${props.blueprint.name}? This can't be undone.`)) {
         router.delete(`/blueprints/${props.blueprint.id}`);
     }
 };

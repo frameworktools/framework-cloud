@@ -1,4 +1,5 @@
 <script setup>
+import { ask } from '@/confirm.js';
 import { pageClass } from '@/ui.js';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
@@ -75,7 +76,7 @@ function fit(event) {
         if (!doc) return;
         // The reader fills its window and scrolls inside <main>, so measure what <main> holds
         const main = doc.querySelector('main') || doc.body;
-        const resize = () => {
+        const resize = async () => {
             const content = main.offsetTop + main.scrollHeight;
             frame.style.height = `${Math.max(160, content, main === doc.body ? 0 : doc.body.scrollHeight - main.clientHeight + main.scrollHeight)}px`;
         };
@@ -94,7 +95,7 @@ const saveDetails = () => details.patch(base, { preserveScroll: true, onSuccess:
 // Sharing
 const sharing = useForm({ visibility: props.artifact.visibility ?? (props.artifact.readable ? 'public' : 'unlisted'), password: '', removePassword: false });
 const passwordChanging = ref(false);
-function saveSharing() {
+async function saveSharing() {
     sharing.transform(data => {
         const payload = { visibility: data.visibility };
         if (data.removePassword) payload.password = null;
@@ -108,26 +109,26 @@ function saveSharing() {
 
 // Merging and removing
 const merge = useForm({ source_id: '' });
-function mergeIn() {
+async function mergeIn() {
     const source = props.mergeSources.find(s => s.id === Number(merge.source_id));
-    if (!source || !confirm(`Append the versions of “${source.title}” to “${props.artifact.title}”? The source keeps its own links and versions.`)) return;
+    if (!source || !await ask(`Append the versions of “${source.title}” to “${props.artifact.title}”? The source keeps its own links and versions.`)) return;
     merge.post(`${base}/merge`, { preserveScroll: true, onSuccess: () => merge.reset() });
 }
-function destroyVersion(version) {
+async function destroyVersion(version) {
     const last = props.versions.length === 1;
     if (external.value) {
-        if (confirm(`Remove version ${version.number} from Framework Cloud? Files at the publishing destination stay available.`)) router.delete(`${base}/versions/${version.number}?then=list`, { preserveScroll: true });
+        if (await ask(`Remove version ${version.number} from Framework Cloud? Files at the publishing destination stay available.`)) router.delete(`${base}/versions/${version.number}?then=list`, { preserveScroll: true });
         return;
     }
-    if (!confirm(last ? `Delete version ${version.number}? It is the only version, so “${props.artifact.title}” is taken down.` : `Delete version ${version.number}? Its links stop working.`)) return;
+    if (!await ask(last ? `Delete version ${version.number}? It is the only version, so “${props.artifact.title}” is taken down.` : `Delete version ${version.number}? Its links stop working.`)) return;
     router.delete(`${base}/versions/${version.number}?then=list`, { preserveScroll: true });
 }
-function destroy() {
+async function destroy() {
     if (external.value) {
-        if (confirm(`Remove “${props.artifact.title}” from Framework Cloud? Files at the publishing destination stay available.`)) router.delete(`${base}?then=list`);
+        if (await ask(`Remove “${props.artifact.title}” from Framework Cloud? Files at the publishing destination stay available.`)) router.delete(`${base}?then=list`);
         return;
     }
-    if (confirm(`Take down “${props.artifact.title}”? Every version and link stops working for everyone.`)) router.delete(`${base}?then=list`);
+    if (await ask(`Take down “${props.artifact.title}”? Every version and link stops working for everyone.`)) router.delete(`${base}?then=list`);
 }
 const sharingText = { unlisted: 'Anyone with the link', public: 'Public', private: 'Private' };
 </script>

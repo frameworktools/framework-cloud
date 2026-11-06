@@ -1,4 +1,5 @@
 <script setup>
+import { ask } from '@/confirm.js';
 import { ref, computed } from 'vue';
 import { router, useForm, usePage } from '@inertiajs/vue3';
 import AccountLayout from '@/Layouts/AccountLayout.vue';
@@ -50,8 +51,8 @@ async function addPasskey() {
     }
 }
 
-const remove = (id) => {
-    if (confirm('Remove this passkey? Devices using it will need email sign-in.')) {
+const remove = async (id) => {
+    if (await ask('Remove this passkey? Devices using it will need email sign-in.')) {
         router.delete(`/account/passkeys/${id}`);
     }
 };

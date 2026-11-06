@@ -1,4 +1,5 @@
 <script setup>
+import { ask } from '@/confirm.js';
 import { computed, ref } from 'vue';
 import { router, useForm, usePage } from '@inertiajs/vue3';
 import SectionLayout from '@/Layouts/SectionLayout.vue';
@@ -38,8 +39,8 @@ const save = (group) => forms[group].put(`/admin/setup/${group}`, {
     preserveScroll: true,
     onSuccess: () => Object.keys(forms[group].data()).forEach((k) => { if (field(k.replace('__', '.')).secret) forms[group][k] = ''; }),
 });
-const clear = (group, what) => {
-    if (confirm(`Remove the saved ${what}? Values set in the environment stay.`)) {
+const clear = async (group, what) => {
+    if (await ask(`Remove the saved ${what}? Values set in the environment stay.`)) {
         router.delete(`/admin/setup/${group}`, { preserveScroll: true });
     }
 };

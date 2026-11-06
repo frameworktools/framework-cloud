@@ -1,4 +1,5 @@
 <script setup>
+import { ask } from '@/confirm.js';
 import UiPanel from '@/Components/UiPanel.vue';
 import { computed } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
@@ -13,8 +14,8 @@ const page = usePage();
 const error = computed(() => page.props.errors.github);
 const connected = computed(() => page.props.flash.status === 'github-connected');
 
-const disconnect = () => {
-    if (confirm('Disconnect GitHub? Existing repositories stay on GitHub. Scaffold status stops updating until you connect again.')) {
+const disconnect = async () => {
+    if (await ask('Disconnect GitHub? Existing repositories stay on GitHub. Scaffold status stops updating until you connect again.')) {
         router.delete('/account/github');
     }
 };

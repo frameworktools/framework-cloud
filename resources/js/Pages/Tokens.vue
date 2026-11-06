@@ -1,4 +1,5 @@
 <script setup>
+import { ask } from '@/confirm.js';
 import { computed } from 'vue';
 import { useForm, usePage, router } from '@inertiajs/vue3';
 import SectionLayout from '@/Layouts/SectionLayout.vue';
@@ -25,8 +26,8 @@ const plainToken = computed(() =>
 const form = useForm({ name: '' });
 const create = () => form.post('/tokens', { onSuccess: () => form.reset() });
 
-const revoke = (id) => {
-    if (confirm('Revoke this token? Machines using it will lose access.')) {
+const revoke = async (id) => {
+    if (await ask('Revoke this token? Machines using it will lose access.')) {
         router.delete(`/tokens/${id}`);
     }
 };

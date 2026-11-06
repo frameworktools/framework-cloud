@@ -1,4 +1,5 @@
 <script setup>
+import { ask } from '@/confirm.js';
 import { computed, ref } from 'vue';
 import { router, useForm, usePage } from '@inertiajs/vue3';
 import SectionLayout from '@/Layouts/SectionLayout.vue';
@@ -67,8 +68,8 @@ const removeSkill = (index) => form.skills.splice(index, 1);
 const skillTitle = (skill) => props.library.find((s) => s.key === skill.name)?.name ?? skill.name;
 
 const save = () => (props.facet ? form.put(`/${props.path}/${props.facet.id}`, { preserveScroll: true }) : form.post(`/${props.path}`));
-const destroy = () => {
-    if (confirm(`Delete ${props.facet.name}? This can't be undone.`)) router.delete(`/${props.path}/${props.facet.id}`);
+const destroy = async () => {
+    if (await ask(`Delete ${props.facet.name}? This can't be undone.`)) router.delete(`/${props.path}/${props.facet.id}`);
 };
 
 const items = computed(() => [
