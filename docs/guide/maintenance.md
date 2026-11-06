@@ -36,7 +36,7 @@ php artisan queue:restart
 Back up three things:
 
 - the database
-- published notebooks, if they are stored on the server's disk
+- published artifacts, if they are stored on the server's disk
 - `APP_KEY`, which decrypts the credentials saved on the Server setup page
 
 With Docker, from the folder with `compose.yml`:

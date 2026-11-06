@@ -75,7 +75,7 @@ const testMail = () => router.post('/admin/setup/mail/test', {}, { preserveScrol
 // Getting started for the admin's own account, while anything is left
 const stepCopy = {
     profile: { title: 'Author profile', text: 'Your name and affiliation go on the notebooks and reports you create.', href: '/account/profile' },
-    machine: { title: 'Computer connection', text: 'Make a token, then run cloud_login() once in R or Python, or fw login in a terminal.', href: '/tokens' },
+    machine: { title: 'Computer connection', text: 'Make a token, then run cloud_login() once in R or Python, fw_login in Stata, or fw login in a terminal.', href: '/tokens' },
     github: { title: 'GitHub connection', text: 'Create projects as GitHub repositories, ready to clone.', href: '/account/github' },
     project: { title: 'New project', text: 'Pick a blueprint and set it up on GitHub or your computer.', href: '/projects/create' },
 };
@@ -243,7 +243,7 @@ const pill = (ready) => (ready
                         placeholder="https://files.example.org (optional)" :error="forms.storage.errors.storage__public_url"
                     />
                     <p class="-mt-2 text-xs text-slate-500">
-                        Optional: a public domain attached to the bucket. Documents then load from there, a separate site from this one, which keeps
+                        Optional: a public domain attached to the bucket. Artifacts then load from there, a separate site from this one, which keeps
                         scripts in published pages away from people's sign-ins. Without it, this server streams them.
                     </p>
                 </form>

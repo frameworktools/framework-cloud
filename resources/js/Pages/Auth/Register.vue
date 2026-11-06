@@ -42,7 +42,7 @@ const send = () => form.post('/auth/magic-link');
                 description="Sign-in address. Your author profile can use a different public email."
                 :error="form.errors.email"
             />
-            <UiButton type="submit" class="w-full" :disabled="form.processing">Send me a sign-in link</UiButton>
+            <UiButton type="submit" class="w-full" :disabled="form.processing">Email me a sign-in link</UiButton>
         </form>
 
         <p class="text-center text-sm text-slate-500 dark:text-slate-400">

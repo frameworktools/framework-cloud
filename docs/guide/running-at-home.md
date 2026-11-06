@@ -1,7 +1,7 @@
 # Local installation
 
 Framework Cloud can run on your own computer for one person. Your
-blueprints, settings, and published notebooks stay on your machine.
+blueprints, settings, and published artifacts stay on your machine.
 
 Single-user mode removes the sign-in screen. Every visit from your own
 computer is signed in as you.

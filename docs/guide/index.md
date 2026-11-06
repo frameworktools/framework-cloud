@@ -14,8 +14,8 @@ Framework Cloud is open source. You can use it in two ways:
 
 ## Framework Cloud
 
-- [Getting started](getting-started.md): create an account, connect R, and
-  start your first project.
+- [Getting started](getting-started.md): create an account, connect R, Python,
+  Stata, or fw, and start your first project.
 - [Signing in](signing-in.md): email links, passkeys, GitHub, and passwords.
 - [Projects and blueprints](projects-and-blueprints.md): set up projects,
   and build, borrow, and remix blueprints.
@@ -36,6 +36,6 @@ Framework Cloud is open source. You can use it in two ways:
 - [Manual installation](install-manual.md): PHP, PostgreSQL, and a web
   server you manage.
 - [Server setup](server-setup.md): email, GitHub, and storage for published
-  notebooks.
+  artifacts.
 - [Configuration reference](configuration.md): every environment variable.
 - [Maintenance](maintenance.md): upgrades, backups, and admin commands.

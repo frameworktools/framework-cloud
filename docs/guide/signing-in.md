@@ -54,4 +54,4 @@ and show your university address on your notebooks.
 ## Account deletion
 
 **Account > Account details > Delete account** deletes your settings, projects,
-tokens, and published notebooks. Type your account email to confirm.
+tokens, and published artifacts, collections, and reports. Type your account email to confirm.

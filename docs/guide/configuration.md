@@ -16,7 +16,7 @@ restart with `docker compose up -d`. Without Docker, run
 | `FW_ADMIN_EMAIL` | none | The admin account, created on first start. |
 | `FW_ADMIN_NAME` | from the email | The admin's name when the account is created. |
 | `FW_REGISTRATION` | `open` | `closed` stops new sign-ups. Admins can still create accounts with `fw:login-link --create`. |
-| `FW_DOCUMENTS_DISK` | `local` | Storage for published notebooks. Becomes `bucket` when a bucket is saved on the setup page. |
+| `FW_DOCUMENTS_DISK` | `local` | Storage for published artifacts. Becomes `bucket` when a bucket is saved on the setup page. |
 | `FW_ARTIFACTS_DISK` | `local` | Private storage for new artifacts. Must not have public bucket or web access. Use shared storage for multiple app nodes. |
 
 ## Sign-in

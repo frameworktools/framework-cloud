@@ -45,7 +45,7 @@ The storage credentials in Server administration configure the older
 
 ### Notebook bucket
 
-By default, published notebooks are stored on the server's disk. For more
+By default, published artifacts are stored on the server's disk. For more
 than a few people, use an S3-compatible bucket: Amazon S3, Cloudflare R2,
 MinIO, or Backblaze B2.
 
