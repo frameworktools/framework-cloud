@@ -9,6 +9,8 @@ import UiBadge from '@/Components/UiBadge.vue';
 import GitHubMark from '@/Components/GitHubMark.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import UiCallout from '@/Components/UiCallout.vue';
+import EmptyState from '@/Components/EmptyState.vue';
+import { FolderIcon } from '@heroicons/vue/24/outline';
 import { languageNames } from '@/library.js';
 import { statusLabel, statusVariant, typeName } from '@/projects.js';
 
@@ -59,11 +61,10 @@ const titleClass = 'font-medium text-slate-900 hover:underline hover:underline-o
                     </ul>
                 </section>
             </template>
-            <div v-else class="mt-12 border-t border-slate-200 pt-8 dark:border-slate-700">
-                <h2 class="font-semibold">New project</h2>
-                <p class="mt-2 text-sm text-slate-500">Use your defaults or a blueprint, then publish outputs and build reports here.</p>
-                <UiButton href="/projects/create" variant="ghost" class="mt-4">New project</UiButton>
-            </div>
+            <EmptyState
+                v-else :icon="FolderIcon" title="No projects" class="mt-12"
+                description="Start a project from your defaults or a blueprint. Its published artifacts and reports appear here."
+            />
         </div>
     </AppLayout>
 </template>

@@ -213,7 +213,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
             <section v-else-if="section === 'publishing'" class="max-w-xl space-y-5">
                 <UiSelect v-model="form.publish_destination" label="Publishing destination" :options="[{value:'',label:'Automatic'}, {value:'cloud',label:'Framework Cloud'}, {value:'github',label:'GitHub Pages'}]" :error="form.errors.publish_destination" />
                 <p class="text-sm text-slate-500">New projects use this destination. Automatic uses a configured bucket, then Framework Cloud. Named folder and object storage destinations can be set in each project's settings.</p>
-                <p class="text-sm text-slate-500">GitHub Pages is public. Private repositories do not make Pages private.</p>
+                <p class="text-sm text-slate-500">A GitHub Pages site is public, even when its repository is private. Only GitHub Enterprise Cloud can limit a site to people with access to the repository.</p>
             </section>
             <template v-else-if="section === 'blueprint'">
                 <DefaultBlueprintList v-model="form.project_type" :blueprints="blueprints" :defaults="previewDefaults" :language="previewLanguage">
