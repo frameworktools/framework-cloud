@@ -11,7 +11,16 @@ import UiBadge from '@/Components/UiBadge.vue';
 import AgentsTabs from './AgentsTabs.vue';
 import { CheckIcon, ClipboardDocumentIcon } from '@heroicons/vue/24/outline';
 
-const props = defineProps({ mcpUrl: String, connections: Array, active: Boolean, historyCount: Number });
+const props = defineProps({ mcpUrl: String, connections: Array, active: Boolean, historyCount: Number, approvedApps: { type: Array, default: () => [] } });
+
+// Web apps approved once reconnect with this access, without the consent screen
+const accessOptions = [{ value: 'full', label: 'Full access' }, { value: 'read', label: 'Read only' }];
+const setAccess = (app, access) => router.patch(`/agents/apps/${app.id}`, { access }, { preserveScroll: true });
+const forget = async (app) => {
+    if (await ask(`Forget ${app.name}? It asks for approval the next time it connects. Its current connection stays.`)) {
+        router.delete(`/agents/apps/${app.id}`, { preserveScroll: true });
+    }
+};
 
 const copied = ref(false);
 async function copy() {
@@ -78,6 +87,32 @@ const command = 'mt-2 block overflow-x-auto whitespace-nowrap rounded-lg bg-[#0c
                     </tbody>
                 </UiTable>
                 <p class="text-sm text-slate-500 dark:text-slate-400">To change an agent's access, disconnect it and connect it again.</p>
+            </section>
+
+            <section v-if="approvedApps.length" class="flex flex-col gap-3">
+                <div>
+                    <h2 class="text-base font-medium text-slate-900 dark:text-white">Approved apps</h2>
+                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                        These apps connect again with the access shown, without asking. Forget an app to approve it again next time.
+                        Claude Code, Codex, and other apps on your computer always ask.
+                    </p>
+                </div>
+                <UiTable label="Approved apps">
+                    <thead><tr><th>App</th><th>Access</th><th>Approved</th><th class="actions"><span class="sr-only">Actions</span></th></tr></thead>
+                    <tbody>
+                        <tr v-for="app in approvedApps" :key="app.id">
+                            <td class="strong">{{ app.name }} <span class="font-normal text-slate-500">({{ app.host }})</span></td>
+                            <td>
+                                <select :value="app.access" :aria-label="`Access for ${app.name}`" class="rounded-md border border-slate-800/15 bg-white py-1 pr-8 pl-2 text-sm text-slate-800 dark:border-white/15 dark:bg-slate-900 dark:text-white"
+                                    @change="setAccess(app, $event.target.value)">
+                                    <option v-for="option in accessOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+                                </select>
+                            </td>
+                            <td>{{ app.approved_at }}</td>
+                            <td class="actions"><UiButton variant="ghost" size="sm" @click="forget(app)">Forget</UiButton></td>
+                        </tr>
+                    </tbody>
+                </UiTable>
             </section>
 
             <section class="flex flex-col gap-3">

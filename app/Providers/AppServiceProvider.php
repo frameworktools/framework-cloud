@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Http\Controllers\OAuth\ApproveMcpAuthorizationController;
+use App\Models\McpApprovedApp;
 use App\Support\Credentials;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -57,6 +59,15 @@ class AppServiceProvider extends ServiceProvider
         // storage/oauth-*.key files made by passport:keys.
         Passport::authorizationView(function (array $parameters) {
             $redirectHost = parse_url((string) $parameters['request']->query('redirect_uri'), PHP_URL_HOST) ?: null;
+
+            // A web app the person approved before connects again with the same access, without asking
+            $approved = McpApprovedApp::for($parameters['user']->id, $parameters['client']->name, $redirectHost);
+            if ($approved !== null) {
+                $request = $parameters['request'];
+                $request->merge(['auth_token' => $parameters['authToken'], 'access' => $approved->access]);
+
+                return app()->call([app(ApproveMcpAuthorizationController::class), '__invoke'], ['request' => $request]);
+            }
 
             return Inertia::render('OAuth/Authorize', [
                 'client' => ['name' => $parameters['client']->name],

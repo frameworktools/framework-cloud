@@ -209,6 +209,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('agents', [AgentsController::class, 'index'])->name('agents');
     Route::get('agents/history', [AgentsController::class, 'history'])->name('agents.history');
     Route::delete('agents/{connection}', [AgentsController::class, 'destroy'])->whereNumber('connection');
+    Route::patch('agents/apps/{app}', [AgentsController::class, 'updateApp'])->whereNumber('app');
+    Route::delete('agents/apps/{app}', [AgentsController::class, 'forgetApp'])->whereNumber('app');
 
     // fw login, fw_login, and cloud_login() approve here; see routes/api.php
     // for the computer's half. The page itself is public (below).

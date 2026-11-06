@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\OAuth;
 
+use App\Models\McpApprovedApp;
 use App\Models\McpConnection;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -45,7 +46,15 @@ class ApproveMcpAuthorizationController
 
         DB::transaction(function () use ($user, $client, $validated, $authRequest): void {
             $redirectHost = parse_url((string) $authRequest->getRedirectUri(), PHP_URL_HOST) ?: null;
-            $web = $redirectHost !== null && ! in_array($redirectHost, ['localhost', '127.0.0.1', '[::1]'], true);
+            $web = McpApprovedApp::rememberable($redirectHost);
+
+            // A web app approved once connects again without the consent screen
+            if ($web) {
+                McpApprovedApp::query()->updateOrCreate(
+                    ['user_id' => $user->id, 'client_name' => $client->name, 'redirect_host' => $redirectHost],
+                    ['access' => $validated['access']],
+                );
+            }
 
             // The same app approved again replaces its old connection. Web apps such as Claude register
             // a new client each time they connect, so for them the same name and host count as the same

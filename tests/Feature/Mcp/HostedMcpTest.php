@@ -4,6 +4,7 @@ namespace Tests\Feature\Mcp;
 
 use App\Http\Controllers\OAuth\RegisterMcpClientController;
 use App\Models\Document;
+use App\Models\McpApprovedApp;
 use App\Models\McpConnection;
 use App\Models\McpToolCall;
 use App\Models\Project;
@@ -15,6 +16,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Testing\TestResponse;
 use Inertia\Testing\AssertableInertia;
 use Laravel\Sanctum\PersonalAccessToken;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -608,7 +610,7 @@ class HostedMcpTest extends TestCase
     {
         $user = $this->owner();
         $first = $this->connect($user, McpConnection::ACCESS_READ, null, 'https://claude.ai/api/mcp/auth_callback');
-        $this->connect($user, McpConnection::ACCESS_FULL, null, 'https://claude.ai/api/mcp/auth_callback');
+        $this->authorizeAgain($user, 'https://claude.ai/api/mcp/auth_callback')->assertRedirect();
 
         $this->assertSame(1, McpConnection::active()->count());
         $this->assertSame(McpConnection::ENDED_REPLACED, McpConnection::orderBy('id')->first()->ended_reason);
@@ -623,5 +625,50 @@ class HostedMcpTest extends TestCase
         $this->connect($user, McpConnection::ACCESS_FULL);
 
         $this->assertSame(2, McpConnection::active()->count());
+    }
+
+    /** Start an authorization for a new registration of an app, as the signed-in owner, and return the response. */
+    private function authorizeAgain(User $user, string $redirect): TestResponse
+    {
+        $clientId = $this->postJson('/oauth/register', ['client_name' => 'Claude', 'redirect_uris' => [$redirect]])->json('client_id');
+        $challenge = rtrim(strtr(base64_encode(hash('sha256', Str::random(64), true)), '+/', '-_'), '=');
+
+        return $this->actingAs($user)->get('/oauth/authorize?'.http_build_query([
+            'client_id' => $clientId, 'redirect_uri' => $redirect, 'response_type' => 'code', 'scope' => 'mcp:use',
+            'state' => 's', 'code_challenge' => $challenge, 'code_challenge_method' => 'S256',
+        ]));
+    }
+
+    public function test_a_web_app_approved_once_reconnects_without_asking(): void
+    {
+        $user = $this->owner();
+        $this->connect($user, McpConnection::ACCESS_READ, null, 'https://claude.ai/api/mcp/auth_callback');
+        $this->assertSame('read', McpApprovedApp::sole()->access);
+
+        $again = $this->authorizeAgain($user, 'https://claude.ai/api/mcp/auth_callback');
+        $again->assertRedirect();
+        $this->assertStringStartsWith('https://claude.ai/api/mcp/auth_callback?code=', $again->headers->get('Location'));
+        $this->assertSame(1, McpConnection::active()->count());
+        $this->assertSame('read', McpConnection::active()->sole()->access);
+
+        // A changed access applies next time; forgetting brings the consent screen back
+        $app = McpApprovedApp::sole();
+        $this->patch("/agents/apps/{$app->id}", ['access' => 'full'])->assertRedirect();
+        $this->authorizeAgain($user, 'https://claude.ai/api/mcp/auth_callback')->assertRedirect();
+        $this->assertSame('full', McpConnection::active()->sole()->access);
+
+        $this->delete("/agents/apps/{$app->id}")->assertRedirect();
+        $this->authorizeAgain($user, 'https://claude.ai/api/mcp/auth_callback')->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page->component('OAuth/Authorize'));
+    }
+
+    public function test_apps_on_a_computer_always_ask(): void
+    {
+        $user = $this->owner();
+        $this->connect($user, McpConnection::ACCESS_FULL);
+
+        $this->assertSame(0, McpApprovedApp::count());
+        $this->authorizeAgain($user, 'http://localhost:33418/callback')->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page->component('OAuth/Authorize'));
     }
 }

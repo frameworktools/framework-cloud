@@ -4,10 +4,12 @@ namespace App\Http\Controllers\App;
 
 use App\Http\Controllers\Controller;
 use App\Mcp\ToolCatalog;
+use App\Models\McpApprovedApp;
 use App\Models\McpConnection;
 use App\Models\McpToolCall;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -39,7 +41,29 @@ class AgentsController extends Controller
                     'last_used_at' => $connection->last_used_at?->diffForHumans(),
                 ]),
             'historyCount' => McpToolCall::where('user_id', $request->user()->id)->count(),
+            'approvedApps' => McpApprovedApp::where('user_id', $request->user()->id)->orderBy('client_name')->get()
+                ->map(fn (McpApprovedApp $app) => [
+                    'id' => $app->id, 'name' => $app->client_name, 'host' => $app->redirect_host,
+                    'access' => $app->access, 'approved_at' => $app->updated_at->diffForHumans(),
+                ]),
         ]);
+    }
+
+    /** Change the access a remembered app gets when it connects again. Its current connection keeps its own. */
+    public function updateApp(Request $request, int $app): RedirectResponse
+    {
+        $validated = $request->validate(['access' => ['required', Rule::in(McpConnection::ACCESS_LEVELS)]]);
+        McpApprovedApp::where('user_id', $request->user()->id)->findOrFail($app)->update($validated);
+
+        return back();
+    }
+
+    /** Forget an app, so it asks again the next time it connects. */
+    public function forgetApp(Request $request, int $app): RedirectResponse
+    {
+        McpApprovedApp::where('user_id', $request->user()->id)->findOrFail($app)->delete();
+
+        return back();
     }
 
     public function history(Request $request): Response
