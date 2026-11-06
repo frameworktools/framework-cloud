@@ -15,11 +15,27 @@ https://framework.pub/mcp
 
 On a self-hosted server, use that server's address instead.
 
+Claude Code and Codex are the easiest to set up. They run on your computer,
+so they can use Framework Cloud's tools and run the commands that go with
+them, such as uploading a large file. Claude and ChatGPT also work, with a few
+more steps.
+
+- **Claude Code:** in the Claude desktop app, select the code button (`</>`)
+  at the top of the window, or run `claude` in a terminal. If you added the
+  Claude connector below, it is already there. Otherwise run
+  `claude mcp add --transport http framework https://framework.pub/mcp`, then
+  `/mcp` in Claude Code to sign in.
+- **Codex:** in the ChatGPT desktop app, open the ChatGPT menu at the top left
+  and choose Codex, or run `codex` in a terminal. Then run
+  `codex mcp add framework --url https://framework.pub/mcp` and
+  `codex mcp login framework`.
 - **Claude:** Customize, then Connectors, then Add and Custom connector.
-  Choose Sign in now and Register automatically. Claude detects both.
+  Choose Sign in now and Register automatically. Claude detects both. Then, in
+  Settings, open Capabilities and add `framework.pub` exactly as shown to the
+  websites Claude may reach, so Claude can upload files. The connector also
+  works in Claude Code when you sign in to it with the same Claude account.
 - **ChatGPT:** Settings, then Apps and connectors, then Create. Custom
   connectors need developer mode on some plans.
-- **Claude Code:** `claude mcp add --transport http framework https://framework.pub/mcp`
 
 Setup steps for each app are under AI Agents, Connect your agent. The app opens
 Framework Cloud in a browser. Sign in, choose the app's access,

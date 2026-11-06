@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { ask } from '@/confirm.js';
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -10,6 +10,7 @@ import UiTable from '@/Components/UiTable.vue';
 import UiBadge from '@/Components/UiBadge.vue';
 import AgentsTabs from './AgentsTabs.vue';
 import { CheckIcon, ClipboardDocumentIcon } from '@heroicons/vue/24/outline';
+import { ChatBubbleOvalLeftIcon, ChevronDownIcon, CodeBracketIcon } from '@heroicons/vue/20/solid';
 
 const props = defineProps({ mcpUrl: String, connections: Array, active: Boolean, historyCount: Number, approvedApps: { type: Array, default: () => [] } });
 
@@ -35,15 +36,17 @@ const disconnect = async (connection) => {
     }
 };
 
-const app = ref('claude');
+const app = ref('claude-code');
 const apps = [
-    { value: 'claude', label: 'Claude' },
-    { value: 'chatgpt', label: 'ChatGPT' },
     { value: 'claude-code', label: 'Claude Code' },
     { value: 'codex', label: 'Codex' },
+    { value: 'claude', label: 'Claude' },
+    { value: 'chatgpt', label: 'ChatGPT' },
 ];
+const host = computed(() => new URL(props.mcpUrl).host);
 const step = 'flex gap-3';
 const number = 'flex size-6 shrink-0 items-center justify-center rounded-full bg-slate-800/5 text-xs font-medium tabular-nums text-slate-600 dark:bg-white/10 dark:text-slate-300';
+const chip = 'mx-0.5 inline-flex items-center gap-0.5 rounded-md bg-slate-800/5 px-1.5 py-0.5 align-middle text-xs font-medium text-slate-800 dark:bg-white/10 dark:text-slate-100';
 const command = 'mt-2 block overflow-x-auto whitespace-nowrap rounded-lg bg-[#0c1526] px-3 py-2 font-mono text-xs text-slate-100';
 </script>
 
@@ -129,7 +132,13 @@ const command = 'mt-2 block overflow-x-auto whitespace-nowrap rounded-lg bg-[#0c
             </section>
 
             <section class="flex flex-col gap-4">
-                <h2 class="text-base font-medium text-slate-900 dark:text-white">Setup steps</h2>
+                <div>
+                    <h2 class="text-base font-medium text-slate-900 dark:text-white">Setup steps</h2>
+                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                        Claude Code and Codex are the easiest to set up. They run on your computer, so they can use Framework Cloud's tools and run the commands that go with them, such as uploading a large file.
+                        Claude and ChatGPT also work, with a few more steps.
+                    </p>
+                </div>
                 <UiTabs v-model="app" :tabs="apps" label="AI app" />
 
                 <ol v-if="app === 'claude'" class="flex flex-col gap-4 text-sm text-slate-700 dark:text-slate-300">
@@ -137,9 +146,10 @@ const command = 'mt-2 block overflow-x-auto whitespace-nowrap rounded-lg bg-[#0c
                     <li :class="step"><span :class="number">2</span><span>Select Add, then Custom connector. Name it Framework Cloud and paste the server address.</span></li>
                     <li :class="step"><span :class="number">3</span><span>Under Authentication, choose Sign in now. Under OAuth client, choose Register automatically. Claude detects both. Leave Request headers empty.</span></li>
                     <li :class="step"><span :class="number">4</span><span>Add the connector. Claude opens Framework Cloud. Sign in, choose the agent's access, and select Connect.</span></li>
-                    <li :class="step"><span :class="number">5</span><span>In a chat, turn on Framework Cloud from the tools menu.</span></li>
+                    <li :class="step"><span :class="number">5</span><span>Open Settings, then Capabilities. Under the websites Claude may reach, add <code class="font-mono text-xs">{{ host }}</code> exactly as shown, with no https:// and nothing after it. This lets Claude upload files to Framework Cloud.</span></li>
+                    <li :class="step"><span :class="number">6</span><span>In a chat, turn on Framework Cloud from the tools menu.</span></li>
                 </ol>
-                <p v-if="app === 'claude'" class="text-sm text-slate-500 dark:text-slate-400">On Team and Enterprise plans, an owner adds custom connectors for the organization.</p>
+                <p v-if="app === 'claude'" class="text-sm text-slate-500 dark:text-slate-400">The connector then works in Claude and in Claude Code when you sign in to Claude Code with the same Claude account. On Team and Enterprise plans, an owner adds custom connectors for the organization.</p>
 
                 <ol v-if="app === 'chatgpt'" class="flex flex-col gap-4 text-sm text-slate-700 dark:text-slate-300">
                     <li :class="step"><span :class="number">1</span><span>In ChatGPT, open Settings, then Apps and connectors. Under Advanced, turn on Developer mode.</span></li>
@@ -150,15 +160,25 @@ const command = 'mt-2 block overflow-x-auto whitespace-nowrap rounded-lg bg-[#0c
                 <p v-if="app === 'chatgpt'" class="text-sm text-slate-500 dark:text-slate-400">On Business and Enterprise plans, a workspace admin allows custom connectors.</p>
 
                 <ol v-if="app === 'claude-code'" class="flex flex-col gap-4 text-sm text-slate-700 dark:text-slate-300">
-                    <li :class="step"><span :class="number">1</span><span class="min-w-0 flex-1">Add the server in a terminal:<code :class="command">claude mcp add --transport http framework {{ mcpUrl }}</code></span></li>
-                    <li :class="step"><span :class="number">2</span><span>In Claude Code, run <code class="font-mono text-xs">/mcp</code>, choose framework, and authenticate.</span></li>
-                    <li :class="step"><span :class="number">3</span><span>Sign in here in the browser that opens, choose the agent's access, and select Connect.</span></li>
+                    <li :class="step"><span :class="number">1</span><span>
+                        Open Claude Code. In the Claude desktop app, select the code button at the top of the window,
+                        <span class="mx-0.5 inline-flex rounded-lg bg-slate-800/5 p-0.5 align-middle dark:bg-white/10" aria-hidden="true"><span class="rounded-md px-1.5 py-0.5 text-slate-500"><ChatBubbleOvalLeftIcon class="size-3.5" /></span><span class="rounded-md bg-white px-1.5 py-0.5 text-slate-800 shadow-sm dark:bg-slate-700 dark:text-white"><CodeBracketIcon class="size-3.5" /></span></span>,
+                        next to the chat button. Or run <code class="font-mono text-xs">claude</code> in a terminal.
+                    </span></li>
+                    <li :class="step"><span :class="number">2</span><span class="min-w-0 flex-1">If you added Framework Cloud as a connector in Claude, it is already there; you are done. Otherwise, add the server in a terminal:<code :class="command">claude mcp add --transport http framework {{ mcpUrl }}</code></span></li>
+                    <li :class="step"><span :class="number">3</span><span>In Claude Code, run <code class="font-mono text-xs">/mcp</code>, choose framework, and authenticate.</span></li>
+                    <li :class="step"><span :class="number">4</span><span>Sign in here in the browser that opens, choose the agent's access, and select Connect.</span></li>
                 </ol>
 
                 <ol v-if="app === 'codex'" class="flex flex-col gap-4 text-sm text-slate-700 dark:text-slate-300">
-                    <li :class="step"><span :class="number">1</span><span class="min-w-0 flex-1">Add the server in a terminal:<code :class="command">codex mcp add framework --url {{ mcpUrl }}</code></span></li>
-                    <li :class="step"><span :class="number">2</span><span class="min-w-0 flex-1">Sign in:<code :class="command">codex mcp login framework</code></span></li>
-                    <li :class="step"><span :class="number">3</span><span>Sign in here in the browser that opens, choose the agent's access, and select Connect.</span></li>
+                    <li :class="step"><span :class="number">1</span><span>
+                        Open Codex. In the ChatGPT desktop app, open the menu at the top left,
+                        <span :class="chip" aria-hidden="true">ChatGPT<ChevronDownIcon class="size-3.5 text-slate-500" /></span>,
+                        and choose Codex. Or run <code class="font-mono text-xs">codex</code> in a terminal.
+                    </span></li>
+                    <li :class="step"><span :class="number">2</span><span class="min-w-0 flex-1">Add the server in a terminal:<code :class="command">codex mcp add framework --url {{ mcpUrl }}</code></span></li>
+                    <li :class="step"><span :class="number">3</span><span class="min-w-0 flex-1">Sign in:<code :class="command">codex mcp login framework</code></span></li>
+                    <li :class="step"><span :class="number">4</span><span>Sign in here in the browser that opens, choose the agent's access, and select Connect.</span></li>
                 </ol>
             </section>
 
