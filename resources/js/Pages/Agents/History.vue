@@ -54,7 +54,7 @@ const outcomes = {
                     </div>
                 </div>
             </template>
-            <p v-else class="text-sm text-slate-500 dark:text-slate-400">No activity yet. When an agent takes an action, it will appear here.</p>
+            <p v-else class="text-xs text-slate-500 dark:text-slate-400">No activity yet. When an agent takes an action, it will appear here.</p>
         </div>
     </AgentsLayout>
 </template>

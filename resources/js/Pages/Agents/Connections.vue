@@ -32,14 +32,14 @@ const disconnect = async (connection) => {
         <div class="flex flex-col gap-8">
             <PageHeader title="Agent connections">
                 <template #description>
-                    Removing an app in Claude or ChatGPT does not end its connection here. Disconnect it here, or it ends after 30 days unused.
+                    The agents connected to your account. Removing an agent in Claude or ChatGPT does not disconnect it. To cut it off, disconnect it here. A connection you don't use for 30 days ends on its own.
                 </template>
             </PageHeader>
 
             <section v-if="approvedApps.length" class="flex flex-col gap-3">
                 <div>
                     <h2 class="text-base font-medium text-slate-900 dark:text-white">Approved apps</h2>
-                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">These apps reconnect with this access without asking. Apps on your computer always ask.</p>
+                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">You approved these apps once. They connect again with the access shown, without asking. Claude Code and Codex ask every time.</p>
                 </div>
                 <UiTable label="Approved apps">
                     <thead><tr><th>App</th><th>Access</th><th>Approved</th><th class="actions"><span class="sr-only">Actions</span></th></tr></thead>
@@ -62,7 +62,7 @@ const disconnect = async (connection) => {
             <section class="flex flex-col gap-3">
                 <div>
                     <h2 class="text-base font-medium text-slate-900 dark:text-white">Connection history</h2>
-                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Each approval, with ended connections from the last 90 days.</p>
+                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Current connections, and those that ended in the last 90 days.</p>
                 </div>
             <template v-if="connections.length">
                 <UiTable label="Agent connections">
@@ -82,7 +82,7 @@ const disconnect = async (connection) => {
                 </UiTable>
                 <p class="text-sm text-slate-500 dark:text-slate-400">To change an agent's access, disconnect it and connect it again.</p>
             </template>
-            <p v-else class="text-sm text-slate-500 dark:text-slate-400">No connections yet. When you approve an agent, it will appear here.</p>
+            <p v-else class="mt-3 text-xs text-slate-500 dark:text-slate-400">No connections yet. When you approve an agent, it will appear here.</p>
             </section>
         </div>
     </AgentsLayout>
