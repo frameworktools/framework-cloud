@@ -12,6 +12,7 @@
     <title>@hasSection('title')@yield('title') · {{ $siteTitle }}@else{{ $siteTitle }}@endif</title>
     <meta name="description" content="@yield('description', $site['tagline'] ?? 'Documentation for '.$siteTitle.'.')">
     <link rel="icon" type="image/png" href="/images/favicon.png">
+    <x-share-meta :title="View::hasSection('title') ? trim(View::yieldContent('title')).' · '.$siteTitle : $siteTitle" :description="trim(View::yieldContent('description', $site['tagline'] ?? 'Documentation for '.$siteTitle.'.'))" />
     <x-theme-script />
     @vite(['resources/css/docs.css'])
 </head>

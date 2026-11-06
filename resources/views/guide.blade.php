@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $page === 'index' ? 'Documentation' : $title }} — Framework Cloud</title>
     <link rel="icon" type="image/png" href="/images/favicon.png">
+    <x-share-meta :title="($page === 'index' ? 'Documentation' : $title).' — Framework Cloud'" />
     <x-theme-script />
     @vite(['resources/css/app.css'])
 </head>

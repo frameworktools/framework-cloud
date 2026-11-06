@@ -6,6 +6,7 @@
     <title>Self-hosting — Framework Cloud</title>
     <meta name="description" content="Self-hosted Framework Cloud with Docker. Server features, artifact storage, installation, and administration.">
     <link rel="icon" type="image/png" href="/images/favicon.png">
+    <x-share-meta title="Self-hosting — Framework Cloud" description="Self-hosted Framework Cloud with Docker. Server features, artifact storage, installation, and administration." />
     <x-theme-script />
     @vite(['resources/css/app.css'])
 </head>

@@ -6,6 +6,7 @@
     <title>Framework: structured data science workflows</title>
     <meta name="description" content="Reproducible research with R, Python, and the Framework CLI. Create projects, connect databases, track data integrity, and publish versioned figures, tables, models, and reports.">
     <link rel="icon" type="image/png" href="/images/favicon.png">
+    <x-share-meta />
     <x-theme-script />
     @vite(['resources/css/app.css'])
 </head>

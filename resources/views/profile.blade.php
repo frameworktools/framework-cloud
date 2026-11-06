@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ '@'.$user->handle }} — Framework Cloud</title>
+    <x-share-meta :title="'@'.$user->handle.' — Framework Cloud'" />
     <x-theme-script />
     @vite(['resources/css/app.css'])
 </head>
