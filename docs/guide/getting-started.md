@@ -77,7 +77,8 @@ Open **Projects > New project**.
    - **On your computer.** You get a project token and the command to run
      with it. In R it is `framework::setup("<project token>")`, and in
      Python it is `framework.new(key="<project token>")`. Framework builds the
-     project.
+     project. On a self-hosted server, the page adds `url =` (R) or `url=`
+     (Python) with the server's address.
    - **On GitHub.** Framework Cloud creates the repository and builds the
      project there. Clone it and start working. See
      [GitHub integration](github.md).

@@ -22,8 +22,9 @@ export function useServerFlag() {
 }
 
 // The command that sets up a project locally from a project token. fw never
-// takes a token as an argument: it reads it from a hidden prompt. Python's
-// new() uses the server cloud_login() connected to.
+// takes a token as an argument: it reads it from a hidden prompt. R's setup()
+// and Python's new() take the server as url, so a self-hosted server works
+// without a login first.
 
 // Python's cloud_login() takes the server as url="<server>"
 export function usePythonServerArg() {
@@ -34,11 +35,12 @@ export function usePythonServerArg() {
 
 export function useSetupCommand() {
     const arg = useServerArg();
+    const pyArg = usePythonServerArg();
     const flag = useServerFlag();
 
     return (language, token) => {
         if (language === 'stata') return `fw new --pull-token${flag.value}`;
-        if (language === 'python') return `framework.new(key="${token}")`;
+        if (language === 'python') return `framework.new(key="${token}"${pyArg.value})`;
         return `framework::setup("${token}"${arg.value})`;
     };
 }

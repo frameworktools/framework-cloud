@@ -16,7 +16,7 @@ import ArtifactUpload from '@/Components/ArtifactUpload.vue';
 import CodeChip from '@/Components/CodeChip.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import { ChevronRightIcon } from '@heroicons/vue/24/outline';
-import { clientUrl, useServerArg, useServerFlag, useSetupCommand } from '@/cloud.js';
+import { clientUrl, usePythonServerArg, useServerArg, useServerFlag, useSetupCommand } from '@/cloud.js';
 import { languageNames } from '@/library.js';
 import { statusLabel, statusVariant, typeName } from '@/projects.js';
 
@@ -49,6 +49,7 @@ const checkServer = async () => {
     }
 };
 const serverArg = useServerArg();
+const pythonServerArg = usePythonServerArg();
 const serverFlag = useServerFlag();
 const setupCommand = useSetupCommand();
 const pullToken = computed(() => (page.props.flash.status === 'project-token' ? page.props.flash.token : null));
@@ -367,7 +368,7 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                 </template>
                 <div class="text-sm">
                     <CodeChip v-if="project.language === 'r'">framework::setup("&lt;project-token&gt;"{{ serverArg }})</CodeChip>
-                    <CodeChip v-else-if="project.language === 'python'">framework.new(key="&lt;project-token&gt;")</CodeChip>
+                    <CodeChip v-else-if="project.language === 'python'">framework.new(key="&lt;project-token&gt;"{{ pythonServerArg }})</CodeChip>
                     <span v-else class="flex flex-wrap items-center gap-2 text-slate-600 dark:text-slate-400">
                         <CodeChip>fw login{{ serverFlag }}</CodeChip>
                         <span>then</span>

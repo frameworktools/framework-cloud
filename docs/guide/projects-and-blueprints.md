@@ -183,8 +183,9 @@ data provenance unless you turn it on.
 4. Choose where to set it up:
    - **On your computer.** Framework Cloud gives you a project token. In R,
      run `framework::setup("<project token>")`. In Python, run
-     `framework.new(key="<project token>")`. Framework builds the project in
-     a folder you choose. For a Stata project, run `fw login` once and
+     `framework.new(key="<project token>")`. On a self-hosted server, add the
+     server's address as `url`. Framework builds the project in a folder you
+     choose. For a Stata project, run `fw login` once and
      then `fw new --from <project name>` in a terminal. `fw` asks the server
      for the project token itself. With a token you already have, run
      `fw new --pull-token` and paste the token when it asks.
