@@ -192,17 +192,8 @@ class DocumentsController extends Controller
 
     public function destroy(Request $request, int $document): RedirectResponse
     {
-        $versions = DB::transaction(function () use ($request, $document) {
-            $document = $this->lockedDocument($request, $document);
-            $versions = $document->versions()->get();
-            if ($versions->isEmpty()) {
-                $versions = collect([$document->latestVersion()]);
-            }
-            $document->delete();
-
-            return $versions;
-        });
-        $versions->each->deleteFiles();
+        // To the Trash, files and all, until restored or deleted forever there
+        DB::transaction(fn () => $this->lockedDocument($request, $document)->delete());
 
         // From the artifact's own page there is nothing to go back to
         return $request->query('then') === 'list'
@@ -210,10 +201,11 @@ class DocumentsController extends Controller
             : back()->with('status', 'document-deleted');
     }
 
-    /** Deleting the newest version restores the previous publication. */
+    /** Deleting the newest version brings back the previous publication. The deleted one waits in the Trash. */
     public function destroyVersion(Request $request, int $document, int $number): RedirectResponse
     {
-        $version = DB::transaction(function () use ($request, $document, $number) {
+        // To the Trash with its files. The only version takes the artifact with it.
+        DB::transaction(function () use ($request, $document, $number) {
             $document = $this->lockedDocument($request, $document);
             $version = $document->findVersion($number) ?? abort(404);
             if ($document->versions()->count() <= 1) {
@@ -223,10 +215,7 @@ class DocumentsController extends Controller
                 $newest = $document->versions()->first();
                 $document->update($newest->only(ArtifactPublisher::VERSION_FIELDS));
             }
-
-            return $version;
         });
-        $version->deleteFiles();
 
         if ($request->query('then') === 'list' && ! $this->documents($request)->whereKey($document)->exists()) {
             return redirect()->route('published')->with('status', 'document-deleted');

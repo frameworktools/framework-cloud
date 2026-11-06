@@ -118,7 +118,8 @@ class ArtifactPublishingTest extends TestCase
         Storage::fake('local');
         $project = Project::factory()->create();
         $document = $this->publish($project);
-        $document->versions()->delete();
+        // A document from before version rows had none at all
+        $document->versions()->forceDelete();
         $document->update(['next_version_number' => 1]);
         $oldPath = $document->disk_path;
         $this->publish($project);
@@ -162,6 +163,10 @@ class ArtifactPublishingTest extends TestCase
         $source = $this->publish($project, 'source.html');
         app(ArtifactPublisher::class)->merge($target, $source);
         $target->delete();
+        $source->refresh();
+        // In the Trash the destination can come back, so the source still points to it; deleted forever, it doesn't
+        $this->assertSame($target->id, $source->merged_into_id);
+        $target->forceDelete();
         $source->refresh();
         $this->assertNull($source->merged_into_id);
         $this->assertNotNull($source->merged_at);

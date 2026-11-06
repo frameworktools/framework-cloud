@@ -58,6 +58,9 @@ class DataFilePublishTest extends TestCase
             ->assertSee('participant_id')->assertSee('CSV')->assertDontSee('Python');
 
         $this->delete("/published/{$document->id}")->assertRedirect();
+        // In the Trash, files and all; deleting forever removes both
+        Storage::disk('local')->assertExists($version->disk_path);
+        $this->delete("/trash/artifact/{$document->id}")->assertRedirect();
         Storage::disk('local')->assertMissing($version->representationPath());
         Storage::disk('local')->assertMissing($version->disk_path);
     }

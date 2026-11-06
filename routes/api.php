@@ -90,6 +90,7 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::post('/artifacts', [ArtifactsController::class, 'store'])->middleware('throttle:30,1');
     Route::post('/artifacts/uploads', [ArtifactsController::class, 'createUpload'])->middleware('throttle:30,1');
     Route::get('/artifacts/{artifact}', [ArtifactsController::class, 'show']);
+    Route::delete('/artifacts/{artifact}', [ArtifactsController::class, 'destroy'])->middleware('throttle:30,1');
     Route::post('/projects/{slug}/linked-artifacts', [ArtifactsController::class, 'link'])->middleware('throttle:60,1');
     Route::delete('/projects/{slug}/linked-artifacts/{artifact}', [ArtifactsController::class, 'unlink']);
     Route::get('/projects/{slug}/artifacts', [ArtifactsController::class, 'index']);

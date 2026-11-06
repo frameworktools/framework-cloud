@@ -32,7 +32,8 @@ class MoveArtifactsCommand extends Command
             return self::FAILURE;
         }
 
-        $versions = DocumentVersion::query()->with('document')
+        // Versions in the Trash too: their files are still stored
+        $versions = DocumentVersion::withTrashed()->with(['document' => fn ($q) => $q->withTrashed()])
             ->where(fn ($q) => $q->whereNull('driver')->orWhere('driver', 'cloud'))
             ->whereNotNull('disk_path')->get()
             ->filter(fn (DocumentVersion $v) => $v->disk() !== $to);

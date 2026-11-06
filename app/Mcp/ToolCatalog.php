@@ -91,6 +91,13 @@ class ToolCatalog
                 'title' => 'Publish an artifact',
                 'description' => 'Publish a small saved file as an artifact, sent in the call: an HTML file as a notebook, a PNG or SVG as a figure, a CSV as a table, a PDF, Markdown, or a framework.artifact/v1 model JSON. Text goes in content, binary in content_base64. Use this only for files of a few hundred KB at most. For larger files, or a file on disk, use artifacts_upload instead. A project is optional. Publishing the same name again adds a version at the same link. New artifacts start private.',
             ],
+            'artifacts_delete' => [
+                'level' => self::FULL, 'method' => 'DELETE', 'path' => '/artifacts/{artifact}',
+                'path_params' => ['artifact' => ['type' => 'string', 'description' => 'The artifact slug.']],
+                'query' => $optionalProject,
+                'title' => 'Delete an artifact',
+                'description' => 'Delete an artifact with all its versions. Its links stop working, and reports and collections show it as unavailable. It goes to the Trash in Framework Cloud, with its files, where the user can restore it. Delete only when the user asks, and name what you will delete first. Pass project when several projects have an artifact with this slug.',
+            ],
             'artifacts_upload' => [
                 'level' => self::FULL, 'method' => 'POST', 'path' => '/artifacts/uploads',
                 'rename' => ['artifact' => 'slug'],

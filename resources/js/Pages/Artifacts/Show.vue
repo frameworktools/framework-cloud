@@ -125,7 +125,7 @@ async function destroyVersion(version) {
         if (await ask(`Remove version ${version.number} from Framework Cloud? Files at the publishing destination stay available.`)) router.delete(`${base}/versions/${version.number}?then=list`, { preserveScroll: true });
         return;
     }
-    if (!await ask(last ? `Delete version ${version.number}? It is the only version, so “${props.artifact.title}” is taken down.` : `Delete version ${version.number}? Its links stop working.`)) return;
+    if (!await ask(last ? `Delete version ${version.number}? It is the only version, so “${props.artifact.title}” is taken down. You can restore it from the Trash.` : `Delete version ${version.number}? Its links stop working. You can restore it from the Trash.`)) return;
     router.delete(`${base}/versions/${version.number}?then=list`, { preserveScroll: true });
 }
 async function destroy() {
@@ -133,7 +133,7 @@ async function destroy() {
         if (await ask(`Remove “${props.artifact.title}” from Framework Cloud? Files at the publishing destination stay available.`)) router.delete(`${base}?then=list`);
         return;
     }
-    if (await ask(`Take down “${props.artifact.title}”? Every version and link stops working for everyone.`)) router.delete(`${base}?then=list`);
+    if (await ask(`Take down “${props.artifact.title}”? Every version and link stops working for everyone. You can restore it from the Trash.`)) router.delete(`${base}?then=list`);
 }
 const sharingText = { unlisted: 'Anyone with the link', public: 'Public', private: 'Private' };
 </script>
@@ -319,7 +319,7 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public', privat
                         </form>
                     </template>
                     <UiSeparator />
-                    <UiSection :title="external ? 'Tracking removal' : 'Artifact deletion'" :description="external ? 'Removes the publication record from Framework Cloud. Files at the destination stay available.' : 'Removes every version. Its links stop working, and collections and reports show it as unavailable.'">
+                    <UiSection :title="external ? 'Tracking removal' : 'Artifact deletion'" :description="external ? 'Removes the publication record from Framework Cloud. Files at the destination stay available.' : 'Moves it to the Trash. Its links stop working, and collections and reports show it as unavailable, until it is restored.'">
                         <div><UiButton variant="ghost" class="text-red-700! dark:text-red-400!" @click="destroy"><TrashIcon aria-hidden="true" />{{ external ? 'Remove record' : 'Take down artifact' }}</UiButton></div>
                     </UiSection>
                 </div>

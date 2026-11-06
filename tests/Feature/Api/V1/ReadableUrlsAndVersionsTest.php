@@ -112,7 +112,9 @@ class ReadableUrlsAndVersionsTest extends TestCase
         // Deleting the newest makes the previous version current
         $newest = $document->latestVersion();
         $this->actingAs($owner)->delete("/published/{$document->id}/versions/2")->assertRedirect();
-        Storage::disk('local')->assertMissing($newest->disk_path);
+        // In the Trash with its files, until deleted forever
+        Storage::disk('local')->assertExists($newest->disk_path);
+        $this->assertSoftDeleted($newest);
         $this->assertStringContainsString('first', $this->get("/d/{$document->key}/raw")->streamedContent());
 
         // Deleting the only version takes the document down

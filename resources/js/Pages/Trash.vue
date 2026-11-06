@@ -1,5 +1,6 @@
 <script setup>
 import { router, usePage } from '@inertiajs/vue3';
+import { ask } from '@/confirm.js';
 import { computed } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
@@ -11,8 +12,14 @@ import { TrashIcon } from '@heroicons/vue/24/outline';
 defineProps({ items: Array });
 const page = usePage();
 const error = computed(() => page.props.errors?.restore);
-const labels = { project: 'Project', report: 'Report', skill: 'Skill' };
+const labels = { project: 'Project', artifact: 'Artifact', version: 'Artifact version', report: 'Report', skill: 'Skill' };
 const restore = (item) => router.post(`/trash/${item.type}/${item.id}/restore`, {}, { preserveScroll: true });
+const size = (bytes) => bytes >= 1048576 ? `${(bytes / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+const forever = async (item) => {
+    if (await ask(`Delete “${item.name}”${item.type === 'version' ? ` (${item.detail})` : ''} forever? Its files are removed and it can't be restored.`)) {
+        router.delete(`/trash/${item.type}/${item.id}`, { preserveScroll: true });
+    }
+};
 </script>
 
 <template>
@@ -22,8 +29,9 @@ const restore = (item) => router.post(`/trash/${item.type}/${item.id}/restore`, 
         <div class="flex max-w-4xl flex-col gap-8">
             <PageHeader title="Trash">
                 <template #description>
-                    Projects, reports, and skills deleted by you or a connected agent. Restore one to bring it back.
+                    Projects, artifacts, reports, and skills deleted by you or a connected agent. Restore one to bring it back.
                     A deleted project's artifacts, reports, collections, and tokens stop working until the project is restored.
+                    Deleted artifacts keep their files, which count toward storage until you delete them forever.
                 </template>
             </PageHeader>
 
@@ -36,11 +44,16 @@ const restore = (item) => router.post(`/trash/${item.type}/${item.id}/restore`, 
                         <td class="strong">{{ item.name }}<span v-if="item.detail" class="ms-2 font-normal text-slate-500">{{ item.detail }}</span></td>
                         <td>{{ labels[item.type] }}</td>
                         <td class="max-sm:hidden"><time :datetime="item.deleted_iso">{{ item.deleted }}</time></td>
-                        <td class="actions"><UiButton variant="ghost" size="sm" @click="restore(item)">Restore</UiButton></td>
+                        <td class="actions">
+                            <div class="flex justify-end gap-1">
+                                <UiButton v-if="item.type === 'artifact' || item.type === 'version'" variant="subtle" size="sm" :title="item.size_bytes ? `Frees ${size(item.size_bytes)}` : undefined" @click="forever(item)">Delete forever</UiButton>
+                                <UiButton variant="ghost" size="sm" @click="restore(item)">Restore</UiButton>
+                            </div>
+                        </td>
                     </tr>
                 </tbody>
             </UiTable>
-            <EmptyState v-else :icon="TrashIcon" title="Trash is empty" description="Deleted projects, reports, and skills appear here." />
+            <EmptyState v-else :icon="TrashIcon" title="Trash is empty" description="Deleted projects, artifacts, reports, and skills appear here." />
         </div>
     </AppLayout>
 </template>

@@ -166,7 +166,7 @@ const command = 'mt-2 block overflow-x-auto whitespace-nowrap rounded-lg bg-[#0c
                 <h2 class="text-base font-medium text-slate-900 dark:text-white">Access levels</h2>
                 <dl class="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-[8rem_1fr]">
                     <dt class="font-medium text-slate-800 dark:text-slate-200">Full access</dt>
-                    <dd class="text-slate-500 dark:text-slate-400">Reads everything below. Creates, renames, and deletes projects, publishes saved files as artifacts, writes, publishes, and deletes reports, and manages your skills. Deleted items go to the Trash, where you can restore them. Recommended.</dd>
+                    <dd class="text-slate-500 dark:text-slate-400">Reads everything below. Creates, renames, and deletes projects, publishes and deletes artifacts, writes, publishes, and deletes reports, and manages your skills. Deleted items go to the Trash, where you can restore them. Recommended.</dd>
                     <dt class="font-medium text-slate-800 dark:text-slate-200">Read only</dt>
                     <dd class="text-slate-500 dark:text-slate-400">Reads projects, artifacts, reports, skills, and blueprints.</dd>
                 </dl>

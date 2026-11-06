@@ -17,10 +17,13 @@ class PublishingQuota
 
     public static function used(User $user): int
     {
-        $ids = Document::where('driver', 'cloud')->whereIn('project_id', $user->projects()->select('id'))->select('id');
+        // Artifacts in the Trash keep their files, so they count until deleted forever
+        $projects = Project::withTrashed()->where('user_id', $user->id)->select('id');
+        $ids = Document::withTrashed()->where('driver', 'cloud')->whereIn('project_id', $projects)->select('id');
 
-        return (int) DocumentVersion::whereIn('document_id', $ids)->sum('size_bytes')
-            + (int) Document::where('driver', 'cloud')->whereIn('project_id', $user->projects()->select('id'))->doesntHave('versions')->sum('size_bytes');
+        return (int) DocumentVersion::withTrashed()->whereIn('document_id', $ids)->sum('size_bytes')
+            + (int) Document::withTrashed()->where('driver', 'cloud')->whereIn('project_id', $projects)
+                ->whereNotExists(fn ($q) => $q->selectRaw('1')->from('document_versions')->whereColumn('document_versions.document_id', 'documents.id'))->sum('size_bytes');
     }
 
     /** Call inside the publishing transaction, before the project lock. Versions share the account budget. */

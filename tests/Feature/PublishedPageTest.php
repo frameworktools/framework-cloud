@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Collection;
 use App\Models\Document;
 use App\Models\Project;
 use App\Models\User;
@@ -46,7 +47,7 @@ class PublishedPageTest extends TestCase
                 ->where('documents.0.url', $document->publicUrl()));
     }
 
-    public function test_taking_a_document_down_deletes_its_file(): void
+    public function test_taking_a_document_down_keeps_its_file_until_deleted_forever(): void
     {
         Storage::fake('local');
         $user = User::factory()->create(['email_verified_at' => now()]);
@@ -56,6 +57,9 @@ class PublishedPageTest extends TestCase
 
         $this->actingAs($user)->delete("/published/{$document->id}")->assertRedirect();
 
+        $this->assertSoftDeleted($document);
+        Storage::disk('local')->assertExists($document->disk_path);
+        $this->delete("/trash/artifact/{$document->id}")->assertRedirect();
         $this->assertModelMissing($document);
         Storage::disk('local')->assertMissing($document->disk_path);
         $this->get('/d/'.$document->key)->assertNotFound();
@@ -80,7 +84,7 @@ class PublishedPageTest extends TestCase
         $project = Project::factory()->for($user)->create(['name' => 'Pilot']);
         $document = $this->publish($project);
         $other = $this->publish($project, 'second.html');
-        $collection = \App\Models\Collection::create(['project_id' => $project->id, 'title' => 'Review set', 'slug' => 'review', 'key' => 'k'.str_repeat('a', 23), 'visibility' => 'private']);
+        $collection = Collection::create(['project_id' => $project->id, 'title' => 'Review set', 'slug' => 'review', 'key' => 'k'.str_repeat('a', 23), 'visibility' => 'private']);
         $collection->items()->create(['document_id' => $document->id, 'position' => 0]);
 
         $this->actingAs($user)->get("/artifacts/{$document->id}")->assertInertia(fn (Assert $page) => $page
@@ -100,6 +104,6 @@ class PublishedPageTest extends TestCase
         $document = $this->publish(Project::factory()->for($user)->create());
 
         $this->actingAs($user)->delete("/published/{$document->id}?then=list")->assertRedirect(route('published'));
-        $this->assertModelMissing($document);
+        $this->assertSoftDeleted($document);
     }
 }

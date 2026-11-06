@@ -759,7 +759,7 @@ class HostedMcpTest extends TestCase
         $this->get('/trash')->assertInertia(fn (AssertableInertia $page) => $page->has('items', 0));
     }
 
-    public function test_agents_cannot_delete_built_in_skills_or_artifacts(): void
+    public function test_agents_cannot_delete_built_in_skills(): void
     {
         $user = $this->owner();
         $builtIn = Skill::create(['user_id' => null, 'key' => 'framework-reports', 'name' => 'Reports', 'description' => 'Reports.', 'visibility' => 'public']);
@@ -767,7 +767,18 @@ class HostedMcpTest extends TestCase
         $token = $this->connect($user, McpConnection::ACCESS_FULL);
 
         $this->assertSame(403, $this->tool($token, 'skills_delete', ['skill' => 'framework/framework-reports'])['body']['error']['status']);
-        $this->assertNotContains('artifacts_delete', $this->toolNames($token));
         $this->assertFalse($builtIn->fresh()->trashed());
+    }
+
+    public function test_an_agent_deletes_an_artifact_to_the_trash(): void
+    {
+        $user = $this->owner();
+        $document = $this->figure($user);
+        $token = $this->connect($user, McpConnection::ACCESS_FULL);
+
+        $this->assertFalse($this->tool($token, 'artifacts_delete', ['artifact' => 'mass-model', 'project' => 'penguin-study'])['error']);
+
+        $this->assertTrue(Document::withTrashed()->find($document->id)->trashed());
+        $this->assertSame([], $this->tool($token, 'artifacts_list')['body']['artifacts']);
     }
 }

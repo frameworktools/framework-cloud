@@ -205,7 +205,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Deleted projects, reports, and skills, until restored
     Route::get('trash', [TrashController::class, 'index'])->name('trash');
-    Route::post('trash/{type}/{id}/restore', [TrashController::class, 'restore'])->whereIn('type', ['project', 'report', 'skill'])->whereNumber('id');
+    Route::post('trash/{type}/{id}/restore', [TrashController::class, 'restore'])->whereIn('type', ['project', 'artifact', 'version', 'report', 'skill'])->whereNumber('id');
+    Route::delete('trash/{type}/{id}', [TrashController::class, 'destroy'])->whereIn('type', ['artifact', 'version'])->whereNumber('id');
 
     Route::get('tokens', [TokensController::class, 'index'])->name('tokens');
     Route::post('tokens', [TokensController::class, 'store']);

@@ -167,6 +167,16 @@ class ArtifactsController extends Controller
         return response()->json($this->published($version), 201);
     }
 
+    /** DELETE /artifacts/{artifact}: move an artifact to the Trash, files and all, until restored. Needs an account token. */
+    public function destroy(Request $request, string $artifact): JsonResponse
+    {
+        $this->user($request);
+        $document = $this->find($request, $artifact, $request->query('project'), owned: $request->filled('project'));
+        $document->delete();
+
+        return response()->json(['deleted' => $document->slug, 'restore' => route('trash')]);
+    }
+
     /** POST /projects/{slug}/linked-artifacts: list an artifact from elsewhere in the account in this project. */
     public function link(Request $request, string $slug): JsonResponse
     {

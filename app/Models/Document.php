@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -22,6 +23,9 @@ use Illuminate\Support\Str;
  */
 class Document extends Model
 {
+    // Deleted artifacts keep their files in the Trash until restored or deleted forever
+    use SoftDeletes;
+
     protected $guarded = [];
 
     protected $hidden = ['password_hash'];
@@ -80,7 +84,8 @@ class Document extends Model
 
     public function preserveImplicitVersion(): void
     {
-        if (! $this->versions()->exists()) {
+        // Only a document saved before version rows has none; versions in the Trash still count
+        if (! $this->versions()->withTrashed()->exists()) {
             $version = $this->implicitVersion();
             $version->document_id = $this->id;
             $version->save();
@@ -122,7 +127,7 @@ class Document extends Model
     public function findVersion(int $number): ?DocumentVersion
     {
         return $this->versions()->where('number', $number)->first()
-            ?? ($number === 1 && ! $this->versions()->exists() ? $this->implicitVersion() : null);
+            ?? ($number === 1 && ! $this->versions()->withTrashed()->exists() ? $this->implicitVersion() : null);
     }
 
     private function implicitVersion(): DocumentVersion

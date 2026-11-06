@@ -84,14 +84,18 @@ class ArtifactPublisher
             return DB::transaction(function () use ($project, $slug, $stored, $input) {
                 PublishingQuota::check($project, (int) $stored['size_bytes']);
                 Project::whereKey($project->id)->lockForUpdate()->firstOrFail();
-                $document = Document::firstOrNew(['project_id' => $project->id, 'slug' => $slug]);
+                // Publishing again under a deleted artifact's name brings it back from the Trash
+                $document = Document::withTrashed()->firstOrNew(['project_id' => $project->id, 'slug' => $slug]);
+                if ($document->trashed()) {
+                    $document->restore();
+                }
                 if (($document->exists && ($document->driver ?? 'cloud') !== 'cloud') || $document->merged_into_id || $document->merged_at) {
                     throw ValidationException::withMessages(['slug' => 'This artifact has been merged. Publish to the destination artifact instead.']);
                 }
                 if ($document->exists) {
                     $document->preserveImplicitVersion();
                 }
-                $number = max((int) $document->next_version_number, (int) $document->versions()->max('number') + 1, 1);
+                $number = max((int) $document->next_version_number, (int) $document->versions()->withTrashed()->max('number') + 1, 1);
                 $document->fill($stored + ['key' => $document->key ?? Document::newKey(), 'title' => $input['title'] ?? $document->title ?? self::titleFromSlug($slug)]);
                 if (array_key_exists('description', $input)) {
                     $document->description = $input['description'];
@@ -141,7 +145,7 @@ class ArtifactPublisher
                 }
                 $target->preserveImplicitVersion();
                 $source->preserveImplicitVersion();
-                $number = max((int) $target->next_version_number, (int) $target->versions()->max('number') + 1);
+                $number = max((int) $target->next_version_number, (int) $target->versions()->withTrashed()->max('number') + 1);
                 foreach ($source->versions()->reorder()->orderBy('number')->get() as $version) {
                     $prefix = 'artifacts/'.$target->project_id.'/'.Str::uuid();
                     $copies[] = $prefix;

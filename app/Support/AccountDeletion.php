@@ -62,7 +62,8 @@ class AccountDeletion
     /** Every stored version, including documents saved before version rows. */
     private function versions(Collection $projectIds): Collection
     {
-        return Document::whereIn('project_id', $projectIds)->with('versions')->get()
+        // Including artifacts and versions in the Trash, whose files are still stored
+        return Document::withTrashed()->whereIn('project_id', $projectIds)->with(['versions' => fn ($q) => $q->withTrashed()])->get()
             ->flatMap(fn (Document $document) => $document->versions->isEmpty()
                 ? [$document->latestVersion()]
                 : $document->versions)
