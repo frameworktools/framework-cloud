@@ -360,7 +360,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                     <h2 :class="heading">Stata</h2>
                     <p :class="note">Scripts only, with master.do running the do-files in order.</p>
                 </section>
-                <p :class="note">A project can hold notebooks in other formats too. <a href="/docs/projects-and-blueprints#notebook-workflows" :class="link">Notebook creation and rendering</a></p>
+                <p :class="note">A project can hold notebooks in other formats too. See <a href="/docs/projects-and-blueprints#notebook-workflows" :class="link">notebook creation and rendering</a>.</p>
             </template>
 
             <section v-else-if="section === 'jupyter'" class="flex max-w-xl flex-col gap-5">
@@ -370,7 +370,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                     @update:model-value="(on) => setTool('jupyter', on)"
                 />
                 <p :class="note">
-                    Notebook outputs can contain data. <Link href="/settings/hooks" preserve-state :class="link">Block notebook outputs</Link> stops a commit until they're cleared.
+                    Notebook outputs can contain data. <Link href="/settings/hooks" preserve-state :class="link">Notebook output checks</Link> stop a commit until they're cleared.
                     <a href="/docs/projects-and-blueprints#notebook-workflows" :class="link">More about Jupyter in Framework</a>
                 </p>
             </section>

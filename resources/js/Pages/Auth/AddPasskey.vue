@@ -11,7 +11,7 @@ const supported = ref(window.passkeys?.supported() ?? false);
 const busy = ref(false);
 const error = ref('');
 
-// Name the passkey after the device, so Settings > Passkeys can tell them apart
+// Name the passkey after the device, so the passkey list can tell them apart
 function deviceName() {
     const ua = navigator.userAgent;
     if (/iPhone/.test(ua)) return 'iPhone';
@@ -81,7 +81,7 @@ const skip = () => router.post('/welcome/passkey/skip');
         </template>
 
         <p class="text-center text-xs text-slate-500 dark:text-slate-400">
-            You can add a passkey for each device you use in Settings &gt; Passkeys.
+            You can add a passkey for each device you use under Account › Sign-in &amp; security.
         </p>
     </AuthLayout>
 </template>

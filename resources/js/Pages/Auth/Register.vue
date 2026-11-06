@@ -21,9 +21,9 @@ const send = () => form.post('/auth/magic-link');
         title="Account registration"
         :description="page.props.githubSignIn ? 'Sign up with GitHub or your email address. There is no password to set.' : 'Sign up with your email address. There is no password to set.'"
     >
-        <UiCallout v-if="sent" variant="success" heading="Confirmation email">
-            Your confirmation link is on its way. It works once and expires in 15
-            minutes. Once you're in, add a passkey in Settings for one-touch sign-in.
+        <UiCallout v-if="sent" variant="success" heading="Sign-in link sent">
+            Check your email for the sign-in link. It works once and expires in 15
+            minutes. Once you're in, add a passkey under Account › Sign-in &amp; security.
         </UiCallout>
 
         <template v-if="page.props.githubSignIn">
