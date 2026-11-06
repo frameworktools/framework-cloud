@@ -99,4 +99,31 @@ class OwnershipTest extends TestCase
         $this->withToken($token)->deleteJson('/api/v1/skills/penguin-checks')->assertForbidden();
         $this->assertNull($this->report->fresh()->deleted_at);
     }
+
+    public function test_everything_deletable_is_kept_and_comes_back_on_restore(): void
+    {
+        $projectToken = $this->project->issuePullToken();
+        $account = $this->owner->createToken('t')->plainTextToken;
+        $use = function (string $token, int $status) {
+            app('auth')->forgetGuards();
+            $this->withToken($token)->getJson('/api/v1/project')->assertStatus($status);
+        };
+        $use($projectToken, 200);
+
+        foreach (["/api/v1/projects/penguin-study/reports/{$this->report->slug}", '/api/v1/skills/penguin-checks', '/api/v1/projects/penguin-study'] as $url) {
+            app('auth')->forgetGuards();
+            $this->withToken($account)->deleteJson($url)->assertOk();
+        }
+
+        // Every row is still there, only marked deleted, and the project's token is kept but refused
+        $this->assertTrue(Project::withTrashed()->find($this->project->id)->trashed());
+        $this->assertTrue(Report::withTrashed()->find($this->report->id)->trashed());
+        $this->assertTrue(Skill::withTrashed()->find($this->skill->id)->trashed());
+        $this->assertSame(1, $this->project->documents()->count());
+        $this->assertSame(1, $this->project->tokens()->count());
+        $use($projectToken, 401);
+
+        Project::withTrashed()->find($this->project->id)->restore();
+        $use($projectToken, 200);
+    }
 }

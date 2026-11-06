@@ -37,11 +37,14 @@ class ProjectsController extends Controller
         return $this->register($request);
     }
 
-    /** DELETE /projects/{slug}: move a project to the Trash. Its artifacts, reports, and collections stop opening until it is restored; its tokens stop working for good. */
+    /**
+     * DELETE /projects/{slug}: move a project to the Trash. Nothing is removed: its artifacts,
+     * reports, collections, and tokens stop working while it is there, and work again when it
+     * is restored. (Sanctum finds no project behind a token while the project is deleted.)
+     */
     public function destroy(Request $request, string $slug): JsonResponse
     {
         $project = $this->user($request)->projects()->listed()->where('slug', $slug)->firstOrFail();
-        $project->tokens()->delete();
         $project->delete();
 
         return response()->json(['deleted' => $project->slug, 'restore' => route('trash')]);

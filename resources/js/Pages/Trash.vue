@@ -23,7 +23,7 @@ const restore = (item) => router.post(`/trash/${item.type}/${item.id}/restore`, 
             <PageHeader title="Trash">
                 <template #description>
                     Projects, reports, and skills deleted by you or a connected agent. Restore one to bring it back.
-                    A deleted project's artifacts, reports, and collections stop opening until the project is restored.
+                    A deleted project's artifacts, reports, collections, and tokens stop working until the project is restored.
                 </template>
             </PageHeader>
 

@@ -70,7 +70,7 @@ class ToolCatalog
             'projects_delete' => [
                 'level' => self::FULL, 'method' => 'DELETE', 'path' => '/projects/{slug}', 'path_params' => $project,
                 'title' => 'Delete a project',
-                'description' => 'Delete a project. Its artifacts, reports, and collections stop opening, and its tokens stop working.'.' It goes to the Trash in Framework Cloud, where the user can restore it. Delete only when the user asks, and name what you will delete first.',
+                'description' => 'Delete a project. Its artifacts, reports, collections, and tokens stop working until it is restored.'.' It goes to the Trash in Framework Cloud, where the user can restore it. Delete only when the user asks, and name what you will delete first.',
             ],
             'artifacts_list' => [
                 'level' => self::READ, 'method' => 'GET', 'path' => '/artifacts', 'query' => $optionalProject,

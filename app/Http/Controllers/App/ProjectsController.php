@@ -454,7 +454,7 @@ class ProjectsController extends Controller
     public function destroy(Request $request, int $project): RedirectResponse
     {
         $project = $request->user()->projects()->findOrFail($project);
-        $project->tokens()->delete();
+        // To the Trash: its tokens stop working while it is there and work again when it is restored
         $project->delete();
 
         return to_route('projects');
