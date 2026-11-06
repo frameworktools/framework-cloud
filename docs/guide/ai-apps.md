@@ -20,7 +20,8 @@ On a self-hosted server, use that server's address instead.
   connectors need developer mode on some plans.
 - **Claude Code:** `claude mcp add --transport http framework https://framework.pub/mcp`
 
-The app opens Framework Cloud in a browser. Sign in, choose the app's access,
+Setup steps for each app are under AI Agents, Connect your agent. The app opens
+Framework Cloud in a browser. Sign in, choose the app's access,
 and select Connect.
 
 ## Access
@@ -38,8 +39,14 @@ new artifacts. Publish results from the project on your computer first. See
 What the app reads, including private projects and drafts, goes to the company
 that runs it.
 
-## Connected apps
+## Connected agents
 
-Connected apps are listed on the API tokens page in your account. Select
-Disconnect to end an app's access. Its tokens stop working at once. To change
-an app's access, disconnect it and connect it again.
+Under AI Agents, Connect your agent has the server address and setup steps for
+each app. After an agent connects, the page is named Connected agents and lists
+each agent with its access. Select Disconnect to end an agent's access. Its
+tokens stop working at once. To change an agent's access, disconnect it and
+connect it again.
+
+The History tab lists each action an agent took, with the project and item it
+named and the result. Request contents are not stored. History is kept for 90
+days.

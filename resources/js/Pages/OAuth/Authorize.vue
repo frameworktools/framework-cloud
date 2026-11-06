@@ -76,7 +76,7 @@ const submitting = ref(false);
 
                 <p class="text-sm text-slate-500 dark:text-slate-400">
                     What the app reads, including private projects and drafts, goes to the company that runs it.
-                    You can disconnect it at any time on the API tokens page.
+                    You can disconnect it at any time under Connected agents.
                 </p>
             </form>
 

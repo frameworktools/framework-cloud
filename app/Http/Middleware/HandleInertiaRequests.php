@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\McpConnection;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -50,6 +51,7 @@ class HandleInertiaRequests extends Middleware
                 ['label' => 'Package sets', 'href' => '/package-sets', 'section' => 'Framework'],
                 ['label' => 'Skills', 'href' => '/skills', 'section' => 'Agents'],
                 ['label' => 'Skill sets', 'href' => '/skill-sets', 'section' => 'Agents'],
+                $user instanceof User ? ['label' => McpConnection::active()->where('user_id', $user->id)->exists() ? 'Connected agents' : 'Connect your agent', 'href' => '/agents', 'section' => 'Agents'] : null,
                 ['label' => 'Account', 'href' => '/account/profile', 'section' => 'You', 'match' => ['/account', '/tokens']],
                 $user?->is_admin ? ['label' => 'Server administration', 'href' => '/admin/setup', 'section' => 'You'] : null,
                 // The guide is a plain page outside the app, so it opens as a normal link

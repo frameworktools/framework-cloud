@@ -5,6 +5,7 @@ namespace Tests\Feature\Mcp;
 use App\Http\Controllers\OAuth\RegisterMcpClientController;
 use App\Models\Document;
 use App\Models\McpConnection;
+use App\Models\McpToolCall;
 use App\Models\Project;
 use App\Models\Report;
 use App\Models\User;
@@ -277,10 +278,11 @@ class HostedMcpTest extends TestCase
         $token = $this->connect($user, McpConnection::ACCESS_READ);
         $connection = McpConnection::sole();
 
-        $this->actingAs($user)->get('/tokens')->assertInertia(fn (AssertableInertia $page) => $page
-            ->has('connections', 1)->where('connections.0.name', 'Claude')->has('tokens', 0));
+        $this->actingAs($user)->get('/tokens')->assertInertia(fn (AssertableInertia $page) => $page->has('tokens', 0));
+        $this->get('/agents')->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Agents/Index')->has('connections', 1)->where('connections.0.name', 'Claude'));
 
-        $this->delete("/tokens/apps/{$connection->id}")->assertRedirect();
+        $this->delete("/agents/{$connection->id}")->assertRedirect();
         auth()->guard('web')->logout();
         app('auth')->forgetGuards();
 
@@ -332,5 +334,37 @@ class HostedMcpTest extends TestCase
         $this->assertSame(0, McpConnection::count());
         $this->assertSame(0, DB::table('oauth_access_tokens')->count());
         $this->assertSame(0, DB::table('oauth_refresh_tokens')->count());
+    }
+
+    public function test_the_nav_names_the_agents_page_by_whether_one_is_connected(): void
+    {
+        $user = $this->owner();
+        $label = fn () => collect($this->actingAs($user)->get('/agents')->viewData('page')['props']['nav'])->firstWhere('href', '/agents')['label'];
+
+        $this->assertSame('Connect your agent', $label());
+
+        $this->connect($user, McpConnection::ACCESS_READ);
+        $this->assertSame('Connected agents', $label());
+    }
+
+    public function test_history_records_each_call_without_its_contents(): void
+    {
+        $user = $this->owner();
+        $token = $this->connect($user, McpConnection::ACCESS_DRAFTS);
+
+        $this->tool($token, 'reports_list', ['slug' => 'penguin-study']);
+        $this->tool($token, 'reports_create', ['slug' => 'penguin-study', 'title' => 'Secret title', 'publish' => true]);
+        $this->tool($token, 'reports_list', ['slug' => 'missing']);
+
+        $this->assertSame(['ok', 'refused', 'error'], McpToolCall::orderBy('id')->pluck('outcome')->all());
+        $this->assertSame('penguin-study', McpToolCall::first()->target);
+        $this->assertStringNotContainsString('Secret title', McpToolCall::all()->toJson());
+
+        $this->actingAs($user)->get('/agents/history')->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Agents/History')->has('calls.data', 3)
+            ->where('calls.data.2.tool', 'List reports')->where('calls.data.2.agent', 'Claude'));
+
+        $this->actingAs(User::factory()->create())->get('/agents/history')
+            ->assertInertia(fn (AssertableInertia $page) => $page->has('calls.data', 0));
     }
 }

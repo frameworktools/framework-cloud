@@ -3,6 +3,7 @@
 namespace App\Mcp;
 
 use App\Models\McpConnection;
+use App\Models\McpToolCall;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Tool;
@@ -73,16 +74,22 @@ class ApiTool extends Tool
         $call = $this->buildCall($arguments);
 
         if (isset($call['error'])) {
+            $this->record($arguments, 'error', null, $call['error']['message']);
+
             return self::error($call['error']);
         }
 
         $refusal = AccessPolicy::check($this->connection, $this->toolName, $this->tool, $call['body'] ?? []);
 
         if ($refusal !== null) {
+            $this->record($arguments, 'refused', null, $refusal['message']);
+
             return self::error($refusal);
         }
 
         if ($dryRun) {
+            $this->record($arguments, 'dry_run');
+
             return Response::json([
                 'dry_run' => true,
                 'method' => $call['method'],
@@ -96,9 +103,12 @@ class ApiTool extends Tool
 
         if ($result['status'] >= 400) {
             $body = is_array($result['body']) ? $result['body'] : ['message' => (string) $result['body']];
+            $this->record($arguments, 'error', $result['status'], is_string($body['message'] ?? null) ? $body['message'] : null);
 
             return self::error(['status' => $result['status'], 'code' => self::errorCode($result['status'])] + $body);
         }
+
+        $this->record($arguments, 'ok', $result['status']);
 
         if ($result['status'] === 204 || $result['body'] === null || $result['body'] === '') {
             return Response::json(['ok' => true, 'status' => $result['status']]);
@@ -156,6 +166,12 @@ class ApiTool extends Tool
         }
 
         return $schema;
+    }
+
+    /** @param  array<string, mixed>  $arguments */
+    private function record(array $arguments, string $outcome, ?int $status = null, ?string $message = null): void
+    {
+        McpToolCall::record($this->connection, $this->toolName, $arguments, $outcome, $status, $message);
     }
 
     private static function errorCode(int $status): string

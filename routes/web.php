@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\SetupController;
+use App\Http\Controllers\App\AgentsController;
 use App\Http\Controllers\App\BlueprintsController;
 use App\Http\Controllers\App\CollectionsController;
 use App\Http\Controllers\App\DeviceController;
@@ -201,7 +202,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('tokens', [TokensController::class, 'index'])->name('tokens');
     Route::post('tokens', [TokensController::class, 'store']);
     Route::delete('tokens/{tokenId}', [TokensController::class, 'destroy']);
-    Route::delete('tokens/apps/{connection}', [TokensController::class, 'destroyConnection'])->whereNumber('connection');
+
+    // AI agents connected over MCP; the server and its OAuth sign-in are in routes/ai.php
+    Route::get('agents', [AgentsController::class, 'index'])->name('agents');
+    Route::get('agents/history', [AgentsController::class, 'history'])->name('agents.history');
+    Route::delete('agents/{connection}', [AgentsController::class, 'destroy'])->whereNumber('connection');
 
     // fw login, fw_login, and cloud_login() approve here; see routes/api.php
     // for the computer's half. The page itself is public (below).
