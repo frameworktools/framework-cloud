@@ -128,6 +128,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('collections', [CollectionsController::class, 'index'])->name('collections.all');
     Route::get('reports', [ReportsController::class, 'index'])->name('reports.all');
     Route::get('projects/{project}/collections', [CollectionsController::class, 'index'])->whereNumber('project')->name('collections.index');
+    // The same lists at the project's slug, as its other tabs use
+    Route::get('projects/{slug}/collections', [CollectionsController::class, 'indexForSlug'])->where('slug', '[A-Za-z0-9_-]*[A-Za-z_-][A-Za-z0-9_-]*');
+    Route::get('projects/{slug}/reports', [ReportsController::class, 'indexForSlug'])->where('slug', '[A-Za-z0-9_-]*[A-Za-z_-][A-Za-z0-9_-]*');
     Route::post('projects/{project}/collections', [CollectionsController::class, 'store'])->whereNumber('project')->name('collections.store');
     Route::get('collections/{collection}/edit', [CollectionsController::class, 'edit'])->name('collections.edit');
     Route::patch('collections/{collection}', [CollectionsController::class, 'update'])->name('collections.update');

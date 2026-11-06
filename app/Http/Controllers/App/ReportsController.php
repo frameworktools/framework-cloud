@@ -15,6 +15,11 @@ use Inertia\Inertia;
 
 class ReportsController extends Controller
 {
+    public function indexForSlug(Request $request, string $slug)
+    {
+        return $this->index($request, $request->user()->projects()->where('slug', $slug)->firstOrFail()->id);
+    }
+
     public function index(Request $request, ?int $project = null)
     {
         $project = $project === null ? null : $request->user()->projects()->findOrFail($project);

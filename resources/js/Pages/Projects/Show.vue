@@ -105,7 +105,7 @@ const revokeToken = async (tokenId) => {
     }
 };
 const destroy = async () => {
-    if (await ask(`Delete ${props.project.name}? Copies on computers and on GitHub are not affected, but the project's tokens stop working.`)) {
+    if (await ask(`Delete ${props.project.name}? Its tokens stop working, and its artifacts, collections, and reports go offline. Copies on computers and on GitHub stay.`)) {
         router.delete(`/projects/${props.project.id}`);
     }
 };
@@ -235,7 +235,7 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                 <details v-if="project.spec" class="group">
                     <summary class="inline-flex cursor-pointer items-center gap-1 text-sm text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">
                         <ChevronRightIcon class="size-3 transition-transform group-open:rotate-90" />
-                        Settings from the last sync
+                        Last synced settings
                     </summary>
                     <pre class="mt-3 max-h-96 overflow-auto rounded-lg bg-slate-900 p-4 font-mono text-xs text-slate-100 dark:bg-slate-950 dark:ring-1 dark:ring-slate-700">{{ project.spec.json }}</pre>
                 </details>
@@ -281,8 +281,8 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                         <dd class="text-sm text-slate-700 dark:text-slate-300">{{ setup.settings.sensitive ? 'Yes' : 'No' }}</dd>
                     </div>
                     <div :class="rowClass">
-                        <dt :class="termClass">Agents</dt>
-                        <dd class="text-sm text-slate-700 dark:text-slate-300">{{ setup.settings.agents ? 'Set up' : 'Off' }}</dd>
+                        <dt :class="termClass">Agent files</dt>
+                        <dd class="text-sm text-slate-700 dark:text-slate-300">{{ setup.settings.agents ? 'Yes' : 'No' }}</dd>
                     </div>
                     <div :class="rowClass">
                         <dt :class="termClass">Git</dt>
@@ -390,7 +390,7 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                 </ul>
             </UiPanel>
 
-            <UiPanel v-if="section === 'setup'" title="Project deletion" description="Copies on computers and on GitHub are not affected, but the project's tokens stop working.">
+            <UiPanel v-if="section === 'setup'" title="Project deletion" description="Its tokens stop working, and its artifacts, collections, and reports go offline. Copies on computers and on GitHub stay.">
                 <div><UiButton variant="danger" @click="destroy">Delete project</UiButton></div>
             </UiPanel>
         </div>

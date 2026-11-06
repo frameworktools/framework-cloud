@@ -10,8 +10,8 @@ const items = [
     { label: 'Project setup', href: `${base}/setup` },
     { label: 'GitHub & Pages', href: `${base}/github` },
     { label: 'Artifacts', href: `${base}/published` },
-    { label: 'Collections', href: `/projects/${props.project.id}/collections` },
-    { label: 'Reports', href: `/projects/${props.project.id}/reports` },
+    { label: 'Collections', href: `/projects/${props.project.slug}/collections` },
+    { label: 'Reports', href: `/projects/${props.project.slug}/reports` },
     { label: 'Computers & tokens', href: `${base}/computers` },
 ];
 </script>
