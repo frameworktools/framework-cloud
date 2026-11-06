@@ -72,6 +72,8 @@ return [
     | turned off in Server administration. See App\Support\Agents.
     */
     'agents' => env('FW_AGENTS', true),
+    // Setup steps for the Framework Cloud plugin, which connects to framework.pub only. Unset: shown on framework.pub
+    'agent_plugin' => env('FW_AGENT_PLUGIN'),
 
     /*
     | Days things stay in the Trash before they are deleted forever, artifact

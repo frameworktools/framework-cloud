@@ -26,6 +26,7 @@ class AgentsController extends Controller
 
         return Inertia::render('Agents/Index', [
             'mcpUrl' => url('/mcp'),
+            'plugin' => (bool) (config('framework.agent_plugin') ?? url('/mcp') === 'https://framework.pub/mcp'),
             'active' => McpConnection::active()->where('user_id', $request->user()->id)->exists(),
             'approvedApps' => McpApprovedApp::where('user_id', $request->user()->id)->orderBy('client_name')->get()
                 ->map(fn (McpApprovedApp $app) => [

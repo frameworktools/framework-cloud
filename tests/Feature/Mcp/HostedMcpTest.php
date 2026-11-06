@@ -289,6 +289,16 @@ class HostedMcpTest extends TestCase
         $this->assertSame(404, $result['body']['error']['status']);
     }
 
+    public function test_setup_shows_the_plugin_on_framework_pub_or_when_turned_on(): void
+    {
+        config(['framework.agent_plugin' => null]);
+        $this->actingAs($this->owner());
+        $this->get('/agents')->assertInertia(fn (AssertableInertia $page) => $page->where('plugin', false));
+
+        config(['framework.agent_plugin' => true]);
+        $this->get('/agents')->assertInertia(fn (AssertableInertia $page) => $page->where('plugin', true));
+    }
+
     public function test_disconnecting_cuts_the_app_off(): void
     {
         $user = $this->owner();

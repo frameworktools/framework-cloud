@@ -13,7 +13,7 @@ import { CheckIcon, ClipboardDocumentIcon } from '@heroicons/vue/24/outline';
 import { ChevronRightIcon } from '@heroicons/vue/20/solid';
 
 const props = defineProps({
-    mcpUrl: String, active: Boolean, connectionCount: Number, historyCount: Number,
+    mcpUrl: String, plugin: Boolean, active: Boolean, connectionCount: Number, historyCount: Number,
     approvedApps: { type: Array, default: () => [] },
 });
 
@@ -41,9 +41,8 @@ const apps = [
     { value: 'chatgpt', label: 'ChatGPT' },
 ];
 
-// The Framework Cloud plugin connects to framework.pub only; self-hosted servers use manual setup
+// The Framework Cloud plugin connects to framework.pub only; other servers show manual setup alone
 const marketplace = 'frameworktools/plugins';
-const plugin = computed(() => props.mcpUrl === 'https://framework.pub/mcp');
 const host = computed(() => new URL(props.mcpUrl).host);
 const signIn = 'In the browser that opens, sign in, choose the access, and select Connect.';
 
