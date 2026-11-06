@@ -23,7 +23,7 @@ const outcomes = {
             <div class="flex flex-col gap-6">
                 <PageHeader title="Agent history">
                     <template #description>
-                        This page lists every action your agents took, newest first. Framework Cloud keeps it for {{ keepDays }} days and does not store what agents sent.
+                        Agent actions stay here for {{ keepDays }} days. Framework Cloud does not store what agents sent.
                     </template>
                 </PageHeader>
             </div>
