@@ -1,0 +1,45 @@
+# AI apps
+
+Claude, ChatGPT, and other AI apps can connect to your Framework Cloud account.
+A connected app reads your projects, published artifacts, and reports. It can
+also write reports from your published results.
+
+## Server address
+
+Add Framework Cloud as a connector, or custom MCP server, in the app. Use your
+server's address followed by `/mcp`:
+
+```
+https://framework.pub/mcp
+```
+
+On a self-hosted server, use that server's address instead.
+
+- **Claude:** Settings, then Connectors, then Add custom connector.
+- **ChatGPT:** Settings, then Apps and connectors, then Create. Custom
+  connectors need developer mode on some plans.
+- **Claude Code:** `claude mcp add --transport http framework https://framework.pub/mcp`
+
+The app opens Framework Cloud in a browser. Sign in, choose the app's access,
+and select Connect.
+
+## Access
+
+| Access | Allowed actions |
+|---|---|
+| Drafts only (recommended) | Read projects, artifacts, and reports. Create and edit report drafts. |
+| Read only | Read projects, artifacts, and reports. |
+| Full access | Everything above. Publish reports and change who can read them. |
+
+A connected app works across all your projects. It cannot run code or publish
+new artifacts. Publish results from the project on your computer first. See
+[Publishing artifacts](publishing.md).
+
+What the app reads, including private projects and drafts, goes to the company
+that runs it.
+
+## Connected apps
+
+Connected apps are listed on the API tokens page in your account. Select
+Disconnect to end an app's access. Its tokens stop working at once. To change
+an app's access, disconnect it and connect it again.

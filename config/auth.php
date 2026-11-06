@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\OAuthUser;
 use App\Models\User;
 
 return [
@@ -42,6 +43,13 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        // Connected AI apps (the hosted MCP server). Passport tokens, on the
+        // OAuthUser model, because Sanctum's API tokens own User's token methods.
+        'api' => [
+            'driver' => 'passport',
+            'provider' => 'oauth_users',
+        ],
     ],
 
     /*
@@ -65,6 +73,11 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', User::class),
+        ],
+
+        'oauth_users' => [
+            'driver' => 'eloquent',
+            'model' => OAuthUser::class,
         ],
 
         // 'users' => [

@@ -11,10 +11,10 @@ import UiCard from '@/Components/UiCard.vue';
 import UiPanel from '@/Components/UiPanel.vue';
 import EmptyState from '@/Components/EmptyState.vue';
 import PageHeader from '@/Components/PageHeader.vue';
-import { ComputerDesktopIcon, KeyIcon } from '@heroicons/vue/24/outline';
+import { ComputerDesktopIcon, KeyIcon, SparklesIcon } from '@heroicons/vue/24/outline';
 import { usePythonServerArg, useServerArg } from '@/cloud.js';
 
-defineProps({ tokens: Array });
+defineProps({ tokens: Array, connections: { type: Array, default: () => [] }, mcpUrl: String });
 
 const page = usePage();
 const serverArg = useServerArg();
@@ -25,6 +25,12 @@ const plainToken = computed(() =>
 
 const form = useForm({ name: '' });
 const create = () => form.post('/tokens', { onSuccess: () => form.reset() });
+
+const disconnect = async (connection) => {
+    if (await ask(`Disconnect ${connection.name}? It will lose access to your account.`)) {
+        router.delete(`/tokens/apps/${connection.id}`);
+    }
+};
 
 const revoke = async (id) => {
     if (await ask('Revoke this token? Machines using it will lose access.')) {
@@ -95,6 +101,36 @@ const revoke = async (id) => {
                     </UiCard>
                 </div>
                 <EmptyState v-else :icon="KeyIcon" title="No tokens" description="Create a token above, then run cloud_login() with it on your computer." />
+            </section>
+
+            <section class="flex flex-col gap-4">
+                <div>
+                    <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Connected AI apps</h2>
+                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                        Claude, ChatGPT, and other AI apps connect with the server address
+                        <code class="font-mono text-xs text-slate-800 dark:text-slate-200">{{ mcpUrl }}</code>.
+                        You approve each app and choose what it may do.
+                    </p>
+                </div>
+                <div v-if="connections.length" class="flex flex-col gap-3">
+                    <UiCard v-for="connection in connections" :key="connection.id" hover>
+                        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div class="flex min-w-0 items-center gap-4">
+                                <div class="hidden size-10 shrink-0 items-center justify-center rounded-lg sm:flex bg-sky-50 text-sky-600 dark:bg-sky-400/10 dark:text-sky-400">
+                                    <SparklesIcon class="size-5" />
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="font-semibold text-slate-900 dark:text-white">{{ connection.name }}</div>
+                                    <p class="text-sm text-slate-500 dark:text-slate-400">
+                                        {{ connection.access }} · Connected {{ connection.created_at }} · {{ connection.last_used_at ? `Last used ${connection.last_used_at}` : 'Never used' }}
+                                    </p>
+                                </div>
+                            </div>
+                            <UiButton variant="danger" size="sm" class="self-start sm:self-auto" @click="disconnect(connection)">Disconnect</UiButton>
+                        </div>
+                    </UiCard>
+                </div>
+                <EmptyState v-else :icon="SparklesIcon" title="No connected apps" description="Add Framework Cloud as a connector in your AI app, then approve it here." />
             </section>
         </div>
     </SectionLayout>

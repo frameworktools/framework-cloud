@@ -3,8 +3,13 @@
 namespace App\Providers;
 
 use App\Support\Credentials;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
+use Inertia\Inertia;
+use Laravel\Passport\Passport;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -13,7 +18,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // The hosted MCP server registers only the OAuth routes it needs, in
+        // routes/ai.php.
+        Passport::ignoreRoutes();
     }
 
     /**
@@ -32,5 +39,41 @@ class AppServiceProvider extends ServiceProvider
         // Fill in this server's credentials saved on the admin setup page,
         // wherever the environment leaves them unset
         Credentials::apply();
+
+        $this->configurePassport();
+    }
+
+    /**
+     * OAuth for the hosted MCP server: short access tokens, a month of
+     * refresh, and our own consent screen with the access choice.
+     */
+    private function configurePassport(): void
+    {
+        Passport::tokensCan(['mcp:use' => 'Use Framework Cloud from an AI app']);
+        Passport::tokensExpireIn(now()->addHour());
+        Passport::refreshTokensExpireIn(now()->addDays(30));
+
+        // Keys from PASSPORT_PRIVATE_KEY and PASSPORT_PUBLIC_KEY (Forge), or
+        // storage/oauth-*.key files made by passport:keys.
+        Passport::authorizationView(function (array $parameters) {
+            $redirectHost = parse_url((string) $parameters['request']->query('redirect_uri'), PHP_URL_HOST) ?: null;
+
+            return Inertia::render('OAuth/Authorize', [
+                'client' => ['name' => $parameters['client']->name],
+                'user' => ['name' => $parameters['user']->name, 'email' => $parameters['user']->email],
+                'authToken' => $parameters['authToken'],
+                'csrfToken' => csrf_token(),
+                'redirectHost' => $redirectHost,
+                'redirectIsLocal' => in_array($redirectHost, ['localhost', '127.0.0.1', '[::1]'], true),
+            ]);
+        });
+
+        RateLimiter::for('mcp-oauth', fn (Request $request) => Limit::perMinute(20)->by('mcp-oauth:'.$request->ip()));
+
+        RateLimiter::for('mcp', function (Request $request) {
+            $connection = $request->attributes->get('mcp_connection');
+
+            return Limit::perMinute(120)->by($connection ? 'mcp:'.$connection->id : 'mcp-ip:'.$request->ip());
+        });
     }
 }

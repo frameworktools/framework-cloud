@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\GitHubWebhookController;
+use App\Http\Controllers\Api\V1\ArtifactsController;
 use App\Http\Controllers\Api\V1\BlueprintsController;
 use App\Http\Controllers\Api\V1\CliDeviceController;
 use App\Http\Controllers\Api\V1\CollectionsController;
@@ -71,6 +72,8 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::post('/documents', [DocumentsController::class, 'store']);
     Route::post('/ledger', [LedgerController::class, 'store']);
     Route::get('/ledger', [LedgerController::class, 'index']);
+    Route::get('/projects/{slug}/artifacts', [ArtifactsController::class, 'index']);
+    Route::get('/projects/{slug}/artifacts/{artifact}', [ArtifactsController::class, 'show']);
     Route::post('/projects/{slug}/artifacts/external', [ExternalArtifactsController::class, 'store'])->middleware('throttle:60,1');
 
     // Reports: Markdown or HTML text with published artifacts, built from a script or an agent

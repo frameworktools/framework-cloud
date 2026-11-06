@@ -1,0 +1,178 @@
+<?php
+
+namespace App\Mcp;
+
+use App\Models\McpConnection;
+use Laravel\Mcp\Request;
+use Laravel\Mcp\Response;
+use Laravel\Mcp\Server\Tool;
+
+/**
+ * One API operation from ToolCatalog, offered as an MCP tool. Path
+ * parameters, the query, and the JSON body's fields are its arguments. Every
+ * tool also takes dry_run.
+ */
+class ApiTool extends Tool
+{
+    /**
+     * @param  array<string, mixed>  $tool  from ToolCatalog::tools()
+     */
+    public function __construct(
+        private readonly string $toolName,
+        private readonly array $tool,
+        private readonly McpConnection $connection,
+    ) {}
+
+    public function name(): string
+    {
+        return $this->toolName;
+    }
+
+    public function title(): string
+    {
+        return $this->tool['title'];
+    }
+
+    public function description(): string
+    {
+        $text = $this->tool['description'];
+
+        if ($this->connection->access === McpConnection::ACCESS_DRAFTS && $this->tool['level'] === ToolCatalog::DRAFTS) {
+            $text .= ' This connection may only work on drafts: do not send publish, visibility, or password.';
+        }
+
+        return $text.' API: '.$this->tool['method'].' /api/v1'.$this->tool['path'].'.';
+    }
+
+    /** @return array<string, mixed> */
+    public function toArray(): array
+    {
+        $read = $this->tool['method'] === 'GET';
+
+        return [
+            'name' => $this->name(),
+            'title' => $this->title(),
+            'description' => $this->description(),
+            'inputSchema' => $this->inputSchema(),
+            'annotations' => [
+                'title' => $this->title(),
+                'readOnlyHint' => $read,
+                'destructiveHint' => ! $read && $this->tool['level'] === ToolCatalog::FULL,
+                'idempotentHint' => $read || $this->tool['method'] === 'PATCH',
+                'openWorldHint' => false,
+            ],
+        ];
+    }
+
+    public function handle(Request $request): Response
+    {
+        $arguments = $request->all();
+        $dryRun = (bool) ($arguments['dry_run'] ?? false);
+        unset($arguments['dry_run']);
+
+        $call = $this->buildCall($arguments);
+
+        if (isset($call['error'])) {
+            return self::error($call['error']);
+        }
+
+        $refusal = AccessPolicy::check($this->connection, $this->toolName, $this->tool, $call['body'] ?? []);
+
+        if ($refusal !== null) {
+            return self::error($refusal);
+        }
+
+        if ($dryRun) {
+            return Response::json([
+                'dry_run' => true,
+                'method' => $call['method'],
+                'path' => '/api/v1'.$call['path'],
+                'query' => $call['query'] ?: null,
+                'body' => $call['body'],
+            ]);
+        }
+
+        $result = (new ApiDispatcher($this->connection))->send($call['method'], $call['path'], $call['query'], $call['body']);
+
+        if ($result['status'] >= 400) {
+            $body = is_array($result['body']) ? $result['body'] : ['message' => (string) $result['body']];
+
+            return self::error(['status' => $result['status'], 'code' => self::errorCode($result['status'])] + $body);
+        }
+
+        if ($result['status'] === 204 || $result['body'] === null || $result['body'] === '') {
+            return Response::json(['ok' => true, 'status' => $result['status']]);
+        }
+
+        return is_array($result['body']) ? Response::json($result['body']) : Response::text((string) $result['body']);
+    }
+
+    /**
+     * Split the arguments into the path, query, and body of the API request.
+     *
+     * @param  array<string, mixed>  $arguments
+     * @return array{method: string, path: string, query: array<string, mixed>, body: array<string, mixed>|null}|array{error: array<string, mixed>}
+     */
+    public function buildCall(array $arguments): array
+    {
+        $path = $this->tool['path'];
+
+        foreach (array_keys($this->tool['path_params'] ?? []) as $name) {
+            $value = $arguments[$name] ?? null;
+
+            if (! is_scalar($value) || (string) $value === '') {
+                return ['error' => ['code' => 'missing_argument', 'message' => "Pass {$name}.", 'fields' => [$name => ['Required.']]]];
+            }
+
+            $path = str_replace('{'.$name.'}', rawurlencode((string) $value), $path);
+            unset($arguments[$name]);
+        }
+
+        $query = [];
+        foreach (array_keys($this->tool['query'] ?? []) as $name) {
+            if (array_key_exists($name, $arguments)) {
+                $query[$name] = $arguments[$name];
+                unset($arguments[$name]);
+            }
+        }
+
+        $known = array_keys($this->tool['body']['properties'] ?? []);
+        $body = $this->tool['method'] === 'GET' ? null : array_intersect_key($arguments, array_flip($known));
+
+        return ['method' => $this->tool['method'], 'path' => $path, 'query' => $query, 'body' => $body];
+    }
+
+    /** @return array<string, mixed> */
+    private function inputSchema(): array
+    {
+        $properties = ($this->tool['path_params'] ?? []) + ($this->tool['query'] ?? []) + ($this->tool['body']['properties'] ?? []);
+        $required = [...array_keys($this->tool['path_params'] ?? []), ...($this->tool['body']['required'] ?? [])];
+
+        $properties['dry_run'] = ['type' => 'boolean', 'description' => 'Return the request that would be sent, without sending it.'];
+
+        $schema = ['type' => 'object', 'properties' => $properties];
+        if ($required !== []) {
+            $schema['required'] = $required;
+        }
+
+        return $schema;
+    }
+
+    private static function errorCode(int $status): string
+    {
+        return match ($status) {
+            401, 403 => 'forbidden',
+            402 => 'payment_required',
+            404 => 'not_found',
+            422 => 'validation_failed',
+            429 => 'rate_limited',
+            default => $status >= 500 ? 'server_error' : 'request_failed',
+        };
+    }
+
+    /** @param  array<string, mixed>  $error */
+    private static function error(array $error): Response
+    {
+        return Response::error(json_encode(['error' => $error], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+    }
+}

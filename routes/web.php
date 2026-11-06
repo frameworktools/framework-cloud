@@ -201,6 +201,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('tokens', [TokensController::class, 'index'])->name('tokens');
     Route::post('tokens', [TokensController::class, 'store']);
     Route::delete('tokens/{tokenId}', [TokensController::class, 'destroy']);
+    Route::delete('tokens/apps/{connection}', [TokensController::class, 'destroyConnection'])->whereNumber('connection');
 
     // fw login, fw_login, and cloud_login() approve here; see routes/api.php
     // for the computer's half. The page itself is public (below).

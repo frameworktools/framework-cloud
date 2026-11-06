@@ -44,6 +44,11 @@ class AccountDeletion
             InstanceSetting::where('updated_by', $user->id)->update(['updated_by' => null]);
             DB::table('sessions')->where('user_id', $user->id)->delete();
             DB::table('password_reset_tokens')->where('email', $user->email)->delete();
+            // Connected AI apps: their OAuth tokens (connections cascade with the user)
+            $tokenIds = DB::table('oauth_access_tokens')->where('user_id', $user->id)->pluck('id');
+            DB::table('oauth_refresh_tokens')->whereIn('access_token_id', $tokenIds)->delete();
+            DB::table('oauth_access_tokens')->whereIn('id', $tokenIds)->delete();
+            DB::table('oauth_auth_codes')->where('user_id', $user->id)->delete();
 
             // Cascades to projects, then documents, ledger entries, collections, and reports
             $user->delete();

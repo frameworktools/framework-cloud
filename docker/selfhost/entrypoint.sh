@@ -23,6 +23,12 @@ if [ "${FW_SINGLE_USER:-false}" = "true" ] && [ -z "$FW_SINGLE_USER_NETWORKS" ];
     echo "Single-user mode: signing in requests from ${gateway:-loopback only}" >&2
 fi
 
+# OAuth signing keys for connected AI apps (/mcp). PASSPORT_PRIVATE_KEY and
+# PASSPORT_PUBLIC_KEY win; otherwise keys are made once in the storage volume.
+if [ -z "$PASSPORT_PRIVATE_KEY" ] && [ ! -f storage/oauth-private.key ]; then
+    php artisan passport:keys --no-interaction
+fi
+
 # Cache config, routes, and views for this start (environment included)
 php artisan optimize --quiet
 
