@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\V2;
+namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Project;
@@ -14,13 +14,13 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
- * Pull v2: a project's layers envelope (resources/schema/layers.v1.json),
+ * The layers pull: a project's layers envelope (resources/schema/layers.v1.json),
  * the same document the cloud commits as .framework/layers.json. Tools
  * merge the layers themselves.
  */
-class ProjectsController extends Controller
+class ProjectLayersController extends Controller
 {
-    /** GET /api/v2/projects/pull, with a project token. */
+    /** GET /api/v1/projects/pull, with a project token. */
     public function pull(Request $request): JsonResponse
     {
         $project = $request->user();
@@ -32,7 +32,7 @@ class ProjectsController extends Controller
     }
 
     /**
-     * PUT /api/v2/project/spec, with the project's token: fw sends the
+     * PUT /api/v1/project/spec, with the project's token: fw sends the
      * project's .framework/spec.json. Only the latest is kept.
      */
     public function updateSpec(Request $request): JsonResponse
@@ -66,7 +66,7 @@ class ProjectsController extends Controller
         ]);
     }
 
-    /** GET /api/v2/projects/{slug}, with a user token: what fw project show prints. */
+    /** GET /api/v1/projects/{slug}, with a user token: what fw project show prints. */
     public function show(Request $request, string $slug): JsonResponse
     {
         $project = $this->project($request, $slug)->loadMissing('blueprintVersion.blueprint.owner');
@@ -95,7 +95,7 @@ class ProjectsController extends Controller
     }
 
     /**
-     * GET /api/v2/projects/{slug}/download, with a user token: the project
+     * GET /api/v1/projects/{slug}/download, with a user token: the project
      * built by the scaffolder, as a zip with the project under {slug}/.
      */
     public function download(Request $request, string $slug, ProjectZip $zips): JsonResponse|BinaryFileResponse
@@ -115,14 +115,14 @@ class ProjectsController extends Controller
         return response()->download($path, "{$project->slug}.zip", ['Content-Type' => 'application/zip'])->deleteFileAfterSend();
     }
 
-    /** GET /api/v2/projects/{slug}/layers, with a user token. */
+    /** GET /api/v1/projects/{slug}/layers, with a user token. */
     public function layers(Request $request, string $slug): JsonResponse
     {
         return $this->envelope($this->project($request, $slug));
     }
 
     /**
-     * POST /api/v2/projects/{slug}/pull-tokens, with a user token. Each call
+     * POST /api/v1/projects/{slug}/pull-tokens, with a user token. Each call
      * issues a new project token for a local checkout's .env. Reading the
      * layers never issues one.
      */

@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Api\V2;
+namespace Tests\Feature\Api\V1;
 
 use App\Models\Blueprint;
 use App\Models\Project;
@@ -37,7 +37,7 @@ class ProjectLayersTest extends TestCase
         $project = $this->project(User::factory()->create(), 'stata');
         $token = $project->issuePullToken();
 
-        $response = $this->withToken($token)->getJson('/api/v2/projects/pull')->assertOk();
+        $response = $this->withToken($token)->getJson('/api/v1/projects/pull')->assertOk();
 
         $this->assertSame(1, $response->json('spec_version'));
         $this->assertSame('NHANES Study', $response->json('name'));
@@ -57,7 +57,7 @@ class ProjectLayersTest extends TestCase
         $this->project($user);
 
         $this->withToken($user->createToken('cli')->plainTextToken)
-            ->getJson('/api/v2/projects/pull')->assertForbidden();
+            ->getJson('/api/v1/projects/pull')->assertForbidden();
     }
 
     public function test_a_user_token_reads_a_project_by_slug(): void
@@ -66,10 +66,10 @@ class ProjectLayersTest extends TestCase
         $this->project($user);
         $token = $user->createToken('cli')->plainTextToken;
 
-        $this->withToken($token)->getJson('/api/v2/projects/nhanes-study/layers')
+        $this->withToken($token)->getJson('/api/v1/projects/nhanes-study/layers')
             ->assertOk()
             ->assertJsonPath('name', 'NHANES Study');
-        $layers = $this->withToken($token)->getJson('/api/v2/projects/nhanes-study/layers')->json('layers');
+        $layers = $this->withToken($token)->getJson('/api/v1/projects/nhanes-study/layers')->json('layers');
         $this->assertSame('r', last($layers)['layer']['language']);
 
         // Reading issues no token
@@ -81,10 +81,10 @@ class ProjectLayersTest extends TestCase
         $this->project(User::factory()->create());
         $other = User::factory()->create()->createToken('cli')->plainTextToken;
 
-        $this->withToken($other)->getJson('/api/v2/projects/nhanes-study/layers')
+        $this->withToken($other)->getJson('/api/v1/projects/nhanes-study/layers')
             ->assertNotFound()
             ->assertJsonPath('message', "You have no project named 'nhanes-study'.");
-        $this->withToken($other)->postJson('/api/v2/projects/nhanes-study/pull-tokens')->assertNotFound();
+        $this->withToken($other)->postJson('/api/v1/projects/nhanes-study/pull-tokens')->assertNotFound();
     }
 
     public function test_a_project_token_cannot_read_by_slug(): void
@@ -92,7 +92,7 @@ class ProjectLayersTest extends TestCase
         $project = $this->project(User::factory()->create());
 
         $this->withToken($project->issuePullToken())
-            ->getJson('/api/v2/projects/nhanes-study/layers')->assertForbidden();
+            ->getJson('/api/v1/projects/nhanes-study/layers')->assertForbidden();
     }
 
     public function test_issuing_a_pull_token_returns_a_working_token_and_the_server_url(): void
@@ -102,21 +102,21 @@ class ProjectLayersTest extends TestCase
         $this->project($user);
 
         $response = $this->withToken($user->createToken('cli')->plainTextToken)
-            ->postJson('/api/v2/projects/nhanes-study/pull-tokens', ['name' => 'fw on lab-mac'])
+            ->postJson('/api/v1/projects/nhanes-study/pull-tokens', ['name' => 'fw on lab-mac'])
             ->assertCreated()
             ->assertJsonPath('url', 'https://cloud.example.edu');
 
         $this->assertSame('fw on lab-mac', PersonalAccessToken::where('tokenable_type', Project::class)->sole()->name);
 
         $this->app['auth']->forgetGuards();
-        $this->withToken($response->json('token'))->getJson('/api/v2/projects/pull')
+        $this->withToken($response->json('token'))->getJson('/api/v1/projects/pull')
             ->assertOk()->assertJsonPath('name', 'NHANES Study');
     }
 
     public function test_unauthenticated_requests_get_401(): void
     {
-        $this->getJson('/api/v2/projects/pull')->assertUnauthorized();
-        $this->getJson('/api/v2/projects/nhanes-study/layers')->assertUnauthorized();
+        $this->getJson('/api/v1/projects/pull')->assertUnauthorized();
+        $this->getJson('/api/v1/projects/nhanes-study/layers')->assertUnauthorized();
     }
 
     public function test_show_gives_the_github_pages_site(): void
@@ -124,7 +124,7 @@ class ProjectLayersTest extends TestCase
         $user = User::factory()->create();
         $this->project($user, 'r')->update(['github_repo' => 'ada/nhanes-study', 'scaffold_status' => 'done', 'pages_url' => 'https://ada.github.io/nhanes-study/']);
 
-        $this->withToken($user->createToken('fw')->plainTextToken)->getJson('/api/v2/projects/nhanes-study')
+        $this->withToken($user->createToken('fw')->plainTextToken)->getJson('/api/v1/projects/nhanes-study')
             ->assertOk()
             ->assertJsonPath('github.repository', 'ada/nhanes-study')
             ->assertJsonPath('github.pages_url', 'https://ada.github.io/nhanes-study/');
@@ -136,16 +136,16 @@ class ProjectLayersTest extends TestCase
         $this->project($user, 'python');
         $token = $user->createToken('fw')->plainTextToken;
 
-        $this->withToken($token)->getJson('/api/v2/projects/nhanes-study')
+        $this->withToken($token)->getJson('/api/v1/projects/nhanes-study')
             ->assertOk()
             ->assertJson(['slug' => 'nhanes-study', 'name' => 'NHANES Study', 'language' => 'python', 'type' => 'project', 'github' => null])
             ->assertJsonPath('blueprint.key', 'framework/project')
             ->assertJsonMissingPath('token');
 
-        $this->withToken($token)->getJson('/api/v2/projects/other')->assertNotFound();
+        $this->withToken($token)->getJson('/api/v1/projects/other')->assertNotFound();
         $this->app['auth']->forgetGuards();
         $this->withToken(User::factory()->create()->createToken('fw')->plainTextToken)
-            ->getJson('/api/v2/projects/nhanes-study')->assertNotFound();
+            ->getJson('/api/v1/projects/nhanes-study')->assertNotFound();
     }
 
     public function test_blueprints_lists_what_the_user_can_build_from(): void
@@ -162,7 +162,7 @@ class ProjectLayersTest extends TestCase
 
         $this->app['auth']->forgetGuards();
         $blueprints = collect($this->withToken($user->createToken('fw')->plainTextToken)
-            ->getJson('/api/v2/blueprints')->assertOk()->json('blueprints'));
+            ->getJson('/api/v1/blueprints')->assertOk()->json('blueprints'));
 
         $this->assertContains('Mine', $blueprints->pluck('name'));
         $this->assertNotContains('Theirs', $blueprints->pluck('name'));
@@ -177,7 +177,7 @@ class ProjectLayersTest extends TestCase
     {
         $body = '{"spec":'.json_encode($spec, JSON_UNESCAPED_SLASHES).'}';
 
-        return $this->call('PUT', '/api/v2/project/spec', [], [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_ACCEPT' => 'application/json', 'HTTP_AUTHORIZATION' => "Bearer {$token}"], $body);
+        return $this->call('PUT', '/api/v1/project/spec', [], [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_ACCEPT' => 'application/json', 'HTTP_AUTHORIZATION' => "Bearer {$token}"], $body);
     }
 
     private function rawSpec(): object
@@ -223,6 +223,6 @@ class ProjectLayersTest extends TestCase
         // A user token is not a project token
         $this->app['auth']->forgetGuards();
         $this->withToken($project->user->createToken('fw')->plainTextToken)
-            ->putJson('/api/v2/project/spec', ['spec' => []])->assertForbidden();
+            ->putJson('/api/v1/project/spec', ['spec' => []])->assertForbidden();
     }
 }

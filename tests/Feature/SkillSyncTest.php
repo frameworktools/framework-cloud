@@ -42,7 +42,7 @@ class SkillSyncTest extends TestCase
 
     private function push(array $files, ?string $id = null, int $base = 0, string $variant = 'r', ?string $request = null)
     {
-        return $this->postJson('/api/v2/skills/sync', ['request_id' => $request ?? (string) Str::uuid(), 'bundle' => $files, 'expected_version' => $base, 'variant' => $variant, 'skill_id' => $id]);
+        return $this->postJson('/api/v1/skills/sync', ['request_id' => $request ?? (string) Str::uuid(), 'bundle' => $files, 'expected_version' => $base, 'variant' => $variant, 'skill_id' => $id]);
     }
 
     public function test_private_import_retry_updates_conflicts_and_binary_snapshots(): void
@@ -59,9 +59,9 @@ class SkillSyncTest extends TestCase
         $this->push($this->bundle('Changed'), request: $request)->assertStatus(409);
         $this->push($this->bundle('Next'), $first['skill_id'], 1)->assertOk()->assertJsonPath('version', 2);
         $this->push($this->bundle('Stale'), $first['skill_id'], 1)->assertStatus(409)->assertJsonPath('head.version', 2);
-        $this->getJson('/api/v2/skills/sync/'.$first['skill_id'].'?version=1')->assertOk()->assertJsonPath('hash', $first['hash']);
+        $this->getJson('/api/v1/skills/sync/'.$first['skill_id'].'?version=1')->assertOk()->assertJsonPath('hash', $first['hash']);
         $this->assertSame('private', Skill::first()->visibility);
-        $this->getJson('/api/v2/skills/sync/'.$first['skill_id'].'/history')->assertOk()->assertJsonCount(2, 'versions');
+        $this->getJson('/api/v1/skills/sync/'.$first['skill_id'].'/history')->assertOk()->assertJsonCount(2, 'versions');
     }
 
     public function test_canonical_changes_fork_the_exact_source_and_preserve_variants_and_lineage(): void
@@ -87,7 +87,7 @@ class SkillSyncTest extends TestCase
         $this->assertSame($child->latestVersion->id, Skill::where('sync_id', $next['skill_id'])->first()->forked_from_id);
         $system->delete();
         $this->actingAs($user);
-        $this->getJson('/api/v2/skills/sync/'.$child->sync_id)->assertOk()->assertJsonPath('parent', null);
+        $this->getJson('/api/v1/skills/sync/'.$child->sync_id)->assertOk()->assertJsonPath('parent', null);
         $this->assertDatabaseHas('skill_versions', ['id' => $source->id]);
     }
 
@@ -96,11 +96,11 @@ class SkillSyncTest extends TestCase
         $this->actingAs($user = User::factory()->create());
         $id = $this->push($this->bundle())->assertOk()->json('skill_id');
         $this->actingAs(User::factory()->create());
-        $this->getJson('/api/v2/skills/sync/'.$id)->assertNotFound();
+        $this->getJson('/api/v1/skills/sync/'.$id)->assertNotFound();
         $this->push($this->bundle('Other'), $id, 1)->assertNotFound();
         auth()->forgetGuards();
         $this->withToken(Project::factory()->create()->issuePullToken());
-        $this->getJson('/api/v2/skills/sync/'.$id)->assertForbidden();
+        $this->getJson('/api/v1/skills/sync/'.$id)->assertForbidden();
         $this->push($this->bundle())->assertForbidden();
     }
 

@@ -13,7 +13,7 @@ use Illuminate\Support\Collection;
  * The layers envelope for one project (schema: resources/schema/layers.v1.json):
  * its name, author, and unmerged layers bottom to top. The framework R
  * package adds its defaults beneath them and merges. This is what the cloud
- * commits as .framework/layers.json and what pull v2 returns.
+ * commits as .framework/layers.json and what GET /api/v1/projects/pull returns.
  */
 class ProjectLayers
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Api\V2;
+namespace Tests\Feature\Api\V1;
 
 use App\Models\User;
 use App\Support\Layer;
@@ -27,29 +27,29 @@ class PiecesTest extends TestCase
     {
         $token = $this->token();
 
-        $this->withToken($token)->getJson('/api/v2/structures')->assertOk()
+        $this->withToken($token)->getJson('/api/v1/structures')->assertOk()
             ->assertJsonCount(5, 'structures')
             ->assertJsonPath('structures.0.key', 'framework/project')
             ->assertJsonPath('structures.4.key', 'framework/bare')
             ->assertJsonPath('structures.4.type', 'bare');
 
-        $tools = collect($this->withToken($token)->getJson('/api/v2/tools')->assertOk()->json('tools'));
+        $tools = collect($this->withToken($token)->getJson('/api/v1/tools')->assertOk()->json('tools'));
         $this->assertSame(['framework/quarto', 'framework/quarto_manuscript', 'framework/quarto_slides', 'framework/jupyter', 'framework/targets', 'framework/renv', 'framework/uv'], $tools->pluck('key')->all());
         $this->assertSame(['quarto'], $tools->firstWhere('key', 'framework/quarto_slides')['requires']);
 
         // Python sees the Quarto tools, not targets or renv
-        $python = collect($this->withToken($token)->getJson('/api/v2/tools?language=python')->json('tools'))->pluck('key');
+        $python = collect($this->withToken($token)->getJson('/api/v1/tools?language=python')->json('tools'))->pluck('key');
         $this->assertNotContains('framework/renv', $python);
         $this->assertContains('framework/quarto', $python);
 
-        $this->withToken($token)->getJson('/api/v2/skill-sets')->assertOk()
+        $this->withToken($token)->getJson('/api/v1/skill-sets')->assertOk()
             ->assertJsonPath('skill_sets.1.key', 'framework/ggplot2')
             ->assertJsonPath('skill_sets.1.skills', ['ggplot2-exploring', 'ggplot2-publishing'])
             ->assertJsonPath('skill_sets.1.packages', ['ggplot2']);
-        $this->withToken($token)->getJson('/api/v2/package-sets')->assertOk()->assertJsonPath('package_sets.0.key', 'framework/python-data-analysis')->assertJsonPath('package_sets.1.key', 'framework/tidyverse-analysis');
-        $this->withToken($token)->getJson('/api/v2/skills')->assertOk()->assertJsonCount(11, 'skills');
+        $this->withToken($token)->getJson('/api/v1/package-sets')->assertOk()->assertJsonPath('package_sets.0.key', 'framework/python-data-analysis')->assertJsonPath('package_sets.1.key', 'framework/tidyverse-analysis');
+        $this->withToken($token)->getJson('/api/v1/skills')->assertOk()->assertJsonCount(11, 'skills');
 
-        $this->withToken($token)->getJson('/api/v2/blueprints')->assertOk()
+        $this->withToken($token)->getJson('/api/v1/blueprints')->assertOk()
             ->assertJsonPath('blueprints.0.structure', 'framework/project')
             ->assertJsonPath('blueprints.0.tools', ['uv'])
             ->assertJsonPath('blueprints.0.workflows', ['quarto', 'jupyter', 'scripts'])
@@ -61,7 +61,7 @@ class PiecesTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $envelope = $this->withToken($this->token($user))->postJson('/api/v2/resolve', ['name' => 'Survey', 'blueprint' => 'framework/project'])
+        $envelope = $this->withToken($this->token($user))->postJson('/api/v1/resolve', ['name' => 'Survey', 'blueprint' => 'framework/project'])
             ->assertOk()->json();
 
         $this->assertSame([], Layer::envelopeProblems($envelope));
@@ -72,7 +72,7 @@ class PiecesTest extends TestCase
 
     public function test_choices_change_the_blueprint(): void
     {
-        $envelope = $this->withToken($this->token())->postJson('/api/v2/resolve', [
+        $envelope = $this->withToken($this->token())->postJson('/api/v1/resolve', [
             'name' => 'Survey',
             'blueprint' => 'framework/project',
             'tools' => ['quarto_manuscript' => true, 'renv' => true],
@@ -99,7 +99,7 @@ class PiecesTest extends TestCase
 
     public function test_ai_off_drops_every_skill(): void
     {
-        $envelope = $this->withToken($this->token())->postJson('/api/v2/resolve', [
+        $envelope = $this->withToken($this->token())->postJson('/api/v1/resolve', [
             'blueprint' => 'framework/project_sensitive', 'settings' => ['ai' => false],
         ])->assertOk()->json();
 
@@ -112,16 +112,16 @@ class PiecesTest extends TestCase
     {
         $token = $this->token();
 
-        $this->withToken($token)->postJson('/api/v2/resolve', ['structure' => 'framework/project', 'workflow' => 'scripts', 'tools' => ['quarto_slides' => true]])
+        $this->withToken($token)->postJson('/api/v1/resolve', ['structure' => 'framework/project', 'workflow' => 'scripts', 'tools' => ['quarto_slides' => true]])
             ->assertUnprocessable()->assertJsonValidationErrors(['tools' => 'Quarto slides needs the quarto tool.']);
 
-        $this->withToken($token)->postJson('/api/v2/resolve', ['structure' => 'framework/project', 'language' => 'python', 'tools' => ['renv' => true]])
+        $this->withToken($token)->postJson('/api/v1/resolve', ['structure' => 'framework/project', 'language' => 'python', 'tools' => ['renv' => true]])
             ->assertUnprocessable()->assertJsonValidationErrors(['tools' => 'renv is not available for Python projects.']);
 
-        $this->withToken($token)->postJson('/api/v2/resolve', ['structure' => 'framework/project', 'language' => 'stata', 'tools' => ['quarto' => true]])
+        $this->withToken($token)->postJson('/api/v1/resolve', ['structure' => 'framework/project', 'language' => 'stata', 'tools' => ['quarto' => true]])
             ->assertUnprocessable()->assertJsonValidationErrors(['tools' => 'Stata projects have no tools.']);
 
-        $this->withToken($token)->postJson('/api/v2/resolve', ['structure' => 'someone/else'])
+        $this->withToken($token)->postJson('/api/v1/resolve', ['structure' => 'someone/else'])
             ->assertUnprocessable()->assertJsonValidationErrors(['structure' => 'There is no project structure someone/else.']);
     }
 
@@ -130,7 +130,7 @@ class PiecesTest extends TestCase
         $user = User::factory()->create();
         $token = $this->token($user);
 
-        $response = $this->withToken($token)->postJson('/api/v2/projects', [
+        $response = $this->withToken($token)->postJson('/api/v1/projects', [
             'name' => 'Clinic Visits', 'blueprint' => 'framework/project', 'tools' => ['renv' => true],
         ])->assertCreated()->assertJsonPath('slug', 'clinic-visits');
         $this->assertNotEmpty($response->json('token'));
@@ -140,14 +140,14 @@ class PiecesTest extends TestCase
         $this->assertNotNull($project->composition);
 
         // The project's layers are the resolved choices
-        $layers = $this->withToken($token)->getJson('/api/v2/projects/clinic-visits/layers')->assertOk()->json('layers');
+        $layers = $this->withToken($token)->getJson('/api/v1/projects/clinic-visits/layers')->assertOk()->json('layers');
         $this->assertContains('framework/renv', array_column($layers, 'key'));
 
         // An unchanged blueprint is pinned by version instead
-        $this->withToken($token)->postJson('/api/v2/projects', ['name' => 'Plain', 'blueprint' => 'framework/project'])->assertCreated();
+        $this->withToken($token)->postJson('/api/v1/projects', ['name' => 'Plain', 'blueprint' => 'framework/project'])->assertCreated();
         $this->assertNull($user->projects()->where('slug', 'plain')->first()->composition);
 
-        $this->withToken($token)->postJson('/api/v2/projects', ['name' => 'Clinic Visits', 'blueprint' => 'framework/project'])
+        $this->withToken($token)->postJson('/api/v1/projects', ['name' => 'Clinic Visits', 'blueprint' => 'framework/project'])
             ->assertUnprocessable()->assertJsonValidationErrors('name');
     }
 
@@ -160,12 +160,12 @@ class PiecesTest extends TestCase
         ]]);
         $token = $this->token($user);
 
-        $this->withToken($token)->getJson('/api/v2/defaults')->assertOk()
+        $this->withToken($token)->getJson('/api/v1/defaults')->assertOk()
             ->assertJsonPath('blueprint', 'framework/project')
             ->assertJsonPath('package_sets', ['framework/tidyverse-analysis'])
             ->assertJsonPath('settings.hooks', ['data_security']);
 
-        $envelope = $this->withToken($token)->postJson('/api/v2/resolve', ['name' => 'Survey'])->assertOk()->json();
+        $envelope = $this->withToken($token)->postJson('/api/v1/resolve', ['name' => 'Survey'])->assertOk()->json();
         $keys = array_column($envelope['layers'], 'key');
         $this->assertSame('framework/project', $keys[0]);
         $this->assertContains('framework/tidyverse-analysis', $keys);
@@ -173,21 +173,21 @@ class PiecesTest extends TestCase
         $this->assertTrue(collect($envelope['layers'])->firstWhere('kind', 'settings')['layer']['git']['hooks']['data_security']);
 
         // Your pieces and settings come along with a chosen blueprint too
-        $layers = $this->withToken($token)->postJson('/api/v2/resolve', ['blueprint' => 'framework/course'])->json('layers');
+        $layers = $this->withToken($token)->postJson('/api/v1/resolve', ['blueprint' => 'framework/course'])->json('layers');
         $this->assertContains('framework/tidyverse-analysis', array_column($layers, 'key'));
         $this->assertTrue(collect($layers)->firstWhere('kind', 'settings')['layer']['git']['hooks']['data_security']);
 
         // Defaults equal to Framework's own leave a blueprint unchanged
         $plain = User::factory()->create();
         $this->app['auth']->forgetGuards();
-        $this->assertArrayHasKey('source', $this->withToken($this->token($plain))->postJson('/api/v2/resolve', ['name' => 'X'])->json());
+        $this->assertArrayHasKey('source', $this->withToken($this->token($plain))->postJson('/api/v1/resolve', ['name' => 'X'])->json());
     }
 
     public function test_with_the_spec_tools_key_on_layers_name_their_tools_and_layout(): void
     {
         config(['framework.spec_tools' => true]);
 
-        $envelope = $this->withToken($this->token())->postJson('/api/v2/resolve', [
+        $envelope = $this->withToken($this->token())->postJson('/api/v1/resolve', [
             'name' => 'Survey', 'blueprint' => 'framework/project', 'tools' => ['renv' => true],
         ])->assertOk()->json();
 
@@ -203,13 +203,13 @@ class PiecesTest extends TestCase
         );
 
         // Stata gets no tools map; bare has no core files
-        $stata = $this->withToken($this->token())->postJson('/api/v2/resolve', ['name' => 'S', 'blueprint' => 'framework/bare', 'language' => 'stata'])->json('layers');
+        $stata = $this->withToken($this->token())->postJson('/api/v1/resolve', ['name' => 'S', 'blueprint' => 'framework/bare', 'language' => 'stata'])->json('layers');
         $this->assertArrayNotHasKey('tools', last($stata)['layer']);
         $this->assertFalse($stata[0]['layer']['core_files']);
 
         // Off, nothing new goes out, for clients older than the schema
         config(['framework.spec_tools' => false]);
-        $plain = $this->withToken($this->token())->postJson('/api/v2/resolve', ['name' => 'Survey', 'blueprint' => 'framework/project'])->json('layers');
+        $plain = $this->withToken($this->token())->postJson('/api/v1/resolve', ['name' => 'Survey', 'blueprint' => 'framework/project'])->json('layers');
         $this->assertArrayNotHasKey('settings_layout', $plain[0]['layer']);
     }
 
@@ -217,25 +217,25 @@ class PiecesTest extends TestCase
     {
         $token = $this->token();
 
-        $r = $this->withToken($token)->postJson('/api/v2/resolve', ['name' => 'S', 'blueprint' => 'framework/project'])->json();
+        $r = $this->withToken($token)->postJson('/api/v1/resolve', ['name' => 'S', 'blueprint' => 'framework/project'])->json();
         $this->assertNotContains('framework/uv', array_column($r['layers'], 'key'));
         $this->assertArrayHasKey('source', $r, 'An R project from an unchanged blueprint still pins it');
 
-        $python = $this->withToken($token)->postJson('/api/v2/resolve', ['name' => 'S', 'blueprint' => 'framework/project', 'language' => 'python'])->json('layers');
+        $python = $this->withToken($token)->postJson('/api/v1/resolve', ['name' => 'S', 'blueprint' => 'framework/project', 'language' => 'python'])->json('layers');
         $keys = array_column($python, 'key');
         $this->assertContains('framework/uv', $keys);
         $this->assertContains('framework/quarto', $keys);
         $this->assertContains('framework/framework', $keys, 'Each package ships its own Framework skills');
         $this->assertNotContains('framework/ggplot2', $keys, 'ggplot2 is for R');
 
-        $bare = array_column($this->withToken($token)->postJson('/api/v2/resolve', ['name' => 'S', 'blueprint' => 'framework/bare', 'language' => 'python'])->json('layers'), 'key');
+        $bare = array_column($this->withToken($token)->postJson('/api/v1/resolve', ['name' => 'S', 'blueprint' => 'framework/bare', 'language' => 'python'])->json('layers'), 'key');
         // Python's workflow is Jupyter, which brings its kernel and Quarto for rendering
         $this->assertSame(['framework/bare', 'framework/uv', 'framework/workflow-jupyter', 'framework/jupyter', 'framework/jupyter-python', 'framework/quarto', 'framework/bare', 'your defaults', 's'], $bare);
     }
 
     public function test_sets_for_another_language_are_left_out(): void
     {
-        $keys = array_column($this->withToken($this->token())->postJson('/api/v2/resolve', [
+        $keys = array_column($this->withToken($this->token())->postJson('/api/v1/resolve', [
             'name' => 'S', 'structure' => 'framework/project', 'language' => 'python',
             'skill_sets' => ['framework/framework', 'framework/ggplot2'], 'package_sets' => ['framework/tidyverse-analysis'],
         ])->assertOk()->json('layers'), 'key');
@@ -247,7 +247,7 @@ class PiecesTest extends TestCase
 
     public function test_empty_maps_in_resolved_layers_are_objects(): void
     {
-        $json = $this->withToken($this->token())->postJson('/api/v2/resolve', ['name' => 'S', 'structure' => 'framework/bare'])
+        $json = $this->withToken($this->token())->postJson('/api/v1/resolve', ['name' => 'S', 'structure' => 'framework/bare'])
             ->assertOk()->getContent();
 
         $layers = json_decode($json)->layers;
@@ -265,10 +265,10 @@ class PiecesTest extends TestCase
     {
         $token = $this->token();
 
-        $r = collect($this->withToken($token)->postJson('/api/v2/resolve', ['structure' => 'framework/project', 'tools' => ['jupyter' => true]])->json('layers'))->keyBy('key');
+        $r = collect($this->withToken($token)->postJson('/api/v1/resolve', ['structure' => 'framework/project', 'tools' => ['jupyter' => true]])->json('layers'))->keyBy('key');
         $this->assertArrayHasKey('IRkernel', $r['framework/jupyter-r']['layer']['packages']['default_packages']);
 
-        $python = collect($this->withToken($token)->postJson('/api/v2/resolve', ['structure' => 'framework/project', 'language' => 'python', 'tools' => ['jupyter' => true, 'uv' => true]])->json('layers'))->keyBy('key');
+        $python = collect($this->withToken($token)->postJson('/api/v1/resolve', ['structure' => 'framework/project', 'language' => 'python', 'tools' => ['jupyter' => true, 'uv' => true]])->json('layers'))->keyBy('key');
         $this->assertSame('pypi', $python['framework/jupyter-python']['layer']['packages']['default_packages']['ipykernel']['source']);
         $this->assertArrayHasKey('framework/uv', $python);
     }
@@ -277,7 +277,7 @@ class PiecesTest extends TestCase
     {
         $project = User::factory()->create()->projects()->create(['name' => 'S', 'slug' => 's']);
 
-        $this->withToken($project->issuePullToken())->getJson('/api/v2/tools')->assertForbidden();
+        $this->withToken($project->issuePullToken())->getJson('/api/v1/tools')->assertForbidden();
     }
 
     public function test_default_git_hooks_go_into_new_projects_that_use_git(): void
@@ -285,18 +285,18 @@ class PiecesTest extends TestCase
         $user = User::factory()->create(['project_defaults' => ['hooks' => ['data_security' => true, 'check_sensitive_dirs' => false]]]);
         $token = $this->token($user);
 
-        $layers = collect($this->withToken($token)->postJson('/api/v2/resolve', ['name' => 'S', 'blueprint' => 'framework/project'])->assertOk()->json('layers'));
+        $layers = collect($this->withToken($token)->postJson('/api/v1/resolve', ['name' => 'S', 'blueprint' => 'framework/project'])->assertOk()->json('layers'));
         $this->assertSame(['data_security' => true], $layers->firstWhere('kind', 'settings')['layer']['git']['hooks']);
 
-        $layers = collect($this->withToken($token)->postJson('/api/v2/resolve', ['name' => 'S', 'blueprint' => 'framework/project', 'settings' => ['git' => false]])->json('layers'));
+        $layers = collect($this->withToken($token)->postJson('/api/v1/resolve', ['name' => 'S', 'blueprint' => 'framework/project', 'settings' => ['git' => false]])->json('layers'));
         $this->assertArrayNotHasKey('hooks', $layers->firstWhere('kind', 'settings')['layer']['git'] ?? []);
     }
 
     public function test_skills_filter_by_language(): void
     {
         $token = $this->token();
-        $all = collect($this->withToken($token)->getJson('/api/v2/skills')->json('skills'));
-        $python = collect($this->withToken($token)->getJson('/api/v2/skills?language=python')->assertOk()->json('skills'));
+        $all = collect($this->withToken($token)->getJson('/api/v1/skills')->json('skills'));
+        $python = collect($this->withToken($token)->getJson('/api/v1/skills?language=python')->assertOk()->json('skills'));
 
         $this->assertNotEmpty($python);
         $this->assertLessThan($all->count(), $python->count());

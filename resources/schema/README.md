@@ -6,8 +6,8 @@ These files are copied from the framework R package, where
 | File | Validates | Source in the R package |
 | --- | --- | --- |
 | `layer.v1.json` | One stored layer (base, facet, blueprint) | `inst/schema/layer.v1.json` |
-| `layers.v1.json` | The layers envelope: `.framework/layers.json` and the pull v2 body | `inst/schema/layers.v1.json` |
-| `spec.v1.json` | A resolved project spec: `.framework/spec.json`, sent by `PUT /api/v2/project/spec` | `inst/schema/spec.v1.json` |
+| `layers.v1.json` | The layers envelope: `.framework/layers.json` and the layers pull body | `inst/schema/layers.v1.json` |
+| `spec.v1.json` | A resolved project spec: `.framework/spec.json`, sent by `PUT /api/v1/project/spec` | `inst/schema/spec.v1.json` |
 | `docs-reference.v1.json` | A docs site's `reference.json`, checked by `fw:docs-import` | `inst/schema/docs-reference.v1.json` |
 
 `docs-site.v1.json` is the cloud's own schema for a docs site's `site.yml`. It

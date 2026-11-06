@@ -29,7 +29,7 @@ class PublishDriversTest extends TestCase
     {
         Storage::fake('local');
         $project = Project::factory()->create();
-        $url = '/api/v2/projects/'.$project->slug.'/artifacts/external';
+        $url = '/api/v1/projects/'.$project->slug.'/artifacts/external';
         $this->withToken($project->issuePullToken())->postJson($url, $this->metadata() + ['path' => '/Volumes/private/secret'])->assertOk()->assertJsonPath('version', 1)->assertJsonPath('url', null);
         $document = Document::sole();
         $this->assertSame('', $document->disk_path);
@@ -41,7 +41,7 @@ class PublishDriversTest extends TestCase
         $this->postJson($url, $this->metadata(['version' => 2, 'sha256' => str_repeat('b', 64)]))->assertOk();
         $this->assertSame(3, $document->fresh()->next_version_number);
         $other = Project::factory()->create();
-        $this->postJson('/api/v2/projects/'.$other->slug.'/artifacts/external', $this->metadata())->assertForbidden();
+        $this->postJson('/api/v1/projects/'.$other->slug.'/artifacts/external', $this->metadata())->assertForbidden();
         $this->actingAs($project->user)->get('/artifacts/'.$document->id)->assertInertia(fn (Assert $page) => $page
             ->where('artifact.driver', 'folder')->where('artifact.capabilities.password', false)->where('artifact.location', 'Folder'));
         $this->patch('/published/'.$document->id, ['visibility' => 'public', 'password' => 'secret-password'])->assertSessionHasErrors('visibility');
@@ -51,7 +51,7 @@ class PublishDriversTest extends TestCase
     {
         $project = Project::factory()->create();
         $this->actingAs($project->user);
-        $endpoint = '/api/v2/projects/'.$project->slug.'/artifacts/external';
+        $endpoint = '/api/v1/projects/'.$project->slug.'/artifacts/external';
         $this->postJson($endpoint, $this->metadata(['driver' => 'github', 'visibility' => 'public', 'url' => 'javascript:alert(1)']))->assertUnprocessable();
         $this->postJson($endpoint, $this->metadata(['url' => 'https://user:secret@example.org/result']))->assertUnprocessable();
         $this->postJson($endpoint, $this->metadata(['driver' => 'github', 'visibility' => 'public', 'url' => 'https://example.org/research/test/']))->assertOk();

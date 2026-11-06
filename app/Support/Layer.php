@@ -154,7 +154,7 @@ class Layer
 
     /**
      * Problems with a resolved spec that a project sends up (PUT
-     * /api/v2/project/spec). The spec is validated as decoded JSON objects,
+     * /api/v1/project/spec). The spec is validated as decoded JSON objects,
      * so empty maps stay maps. Credentials and secret-looking env values are
      * refused as they are in layers.
      *

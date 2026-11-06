@@ -28,8 +28,8 @@ terminal fw never asks.
   `# FW_PROJECT_TOKEN=`, and the URL of the project's token page. It adds
   `.env` to `.gitignore` if the last line about `.env` doesn't ignore it.
   The zip has no token, because zips get passed around.
-- **Routes**: `GET /projects/{id}/download` (web), `GET /api/v2/destinations`,
-  `GET /api/v2/projects/{slug}/download`. `POST /api/v2/projects` takes
+- **Routes**: `GET /projects/{id}/download` (web), `GET /api/v1/destinations`,
+  `GET /api/v1/projects/{slug}/download`. `POST /api/v1/projects` takes
   `github: {owner, name?, private}`. Project show reports `scaffold_error`.
 - **Python on GitHub**: `resources/github/framework-scaffold-python.yml`,
   pinned by `GITHUB_FRAMEWORK_PY_SHA` (default d10c19f).

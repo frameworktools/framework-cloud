@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Api\V2;
+namespace Tests\Feature\Api\V1;
 
 use App\Models\Document;
 use App\Models\Project;
@@ -35,7 +35,7 @@ class ReportsApiTest extends TestCase
         $this->figure($project);
         Sanctum::actingAs($project->user, ['*']);
 
-        $response = $this->postJson('/api/v2/projects/penguin-study/reports', [
+        $response = $this->postJson('/api/v1/projects/penguin-study/reports', [
             'title' => 'Penguin notebook', 'slug' => 'penguin-notebook', 'visibility' => 'public', 'publish' => true,
             'blocks' => [
                 ['type' => 'text', 'text' => "# Body mass\n\nFlipper length predicts **body mass**.\n\n<script>alert(1)</script>"],
@@ -58,14 +58,14 @@ class ReportsApiTest extends TestCase
         $project = $this->project();
         Sanctum::actingAs($project->user, ['*']);
 
-        $created = $this->postJson('/api/v2/projects/penguin-study/reports', ['title' => 'Notes', 'markdown' => '## First draft'])
+        $created = $this->postJson('/api/v1/projects/penguin-study/reports', ['title' => 'Notes', 'markdown' => '## First draft'])
             ->assertCreated()->assertJsonPath('latest_version', null)->assertJsonCount(1, 'blocks');
         $slug = $created->json('slug');
 
-        $this->patchJson("/api/v2/projects/penguin-study/reports/$slug", ['markdown' => '## Second draft', 'visibility' => 'unlisted', 'publish' => true])
+        $this->patchJson("/api/v1/projects/penguin-study/reports/$slug", ['markdown' => '## Second draft', 'visibility' => 'unlisted', 'publish' => true])
             ->assertOk()->assertJsonPath('latest_version', 1)->assertJsonPath('url', $created->json('url'));
-        $this->postJson("/api/v2/projects/penguin-study/reports/$slug/publish")->assertOk()->assertJsonPath('latest_version', 2)->assertJsonCount(2, 'versions');
-        $this->getJson('/api/v2/projects/penguin-study/reports')->assertOk()->assertJsonPath('reports.0.slug', $slug);
+        $this->postJson("/api/v1/projects/penguin-study/reports/$slug/publish")->assertOk()->assertJsonPath('latest_version', 2)->assertJsonCount(2, 'versions');
+        $this->getJson('/api/v1/projects/penguin-study/reports')->assertOk()->assertJsonPath('reports.0.slug', $slug);
     }
 
     public function test_project_tokens_work_on_their_own_project_only(): void
@@ -74,8 +74,8 @@ class ReportsApiTest extends TestCase
         $other = Project::factory()->for($project->user)->create(['slug' => 'other-study']);
         $token = ['Authorization' => 'Bearer '.$project->issuePullToken()];
 
-        $this->postJson('/api/v2/projects/penguin-study/reports', ['title' => 'From the project token', 'markdown' => 'Hello'], $token)->assertCreated();
-        $this->postJson('/api/v2/projects/other-study/reports', ['title' => 'Elsewhere', 'markdown' => 'Hello'], $token)->assertForbidden();
+        $this->postJson('/api/v1/projects/penguin-study/reports', ['title' => 'From the project token', 'markdown' => 'Hello'], $token)->assertCreated();
+        $this->postJson('/api/v1/projects/other-study/reports', ['title' => 'Elsewhere', 'markdown' => 'Hello'], $token)->assertForbidden();
         $this->assertSame(0, Report::where('project_id', $other->id)->count());
     }
 
@@ -84,8 +84,8 @@ class ReportsApiTest extends TestCase
         $project = $this->project();
         Sanctum::actingAs($project->user, ['*']);
 
-        $this->postJson('/api/v2/projects/penguin-study/reports', ['title' => 'Both', 'markdown' => 'x', 'blocks' => []])->assertJsonValidationErrors('markdown');
-        $this->postJson('/api/v2/projects/penguin-study/reports', ['title' => 'Missing', 'blocks' => [['type' => 'artifact', 'artifact' => 'nope']]])->assertJsonValidationErrors('blocks.0.artifact');
-        $this->getJson('/api/v2/projects/someone-else/reports')->assertNotFound();
+        $this->postJson('/api/v1/projects/penguin-study/reports', ['title' => 'Both', 'markdown' => 'x', 'blocks' => []])->assertJsonValidationErrors('markdown');
+        $this->postJson('/api/v1/projects/penguin-study/reports', ['title' => 'Missing', 'blocks' => [['type' => 'artifact', 'artifact' => 'nope']]])->assertJsonValidationErrors('blocks.0.artifact');
+        $this->getJson('/api/v1/projects/someone-else/reports')->assertNotFound();
     }
 }

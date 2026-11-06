@@ -62,7 +62,7 @@ class SkillTagsTest extends TestCase
         $this->put("/skills/{$skill->id}", array_replace($data, ['tags' => [$tags[0]], 'content' => $data['content']."\nUpdated.\n", 'expected_version' => 1]))->assertSessionHasNoErrors();
         $this->assertCount(1, $skill->fresh()->tags);
         $content = $data['content']."\nSynced from a Stata project.\n";
-        $this->postJson('/api/v2/skills/sync', [
+        $this->postJson('/api/v1/skills/sync', [
             'request_id' => (string) Str::uuid(),
             'skill_id' => $skill->sync_id, 'expected_version' => 2, 'variant' => 'stata',
             'bundle' => [['path' => 'SKILL.md', 'content' => base64_encode($content), 'executable' => false]],

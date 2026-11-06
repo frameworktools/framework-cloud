@@ -11,21 +11,47 @@ use Illuminate\Http\Request;
 class BlueprintsController extends Controller
 {
     /**
-     * The project types with their structure and AI masters, in the shape
-     * framework 1.x reads. ?key= narrows to one type.
+     * GET /api/v1/blueprints, with a user token: the blueprints this user can
+     * make projects from (Framework's, their own, and ones shared with them).
+     * fw blueprints list prints these.
      */
     public function __invoke(Request $request): JsonResponse
     {
-        abort_unless($request->user() instanceof User, 403, 'This endpoint requires a user token.');
+        $user = $request->user();
 
-        $query = Blueprint::systemTypes()->with('latestVersion.base');
+        abort_unless($user instanceof User, 403, 'This endpoint requires a user token.');
 
-        if ($request->filled('key')) {
-            $query->where('key', $request->string('key'));
-        }
+        $blueprints = Blueprint::visibleTo($user)
+            ->with('owner', 'latestVersion.base.facet', 'latestVersion.facetVersions.facet')
+            ->whereHas('latestVersion')
+            ->orderBy('position')->orderBy('name')
+            ->get()
+            ->map(fn (Blueprint $b) => [
+                'key' => $b->handle,
+                'name' => $b->name,
+                'description' => $b->description,
+                'language' => $b->language ?? 'r',
+                'type' => $b->latestVersion->base?->layer['type'] ?? 'bare',
+                'version' => $b->latestVersion->version,
+                'visibility' => $b->visibility,
+                'system' => $b->isSystem(),
+                'structure' => $b->latestVersion->base?->facet->handle,
+                // What it supports and needs, which resolution checks
+                ...$b->latestVersion->compatibility(),
+                'license' => $b->license,
+                'tags' => $b->tags ?? [],
+                'tools' => $b->latestVersion->facetVersions->filter(fn ($v) => $v->facet->kind === 'tool')->map(fn ($v) => $v->facet->key)->values()->all(),
+                'package_sets' => $this->handles($b, 'package_set'),
+                'skill_sets' => $this->handles($b, 'skill_set'),
+                // Every piece above the structure, for fw 0.2 and 0.3
+                'facets' => $b->latestVersion->facetVersions->map(fn ($v) => $v->facet->handle)->values()->all(),
+            ]);
 
-        return response()->json([
-            'blueprints' => $query->get()->map->toV1Array(),
-        ]);
+        return response()->json(['blueprints' => $blueprints]);
+    }
+
+    private function handles(Blueprint $blueprint, string $kind): array
+    {
+        return $blueprint->latestVersion->facetVersions->filter(fn ($v) => $v->facet->kind === $kind)->map(fn ($v) => $v->facet->handle)->values()->all();
     }
 }

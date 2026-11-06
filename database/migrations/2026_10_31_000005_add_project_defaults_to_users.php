@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Schema;
  * A user's preferred pieces for new projects: package sets, skill sets,
  * tools, and whether projects start sensitive. Kept out of the synced
  * settings document, which the R package reads and validates, until the
- * packages read these through GET /api/v2/defaults.
+ * packages read these through GET /api/v1/defaults.
  */
 return new class extends Migration
 {

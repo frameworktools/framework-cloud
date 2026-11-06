@@ -281,16 +281,16 @@ Hosted report publishing is free.
 ### Reports from a script or an AI agent
 
 The reports API builds the same reports from R, Python, Stata, or a terminal.
-Requests go to `/api/v2/projects/<project>/reports` with the project token from
+Requests go to `/api/v1/projects/<project>/reports` with the project token from
 `.env` (`FW_PROJECT_TOKEN`) or a personal API token.
 
 | Action | Request |
 |---|---|
-| List reports | `GET /api/v2/projects/<project>/reports` |
-| Read one | `GET /api/v2/projects/<project>/reports/<report>` |
-| Create | `POST /api/v2/projects/<project>/reports` |
-| Update the draft | `PATCH /api/v2/projects/<project>/reports/<report>` |
-| Publish | `POST /api/v2/projects/<project>/reports/<report>/publish` |
+| List reports | `GET /api/v1/projects/<project>/reports` |
+| Read one | `GET /api/v1/projects/<project>/reports/<report>` |
+| Create | `POST /api/v1/projects/<project>/reports` |
+| Update the draft | `PATCH /api/v1/projects/<project>/reports/<report>` |
+| Publish | `POST /api/v1/projects/<project>/reports/<report>/publish` |
 
 A report is a list of `blocks`. Text blocks are Markdown, or HTML with
 `"format": "html"`, cleaned the same way as in the editor. Artifact blocks name

@@ -137,30 +137,14 @@ class CloudApiTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_blueprints_are_listed_with_masters(): void
+    public function test_blueprints_are_listed_by_handle(): void
     {
         $this->seed(BlueprintSeeder::class);
         $user = User::factory()->create();
 
-        $response = $this->withToken($this->userToken($user))
-            ->getJson('/api/v1/blueprints')
-            ->assertOk();
-
-        $keys = collect($response->json('blueprints'))->pluck('key');
-        $this->assertTrue($keys->contains('bare'));
-        $this->assertTrue($keys->contains('project_sensitive'));
-
-        $sensitive = collect($response->json('blueprints'))->firstWhere('key', 'project_sensitive');
-        $this->assertArrayHasKey('framework-sensitive-data', $sensitive['skills']);
-        // No AGENTS.md master: R 1.x then writes its own template
-        $this->assertNull($sensitive['agents_md']);
-        $this->assertNotEmpty($sensitive['structure']['directories']);
-
-        // Narrowing by key
-        $this->withToken($this->userToken($user))
-            ->getJson('/api/v1/blueprints?key=bare')
-            ->assertOk()
-            ->assertJsonCount(1, 'blueprints');
+        $keys = collect($this->withToken($this->userToken($user))->getJson('/api/v1/blueprints')->assertOk()->json('blueprints'))->pluck('key');
+        $this->assertTrue($keys->contains('framework/project'));
+        $this->assertTrue($keys->contains('framework/project_sensitive'));
     }
 
     public function test_project_tokens_cannot_list_blueprints(): void

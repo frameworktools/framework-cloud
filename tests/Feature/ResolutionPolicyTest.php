@@ -74,14 +74,14 @@ class ResolutionPolicyTest extends TestCase
         $user = User::factory()->create(['email_verified_at' => now()]);
         Sanctum::actingAs($user);
 
-        $first = $this->postJson('/api/v2/resolve', ['language' => 'stata'])->assertOk();
+        $first = $this->postJson('/api/v1/resolve', ['language' => 'stata'])->assertOk();
         $this->assertSame('Untitled project', $first->json('name'));
         $revision = $first->headers->get('Framework-Defaults-Revision');
         $this->assertNotEmpty($revision);
-        $this->assertSame($revision, $this->getJson('/api/v2/defaults')->headers->get('Framework-Defaults-Revision'));
+        $this->assertSame($revision, $this->getJson('/api/v1/defaults')->headers->get('Framework-Defaults-Revision'));
 
         $this->actingAs($user)->patch('/settings', ['project_type' => 'course', 'ide' => 'vscode'])->assertSessionHasNoErrors();
-        $second = $this->postJson('/api/v2/resolve', ['language' => 'stata'])->assertOk();
+        $second = $this->postJson('/api/v1/resolve', ['language' => 'stata'])->assertOk();
         $this->assertNotSame($revision, $second->headers->get('Framework-Defaults-Revision'));
         $this->assertStringContainsString("doesn't support Stata", $second->headers->get('Framework-Notice'));
     }

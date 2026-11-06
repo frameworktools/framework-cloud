@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Api\V2;
+namespace Tests\Feature\Api\V1;
 
 use App\Jobs\ScaffoldOnGitHub;
 use App\Models\GitHubAccount;
@@ -55,7 +55,7 @@ class NewProjectDestinationsTest extends TestCase
         $this->fakeInstallations();
         $token = $this->connected()->createToken('fw')->plainTextToken;
 
-        $this->withToken($token)->getJson('/api/v2/destinations')->assertOk()
+        $this->withToken($token)->getJson('/api/v1/destinations')->assertOk()
             ->assertJsonPath('download.available', true)
             ->assertJsonPath('github.available', true)
             ->assertJsonPath('github.login', 'ada')
@@ -63,7 +63,7 @@ class NewProjectDestinationsTest extends TestCase
             ->assertJsonPath('github.unavailable', []);
 
         config(['services.scaffolder.url' => null, 'services.github.framework_py_sha' => null]);
-        $this->withToken($token)->getJson('/api/v2/destinations')->assertOk()
+        $this->withToken($token)->getJson('/api/v1/destinations')->assertOk()
             ->assertJsonPath('download.available', false)
             ->assertJsonPath('github.unavailable.python', 'This server is not set up to scaffold Python projects on GitHub yet.');
     }
@@ -72,7 +72,7 @@ class NewProjectDestinationsTest extends TestCase
     {
         $token = User::factory()->create()->createToken('fw')->plainTextToken;
 
-        $this->withToken($token)->getJson('/api/v2/destinations')->assertOk()
+        $this->withToken($token)->getJson('/api/v1/destinations')->assertOk()
             ->assertJsonPath('github.login', null)
             ->assertJsonPath('github.owners', []);
     }
@@ -83,7 +83,7 @@ class NewProjectDestinationsTest extends TestCase
         $this->fakeInstallations();
         $user = $this->connected();
 
-        $this->withToken($user->createToken('fw')->plainTextToken)->postJson('/api/v2/projects', [
+        $this->withToken($user->createToken('fw')->plainTextToken)->postJson('/api/v1/projects', [
             'name' => 'Clinic Visits', 'blueprint' => 'framework/project', 'language' => 'python',
             'github' => ['owner' => 'lab'],
         ])->assertCreated()
@@ -102,16 +102,16 @@ class NewProjectDestinationsTest extends TestCase
         $user = $this->connected();
         $token = $user->createToken('fw')->plainTextToken;
 
-        $this->withToken($token)->postJson('/api/v2/projects', [
+        $this->withToken($token)->postJson('/api/v1/projects', [
             'name' => 'Clinic Visits', 'blueprint' => 'framework/project', 'github' => ['owner' => 'someone-else'],
         ])->assertUnprocessable()->assertJsonValidationErrors('github.owner');
 
-        $this->withToken($token)->postJson('/api/v2/projects', [
+        $this->withToken($token)->postJson('/api/v1/projects', [
             'name' => 'Clinic Visits', 'blueprint' => 'framework/project_sensitive', 'github' => ['owner' => 'ada', 'private' => false],
         ])->assertUnprocessable()->assertJsonValidationErrors('github.private');
 
         config(['services.github.fw_version' => null]);
-        $this->withToken($token)->postJson('/api/v2/projects', [
+        $this->withToken($token)->postJson('/api/v1/projects', [
             'name' => 'Clinic Visits', 'blueprint' => 'framework/project', 'language' => 'stata', 'github' => ['owner' => 'ada'],
         ])->assertUnprocessable()->assertJsonValidationErrors('github');
 
@@ -123,7 +123,7 @@ class NewProjectDestinationsTest extends TestCase
     {
         $user = User::factory()->create();
         $token = $user->createToken('fw')->plainTextToken;
-        $this->withToken($token)->postJson('/api/v2/projects', ['name' => 'Clinic Visits', 'blueprint' => 'framework/project'])->assertCreated();
+        $this->withToken($token)->postJson('/api/v1/projects', ['name' => 'Clinic Visits', 'blueprint' => 'framework/project'])->assertCreated();
 
         $path = tempnam(sys_get_temp_dir(), 'zip');
         $zip = new ZipArchive;
@@ -135,24 +135,24 @@ class NewProjectDestinationsTest extends TestCase
             ->push(['error' => 'The project could not be built.'], 422)]);
         unlink($path);
 
-        $this->withToken($token)->get('/api/v2/projects/clinic-visits/download')
+        $this->withToken($token)->get('/api/v1/projects/clinic-visits/download')
             ->assertOk()->assertDownload('clinic-visits.zip');
 
-        $this->withToken($token)->getJson('/api/v2/projects/clinic-visits/download')
+        $this->withToken($token)->getJson('/api/v1/projects/clinic-visits/download')
             ->assertStatus(502)->assertJsonPath('message', 'The project could not be built. The details are in the server log.');
 
         config(['services.scaffolder.url' => null]);
-        $this->withToken($token)->getJson('/api/v2/projects/clinic-visits/download')->assertNotFound();
-        $this->withToken($token)->getJson('/api/v2/projects/someone-elses/download')->assertNotFound();
+        $this->withToken($token)->getJson('/api/v1/projects/clinic-visits/download')->assertNotFound();
+        $this->withToken($token)->getJson('/api/v1/projects/someone-elses/download')->assertNotFound();
     }
 
     public function test_project_tokens_cannot_download(): void
     {
         $user = User::factory()->create();
-        $this->withToken($user->createToken('fw')->plainTextToken)->postJson('/api/v2/projects', ['name' => 'Clinic Visits', 'blueprint' => 'framework/project'])->assertCreated();
+        $this->withToken($user->createToken('fw')->plainTextToken)->postJson('/api/v1/projects', ['name' => 'Clinic Visits', 'blueprint' => 'framework/project'])->assertCreated();
         $pull = $user->projects()->firstOrFail()->issuePullToken();
         $this->app['auth']->forgetGuards();
 
-        $this->withToken($pull)->getJson('/api/v2/projects/clinic-visits/download')->assertForbidden();
+        $this->withToken($pull)->getJson('/api/v1/projects/clinic-visits/download')->assertForbidden();
     }
 }

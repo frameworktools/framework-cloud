@@ -14,7 +14,6 @@ use App\Support\Layer;
 use App\Support\LayerSummary;
 use Database\Seeders\BlueprintSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\File;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -83,25 +82,10 @@ class LibraryTest extends TestCase
         $this->assertSame($versions, FacetVersion::count() + BlueprintVersion::count() + SkillVersion::count());
     }
 
-    public function test_bases_reference_package_skills_and_v1_still_receives_their_text(): void
+    public function test_bases_reference_package_skills(): void
     {
         $layer = $this->system(Blueprint::class, 'project_sensitive')->latestVersion->layer;
         $this->assertSame(['package' => true], $layer['skills']['framework-sensitive-data']);
-
-        $user = $this->user();
-        $response = $this->withToken($user->createToken('r')->plainTextToken)->getJson('/api/v1/blueprints')->assertOk();
-
-        $sensitive = collect($response->json('blueprints'))->firstWhere('key', 'project_sensitive');
-        $this->assertSame(
-            File::get(database_path('seeders/masters/skills/framework-sensitive-data.md')),
-            $sensitive['skills']['framework-sensitive-data'],
-        );
-        // The packages generate AGENTS.md from settings, so no structure carries one
-        $this->assertNull($sensitive['agents_md']);
-
-        // Skills in skill sets reach v1 too, since it reads only the flattened shape
-        $this->assertSame(File::get(database_path('seeders/masters/skills/ggplot2-exploring.md')), $sensitive['skills']['ggplot2-exploring']);
-        $this->assertArrayHasKey('framework-data', $sensitive['skills']);
     }
 
     public function test_user_builds_a_structure_and_saving_unchanged_content_keeps_the_version(): void

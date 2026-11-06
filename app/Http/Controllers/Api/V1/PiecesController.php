@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\V2;
+namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Jobs\ScaffoldOnGitHub;
@@ -27,7 +27,7 @@ use Illuminate\Validation\ValidationException;
  */
 class PiecesController extends Controller
 {
-    /** GET /api/v2/structures, /tools, /package-sets, or /skill-sets. ?language= filters. */
+    /** GET /api/v1/structures, /tools, /package-sets, or /skill-sets. ?language= filters. */
     public function index(Request $request, string $kind): JsonResponse
     {
         $user = $this->user($request);
@@ -42,7 +42,7 @@ class PiecesController extends Controller
         return response()->json([str($kind)->plural()->value() => $pieces]);
     }
 
-    /** GET /api/v2/defaults: what the user's new projects start with. */
+    /** GET /api/v1/defaults: what the user's new projects start with. */
     public function defaults(Request $request): JsonResponse
     {
         $user = $this->user($request);
@@ -50,7 +50,7 @@ class PiecesController extends Controller
         return response()->json(ProjectDefaults::for($user))->header('Framework-Defaults-Revision', ProjectDefaults::revision($user));
     }
 
-    /** GET /api/v2/skills: single skills, for --skill. */
+    /** GET /api/v1/skills: single skills, for --skill. */
     public function skills(Request $request): JsonResponse
     {
         $user = $this->user($request);
@@ -74,7 +74,7 @@ class PiecesController extends Controller
     }
 
     /**
-     * POST /api/v2/resolve: the layers envelope for a set of choices, without
+     * POST /api/v1/resolve: the layers envelope for a set of choices, without
      * creating a project. fw new hands it to R or Python, or scaffolds Stata.
      */
     public function resolve(Request $request): JsonResponse
@@ -90,13 +90,13 @@ class PiecesController extends Controller
     }
 
     /**
-     * POST /api/v2/projects: make a cloud project from the same choices, and
+     * POST /api/v1/projects: make a cloud project from the same choices, and
      * hand back a project token so fw can link the local copy.
      */
     /**
-     * POST /api/v2/projects: create a project from choices. With github
+     * POST /api/v1/projects: create a project from choices. With github
      * ({owner, name, private}), the project is also scaffolded in a new
-     * repository; GET /api/v2/projects/{slug} reports how that went.
+     * repository; GET /api/v1/projects/{slug} reports how that went.
      */
     public function store(Request $request): JsonResponse
     {
@@ -143,7 +143,7 @@ class PiecesController extends Controller
     }
 
     /**
-     * GET /api/v2/destinations: the ways this server can hand over a new
+     * GET /api/v1/destinations: the ways this server can hand over a new
      * project besides building it on the person's computer, so fw can ask.
      */
     public function destinations(Request $request): JsonResponse

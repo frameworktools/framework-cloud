@@ -30,7 +30,7 @@ publishing again adds the next version at the same link.
 
 ## The API
 
-All requests go to `$FW_CLOUD_URL/api/v2/projects/<project-slug>/reports`
+All requests go to `$FW_CLOUD_URL/api/v1/projects/<project-slug>/reports`
 with `Authorization: Bearer $FW_PROJECT_TOKEN` and JSON bodies.
 
 | Action | Request |
@@ -76,7 +76,7 @@ version's own `url`, and the draft `blocks`.
 Terminal:
 
 ```sh
-curl -sS -X POST "$FW_CLOUD_URL/api/v2/projects/penguin-study/reports" \
+curl -sS -X POST "$FW_CLOUD_URL/api/v1/projects/penguin-study/reports" \
   -H "Authorization: Bearer $FW_PROJECT_TOKEN" -H "Content-Type: application/json" \
   -d '{"title": "Penguin body mass", "slug": "penguin-body-mass-report", "publish": true,
        "blocks": [
@@ -91,7 +91,7 @@ R (httr2):
 ```r
 library(httr2)
 report <- request(Sys.getenv("FW_CLOUD_URL")) |>
-  req_url_path_append("api/v2/projects/penguin-study/reports") |>
+  req_url_path_append("api/v1/projects/penguin-study/reports") |>
   req_auth_bearer_token(Sys.getenv("FW_PROJECT_TOKEN")) |>
   req_body_json(list(
     title = "Penguin body mass",
@@ -110,7 +110,7 @@ Python:
 ```python
 import os, requests
 response = requests.post(
-    f"{os.environ['FW_CLOUD_URL']}/api/v2/projects/penguin-study/reports",
+    f"{os.environ['FW_CLOUD_URL']}/api/v1/projects/penguin-study/reports",
     headers={"Authorization": f"Bearer {os.environ['FW_PROJECT_TOKEN']}"},
     json={"title": "Penguin body mass", "markdown": "## Draft\n\nNotes so far."},
 )

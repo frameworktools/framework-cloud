@@ -25,11 +25,20 @@ class ProjectsController extends Controller
     }
 
     /**
-     * Register a project from the R package (framework::new() with a cloud
-     * token). Returns a pull token so the project key can land in the
-     * project's .env at creation time.
+     * Register a project. Resolved choices (blueprint, structure, tools, and so on) build it from
+     * layers; the older name-and-type body, which older packages send, registers it by type.
      */
     public function store(Request $request): JsonResponse
+    {
+        if (! $request->has('project_type')) {
+            return app(PiecesController::class)->store($request);
+        }
+
+        return $this->register($request);
+    }
+
+    /** framework::new() and framework.new() register by name and type, and get a pull token for .env. */
+    private function register(Request $request): JsonResponse
     {
         $user = $this->user($request);
 

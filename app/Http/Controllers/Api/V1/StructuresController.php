@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\V2;
+namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Facet;
@@ -12,7 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
 /**
- * POST /api/v2/structures: save a folder layout someone imported from an
+ * POST /api/v1/structures: save a folder layout someone imported from an
  * existing project (R's and Python's structure_import(), fw structure
  * import) as a project structure of their own. Only folder paths and the
  * roles they play arrive; the packages never send file names or contents.
