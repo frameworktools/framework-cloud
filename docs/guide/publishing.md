@@ -278,6 +278,41 @@ The report reader provides section navigation, formatted text, interactive
 artifact displays, download links, and access to earlier report versions.
 Hosted report publishing is free.
 
+### Reports from a script or an AI agent
+
+The reports API builds the same reports from R, Python, Stata, or a terminal.
+Requests go to `/api/v2/projects/<project>/reports` with the project token from
+`.env` (`FW_PROJECT_TOKEN`) or a personal API token.
+
+| Action | Request |
+|---|---|
+| List reports | `GET /api/v2/projects/<project>/reports` |
+| Read one | `GET /api/v2/projects/<project>/reports/<report>` |
+| Create | `POST /api/v2/projects/<project>/reports` |
+| Update the draft | `PATCH /api/v2/projects/<project>/reports/<report>` |
+| Publish | `POST /api/v2/projects/<project>/reports/<report>/publish` |
+
+A report is a list of `blocks`. Text blocks are Markdown, or HTML with
+`"format": "html"`, cleaned the same way as in the editor. Artifact blocks name
+a published artifact by its slug:
+
+```json
+{
+  "title": "Penguin body mass",
+  "publish": true,
+  "blocks": [
+    {"type": "text", "text": "## Body mass by species\n\nGentoo penguins are heaviest."},
+    {"type": "artifact", "artifact": "mass-by-species"},
+    {"type": "artifact", "artifact": "penguin-body-mass", "caption": "Linear model"}
+  ]
+}
+```
+
+Send `markdown` instead of `blocks` for a single text block. `publish: true`
+publishes after saving. The response includes the report's link and its
+versions. The **Creating Framework reports** skill teaches an AI agent to use
+this API.
+
 ## Storage
 
 New artifact files live on a private filesystem disk and are served through

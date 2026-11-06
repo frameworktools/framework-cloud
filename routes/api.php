@@ -6,13 +6,14 @@ use App\Http\Controllers\Api\V1\CliDeviceController;
 use App\Http\Controllers\Api\V1\DocumentsController;
 use App\Http\Controllers\Api\V1\LedgerController;
 use App\Http\Controllers\Api\V1\MeController;
-use App\Http\Controllers\Api\V1\TokenController;
 use App\Http\Controllers\Api\V1\ProjectPullController;
 use App\Http\Controllers\Api\V1\ProjectsController;
 use App\Http\Controllers\Api\V1\SettingsController;
+use App\Http\Controllers\Api\V1\TokenController;
 use App\Http\Controllers\Api\V2\CollectionsController;
 use App\Http\Controllers\Api\V2\ExternalArtifactsController;
 use App\Http\Controllers\Api\V2\PiecesController;
+use App\Http\Controllers\Api\V2\ReportsController;
 use App\Http\Controllers\Api\V2\SkillSyncController;
 use App\Http\Controllers\Api\V2\StructuresController;
 use App\Http\Controllers\MetricsController;
@@ -55,6 +56,12 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
 // Pull v2: layers envelopes for the R package and fw
 Route::prefix('v2')->middleware('auth:sanctum')->group(function () {
     Route::post('/projects/{slug}/artifacts/external', [ExternalArtifactsController::class, 'store'])->middleware('throttle:60,1');
+    // Reports: Markdown or HTML text with published artifacts, built from a script or an agent
+    Route::get('/projects/{slug}/reports', [ReportsController::class, 'index']);
+    Route::post('/projects/{slug}/reports', [ReportsController::class, 'store'])->middleware('throttle:30,1');
+    Route::get('/projects/{slug}/reports/{report}', [ReportsController::class, 'show']);
+    Route::patch('/projects/{slug}/reports/{report}', [ReportsController::class, 'update'])->middleware('throttle:60,1');
+    Route::post('/projects/{slug}/reports/{report}/publish', [ReportsController::class, 'publish'])->middleware('throttle:30,1');
     Route::get('/collections', [CollectionsController::class, 'index']);
     Route::post('/collections', [CollectionsController::class, 'store'])->middleware('throttle:20,1');
     Route::post('/collections/{collection}/items', [CollectionsController::class, 'storeItem'])->middleware('throttle:60,1');

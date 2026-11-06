@@ -106,6 +106,9 @@ class BlueprintSeeder extends Seeder
      */
     private const SINGLE_LANGUAGE_SKILLS = ['matplotlib-exploring' => 'python', 'stata-graphs' => 'stata'];
 
+    /** Skills that work the same in every language, such as the reports API one. */
+    private const EVERY_LANGUAGE_SKILLS = ['framework-reports'];
+
     private function seedSkills(string $dir): void
     {
         $registry = File::exists(dirname($dir).'/skill-bundles.json') ? $this->json(dirname($dir).'/skill-bundles.json') : [];
@@ -135,6 +138,7 @@ class BlueprintSeeder extends Seeder
                 'language' => match (true) {
                     isset($registry[$key]) => array_keys($registry[$key]),
                     isset(self::SINGLE_LANGUAGE_SKILLS[$key]) => [self::SINGLE_LANGUAGE_SKILLS[$key]],
+                    in_array($key, self::EVERY_LANGUAGE_SKILLS, true) => ['r', 'python', 'stata'],
                     (bool) $texts => array_keys($texts + ['r' => $content]),
                     default => ['r'],
                 }, 'visibility' => 'public',

@@ -25,6 +25,7 @@ class SkillTags
         'framework-stata' => ['framework', 'notebooks'],
         'matplotlib-exploring' => ['visualization', 'exploration'],
         'stata-graphs' => ['visualization', 'exploration'],
+        'framework-reports' => ['framework', 'publishing'],
     ];
 
     public static function seed(): void

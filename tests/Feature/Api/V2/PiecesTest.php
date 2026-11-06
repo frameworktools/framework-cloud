@@ -47,7 +47,7 @@ class PiecesTest extends TestCase
             ->assertJsonPath('skill_sets.1.skills', ['ggplot2-exploring', 'ggplot2-publishing'])
             ->assertJsonPath('skill_sets.1.packages', ['ggplot2']);
         $this->withToken($token)->getJson('/api/v2/package-sets')->assertOk()->assertJsonPath('package_sets.0.key', 'framework/python-data-analysis')->assertJsonPath('package_sets.1.key', 'framework/tidyverse-analysis');
-        $this->withToken($token)->getJson('/api/v2/skills')->assertOk()->assertJsonCount(10, 'skills');
+        $this->withToken($token)->getJson('/api/v2/skills')->assertOk()->assertJsonCount(11, 'skills');
 
         $this->withToken($token)->getJson('/api/v2/blueprints')->assertOk()
             ->assertJsonPath('blueprints.0.structure', 'framework/project')
