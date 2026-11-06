@@ -54,7 +54,7 @@ class ReadableUrlsAndVersionsTest extends TestCase
             ->assertJsonPath('readable_url', url('/@ada/nhanes-study/main-results'))
             ->assertJsonPath('url', url('/@ada/nhanes-study/main-results'));
 
-        $this->get('/@ada/nhanes-study/main-results')->assertOk()->assertSee('Main Results');
+        $this->get('/@ada/nhanes-study/main-results')->assertOk()->assertSee('Main results');
     }
 
     public function test_republishing_without_readable_keeps_the_setting(): void

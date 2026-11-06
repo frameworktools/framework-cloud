@@ -92,7 +92,7 @@ class ArtifactPublisher
                     $document->preserveImplicitVersion();
                 }
                 $number = max((int) $document->next_version_number, (int) $document->versions()->max('number') + 1, 1);
-                $document->fill($stored + ['key' => $document->key ?? Document::newKey(), 'title' => $input['title'] ?? $document->title ?? Str::headline($slug)]);
+                $document->fill($stored + ['key' => $document->key ?? Document::newKey(), 'title' => $input['title'] ?? $document->title ?? self::titleFromSlug($slug)]);
                 if (array_key_exists('description', $input)) {
                     $document->description = $input['description'];
                 }
@@ -213,5 +213,16 @@ class ArtifactPublisher
             str_starts_with($type, 'text/'), $type === 'application/json' => 'text',
             default => 'file',
         };
+    }
+
+    /**
+     * A readable title from an artifact name, in sentence case: "mass-by-species"
+     * becomes "Mass by species". Letters the person capitalized stay as they are.
+     */
+    public static function titleFromSlug(string $slug): string
+    {
+        $words = trim(preg_replace('/[\s_-]+/', ' ', $slug) ?? $slug);
+
+        return Str::ucfirst($words);
     }
 }

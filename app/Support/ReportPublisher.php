@@ -142,7 +142,7 @@ class ReportPublisher
             }
             $share = (bool) ($data['share_unlisted'] ?? false);
             if ($publishing && $report->visibility === 'public' && $document->visibility !== 'public') {
-                throw ValidationException::withMessages([$prefix.'.document_id' => 'Public reports can contain only public artifacts.']);
+                throw ValidationException::withMessages([$prefix.'.document_id' => 'Public reports can contain only public artifacts. Make “'.($document->title ?? $document->slug).'” public or remove it.']);
             }
             if ($publishing && $report->visibility === 'unlisted' && $document->visibility !== 'public' && ! $share) {
                 throw ValidationException::withMessages([$prefix.'.share_unlisted' => 'Allow report readers to access this unlisted artifact before publishing.']);

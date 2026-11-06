@@ -105,7 +105,8 @@ class DocumentsController extends Controller
                 ...$reports->map(fn (Report $report) => ['type' => 'Report', 'title' => $report->title, 'href' => '/reports/'.$report->id.'/edit'])->values(),
             ],
             'mergeSources' => Document::where('project_id', $document->project_id)->where('driver', 'cloud')->whereKeyNot($document->id)
-                ->whereNull('merged_into_id')->whereNull('merged_at')->orderBy('title')->get(['id', 'title', 'slug'])
+                // A password-protected source can't be merged, so it isn't offered
+                ->whereNull('merged_into_id')->whereNull('merged_at')->whereNull('password_hash')->orderBy('title')->get(['id', 'title', 'slug'])
                 ->map(fn ($d) => ['id' => $d->id, 'title' => $d->title ?? $d->slug]),
         ]);
     }

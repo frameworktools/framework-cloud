@@ -90,6 +90,7 @@ function saveSharing() {
         onSuccess: () => { sharing.password = ''; sharing.remove_password = false; sharing.defaults(); },
     });
 }
+const sharingLabels = { private: 'Private', unlisted: 'Anyone with the link', public: 'Public' };
 const visibilityText = {
     private: 'Only you can open the collection.',
     unlisted: 'Anyone with the link can open it. It isn’t listed anywhere.',
@@ -249,7 +250,7 @@ onBeforeUnmount(() => { clearInterval(clock); clearTimeout(timer); window.remove
                                     <p class="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-slate-500 dark:text-slate-400">
                                         <template v-if="artifactFor(item)"><span>{{ artifactKind(artifactFor(item).kind).label }}</span><span aria-hidden="true">·</span></template>
                                         <span>{{ item.version_number ? `Version ${item.version_number}` : 'Latest version' }}</span>
-                                        <template v-if="artifactFor(item)"><span aria-hidden="true">·</span><span class="capitalize">{{ artifactFor(item).visibility }}</span></template>
+                                        <template v-if="artifactFor(item)"><span aria-hidden="true">·</span><span>{{ sharingLabels[artifactFor(item).visibility] ?? artifactFor(item).visibility }}</span></template>
                                         <LockClosedIcon v-if="artifactFor(item)?.password_protected" class="size-3.5" aria-label="Password protected" />
                                     </p>
                                     <p v-if="item.caption" class="mt-1.5 line-clamp-2 whitespace-pre-line text-sm text-slate-600 dark:text-slate-300">{{ item.caption }}</p>

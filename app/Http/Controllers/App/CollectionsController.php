@@ -72,8 +72,11 @@ class CollectionsController extends Controller
             'password' => ['nullable', 'string', 'min:8', 'max:255'], 'remove_password' => ['sometimes', 'boolean'],
         ]);
         if (($data['visibility'] ?? null) === 'public') {
-            if ($collection->items()->whereHas('document', fn ($q) => $q->where('visibility', '!=', 'public'))->exists()) {
-                throw ValidationException::withMessages(['visibility' => 'Public collections can contain only public artifacts.']);
+            $blocking = $collection->items()->with('document:id,title,slug')
+                ->whereHas('document', fn ($q) => $q->where('visibility', '!=', 'public'))->get()
+                ->map(fn ($item) => '“'.($item->document->title ?? $item->document->slug).'”');
+            if ($blocking->isNotEmpty()) {
+                throw ValidationException::withMessages(['visibility' => 'Public collections can contain only public artifacts. Make these public or remove them: '.$blocking->join(', ', ' and ').'.']);
             }
         }
         $attributes = collect($data)->only(['title', 'description', 'visibility'])->all();
