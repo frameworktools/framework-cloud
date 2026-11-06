@@ -19,8 +19,8 @@
 
     {{-- Hero: a light sky gradient, or slate in dark mode --}}
     <section class="relative">
-        <div class="relative mx-auto grid max-w-7xl items-center gap-12 px-6 py-14 sm:py-20 lg:grid-cols-[1fr_1.05fr] lg:gap-14">
-            <div class="min-w-0">
+        <div class="relative mx-auto grid max-w-7xl items-start gap-12 px-6 py-14 sm:py-16 lg:grid-cols-[1fr_1.05fr] lg:gap-14">
+            <div class="min-w-0 lg:pt-10">
                 <h1 class="text-4xl font-semibold leading-[1.06] tracking-tight text-balance sm:text-5xl xl:text-[3.5rem]">Structured data science workflows</h1>
                 <p class="mt-6 max-w-xl text-lg leading-relaxed text-slate-700 dark:text-slate-200">Framework helps you set up a data science project, keep track of the data and settings you use, and share your results. Start a project in Framework Cloud, or with our R, Python, {{ isset(\App\Support\Docs\Products::listed()['stata']) ? 'Stata, ' : '' }}or command-line tools.</p>
                 @php
