@@ -18,6 +18,9 @@ import { visibilityOptions } from '@/library.js';
 const props = defineProps({ skill: Object, content: String, variant: String, language: String, tagOptions: Array });
 
 const page = usePage();
+// A copy made by Copy and edit that hasn't been saved yet can be discarded
+const freshCopy = computed(() => new URL(page.url, window.location.origin).searchParams.has('copy'));
+const discardCopy = () => router.delete(`/skills/${props.skill.id}`);
 const saved = computed(() => ['skill-saved', 'skill-forked'].includes(page.props.flash.status));
 const readOnly = computed(() => props.skill && !props.skill.editable);
 
@@ -81,6 +84,9 @@ const destroy = async () => {
         <div v-if="skill" class="mt-2 font-mono text-xs text-slate-500">{{ skill.handle }} · v{{ skill.version }}</div>
 
         <UiCallout v-if="saved" variant="success" heading="Saved" class="mt-8">Version {{ skill?.version }} is saved.</UiCallout>
+        <UiCallout v-else-if="skill && freshCopy" heading="New copy" class="mt-8">
+            <span class="flex flex-wrap items-center gap-3">Save a version to keep it. <UiButton variant="ghost" size="sm" @click="discardCopy">Discard copy</UiButton></span>
+        </UiCallout>
 
         <form id="skill-form" class="mt-8 flex flex-col gap-8" @submit.prevent="save">
             <UiPanel id="content" class="scroll-mt-6">

@@ -24,6 +24,9 @@ const props = defineProps({
 });
 
 const page = usePage();
+// A copy made by Copy and edit that hasn't been saved yet can be discarded
+const freshCopy = computed(() => new URL(page.url, window.location.origin).searchParams.has('copy'));
+const discardCopy = () => router.delete(`/${props.path}/${props.facet.id}`);
 const copy = computed(() => pieceCopy[props.kind]);
 const saved = computed(() => ['facet-saved', 'facet-forked', 'facet-imported'].includes(page.props.flash.status));
 const isStructure = computed(() => props.kind === 'structure');
@@ -100,6 +103,9 @@ const errorFor = (prefix) => Object.entries(form.errors).filter(([k]) => k.start
         <div v-if="facet" class="mt-2 font-mono text-xs text-slate-500">{{ facet.handle }} · v{{ facet.version }}</div>
 
         <UiCallout v-if="saved" variant="success" heading="Saved" class="mt-8">Version {{ facet?.version }} is ready to use.</UiCallout>
+        <UiCallout v-else-if="facet && freshCopy" heading="New copy" class="mt-8">
+            <span class="flex flex-wrap items-center gap-3">Save a version to keep it. <UiButton variant="ghost" size="sm" @click="discardCopy">Discard copy</UiButton></span>
+        </UiCallout>
 
         <form id="piece-form" class="mt-8 flex flex-col gap-8" @submit.prevent="save">
             <UiPanel id="details" title="Details" class="scroll-mt-6">

@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
-import { useForm, usePage } from '@inertiajs/vue3';
+import { router, useForm, usePage } from '@inertiajs/vue3';
 import SectionLayout from '@/Layouts/SectionLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import UiPanel from '@/Components/UiPanel.vue';
@@ -60,6 +60,9 @@ watch(() => form.language, (language) => {
 
 // The files and folders a project would get, for one language and workflow it supports
 const page = usePage();
+// A copy made by Copy and edit that hasn't been saved yet: Cancel discards it
+const freshCopy = computed(() => new URL(page.url, window.location.origin).searchParams.has('copy'));
+const discardCopy = () => router.delete(`/blueprints/${props.blueprint.id}`);
 const previewWorkflow = ref(null);
 const workflowChoices = computed(() => form.workflows.filter((w) => fits(w, form.language)));
 watch(workflowChoices, (choices) => {
@@ -177,7 +180,8 @@ const items = [
             <UiButton save-shortcut type="submit" form="blueprint-form" class="w-full" :disabled="form.processing || !form.structure">
                 {{ editing ? 'Save new version' : 'Create blueprint' }}
             </UiButton>
-            <Link :href="editing ? `/blueprints/${blueprint.id}` : '/blueprints'" class="block"><UiButton variant="ghost" class="w-full">Cancel</UiButton></Link>
+            <UiButton v-if="editing && freshCopy" variant="ghost" class="w-full" @click="discardCopy">Discard copy</UiButton>
+            <Link v-else :href="editing ? `/blueprints/${blueprint.id}` : '/blueprints'" class="block"><UiButton variant="ghost" class="w-full">Cancel</UiButton></Link>
         </template>
     </SectionLayout>
 </template>

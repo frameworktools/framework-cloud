@@ -4,6 +4,7 @@ import { computed, ref, watch } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
 import ThemeToggle from '@/Components/ThemeToggle.vue';
 import SidebarNav from '@/Components/SidebarNav.vue';
+import FlashToast from '@/Components/FlashToast.vue';
 import { Bars3Icon, XMarkIcon } from '@heroicons/vue/24/outline';
 
 defineProps({ bleed: Boolean });
@@ -74,5 +75,6 @@ watch(() => page.url, () => { menuOpen.value = false; });
                 <slot />
             </main>
         </div>
+        <FlashToast />
     </div>
 </template>

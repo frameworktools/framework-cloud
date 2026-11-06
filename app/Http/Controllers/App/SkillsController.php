@@ -173,7 +173,7 @@ class SkillsController extends Controller
             'notes' => "Forked from {$skill->handle} v{$source->version}",
         ]);
 
-        return to_route('skills.edit', $copy)->with('status', 'skill-forked');
+        return to_route('skills.edit', ['skill' => $copy, 'copy' => 1])->with('status', 'skill-forked');
     }
 
     public function restore(Request $request, Skill $skill): RedirectResponse

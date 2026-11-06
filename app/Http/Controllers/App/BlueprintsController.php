@@ -236,7 +236,7 @@ class BlueprintsController extends Controller
             return $copy;
         });
 
-        return to_route('blueprints.edit', $copy)->with('status', 'blueprint-forked');
+        return to_route('blueprints.edit', ['blueprint' => $copy, 'copy' => 1])->with('status', 'blueprint-forked');
     }
 
     public function destroy(Request $request, Blueprint $blueprint): RedirectResponse

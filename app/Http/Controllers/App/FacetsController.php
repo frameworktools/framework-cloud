@@ -198,7 +198,7 @@ class FacetsController extends Controller
         ]);
         $copy->publishVersion(['layer' => $source->layer, 'notes' => "Copied from {$facet->handle} v{$source->version}"]);
 
-        return to_route(self::PATHS[$kind].'.edit', $copy)->with('status', 'facet-forked');
+        return to_route(self::PATHS[$kind].'.edit', ['facet' => $copy, 'copy' => 1])->with('status', 'facet-forked');
     }
 
     public function destroy(Request $request, Facet $facet, string $kind): RedirectResponse
