@@ -137,7 +137,9 @@ class ReportsController extends Controller
                 $block['id'] = 'b'.$next++;
             }
             if (($block['type'] ?? null) === 'artifact' && ! isset($block['document_id']) && is_string($block['artifact'] ?? null)) {
-                $document = Document::where('project_id', $project->id)->where('slug', $block['artifact'])->first();
+                // The project's own artifact first, then one linked to it
+                $document = Document::availableTo($project->id)->where('slug', $block['artifact'])
+                    ->orderByRaw('case when project_id = ? then 0 else 1 end', [$project->id])->first();
                 if (! $document) {
                     throw ValidationException::withMessages(["blocks.$index.artifact" => 'No published artifact in this project has the slug “'.$block['artifact'].'”.']);
                 }

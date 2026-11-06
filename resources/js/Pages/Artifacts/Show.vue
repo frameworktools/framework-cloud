@@ -19,7 +19,12 @@ import { artifactKind } from '@/report-artifacts.js';
 import { EyeIcon, ArrowTopRightOnSquareIcon, LockClosedIcon, TrashIcon, CheckIcon } from '@heroicons/vue/20/solid';
 import { ClipboardDocumentIcon, Square2StackIcon, Square3Stack3DIcon } from '@heroicons/vue/24/outline';
 
-const props = defineProps({ artifact: Object, project: Object, versions: Array, usedIn: Array, mergeSources: Array, handle: String });
+const props = defineProps({ artifact: Object, project: Object, versions: Array, usedIn: Array, mergeSources: Array, handle: String, linkedProjects: { type: Array, default: () => [] }, linkableProjects: { type: Array, default: () => [] } });
+
+// Projects this artifact is listed in besides its own
+const linking = useForm({ project_id: '' });
+const link = () => linking.post(`/artifacts/${props.artifact.id}/projects`, { preserveScroll: true, onSuccess: () => linking.reset() });
+const unlink = (linked) => router.delete(`/artifacts/${props.artifact.id}/projects/${linked.id}`, { preserveScroll: true });
 const breadcrumbItems = computed(() => {
     const collections = props.usedIn.filter(item => item.type === 'Collection').map(item => ({ label: item.title, href: item.href, icon: 'collection' }));
     return [{ label: 'Artifacts', href: '/published' }, ...(collections.length === 1 ? collections : collections.length ? [{ links: collections }] : [])];
@@ -148,9 +153,13 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public', privat
                             <span>{{ sharingText[artifact.visibility] || artifact.visibility }}</span>
                             <LockClosedIcon v-if="artifact.password_protected" class="size-3.5" aria-label="Password protected" />
                             <span aria-hidden="true">·</span>
-                            <Link :href="`/projects/${project.slug}/published`" class="inline-flex min-w-0 max-w-full items-center gap-1.5 hover:text-slate-800 hover:underline dark:hover:text-white">
-                                <Square3Stack3DIcon class="size-4 shrink-0 text-slate-400" aria-hidden="true" /><span class="truncate">{{ project.name }}</span>
-                            </Link>
+<template v-for="(listed, index) in [...(project.is_home ? [] : [project]), ...linkedProjects]" :key="listed.id">
+                                <span v-if="index" aria-hidden="true" class="-ml-1">,</span>
+                                <Link :href="`/projects/${listed.slug}/published`" class="inline-flex min-w-0 max-w-full items-center gap-1.5 hover:text-slate-800 hover:underline dark:hover:text-white">
+                                    <Square3Stack3DIcon v-if="!index" class="size-4 shrink-0 text-slate-400" aria-hidden="true" /><span class="truncate">{{ listed.name }}</span>
+                                </Link>
+                            </template>
+                            <span v-if="project.is_home && !linkedProjects.length">No project</span>
                         </p>
                     </div>
                     <div class="flex shrink-0 items-center gap-2">
@@ -277,6 +286,27 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public', privat
                             <span v-if="details.recentlySuccessful" class="text-sm text-emerald-700 dark:text-emerald-400">Saved</span>
                         </div>
                     </form>
+                    <UiSeparator />
+                    <section class="space-y-4">
+                        <UiSection title="Projects" :description="project.is_home
+                            ? 'This artifact has no project. Link it to projects to list it there and use it in their reports and collections.'
+                            : `Published from ${project.name}. Link it to other projects to list it there and use it in their reports and collections.`" />
+                        <ul v-if="linkedProjects.length" class="divide-y divide-slate-800/10 text-sm dark:divide-white/10">
+                            <li v-for="linked in linkedProjects" :key="linked.id" class="flex items-center justify-between gap-3 py-2">
+                                <UiLink :href="`/projects/${linked.slug}/published`">{{ linked.name }}</UiLink>
+                                <UiButton variant="subtle" size="sm" @click="unlink(linked)">Unlink</UiButton>
+                            </li>
+                        </ul>
+                        <form v-if="linkableProjects.length" class="flex flex-wrap items-end gap-3" @submit.prevent="link">
+                            <div class="min-w-56 flex-1">
+                                <UiSelect v-model="linking.project_id" label="Project" :error="linking.errors.project_id">
+                                    <option value="" disabled>Choose a project</option>
+                                    <option v-for="option in linkableProjects" :key="option.id" :value="option.id">{{ option.name }}</option>
+                                </UiSelect>
+                            </div>
+                            <UiButton type="submit" variant="ghost" :disabled="!linking.project_id || linking.processing">Link project</UiButton>
+                        </form>
+                    </section>
                     <template v-if="!external && mergeSources.length && !artifact.merged_into">
                         <UiSeparator />
                         <form class="space-y-6" @submit.prevent="mergeIn">

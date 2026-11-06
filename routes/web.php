@@ -128,6 +128,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('projects', [ProjectsController::class, 'index'])->name('projects');
     Route::get('published', [DocumentsController::class, 'index'])->name('published');
     Route::get('artifacts/{document}', [DocumentsController::class, 'show'])->whereNumber('document')->name('artifacts.show');
+    Route::post('artifacts/{document}/projects', [DocumentsController::class, 'link'])->whereNumber('document');
+    Route::delete('artifacts/{document}/projects/{project}', [DocumentsController::class, 'unlink'])->whereNumber(['document', 'project']);
     Route::delete('published/{document}', [DocumentsController::class, 'destroy']);
     Route::patch('published/{document}', [DocumentsController::class, 'update']);
     Route::post('published/{document}/merge', [DocumentsController::class, 'merge']);

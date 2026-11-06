@@ -17,8 +17,8 @@ const query = ref('');
 const project = ref('');
 const shown = computed(() => {
     const words = query.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
-    return props.documents.filter(doc => (!project.value || doc.project.id === Number(project.value))
-        && words.every(word => `${doc.title} ${doc.slug} ${artifactKind(doc.kind).label} ${doc.project.name}`.toLowerCase().includes(word)));
+    return props.documents.filter(doc => (!project.value || doc.project.id === Number(project.value) || (doc.linked_projects ?? []).some(p => p.id === Number(project.value)))
+        && words.every(word => `${doc.title} ${doc.slug} ${artifactKind(doc.kind).label} ${doc.project.name} ${(doc.linked_projects ?? []).map(p => p.name).join(' ')}`.toLowerCase().includes(word)));
 });
 const date = (value) => new Date(value).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 </script>
@@ -29,7 +29,7 @@ const date = (value) => new Date(value).toLocaleDateString(undefined, { year: 'n
     <AppLayout>
         <div class="flex flex-col gap-8">
             <PageHeader title="Artifacts" description="Published artifacts across projects. Each has a reader page and version history.">
-                <template #actions><UiButton v-if="canPublish && projects.length" :variant="uploading ? 'ghost' : 'primary'" @click="uploading = !uploading">{{ uploading ? 'Close' : 'Publish an artifact' }}</UiButton></template>
+                <template #actions><UiButton v-if="canPublish" :variant="uploading ? 'ghost' : 'primary'" @click="uploading = !uploading">{{ uploading ? 'Close' : 'Publish an artifact' }}</UiButton></template>
             </PageHeader>
 
             <p v-if="storage?.limit" class="text-xs text-slate-500">Artifact storage: <span class="font-mono">{{ (storage.used / 1048576).toFixed(1) }} MB</span> of <span class="font-mono">{{ (storage.limit / 1073741824).toFixed(1) }} GB</span>. Versions share this limit.</p>
@@ -60,7 +60,11 @@ const date = (value) => new Date(value).toLocaleDateString(undefined, { year: 'n
                                     <Link :href="`/artifacts/${doc.id}`" class="truncate hover:underline hover:underline-offset-4">{{ doc.title }}</Link>
                                     <span v-if="doc.merged_into_id" class="rounded-md bg-slate-800/5 px-1.5 text-xs font-normal text-slate-500 dark:bg-white/10">Merged</span>
                                 </span>
-                                <Link :href="`/projects/${doc.project.slug}/published`" class="mt-1 block truncate text-xs font-normal text-slate-500 hover:underline">{{ doc.project.name }}</Link>
+                                <span class="mt-1 block truncate text-xs font-normal text-slate-500">
+                                    <Link v-if="!doc.project.is_home" :href="`/projects/${doc.project.slug}/published`" class="hover:underline">{{ doc.project.name }}</Link>
+                                    <template v-else-if="!doc.linked_projects?.length">No project</template>
+                                    <template v-for="(linked, index) in doc.linked_projects ?? []" :key="linked.id"><template v-if="index || !doc.project.is_home">, </template><Link :href="`/projects/${linked.slug}/published`" class="hover:underline">{{ linked.name }}</Link></template>
+                                </span>
                             </td>
                             <td class="max-sm:hidden">{{ artifactKind(doc.kind).label }}</td><td class="max-lg:hidden">{{ doc.location ?? 'Framework Cloud' }}</td>
                             <td class="max-2xl:hidden"><span class="inline-flex items-center gap-1.5">{{ doc.visibility === 'private' ? 'Private' : doc.visibility === 'public' ? 'Public' : 'Anyone with the link' }}<LockClosedIcon v-if="doc.password_protected" class="size-3.5" aria-label="Password protected" /></span></td>

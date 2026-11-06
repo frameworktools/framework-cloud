@@ -202,7 +202,7 @@ class HostedMcpTest extends TestCase
         $this->assertFalse($projects['error']);
         $this->assertSame('penguin-study', $projects['body']['projects'][0]['slug']);
 
-        $artifact = $this->tool($token, 'artifacts_show', ['slug' => 'penguin-study', 'artifact' => 'mass-model']);
+        $artifact = $this->tool($token, 'artifacts_show', ['project' => 'penguin-study', 'artifact' => 'mass-model']);
         $this->assertFalse($artifact['error'], json_encode($artifact));
         $this->assertSame('{"estimate": 4207.1}', $artifact['body']['content']);
 
@@ -371,7 +371,7 @@ class HostedMcpTest extends TestCase
         $user = $this->owner();
         $token = $this->connect($user, McpConnection::ACCESS_FULL);
 
-        $notebook = $this->tool($token, 'artifacts_publish', ['slug' => 'penguin-study', 'filename' => 'analysis.html',
+        $notebook = $this->tool($token, 'artifacts_publish', ['project' => 'penguin-study', 'filename' => 'analysis.html',
             'content' => '<html><body><h1>Penguins</h1></body></html>', 'title' => 'Penguin analysis']);
         $this->assertFalse($notebook['error'], json_encode($notebook));
         $this->assertSame('analysis', $notebook['body']['slug']);
@@ -380,19 +380,19 @@ class HostedMcpTest extends TestCase
         $this->assertSame(1, $notebook['body']['version']);
 
         $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==');
-        $figure = $this->tool($token, 'artifacts_publish', ['slug' => 'penguin-study', 'filename' => 'mass.png',
+        $figure = $this->tool($token, 'artifacts_publish', ['project' => 'penguin-study', 'filename' => 'mass.png',
             'content_base64' => base64_encode($png), 'artifact' => 'flipper-and-mass']);
         $this->assertFalse($figure['error'], json_encode($figure));
         $this->assertSame('flipper-and-mass', $figure['body']['slug']);
         $this->assertSame('image', $figure['body']['kind']);
 
-        $again = $this->tool($token, 'artifacts_publish', ['slug' => 'penguin-study', 'filename' => 'analysis.html', 'content' => '<html>v2</html>']);
+        $again = $this->tool($token, 'artifacts_publish', ['project' => 'penguin-study', 'filename' => 'analysis.html', 'content' => '<html>v2</html>']);
         $this->assertSame(2, $again['body']['version']);
 
         $version = Document::where('slug', 'analysis')->sole()->versions()->first();
         $this->assertSame(['published_by' => 'agent', 'agent' => 'Claude'], array_intersect_key($version->provenance, array_flip(['published_by', 'agent'])));
 
-        $shown = $this->tool($token, 'artifacts_show', ['slug' => 'penguin-study', 'artifact' => 'analysis']);
+        $shown = $this->tool($token, 'artifacts_show', ['project' => 'penguin-study', 'artifact' => 'analysis']);
         $this->assertSame('Claude', $shown['body']['versions'][0]['published_by']);
     }
 
@@ -407,7 +407,7 @@ class HostedMcpTest extends TestCase
         $archive->addFromString('site_files/style.css', 'body { color: black; }');
         $archive->close();
 
-        $site = $this->tool($token, 'artifacts_publish', ['slug' => 'penguin-study', 'filename' => 'report.zip',
+        $site = $this->tool($token, 'artifacts_publish', ['project' => 'penguin-study', 'filename' => 'report.zip',
             'content_base64' => base64_encode(file_get_contents($zip)), 'entrypoint' => 'index.html', 'artifact' => 'quarto-report']);
         @unlink($zip);
 
@@ -421,14 +421,14 @@ class HostedMcpTest extends TestCase
         $user = $this->owner();
         $full = $this->connect($user, McpConnection::ACCESS_FULL);
 
-        $bad = $this->tool($full, 'artifacts_publish', ['slug' => 'penguin-study', 'filename' => 'x.png', 'content_base64' => '***']);
+        $bad = $this->tool($full, 'artifacts_publish', ['project' => 'penguin-study', 'filename' => 'x.png', 'content_base64' => '***']);
         $this->assertTrue($bad['error']);
         $this->assertSame(422, $bad['body']['error']['status']);
 
-        $traversal = $this->tool($full, 'artifacts_publish', ['slug' => 'penguin-study', 'filename' => '../x.html', 'content' => 'x']);
+        $traversal = $this->tool($full, 'artifacts_publish', ['project' => 'penguin-study', 'filename' => '../x.html', 'content' => 'x']);
         $this->assertSame(422, $traversal['body']['error']['status']);
 
-        $preview = $this->tool($full, 'artifacts_publish', ['slug' => 'penguin-study', 'filename' => 'big.html', 'content' => str_repeat('a', 5000), 'dry_run' => true]);
+        $preview = $this->tool($full, 'artifacts_publish', ['project' => 'penguin-study', 'filename' => 'big.html', 'content' => str_repeat('a', 5000), 'dry_run' => true]);
         $this->assertSame('(5,000 characters)', $preview['body']['body']['content']);
         $this->assertSame(0, Document::count());
     }
@@ -440,5 +440,108 @@ class HostedMcpTest extends TestCase
         $this->withToken($user->createToken('script')->plainTextToken)
             ->postJson('/api/v1/projects/penguin-study/artifacts', ['filename' => 'table.csv', 'content' => "species,mass\nAdelie,3700\n", 'visibility' => 'unlisted'])
             ->assertCreated()->assertJsonPath('kind', 'table')->assertJsonPath('visibility', 'unlisted');
+    }
+
+    public function test_an_artifact_can_be_published_without_a_project(): void
+    {
+        $user = $this->owner();
+        $token = $this->connect($user, McpConnection::ACCESS_FULL);
+
+        $loose = $this->tool($token, 'artifacts_publish', ['filename' => 'notes.md', 'content' => '# Notes']);
+        $this->assertFalse($loose['error'], json_encode($loose));
+        $this->assertNull($loose['body']['project']);
+        $this->assertTrue(Document::where('slug', 'notes')->sole()->project->is_home);
+
+        // The home is not a project anyone lists
+        $this->assertSame(['penguin-study'], array_column($this->tool($token, 'projects_list')['body']['projects'], 'slug'));
+        $this->assertSame('notes', $this->tool($token, 'artifacts_show', ['artifact' => 'notes'])['body']['slug']);
+        $this->assertSame(['notes'], array_column($this->tool($token, 'artifacts_list')['body']['artifacts'], 'slug'));
+
+        app('auth')->forgetGuards();
+        $this->actingAs($user)->get('/projects')->assertInertia(fn (AssertableInertia $page) => $page->has('projects', 1));
+        $this->get('/published')->assertInertia(fn (AssertableInertia $page) => $page->where('documents.0.project.name', 'No project'));
+    }
+
+    public function test_an_upload_link_publishes_a_large_file_once(): void
+    {
+        $user = $this->owner();
+        $token = $this->connect($user, McpConnection::ACCESS_FULL);
+
+        $link = $this->tool($token, 'artifacts_upload', ['filename' => 'big-notebook.html', 'artifact' => 'quarto-notebook', 'title' => 'Quarto notebook']);
+        $this->assertFalse($link['error'], json_encode($link));
+        $this->assertStringContainsString('--data-binary @', $link['body']['command']);
+        $url = $link['body']['upload_url'];
+        $this->assertSame(0, Document::count());
+
+        $html = '<html><img src="data:image/png;base64,'.str_repeat('A', 3_000_000).'"></html>';
+        app('auth')->forgetGuards();
+        $this->call('PUT', $url, [], [], [], ['CONTENT_TYPE' => 'application/octet-stream', 'HTTP_ACCEPT' => 'application/json'], $html)
+            ->assertCreated()->assertJsonPath('slug', 'quarto-notebook')->assertJsonPath('kind', 'html')
+            ->assertJsonPath('visibility', 'private')->assertJsonPath('project', null);
+
+        $version = Document::where('slug', 'quarto-notebook')->sole()->latestVersion();
+        $this->assertSame(strlen($html), (int) $version->size_bytes);
+        $this->assertSame('Claude', $version->provenance['agent']);
+
+        $this->call('PUT', $url, [], [], [], ['HTTP_ACCEPT' => 'application/json'], 'again')->assertNotFound();
+    }
+
+    public function test_an_upload_link_expires_and_rejects_empty_files(): void
+    {
+        $user = $this->owner();
+        $api = $user->createToken('script')->plainTextToken;
+        $url = $this->withToken($api)->postJson('/api/v1/artifacts/uploads', ['filename' => 'fig.png', 'project' => 'penguin-study'])
+            ->assertCreated()->json('upload_url');
+        app('auth')->forgetGuards();
+
+        $this->call('PUT', $url, [], [], [], ['HTTP_ACCEPT' => 'application/json'], '')->assertUnprocessable();
+
+        $this->travel(31)->minutes();
+        $this->call('PUT', $url, [], [], [], ['HTTP_ACCEPT' => 'application/json'], 'png bytes')->assertNotFound();
+        $this->call('PUT', '/api/v1/uploads/'.str_repeat('a', 48), [], [], [], ['HTTP_ACCEPT' => 'application/json'], 'x')->assertNotFound();
+    }
+
+    public function test_a_linked_artifact_appears_in_its_projects_and_their_reports(): void
+    {
+        $user = $this->owner();
+        Project::factory()->for($user)->create(['slug' => 'thesis', 'name' => 'Thesis']);
+        $token = $this->connect($user, McpConnection::ACCESS_FULL);
+        $this->tool($token, 'artifacts_publish', ['filename' => 'mass.csv', 'content' => "species,mass\nAdelie,3700\n"]);
+
+        $linked = $this->tool($token, 'artifacts_link', ['project' => 'penguin-study', 'artifact' => 'mass']);
+        $this->assertFalse($linked['error'], json_encode($linked));
+        $this->tool($token, 'artifacts_link', ['project' => 'thesis', 'artifact' => 'mass']);
+        $this->assertSame(['penguin-study', 'thesis'], $this->tool($token, 'artifacts_show', ['artifact' => 'mass'])['body']['linked_projects']);
+        $this->assertSame(['mass'], array_column($this->tool($token, 'artifacts_list', ['project' => 'penguin-study'])['body']['artifacts'], 'slug'));
+
+        $report = $this->tool($token, 'reports_create', ['slug' => 'penguin-study', 'title' => 'Mass', 'publish' => true,
+            'blocks' => [['type' => 'artifact', 'artifact' => 'mass']]]);
+        $this->assertFalse($report['error'], json_encode($report));
+        $this->assertSame(1, $report['body']['latest_version']);
+
+        app('auth')->forgetGuards();
+        $this->actingAs($user)->get('/projects/penguin-study/published')
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('project.documents.0.linked_from', 'No project'));
+
+        $this->tool($token, 'artifacts_unlink', ['project' => 'thesis', 'artifact' => 'mass']);
+        $this->assertSame(['penguin-study'], $this->tool($token, 'artifacts_show', ['artifact' => 'mass'])['body']['linked_projects']);
+    }
+
+    public function test_the_artifact_page_links_and_unlinks_projects(): void
+    {
+        $user = $this->owner();
+        $thesis = Project::factory()->for($user)->create(['slug' => 'thesis', 'name' => 'Thesis']);
+        $document = $this->figure($user);
+        $other = Project::factory()->for(User::factory()->create())->create();
+
+        $this->actingAs($user)->get("/artifacts/{$document->id}")->assertInertia(fn (AssertableInertia $page) => $page
+            ->has('linkedProjects', 0)->where('linkableProjects.0.slug', 'thesis'));
+
+        $this->post("/artifacts/{$document->id}/projects", ['project_id' => $other->id])->assertNotFound();
+        $this->post("/artifacts/{$document->id}/projects", ['project_id' => $thesis->id])->assertRedirect();
+        $this->assertSame([$thesis->id], $document->linkedProjects()->pluck('projects.id')->all());
+
+        $this->delete("/artifacts/{$document->id}/projects/{$thesis->id}")->assertRedirect();
+        $this->assertSame(0, $document->linkedProjects()->count());
     }
 }

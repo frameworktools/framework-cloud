@@ -22,6 +22,7 @@ class ToolCatalog
     {
         $project = ['slug' => ['type' => 'string', 'description' => 'The project slug, from projects_list.']];
         $report = ['report' => ['type' => 'string', 'description' => 'The report slug, from reports_list.']];
+        $optionalProject = ['project' => ['type' => 'string', 'description' => 'A project slug, from projects_list. Optional.']];
         $language = ['language' => ['type' => 'string', 'enum' => ['r', 'python', 'stata'], 'description' => 'Keep only items for this language.']];
 
         return [
@@ -41,23 +42,47 @@ class ToolCatalog
                 'description' => 'One project: its blueprint, its GitHub repository and Pages site, and when it was created.',
             ],
             'artifacts_list' => [
-                'level' => self::READ, 'method' => 'GET', 'path' => '/projects/{slug}/artifacts', 'path_params' => $project,
+                'level' => self::READ, 'method' => 'GET', 'path' => '/artifacts', 'query' => $optionalProject,
                 'title' => 'List published artifacts',
-                'description' => 'A project\'s published figures, tables, models, data, and notebooks, with slug, kind, visibility, link, and latest version.',
+                'description' => 'Published figures, tables, models, data, and notebooks, with slug, kind, visibility, link, latest version, their project (null for none), and the projects they are linked to. Pass project for one project\'s own and linked artifacts; leave it out for the whole account.',
             ],
             'artifacts_show' => [
-                'level' => self::READ, 'method' => 'GET', 'path' => '/projects/{slug}/artifacts/{artifact}',
-                'path_params' => $project + ['artifact' => ['type' => 'string', 'description' => 'The artifact slug, from artifacts_list.']],
-                'query' => ['version_number' => ['type' => 'integer', 'minimum' => 1, 'description' => 'A version to read. Defaults to the latest.']],
+                'level' => self::READ, 'method' => 'GET', 'path' => '/artifacts/{artifact}',
+                'path_params' => ['artifact' => ['type' => 'string', 'description' => 'The artifact slug, from artifacts_list.']],
+                'query' => $optionalProject + ['version_number' => ['type' => 'integer', 'minimum' => 1, 'description' => 'A version to read. Defaults to the latest.']],
                 'title' => 'Show a published artifact',
-                'description' => 'One artifact and its versions. For text content (a model\'s JSON, a CSV table, Markdown), content holds the version\'s content, up to 200 KB. Take estimates and counts from here, never invent them.',
+                'description' => 'One artifact and its versions. For text content (a model\'s JSON, a CSV table, Markdown), content holds the version\'s content, up to 200 KB. Take estimates and counts from here, never invent them. Pass project when several projects have an artifact with this slug.',
             ],
             'artifacts_publish' => [
-                'level' => self::FULL, 'method' => 'POST', 'path' => '/projects/{slug}/artifacts', 'path_params' => $project,
+                'level' => self::FULL, 'method' => 'POST', 'path' => '/artifacts',
                 'rename' => ['artifact' => 'slug'],
                 'body' => self::publishBody(),
                 'title' => 'Publish an artifact',
-                'description' => 'Publish a saved file to a project as an artifact: an HTML file as a notebook, a PNG or SVG as a figure, a CSV as a table, a PDF, Markdown, or a framework.artifact/v1 model JSON. A zip with an HTML entrypoint publishes a rendered site, such as Quarto output. Send text files as content and binary files as content_base64, up to 10 MB. Publishing the same artifact name again adds a version at the same link. New artifacts start private. If you can run fw publish or the R, Python, or Stata package in the project, prefer those: they check the project\'s private folders first.',
+                'description' => 'Publish a small saved file as an artifact, sent in the call: an HTML file as a notebook, a PNG or SVG as a figure, a CSV as a table, a PDF, Markdown, or a framework.artifact/v1 model JSON. Text goes in content, binary in content_base64. Use this only for files of a few hundred KB at most. For larger files, or a file on disk, use artifacts_upload instead. A project is optional. Publishing the same name again adds a version at the same link. New artifacts start private.',
+            ],
+            'artifacts_upload' => [
+                'level' => self::FULL, 'method' => 'POST', 'path' => '/artifacts/uploads',
+                'rename' => ['artifact' => 'slug'],
+                'body' => self::uploadBody(),
+                'title' => 'Get an upload link',
+                'description' => 'For a file on disk or too large to send in a call, up to 50 MB: returns a one-time upload link and a curl command that publishes the file when run. If you can run commands, run it yourself; otherwise give it to the user. A rendered Quarto site goes as a zip with its entrypoint. A project is optional. The link expires in 30 minutes. New artifacts start private.',
+            ],
+            'artifacts_link' => [
+                'level' => self::FULL, 'method' => 'POST', 'path' => '/projects/{project}/linked-artifacts',
+                'path_params' => ['project' => ['type' => 'string', 'description' => 'The project to list the artifact in.']],
+                'body' => ['properties' => [
+                    'artifact' => ['type' => 'string', 'description' => 'The artifact slug.'],
+                    'from_project' => ['type' => 'string', 'description' => 'The artifact\'s own project. Leave out for an artifact with no project.'],
+                ], 'required' => ['artifact']],
+                'title' => 'Link an artifact to a project',
+                'description' => 'List an artifact in another project, which may then use it in reports and collections. The artifact stays where it is; an artifact can be linked to several projects.',
+            ],
+            'artifacts_unlink' => [
+                'level' => self::FULL, 'method' => 'DELETE', 'path' => '/projects/{project}/linked-artifacts/{artifact}',
+                'path_params' => ['project' => ['type' => 'string'], 'artifact' => ['type' => 'string']],
+                'query' => ['from_project' => ['type' => 'string', 'description' => 'The artifact\'s own project, when two linked artifacts share a slug.']],
+                'title' => 'Unlink an artifact from a project',
+                'description' => 'Stop listing a linked artifact in a project. The artifact itself is unchanged.',
             ],
             'reports_list' => [
                 'level' => self::READ, 'method' => 'GET', 'path' => '/projects/{slug}/reports', 'path_params' => $project,
@@ -110,13 +135,24 @@ class ToolCatalog
     }
 
     /** @return array{properties: array<string, mixed>, required: list<string>} */
+    private static function uploadBody(): array
+    {
+        $body = self::publishBody();
+        unset($body['properties']['content'], $body['properties']['content_base64']);
+        $body['properties']['filename']['description'] = 'The file name with its extension, as it is on disk, such as analysis.html or site.zip. The extension sets the kind.';
+
+        return $body;
+    }
+
+    /** @return array{properties: array<string, mixed>, required: list<string>} */
     private static function publishBody(): array
     {
         return [
             'properties' => [
+                'project' => ['type' => 'string', 'description' => 'The project to publish to, by slug. Leave out to publish with no project.'],
                 'filename' => ['type' => 'string', 'description' => 'The file name with its extension, such as analysis.html, flipper-and-mass.png, or site.zip. The extension sets the kind.'],
                 'content' => ['type' => 'string', 'description' => 'The file as text, for HTML, Markdown, CSV, JSON, or SVG.'],
-                'content_base64' => ['type' => 'string', 'description' => 'The file, base64-encoded, for PNG, PDF, zip, and other binary files. Up to 10 MB before encoding.'],
+                'content_base64' => ['type' => 'string', 'description' => 'The file, base64-encoded, for PNG, PDF, and other binary files. Keep it small; use artifacts_upload for larger files.'],
                 'entrypoint' => ['type' => 'string', 'description' => 'For a zip: the HTML page to open, such as index.html.'],
                 'artifact' => ['type' => 'string', 'description' => 'The artifact name in the link, such as penguin-body-mass. Defaults to the file name. Reuse a name to add a version.'],
                 'title' => ['type' => 'string'],

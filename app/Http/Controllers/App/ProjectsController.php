@@ -58,10 +58,10 @@ class ProjectsController extends Controller
         $projectIds = $request->user()->projects()->select('id');
 
         return Inertia::render($component, [
-            'projects' => $request->user()->projects()->latest()->with('blueprintVersion.blueprint')->get()
+            'projects' => $request->user()->projects()->listed()->latest()->with('blueprintVersion.blueprint')->get()
                 ->map(fn (Project $p) => self::summary($p)),
             'counts' => [
-                'projects' => $request->user()->projects()->count(),
+                'projects' => $request->user()->projects()->listed()->count(),
                 'artifacts' => Document::whereIn('project_id', $projectIds)->count(),
                 'collections' => Collection::whereIn('project_id', $projectIds)->count(),
                 'reports' => Report::whereIn('project_id', $projectIds)->count(),
@@ -100,7 +100,7 @@ class ProjectsController extends Controller
     public function show(Request $request, string $slug, string $section = 'overview'): Response
     {
         $project = $request->user()->projects()->where('slug', $slug)
-            ->with('blueprintVersion.blueprint', 'tokens', 'documents.versions')->firstOrFail();
+            ->with('blueprintVersion.blueprint', 'tokens', 'documents.versions', 'linkedDocuments.versions', 'linkedDocuments.project:id,user_id,name,slug,is_home', 'linkedDocuments.project.user:id,handle')->firstOrFail();
 
         return Inertia::render('Projects/Show', [
             'section' => $section,
@@ -114,8 +114,10 @@ class ProjectsController extends Controller
                     'received_at' => $project->spec_received_at,
                     'json' => json_encode(json_decode($project->spec), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
                 ] : null,
-                'documents' => $project->documents->sortByDesc('updated_at')->values()
+                // Its own artifacts and those linked to it from elsewhere in the account
+                'documents' => $project->documents->concat($project->linkedDocuments)->sortByDesc('updated_at')->values()
                     ->map(fn (Document $d) => [
+                        'linked_from' => $d->project_id !== $project->id ? ($d->project?->is_home ? 'No project' : $d->project?->name) : null,
                         'id' => $d->id,
                         'title' => $d->title ?? $d->slug,
                         'url' => ($d->driver ?? 'cloud') === 'cloud' ? ($d->readableUrl() ?? $d->shareUrl()) : $d->external_url,

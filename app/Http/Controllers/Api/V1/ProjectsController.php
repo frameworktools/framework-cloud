@@ -20,7 +20,7 @@ class ProjectsController extends Controller
         $user = $this->user($request);
 
         return response()->json([
-            'projects' => $user->projects()->latest()->get(['name', 'slug', 'project_type', 'language', 'description', 'created_at']),
+            'projects' => $user->projects()->listed()->latest()->get(['name', 'slug', 'project_type', 'language', 'description', 'created_at']),
         ]);
     }
 

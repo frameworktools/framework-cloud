@@ -33,8 +33,12 @@ class DocumentsController extends Controller
             'canPublish' => $request->user()->canPublish(),
             'storage' => ['used' => PublishingQuota::used($request->user()), 'limit' => PublishingQuota::limit()],
             'handle' => $request->user()->handle,
-            'projects' => $request->user()->projects()->get(['id', 'name', 'slug']),
-            'documents' => $this->documents($request)->with(['project:id,user_id,name,slug', 'project.user:id,handle', 'versions'])
+            // Publishing here can also go to no project: the account's automatic home, listed last
+            'projects' => [
+                ...$request->user()->projects()->listed()->orderBy('name')->get(['id', 'name', 'slug']),
+                ...($request->user()->canPublish() ? [['id' => $request->user()->artifactHome()->id, 'name' => 'No project', 'slug' => null, 'is_home' => true]] : []),
+            ],
+            'documents' => $this->documents($request)->with(['project:id,user_id,name,slug,is_home', 'project.user:id,handle', 'versions', 'linkedProjects:id,name,slug'])
                 ->latest('updated_at')->get()
                 ->map(fn (Document $d) => [
                     'id' => $d->id,
@@ -57,7 +61,8 @@ class DocumentsController extends Controller
                     'bundle' => $d->entrypoint !== null,
                     'published_at' => $d->created_at,
                     'updated_at' => $d->updated_at,
-                    'project' => $d->project->only(['id', 'name', 'slug']),
+                    'linked_projects' => $d->linkedProjects->map->only('id', 'name', 'slug')->values(),
+                    'project' => $d->project->is_home ? ['id' => $d->project->id, 'name' => 'No project', 'slug' => null, 'is_home' => true] : $d->project->only(['id', 'name', 'slug']),
                     'versions' => ($d->versions->isEmpty() ? collect([$d->latestVersion()]) : $d->versions)->map(fn (DocumentVersion $v) => [
                         'number' => $v->number,
                         'kind' => $v->kind,
@@ -73,9 +78,9 @@ class DocumentsController extends Controller
     /** One artifact's own page: preview, versions, sharing, and settings, outside its project. */
     public function show(Request $request, int $document): Response
     {
-        $document = $this->documents($request)->with(['project.user', 'versions'])->findOrFail($document);
+        $document = $this->documents($request)->with(['project.user', 'versions', 'linkedProjects:id,name,slug'])->findOrFail($document);
         $versions = $document->versions->isEmpty() ? collect([$document->latestVersion()]) : $document->versions;
-        $reports = Report::where('project_id', $document->project_id)->get(['id', 'title', 'draft_blocks'])
+        $reports = Report::whereIn('project_id', [$document->project_id, ...$document->linkedProjects->pluck('id')])->get(['id', 'title', 'draft_blocks'])
             ->filter(fn (Report $report) => collect($report->draft_blocks ?? [])->contains(fn ($block) => (int) ($block['document_id'] ?? 0) === $document->id));
 
         return Inertia::render('Artifacts/Show', [
@@ -92,7 +97,10 @@ class DocumentsController extends Controller
                 'published_at' => $document->created_at, 'updated_at' => $document->updated_at,
                 'merged_into' => $document->merged_into_id ? Document::find($document->merged_into_id)?->only('id', 'title') : null,
             ],
-            'project' => $document->project->only('id', 'name', 'slug'),
+            'project' => $document->project->only('id', 'name', 'slug', 'is_home'),
+            'linkedProjects' => $document->linkedProjects->sortBy('name')->values()->map->only('id', 'name', 'slug'),
+            'linkableProjects' => $request->user()->projects()->listed()->whereKeyNot($document->project_id)
+                ->whereNotIn('id', $document->linkedProjects->pluck('id'))->orderBy('name')->get(['id', 'name', 'slug']),
             'versions' => $versions->map(fn (DocumentVersion $v) => [
                 'external_url' => $v->external_url, 'number' => $v->number, 'kind' => $v->kind, 'size_bytes' => $v->size_bytes, 'created_at' => $v->created_at,
                 'original_filename' => $v->original_filename,
@@ -109,6 +117,25 @@ class DocumentsController extends Controller
                 ->whereNull('merged_into_id')->whereNull('merged_at')->whereNull('password_hash')->orderBy('title')->get(['id', 'title', 'slug'])
                 ->map(fn ($d) => ['id' => $d->id, 'title' => $d->title ?? $d->slug]),
         ]);
+    }
+
+    /** List this artifact in another project, which may then use it in reports and collections. */
+    public function link(Request $request, int $document): RedirectResponse
+    {
+        $document = $this->documents($request)->findOrFail($document);
+        $project = $request->user()->projects()->listed()->findOrFail($request->validate(['project_id' => ['required', 'integer']])['project_id']);
+        if ($project->id !== $document->project_id) {
+            $document->linkedProjects()->syncWithoutDetaching([$project->id]);
+        }
+
+        return back();
+    }
+
+    public function unlink(Request $request, int $document, int $project): RedirectResponse
+    {
+        $this->documents($request)->findOrFail($document)->linkedProjects()->detach($project);
+
+        return back();
     }
 
     public function store(Request $request, int $project): RedirectResponse

@@ -21,7 +21,7 @@ class GettingStarted
             ['key' => 'profile', 'done' => filled(Arr::get($author, 'author.affiliations')) || filled(Arr::get($author, 'author.affiliation'))],
             ['key' => 'machine', 'done' => $user->tokens()->exists()],
             Scaffolder::enabled() ? ['key' => 'github', 'done' => $user->githubAccount()->exists()] : null,
-            ['key' => 'project', 'done' => $user->projects()->exists()],
+            ['key' => 'project', 'done' => $user->projects()->listed()->exists()],
         ]));
     }
 

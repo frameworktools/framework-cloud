@@ -12,7 +12,7 @@ import UiTable from '@/Components/UiTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
 import { artifactKind } from '@/report-artifacts.js';
 import { ArrowTopRightOnSquareIcon, LockClosedIcon } from '@heroicons/vue/20/solid';
-import { GlobeAltIcon } from '@heroicons/vue/24/outline';
+import { GlobeAltIcon, LinkIcon } from '@heroicons/vue/24/outline';
 import ArtifactUpload from '@/Components/ArtifactUpload.vue';
 import CodeChip from '@/Components/CodeChip.vue';
 import PageHeader from '@/Components/PageHeader.vue';
@@ -327,7 +327,7 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                 <p v-else class="text-sm text-slate-600 dark:text-slate-400">This project was set up for a computer, so it has no repository here.</p>
             </UiPanel>
 
-            <UiSection v-if="section === 'published'" title="Published artifacts" description="Figures, tables, models, data, and documents published from this project. Each has a reader page and a version history.">
+            <UiSection v-if="section === 'published'" title="Published artifacts" description="Figures, tables, models, data, and documents published from this project or linked to it. Each has a reader page and a version history.">
                 <template #actions>
                     <UiButton v-if="canPublish" :variant="publishing ? 'outline' : 'primary'" @click="publishing = !publishing">{{ publishing ? 'Close' : 'Publish an artifact' }}</UiButton>
                 </template>
@@ -342,6 +342,7 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                                 <span class="flex items-center gap-2.5">
                                     <component :is="artifactKind(doc.kind).icon" class="size-4 shrink-0 text-slate-400" aria-hidden="true" />
                                     <Link :href="`/artifacts/${doc.id}`" class="truncate hover:underline hover:underline-offset-4">{{ doc.title }}</Link>
+                                    <LinkIcon v-if="doc.linked_from" class="size-3.5 shrink-0 text-slate-400" :aria-label="`Linked from ${doc.linked_from}`"><title>Linked from {{ doc.linked_from }}</title></LinkIcon>
                                 </span>
                             </td>
                             <td class="max-sm:hidden">{{ artifactKind(doc.kind).label }}</td>

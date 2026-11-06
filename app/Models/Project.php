@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Database\Factories\ProjectFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Sanctum\HasApiTokens;
@@ -60,6 +62,7 @@ class Project extends Model
             'payload' => 'array',
             'composition' => 'array',
             'github_private' => 'boolean',
+            'is_home' => 'boolean',
             // spec stays raw JSON text so empty maps stay {}
             'spec_received_at' => 'datetime',
         ];
@@ -80,6 +83,23 @@ class Project extends Model
     {
         return $this->hasMany(Document::class);
     }
+
+    /** Artifacts from elsewhere in the account that this project lists and may use in reports. */
+    public function linkedDocuments(): BelongsToMany
+    {
+        return $this->belongsToMany(Document::class)->withPivot('created_at');
+    }
+
+    /** Projects people made, leaving out the account's automatic home for artifacts. */
+    public function scopeListed(Builder $query): void
+    {
+        $query->where('is_home', false);
+    }
+
+    /** The home's name and link name, and the link name used when a project already has it. */
+    public const HOME_NAME = 'Artifacts';
+
+    public const HOME_SLUG = 'artifacts';
 
     public function user(): BelongsTo
     {

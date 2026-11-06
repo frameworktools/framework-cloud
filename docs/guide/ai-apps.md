@@ -36,16 +36,29 @@ A connected app works across all your projects. It cannot run code.
 
 ## Publishing files
 
-With Full access, an agent can publish a saved file you give it: an HTML file as
-a notebook, a PNG or SVG as a figure, a CSV as a table, a PDF, or a model's
+With Full access, an agent can publish a saved file: an HTML file as a notebook,
+a PNG or SVG as a figure, a CSV as a table, a PDF, or a model's
 `framework.artifact/v1` JSON. A zip of rendered output with its HTML entrypoint,
-such as a Quarto site, publishes as one artifact. Files go up to 10 MB. New
-artifacts start private. Each version records which agent published it.
+such as a Quarto site, publishes as one artifact. New artifacts start private.
+Each version records which agent published it.
+
+Small files go straight into the agent's call. For a larger file, up to 50 MB,
+the agent asks for an upload link and sends the file with `curl`. An agent that
+can run commands, such as Claude Code or Codex, runs the command itself. Others
+give you the command to run. Each link works once and expires after 30 minutes.
+
+A project is optional. Artifacts published without one are listed under
+Artifacts with no project.
 
 The R, Python, and Stata packages and `fw publish` check the project's private
 folders before publishing. An agent publishing a file directly cannot. Use the
-packages for results from a project, and for files over 10 MB. See
-[Publishing artifacts](publishing.md).
+packages for results from a project. See [Publishing artifacts](publishing.md).
+
+## Linked projects
+
+Any artifact can be linked to one or more projects, from the Settings tab on its
+page or by an agent. A linked project lists the artifact and can use it in its
+reports and collections. The artifact keeps its own project, or none.
 
 What the app reads, including private projects and drafts, goes to the company
 that runs it.

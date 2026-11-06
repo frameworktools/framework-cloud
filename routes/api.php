@@ -37,6 +37,11 @@ Route::prefix('v1/cli')->group(function () {
     Route::post('/device/token', [CliDeviceController::class, 'token'])->middleware('throttle:30,1');
 });
 
+// An upload link's raw file. The one-time token in the address is the permission;
+// see ArtifactsController::createUpload.
+Route::match(['put', 'post'], 'v1/uploads/{token}', [ArtifactsController::class, 'receiveUpload'])
+    ->where('token', '[A-Za-z0-9]{48}')->middleware('throttle:30,1')->name('api.uploads.store');
+
 Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::get('/me', MeController::class);
     Route::delete('/token', [TokenController::class, 'destroy']);
@@ -72,6 +77,13 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::post('/documents', [DocumentsController::class, 'store']);
     Route::post('/ledger', [LedgerController::class, 'store']);
     Route::get('/ledger', [LedgerController::class, 'index']);
+    // Artifacts across the account; "project" is optional, and those without one live in the account's home
+    Route::get('/artifacts', [ArtifactsController::class, 'index']);
+    Route::post('/artifacts', [ArtifactsController::class, 'store'])->middleware('throttle:30,1');
+    Route::post('/artifacts/uploads', [ArtifactsController::class, 'createUpload'])->middleware('throttle:30,1');
+    Route::get('/artifacts/{artifact}', [ArtifactsController::class, 'show']);
+    Route::post('/projects/{slug}/linked-artifacts', [ArtifactsController::class, 'link'])->middleware('throttle:60,1');
+    Route::delete('/projects/{slug}/linked-artifacts/{artifact}', [ArtifactsController::class, 'unlink']);
     Route::get('/projects/{slug}/artifacts', [ArtifactsController::class, 'index']);
     Route::post('/projects/{slug}/artifacts', [ArtifactsController::class, 'store'])->middleware('throttle:30,1');
     Route::get('/projects/{slug}/artifacts/{artifact}', [ArtifactsController::class, 'show']);

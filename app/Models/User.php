@@ -77,6 +77,26 @@ class User extends Authenticatable implements HasPasskeys, MustVerifyEmail
     }
 
     /**
+     * The automatic home for artifacts published without a project, made the first
+     * time one is. Its link name is "artifacts", or the next free one if a project
+     * already uses that.
+     */
+    public function artifactHome(): Project
+    {
+        $home = $this->projects()->where('is_home', true)->first();
+        if ($home) {
+            return $home;
+        }
+
+        $slug = Project::HOME_SLUG;
+        for ($n = 2; Project::withTrashed()->where('user_id', $this->id)->where('slug', $slug)->exists(); $n++) {
+            $slug = Project::HOME_SLUG.'-'.$n;
+        }
+
+        return $this->projects()->create(['name' => Project::HOME_NAME, 'slug' => $slug, 'project_type' => 'project', 'is_home' => true]);
+    }
+
+    /**
      * The user's global settings document (seeded with defaults on first access).
      */
     public function globalSettings(): Setting

@@ -28,7 +28,7 @@ class CollectionsController extends Controller
 
         return Inertia::render('Collections/Index', [
             'project' => $project?->only('id', 'name', 'slug'),
-            'projects' => $request->user()->projects()->orderBy('name')->get(['id', 'name', 'slug']),
+            'projects' => $request->user()->projects()->listed()->orderBy('name')->get(['id', 'name', 'slug']),
             'collections' => Collection::whereIn('project_id', $request->user()->projects()->select('id'))->when($project, fn ($query) => $query->where('project_id', $project->id))->with('project:id,name,slug')->withCount('items')->latest()->get()->map(fn ($collection) => [
                 ...$collection->only('id', 'title', 'description', 'visibility', 'items_count'),
                 'project' => $collection->project->only('id', 'name', 'slug'),
@@ -115,7 +115,7 @@ class CollectionsController extends Controller
     {
         $collection = $this->owned($request, $collection);
         $data = $request->validate(['document_id' => ['required', 'integer'], 'share_unlisted' => ['sometimes', 'boolean']]);
-        $document = Document::where('project_id', $collection->project_id)->where('driver', 'cloud')->findOrFail($data['document_id']);
+        $document = Document::availableTo($collection->project_id)->where('driver', 'cloud')->findOrFail($data['document_id']);
         $this->validateSharing($collection, $document, $data['share_unlisted'] ?? false);
         $collection->items()->firstOrCreate(['document_id' => $document->id], [
             'share_unlisted' => $data['share_unlisted'] ?? false,

@@ -26,7 +26,7 @@ class ReportsController extends Controller
 
         return Inertia::render('Reports/Index', [
             'project' => $project?->only('id', 'name', 'slug'),
-            'projects' => $request->user()->projects()->orderBy('name')->get(['id', 'name', 'slug']),
+            'projects' => $request->user()->projects()->listed()->orderBy('name')->get(['id', 'name', 'slug']),
             'canPublish' => $request->user()->canPublish(),
             'reports' => Report::whereIn('project_id', $request->user()->projects()->select('id'))->when($project, fn ($query) => $query->where('project_id', $project->id))->with(['versions', 'project:id,name,slug'])->latest('updated_at')->get()->map(fn ($report) => $this->data($report) + ['project' => $report->project->only('id', 'name', 'slug')]),
         ]);

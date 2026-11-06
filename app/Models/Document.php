@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -87,6 +90,19 @@ class Document extends Model
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
+    }
+
+    /** Other projects this artifact is linked to. */
+    public function linkedProjects(): BelongsToMany
+    {
+        return $this->belongsToMany(Project::class)->withPivot('created_at');
+    }
+
+    /** Artifacts a project may use: its own, and those linked to it. */
+    public function scopeAvailableTo(Builder $query, int $projectId): void
+    {
+        $query->where(fn (Builder $q) => $q->where('project_id', $projectId)
+            ->orWhereIn('id', DB::table('document_project')->where('project_id', $projectId)->select('document_id')));
     }
 
     public function versions(): HasMany

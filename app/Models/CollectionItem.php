@@ -27,7 +27,7 @@ class CollectionItem extends Model
     public function isShareable(bool $owner = false): bool
     {
         $document = $this->document;
-        if (! $document || $document->project_id !== $this->collection->project_id) {
+        if (! $document || ($document->project_id !== $this->collection->project_id && ! $document->linkedProjects()->whereKey($this->collection->project_id)->exists())) {
             return false;
         }
         if ($this->version_number && ! $document->findVersion($this->version_number)) {
