@@ -1,0 +1,52 @@
+# Framework Cloud's test suite. It runs before a release: the Docker image and
+# scaffolder image workflows call it on a version tag and publish only when it
+# passes. Pushes to main don't run it, so Forge deploys aren't held up. Start it
+# by hand from the Actions tab to test a branch.
+
+name: Tests
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      # The self-hosting image runs PHP 8.4. Tests use SQLite in memory.
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_sqlite, intl, zip, bcmath, exif
+          coverage: none
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install PHP packages
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      # Pages render through Vite's manifest, so the assets are built first
+      - name: Build the frontend
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+
+      - name: Prepare the environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: PHP tests
+        run: php artisan test --parallel
+
+      - name: JavaScript tests
+        run: node --test tests/js/*.test.mjs

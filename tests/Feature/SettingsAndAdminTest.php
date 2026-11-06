@@ -140,12 +140,40 @@ class SettingsAndAdminTest extends TestCase
             ->assertSessionHasErrors('orcid');
     }
 
+    /**
+     * Sets environment variables the way env() reads them. A .env file copied
+     * from .env.example holds FW_ADMIN_EMAIL= in $_ENV, which would hide a
+     * value set with putenv() alone. Each value is restored after the test.
+     *
+     * @param  array<string, string>  $values
+     */
+    private function setEnv(array $values): void
+    {
+        foreach ($values as $key => $value) {
+            $before = [getenv($key), $_ENV[$key] ?? null, $_SERVER[$key] ?? null];
+            putenv("{$key}={$value}");
+            $_ENV[$key] = $_SERVER[$key] = $value;
+            $this->beforeApplicationDestroyed(function () use ($key, $before) {
+                $before[0] === false ? putenv($key) : putenv("{$key}={$before[0]}");
+                if ($before[1] === null) {
+                    unset($_ENV[$key]);
+                } else {
+                    $_ENV[$key] = $before[1];
+                }
+                if ($before[2] === null) {
+                    unset($_SERVER[$key]);
+                } else {
+                    $_SERVER[$key] = $before[2];
+                }
+            });
+        }
+    }
+
     public function test_production_seeder_creates_admin(): void
     {
-        putenv('FW_ADMIN_EMAIL=admin@example.com');
+        $this->setEnv(['FW_ADMIN_EMAIL' => 'admin@example.com']);
 
         $this->seed(ProductionSeeder::class);
-        putenv('FW_ADMIN_EMAIL');
 
         $user = User::where('email', 'admin@example.com')->first();
         $this->assertNotNull($user);
@@ -158,8 +186,7 @@ class SettingsAndAdminTest extends TestCase
     public function test_reseeding_on_every_start_leaves_the_admin_as_edited(): void
     {
         // Docker runs the seeder on every start, with FW_ADMIN_NAME often blank
-        putenv('FW_ADMIN_EMAIL=ada@example.com');
-        putenv('FW_ADMIN_NAME=');
+        $this->setEnv(['FW_ADMIN_EMAIL' => 'ada@example.com', 'FW_ADMIN_NAME' => '']);
 
         $this->seed(ProductionSeeder::class);
         $user = User::where('email', 'ada@example.com')->first();
@@ -167,9 +194,6 @@ class SettingsAndAdminTest extends TestCase
 
         $user->update(['name' => 'Ada Lovelace']);
         $this->seed(ProductionSeeder::class);
-
-        putenv('FW_ADMIN_EMAIL');
-        putenv('FW_ADMIN_NAME');
 
         $this->assertSame('Ada Lovelace', $user->fresh()->name);
         $this->assertSame(1, User::count());

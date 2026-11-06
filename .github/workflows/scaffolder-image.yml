@@ -19,7 +19,12 @@ env:
   IMAGE: ghcr.io/${{ github.repository_owner }}/framework-scaffolder
 
 jobs:
+  # Publish only a release whose tests pass
+  tests:
+    uses: ./.github/workflows/tests.yml
+
   build:
+    needs: tests
     strategy:
       fail-fast: true
       matrix:
