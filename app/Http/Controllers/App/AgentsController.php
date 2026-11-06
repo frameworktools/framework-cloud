@@ -24,11 +24,17 @@ class AgentsController extends Controller
 
         return Inertia::render('Agents/Index', [
             'mcpUrl' => url('/mcp'),
-            'connections' => McpConnection::active()->where('user_id', $request->user()->id)->latest()->get()
+            'active' => McpConnection::active()->where('user_id', $request->user()->id)->exists(),
+            // Active connections, then those that ended in the last 90 days
+            'connections' => McpConnection::where('user_id', $request->user()->id)
+                ->where(fn ($query) => $query->whereNull('revoked_at')->orWhere('revoked_at', '>', now()->subDays(90)))
+                ->orderByRaw('revoked_at is not null')->latest()->limit(50)->get()
                 ->map(fn (McpConnection $connection) => [
                     'id' => $connection->id,
                     'name' => $connection->client_name,
                     'access' => McpConnection::accessLabel($connection->access),
+                    'active' => $connection->revoked_at === null,
+                    'status' => $connection->revoked_at === null ? 'Active' : ucfirst(McpConnection::endedLabel($connection->ended_reason) ?? 'disconnected'),
                     'created_at' => $connection->created_at->diffForHumans(),
                     'last_used_at' => $connection->last_used_at?->diffForHumans(),
                 ]),

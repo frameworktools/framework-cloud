@@ -288,6 +288,9 @@ class HostedMcpTest extends TestCase
             ->component('Agents/Index')->has('connections', 1)->where('connections.0.name', 'Claude'));
 
         $this->delete("/agents/{$connection->id}")->assertRedirect();
+        // It stays in the connection history, marked as ended
+        $this->get('/agents')->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('active', false)->where('connections.0.status', 'Disconnected')->where('connections.0.active', false));
         auth()->guard('web')->logout();
         app('auth')->forgetGuards();
 

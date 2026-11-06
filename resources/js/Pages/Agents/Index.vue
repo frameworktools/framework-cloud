@@ -7,10 +7,11 @@ import PageHeader from '@/Components/PageHeader.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiTabs from '@/Components/UiTabs.vue';
 import UiTable from '@/Components/UiTable.vue';
+import UiBadge from '@/Components/UiBadge.vue';
 import AgentsTabs from './AgentsTabs.vue';
 import { CheckIcon, ClipboardDocumentIcon } from '@heroicons/vue/24/outline';
 
-const props = defineProps({ mcpUrl: String, connections: Array, historyCount: Number });
+const props = defineProps({ mcpUrl: String, connections: Array, active: Boolean, historyCount: Number });
 
 const copied = ref(false);
 async function copy() {
@@ -38,12 +39,12 @@ const command = 'mt-2 block overflow-x-auto whitespace-nowrap rounded-lg bg-[#0c
 </script>
 
 <template>
-    <Head :title="connections.length ? 'Connected agents' : 'Connect your agent'" />
+    <Head :title="active ? 'Connected agents' : 'Connect your agent'" />
 
     <AppLayout>
         <div class="flex max-w-4xl flex-col gap-8">
             <div class="flex flex-col gap-6">
-                <PageHeader :title="connections.length ? 'Connected agents' : 'Connect your agent'">
+                <PageHeader :title="active ? 'Connected agents' : 'Connect your agent'">
                     <template #description>
                         Claude, ChatGPT, and other AI agents can read your projects, published artifacts, and reports, and write reports from your results.
                         You approve each agent and choose what it may do.
@@ -53,18 +54,26 @@ const command = 'mt-2 block overflow-x-auto whitespace-nowrap rounded-lg bg-[#0c
             </div>
 
             <section v-if="connections.length" class="flex flex-col gap-3">
-                <h2 class="text-base font-medium text-slate-900 dark:text-white">Connected agents</h2>
-                <UiTable label="Connected agents">
+                <div>
+                    <h2 class="text-base font-medium text-slate-900 dark:text-white">Connection history</h2>
+                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                        Each time you approve an agent, with ended connections from the last 90 days.
+                        Disconnecting in Claude or ChatGPT does not notify Framework Cloud, so the connection stays active here until it expires after 30 days unused.
+                        Disconnect it here to end it at once.
+                    </p>
+                </div>
+                <UiTable label="Connection history">
                     <thead>
-                        <tr><th>Agent</th><th>Access</th><th>Connected</th><th>Last used</th><th class="actions"><span class="sr-only">Actions</span></th></tr>
+                        <tr><th>Agent</th><th>Status</th><th>Access</th><th>Connected</th><th>Last used</th><th class="actions"><span class="sr-only">Actions</span></th></tr>
                     </thead>
                     <tbody>
                         <tr v-for="connection in connections" :key="connection.id">
                             <td class="strong">{{ connection.name }}</td>
+                            <td><UiBadge :variant="connection.active ? 'green' : 'slate'">{{ connection.status }}</UiBadge></td>
                             <td>{{ connection.access }}</td>
                             <td>{{ connection.created_at }}</td>
                             <td>{{ connection.last_used_at ?? 'Never' }}</td>
-                            <td class="actions"><UiButton variant="ghost" size="sm" @click="disconnect(connection)">Disconnect</UiButton></td>
+                            <td class="actions"><UiButton v-if="connection.active" variant="ghost" size="sm" @click="disconnect(connection)">Disconnect</UiButton></td>
                         </tr>
                     </tbody>
                 </UiTable>
