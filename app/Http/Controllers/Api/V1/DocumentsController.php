@@ -42,6 +42,8 @@ class DocumentsController extends Controller
             'kind' => $document->kind,
             'password_protected' => $document->isPasswordProtected(),
             'slug' => $document->slug,
+            // Clients report what was stored, which may differ from what they asked for
+            'visibility' => $document->visibility,
             'version' => $version->number,
             // The link to share: readable when available, else unlisted.
             'url' => $readableUrl ?? $document->publicUrl(),
@@ -50,7 +52,7 @@ class DocumentsController extends Controller
             'version_url' => $readableUrl ? $document->readableUrl($version->number) : $version->url(),
             'raw_url' => $document->rawUrl(),
             'notice' => $document->isReadable() && ! $readableUrl
-                ? 'Set a handle in Account > Account details to get a readable URL. The unlisted link works now.'
+                ? 'Public. Set a handle in Account > Account details to get a readable URL. Until then, share the link above.'
                 : null,
         ], 201);
     }

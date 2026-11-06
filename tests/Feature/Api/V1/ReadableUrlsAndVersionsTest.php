@@ -40,7 +40,7 @@ class ReadableUrlsAndVersionsTest extends TestCase
 
     public function test_documents_are_private_unless_readable_is_requested(): void
     {
-        $this->publish()->assertCreated()->assertJsonPath('readable_url', null);
+        $this->publish()->assertCreated()->assertJsonPath('readable_url', null)->assertJsonPath('visibility', 'unlisted');
 
         $this->get('/@ada/nhanes-study/analysis')->assertNotFound();
         $this->get(Document::first()->publicUrl())->assertOk();
@@ -51,6 +51,7 @@ class ReadableUrlsAndVersionsTest extends TestCase
         $this->publish(['slug' => 'Main Results', 'readable' => true])
             ->assertCreated()
             ->assertJsonPath('slug', 'main-results')
+            ->assertJsonPath('visibility', 'public')
             ->assertJsonPath('readable_url', url('/@ada/nhanes-study/main-results'))
             ->assertJsonPath('url', url('/@ada/nhanes-study/main-results'));
 
