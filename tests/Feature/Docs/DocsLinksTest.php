@@ -82,6 +82,14 @@ class DocsLinksTest extends TestCase
         $this->assertSame([], $links->warnings);
     }
 
+    public function test_see_also_leaves_out_an_entry_the_reference_lacks(): void
+    {
+        $links = $this->links();
+
+        $this->assertNull($links->seeAlso('project_create'));
+        $this->assertCount(1, $links->warnings);
+    }
+
     public function test_markdown_links_are_rewritten_and_alerts_become_callouts(): void
     {
         $html = Markdown::render(implode("\n", [

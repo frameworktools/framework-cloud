@@ -75,10 +75,12 @@ class Links
 
     /**
      * A see_also string: an entry name in this product, or a link target.
+     * An entry the reference doesn't have (an internal function, say) gives
+     * null, so the page leaves it out instead of linking to a missing page.
      *
-     * @return array{title: string, url: string}
+     * @return array{title: string, url: string}|null
      */
-    public function seeAlso(string $item): array
+    public function seeAlso(string $item): ?array
     {
         if (preg_match('#^(?:(r|py|cli|stata):)?(guide|ref):([^\#]+)#', $item, $m)) {
             $other = $m[1] !== '' && $m[1] !== $this->product ? ' ('.Products::LABELS[$m[1]].')' : '';
@@ -93,9 +95,9 @@ class Links
         $title = preg_replace('/\(\)$/', '', trim($item));
         $id = $this->entryId($item);
         if ($id === null) {
-            $this->warn("see also \"{$item}\" does not match an entry.");
+            $this->warn("see also \"{$item}\" does not match an entry, so it is left out.");
 
-            return ['title' => $title, 'url' => '/reference/'.rawurlencode($title)];
+            return null;
         }
 
         return ['title' => $title, 'url' => '/reference/'.$id];

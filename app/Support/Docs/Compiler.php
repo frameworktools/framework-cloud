@@ -441,10 +441,10 @@ class Compiler
                 'html' => CodeBlocks::tokens($e['code'], CodeBlocks::PRODUCT_LANGUAGES[$this->product] ?? ''),
                 'runnable' => $e['runnable'] ?? true,
             ], $entry['examples'] ?? []),
-            'see_also' => array_map(
+            'see_also' => array_values(array_filter(array_map(
                 fn ($s) => is_string($s) ? $links->seeAlso($s) : ['title' => $s['title'], 'url' => $s['url']],
                 $entry['see_also'] ?? [],
-            ),
+            ))),
             'aliases' => $entry['aliases'] ?? [],
             'lifecycle' => $entry['lifecycle'] ?? 'stable',
             'replaced_by' => $replacedBy,

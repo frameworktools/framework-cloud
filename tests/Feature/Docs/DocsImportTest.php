@@ -110,7 +110,7 @@ class DocsImportTest extends DocsTestCase
             ->expectsOutputToContain('guide:data-management#no-such-heading names a heading the page does not have.')
             ->expectsOutputToContain('other.md is not a link form docs sites use')
             ->expectsOutputToContain('images/missing.png is not in images/.')
-            ->expectsOutputToContain('reference.json: data_save: see also "no_such_function" does not match an entry.')
+            ->expectsOutputToContain('reference.json: data_save: see also "no_such_function" does not match an entry, so it is left out.')
             ->expectsOutputToContain('reference.json: data_load: replaced_by "gone_too" does not match an entry.')
             ->assertSuccessful();
     }
