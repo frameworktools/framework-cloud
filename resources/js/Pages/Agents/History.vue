@@ -22,7 +22,7 @@ const outcomes = {
     <Head title="Agent history" />
 
     <AppLayout>
-        <div class="flex max-w-5xl flex-col gap-8">
+        <div class="flex max-w-4xl flex-col gap-8">
             <div class="flex flex-col gap-6">
                 <PageHeader title="Agent history">
                     <template #description>
@@ -43,11 +43,9 @@ const outcomes = {
                             <td class="strong">{{ call.agent ?? 'Removed agent' }}<span v-if="call.disconnected" class="ms-1.5 text-xs font-normal text-slate-500">(disconnected)</span></td>
                             <td>{{ call.tool }}</td>
                             <td class="font-mono text-xs">{{ call.target ?? '' }}</td>
-                            <td>
-                                <span class="inline-flex items-center gap-2" :title="call.message ?? undefined">
-                                    <UiBadge :variant="outcomes[call.outcome]?.[0] ?? 'slate'">{{ outcomes[call.outcome]?.[1] ?? call.outcome }}</UiBadge>
-                                    <span v-if="call.message" class="max-w-xs truncate text-xs">{{ call.message }}</span>
-                                </span>
+                            <td class="whitespace-normal">
+                                <UiBadge :variant="outcomes[call.outcome]?.[0] ?? 'slate'">{{ outcomes[call.outcome]?.[1] ?? call.outcome }}</UiBadge>
+                                <p v-if="call.message" class="mt-1 min-w-48 max-w-xs text-xs">{{ call.message }}</p>
                             </td>
                         </tr>
                     </tbody>

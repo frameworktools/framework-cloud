@@ -7,9 +7,8 @@ import PageHeader from '@/Components/PageHeader.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiTabs from '@/Components/UiTabs.vue';
 import UiTable from '@/Components/UiTable.vue';
-import EmptyState from '@/Components/EmptyState.vue';
 import AgentsTabs from './AgentsTabs.vue';
-import { CheckIcon, ClipboardDocumentIcon, SparklesIcon } from '@heroicons/vue/24/outline';
+import { CheckIcon, ClipboardDocumentIcon } from '@heroicons/vue/24/outline';
 
 const props = defineProps({ mcpUrl: String, connections: Array, historyCount: Number });
 
@@ -42,7 +41,7 @@ const command = 'mt-2 block overflow-x-auto whitespace-nowrap rounded-lg bg-[#0c
     <Head :title="connections.length ? 'Connected agents' : 'Connect your agent'" />
 
     <AppLayout>
-        <div class="flex max-w-3xl flex-col gap-8">
+        <div class="flex max-w-4xl flex-col gap-8">
             <div class="flex flex-col gap-6">
                 <PageHeader :title="connections.length ? 'Connected agents' : 'Connect your agent'">
                     <template #description>
@@ -120,7 +119,7 @@ const command = 'mt-2 block overflow-x-auto whitespace-nowrap rounded-lg bg-[#0c
 
             <section class="flex flex-col gap-3">
                 <h2 class="text-base font-medium text-slate-900 dark:text-white">Access levels</h2>
-                <dl class="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-[12rem_1fr]">
+                <dl class="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-[8rem_1fr]">
                     <dt class="font-medium text-slate-800 dark:text-slate-200">Drafts only</dt>
                     <dd class="text-slate-500 dark:text-slate-400">Reads projects, artifacts, and reports. Creates and edits report drafts. Recommended.</dd>
                     <dt class="font-medium text-slate-800 dark:text-slate-200">Read only</dt>
@@ -133,7 +132,6 @@ const command = 'mt-2 block overflow-x-auto whitespace-nowrap rounded-lg bg-[#0c
                 </p>
             </section>
 
-            <EmptyState v-if="!connections.length" :icon="SparklesIcon" title="No connected agents" description="Connected agents appear here after you approve them." compact />
         </div>
     </AppLayout>
 </template>
