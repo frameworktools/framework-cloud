@@ -600,4 +600,25 @@ class HostedMcpTest extends TestCase
         $this->assertSame(McpConnection::ENDED_EXPIRED, McpConnection::sole()->ended_reason);
         $this->get('/agents/history')->assertInertia(fn (AssertableInertia $page) => $page->where('calls.data.0.ended', 'expired'));
     }
+
+    public function test_a_web_app_connecting_again_replaces_its_old_connection(): void
+    {
+        $user = $this->owner();
+        $first = $this->connect($user, McpConnection::ACCESS_READ, null, 'https://claude.ai/api/mcp/auth_callback');
+        $this->connect($user, McpConnection::ACCESS_FULL, null, 'https://claude.ai/api/mcp/auth_callback');
+
+        $this->assertSame(1, McpConnection::active()->count());
+        $this->assertSame(McpConnection::ENDED_REPLACED, McpConnection::orderBy('id')->first()->ended_reason);
+        app('auth')->forgetGuards();
+        $this->withToken($first)->postJson('/mcp', ['jsonrpc' => '2.0', 'id' => 1, 'method' => 'tools/list'])->assertUnauthorized();
+    }
+
+    public function test_two_computers_keep_their_own_connections(): void
+    {
+        $user = $this->owner();
+        $this->connect($user, McpConnection::ACCESS_FULL);
+        $this->connect($user, McpConnection::ACCESS_FULL);
+
+        $this->assertSame(2, McpConnection::active()->count());
+    }
 }

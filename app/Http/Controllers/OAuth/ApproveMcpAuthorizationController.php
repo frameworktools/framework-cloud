@@ -44,10 +44,18 @@ class ApproveMcpAuthorizationController
         }
 
         DB::transaction(function () use ($user, $client, $validated, $authRequest): void {
+            $redirectHost = parse_url((string) $authRequest->getRedirectUri(), PHP_URL_HOST) ?: null;
+            $web = $redirectHost !== null && ! in_array($redirectHost, ['localhost', '127.0.0.1', '[::1]'], true);
+
+            // The same app approved again replaces its old connection. Web apps such as Claude register
+            // a new client each time they connect, so for them the same name and host count as the same
+            // app. Apps on a computer (loopback) are matched by client only: two machines may each
+            // connect their own Claude Code.
             McpConnection::query()
                 ->active()
                 ->where('user_id', $user->id)
-                ->where('oauth_client_id', $client->id)
+                ->where(fn ($query) => $query->where('oauth_client_id', $client->id)
+                    ->when($web, fn ($q) => $q->orWhere(fn ($same) => $same->where('client_name', $client->name)->where('redirect_host', $redirectHost))))
                 ->get()
                 ->each(fn (McpConnection $old) => $old->revoke(McpConnection::ENDED_REPLACED));
 
@@ -57,7 +65,7 @@ class ApproveMcpAuthorizationController
                 'user_id' => $user->id,
                 'oauth_client_id' => $client->id,
                 'client_name' => $client->name,
-                'redirect_host' => parse_url((string) $authRequest->getRedirectUri(), PHP_URL_HOST) ?: null,
+                'redirect_host' => $redirectHost,
                 'access' => $validated['access'],
                 'personal_access_token_id' => $token->accessToken->id,
                 'api_key' => $token->plainTextToken,
