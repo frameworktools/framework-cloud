@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Framework: structured data science workflows</title>
+    <title>Framework: Structured data science workflows</title>
     <meta name="description" content="Reproducible research with R, Python, and the Framework CLI. Create projects, connect databases, track data integrity, and publish versioned figures, tables, models, and reports.">
     <link rel="icon" type="image/png" href="/images/favicon.png">
     <x-share-meta />

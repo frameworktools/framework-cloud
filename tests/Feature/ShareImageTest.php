@@ -23,6 +23,6 @@ class ShareImageTest extends TestCase
 
     public function test_the_homepage_preview_names_framework_and_its_tagline(): void
     {
-        $this->get('/')->assertSee('<meta property="og:title" content="Framework: structured data science workflows">', false);
+        $this->get('/')->assertSee('<meta property="og:title" content="Framework: Structured data science workflows">', false);
     }
 }
