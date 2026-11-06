@@ -36,13 +36,13 @@ class BlueprintsController extends Controller
                 ->orderByRaw('user_id is not null')->orderBy('position')->orderBy('name')
                 ->get()->filter(fn (Blueprint $b) => $b->latestVersion)
                 ->map(fn (Blueprint $b) => Library::blueprint($b, $user) + self::supports($b->latestVersion) + [
-                    // The defaults model holds Framework's blueprints by key
-                    'can_be_default' => $b->isSystem() && in_array($b->key, Project::TYPES, true),
+                    // Framework's blueprints by type, and your own
+                    'can_be_default' => ($b->isSystem() && in_array($b->key, Project::TYPES, true)) || $b->user_id === $user->id,
                 ])->values(),
             // Where browsing starts: the saved language and each language's workflow
             'language' => ProjectDefaults::for($user)['language'] ?? ProjectDefaults::LANGUAGE,
             'workflows' => ProjectDefaults::workflows(Arr::get($doc, 'defaults.workflows')),
-            'default_blueprint' => 'framework/'.Arr::get($doc, 'defaults.project_type', ProjectDefaults::BLUEPRINT),
+            'default_blueprint' => ProjectDefaults::for($user)['blueprint'],
         ]);
     }
 
@@ -91,7 +91,10 @@ class BlueprintsController extends Controller
      */
     public function makeDefault(Request $request, Blueprint $blueprint): RedirectResponse
     {
-        abort_unless($blueprint->isSystem() && in_array($blueprint->key, Project::TYPES, true), 404);
+        $user = $request->user();
+        $system = $blueprint->isSystem() && in_array($blueprint->key, Project::TYPES, true);
+        // Framework's blueprints by type, or one of your own
+        abort_unless($system || $blueprint->user_id === $user->id, 404);
         $data = $request->validate([
             'language' => ['required', Rule::in(Project::LANGUAGES)],
             'workflow' => ['required', Rule::in(ProjectDefaults::WORKFLOW_KEYS)],
@@ -101,9 +104,14 @@ class BlueprintsController extends Controller
             throw ValidationException::withMessages(['workflow' => "{$blueprint->name} doesn't support that language and workflow."]);
         }
 
-        $setting = $request->user()->globalSettings();
+        $setting = $user->globalSettings();
         $doc = $setting->document;
-        Arr::set($doc, 'defaults.project_type', $blueprint->key);
+        // The packages work offline from the project type, so an own blueprint
+        // also sets the type of its structure
+        $type = $system ? $blueprint->key : ($blueprint->latestVersion?->base?->layer['type'] ?? null);
+        Arr::set($doc, 'defaults.project_type', in_array($type, Project::TYPES, true) ? $type : ProjectDefaults::BLUEPRINT);
+        $own = Arr::except($user->project_defaults ?? [], 'blueprint_id');
+        $user->forceFill(['project_defaults' => $system ? $own : $own + ['blueprint_id' => $blueprint->id]])->save();
         $workflows = ProjectDefaults::workflows(Arr::get($doc, 'defaults.workflows'));
         $workflows[$data['language']] = $data['workflow'];
         Arr::set($doc, 'defaults.workflows', $workflows);

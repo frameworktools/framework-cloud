@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\Blueprint;
 use App\Models\Project;
 use App\Models\User;
 use Illuminate\Support\Arr;
@@ -102,6 +103,16 @@ class ProjectDefaults
     /** The git hooks a user can turn on for new projects, as the R package names them. */
     public const HOOKS = ['data_security', 'check_sensitive_dirs', 'check_notebook_outputs'];
 
+    /** The handle of the person's own default blueprint, while it still exists. */
+    private static function ownBlueprint(User $user, mixed $id): ?string
+    {
+        if (! is_int($id)) {
+            return null;
+        }
+
+        return Blueprint::where('user_id', $user->id)->find($id)?->handle;
+    }
+
     /**
      * @return array{blueprint: string, package_sets: list<string>, skill_sets: list<string>, packages: array<string, list<array<string, mixed>>>, tools: array<string, bool>, settings: array{git: bool, ai: bool, hooks: list<string>, ide: string, scaffold: array<string, bool|string>, agents: list<string>, quarto: array<string, array<string, mixed>>}, language: ?string, workflows: array<string, string>, rmarkdown: bool}
      */
@@ -112,7 +123,7 @@ class ProjectDefaults
 
         return [
             'publish_destination' => $own['publish_destination'] ?? '',
-            'blueprint' => 'framework/'.Arr::get($doc, 'defaults.project_type', self::BLUEPRINT),
+            'blueprint' => self::ownBlueprint($user, $own['blueprint_id'] ?? null) ?? 'framework/'.Arr::get($doc, 'defaults.project_type', self::BLUEPRINT),
             // Only what the person chose: a blueprint's own language and workflow show through the rest
             'language' => in_array($own['language'] ?? null, Project::LANGUAGES, true) ? $own['language'] : null,
             'workflows' => self::chosenWorkflows(Arr::get($doc, 'defaults.workflows')),

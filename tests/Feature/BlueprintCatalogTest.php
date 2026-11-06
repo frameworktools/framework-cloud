@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Blueprint;
 use App\Models\User;
+use App\Support\ProjectDefaults;
 use Database\Seeders\BlueprintSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -74,9 +75,26 @@ class BlueprintCatalogTest extends TestCase
         $this->assertSame('rmarkdown', $doc['defaults']['notebook_format']);
         $this->assertSame('vscode', $doc['defaults']['ide']);
 
-        // Only supported combinations, and only blueprints the defaults can hold
+        // Only supported combinations
         $this->actingAs($user)->post("/blueprints/{$this->system('course')->id}/default", ['language' => 'r', 'workflow' => 'jupyter'])->assertSessionHasErrors('workflow');
-        $this->actingAs($user)->post('/blueprints/'.$this->forkOf($user, 'project')->id.'/default', ['language' => 'r', 'workflow' => 'quarto'])->assertNotFound();
+
+        // Your own blueprint can be the default. The packages get its structure's type for offline use
+        $mine = $this->forkOf($user, 'project');
+        $this->actingAs($user)->post("/blueprints/{$mine->id}/default", ['language' => 'r', 'workflow' => 'quarto'])->assertSessionHas('status', 'blueprint-default');
+        $this->assertSame($mine->fresh()->handle, ProjectDefaults::for($user->fresh())['blueprint']);
+        $this->assertSame('project', $user->fresh()->globalSettings()->document['defaults']['project_type']);
+
+        // Choosing a Framework blueprint again clears it, and deleting it falls back to the type
+        $this->actingAs($user)->post("/blueprints/{$this->system('project_sensitive')->id}/default", ['language' => 'r', 'workflow' => 'quarto']);
+        $this->assertSame('framework/project_sensitive', ProjectDefaults::for($user->fresh())['blueprint']);
+        $this->actingAs($user)->post("/blueprints/{$mine->id}/default", ['language' => 'r', 'workflow' => 'quarto']);
+        $mine->delete();
+        $this->assertSame('framework/project', ProjectDefaults::for($user->fresh())['blueprint']);
+
+        // Someone else's blueprint can't be
+        $other = User::factory()->create(['email_verified_at' => now()]);
+        $theirs = $this->forkOf($other, 'project');
+        $this->actingAs($user)->post("/blueprints/{$theirs->id}/default", ['language' => 'r', 'workflow' => 'quarto'])->assertNotFound();
     }
 
     private function forkOf(User $user, string $key): Blueprint
