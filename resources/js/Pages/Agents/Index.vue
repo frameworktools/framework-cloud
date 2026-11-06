@@ -152,12 +152,12 @@ const command = 'mt-2 block overflow-x-auto whitespace-nowrap rounded-lg bg-[#0c
                 <p v-if="app === 'claude'" class="text-sm text-slate-500 dark:text-slate-400">The connector then works in Claude and in Claude Code when you sign in to Claude Code with the same Claude account. On Team and Enterprise plans, an owner adds custom connectors for the organization.</p>
 
                 <ol v-if="app === 'chatgpt'" class="flex flex-col gap-4 text-sm text-slate-700 dark:text-slate-300">
-                    <li :class="step"><span :class="number">1</span><span>In ChatGPT, open Settings, then Apps and connectors. Under Advanced, turn on Developer mode.</span></li>
-                    <li :class="step"><span :class="number">2</span><span>Select Create. Name it Framework Cloud, paste the server address, and choose OAuth.</span></li>
-                    <li :class="step"><span :class="number">3</span><span>Sign in here, choose the agent's access, and select Connect.</span></li>
-                    <li :class="step"><span :class="number">4</span><span>In a chat, add Framework Cloud from the tools menu.</span></li>
+                    <li :class="step"><span :class="number">1</span><span>In the ChatGPT desktop app, open Settings, then Plugins. Select Add, then Add MCP server.</span></li>
+                    <li :class="step"><span :class="number">2</span><span>Name it framework. Next to Type, choose Streamable HTTP, not STDIO, and paste the server address as the URL. Leave everything else empty, then select Save.</span></li>
+                    <li :class="step"><span :class="number">3</span><span>Under MCPs, select Authenticate next to framework.</span></li>
+                    <li :class="step"><span :class="number">4</span><span>Sign in here in the browser that opens, choose the agent's access, and select Connect.</span></li>
                 </ol>
-                <p v-if="app === 'chatgpt'" class="text-sm text-slate-500 dark:text-slate-400">On Business and Enterprise plans, a workspace admin allows custom connectors.</p>
+                <p v-if="app === 'chatgpt'" class="text-sm text-slate-500 dark:text-slate-400">On chatgpt.com, open Settings, then Apps and connectors. Under Advanced, turn on Developer mode, then select Create, paste the server address, and choose OAuth. On Business and Enterprise plans, a workspace admin allows custom connectors.</p>
 
                 <ol v-if="app === 'claude-code'" class="flex flex-col gap-4 text-sm text-slate-700 dark:text-slate-300">
                     <li :class="step"><span :class="number">1</span><span>
@@ -176,7 +176,7 @@ const command = 'mt-2 block overflow-x-auto whitespace-nowrap rounded-lg bg-[#0c
                         <span :class="chip" aria-hidden="true">ChatGPT<ChevronDownIcon class="size-3.5 text-slate-500" /></span>,
                         and choose Codex. Or run <code class="font-mono text-xs">codex</code> in a terminal.
                     </span></li>
-                    <li :class="step"><span :class="number">2</span><span class="min-w-0 flex-1">Add the server in a terminal:<code :class="command">codex mcp add framework --url {{ mcpUrl }}</code></span></li>
+                    <li :class="step"><span :class="number">2</span><span class="min-w-0 flex-1">Add the server in a terminal, or in the ChatGPT desktop app as the ChatGPT tab shows:<code :class="command">codex mcp add framework --url {{ mcpUrl }}</code></span></li>
                     <li :class="step"><span :class="number">3</span><span class="min-w-0 flex-1">Sign in:<code :class="command">codex mcp login framework</code></span></li>
                     <li :class="step"><span :class="number">4</span><span>Sign in here in the browser that opens, choose the agent's access, and select Connect.</span></li>
                 </ol>

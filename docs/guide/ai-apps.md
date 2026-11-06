@@ -34,8 +34,12 @@ more steps.
   Settings, open Capabilities and add `framework.pub` exactly as shown to the
   websites Claude may reach, so Claude can upload files. The connector also
   works in Claude Code when you sign in to it with the same Claude account.
-- **ChatGPT:** Settings, then Apps and connectors, then Create. Custom
-  connectors need developer mode on some plans.
+- **ChatGPT:** in the desktop app, open Settings, then Plugins, then Add and
+  Add MCP server. Name it framework, choose Streamable HTTP (not STDIO), paste
+  the address as the URL, and leave the rest empty. Save, then select
+  Authenticate next to framework under MCPs. On chatgpt.com, use Settings,
+  then Apps and connectors, then Create; custom connectors need developer mode
+  on some plans.
 
 Setup steps for each app are under AI Agents, Connect your agent. The app opens
 Framework Cloud in a browser. Sign in, choose the app's access,
