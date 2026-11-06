@@ -343,7 +343,7 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                                 </span>
                             </td>
                             <td class="max-sm:hidden">{{ artifactKind(doc.kind).label }}</td>
-                            <td class="max-xl:hidden"><span class="inline-flex items-center gap-1.5">{{ doc.readable ? 'Public' : 'Anyone with the link' }}<LockClosedIcon v-if="doc.password_protected" class="size-3.5" aria-label="Password protected" /></span></td>
+                            <td class="max-xl:hidden"><span class="inline-flex items-center gap-1.5">{{ doc.visibility === 'private' ? 'Private' : doc.visibility === 'public' ? 'Public' : 'Anyone with the link' }}<LockClosedIcon v-if="doc.password_protected" class="size-3.5" aria-label="Password protected" /></span></td>
 
                             <td class="max-sm:hidden">{{ date(doc.updated_at) }}</td>
                             <td class="actions">
