@@ -55,7 +55,7 @@ const destroy = () => deleteForm.delete('/account/account');
             </template>
         </UiPanel>
 
-        <UiPanel title="Account deletion" description="Deletes your settings, projects, tokens, and published documents.">
+        <UiPanel title="Account deletion" description="Deletes your settings, projects, tokens, and published artifacts, collections, and reports.">
             <template #actions>
                 <UiButton variant="danger" @click="showDelete = true">Delete account</UiButton>
             </template>

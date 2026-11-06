@@ -96,7 +96,7 @@ const remove = (id) => {
             v-if="page.props.passwords" title="Password"
             :description="hasPassword
                 ? 'You can sign in with your email address and this password.'
-                : 'Add a password to sign in with your email address and a password, as well as passkeys and email links.'"
+                : 'Sign in with your email address and a password. Passkeys and email links keep working.'"
         >
             <form class="flex flex-col gap-4" @submit.prevent="savePassword">
                 <UiInput

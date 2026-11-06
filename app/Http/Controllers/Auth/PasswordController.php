@@ -74,6 +74,8 @@ class PasswordController extends Controller
             'token' => ['required', 'string'],
             'email' => ['required', 'string', 'lowercase', 'email'],
             'password' => ['required', 'confirmed', PasswordRule::min(10)],
+        ], [
+            'password.confirmed' => 'The two passwords don\'t match.',
         ]);
 
         $status = Password::reset(
@@ -108,6 +110,7 @@ class PasswordController extends Controller
             'password' => ['required', 'confirmed', PasswordRule::min(10)],
         ], [
             'current_password.current_password' => 'That isn\'t your current password.',
+            'password.confirmed' => 'The two passwords don\'t match.',
         ]);
 
         $user->forceFill(['password' => $request->input('password')])->save();
@@ -124,6 +127,7 @@ class PasswordController extends Controller
             'current_password' => ['required', 'current_password'],
         ], [
             'current_password.current_password' => 'That isn\'t your current password.',
+            'password.confirmed' => 'The two passwords don\'t match.',
         ]);
 
         $request->user()->forceFill(['password' => null])->save();

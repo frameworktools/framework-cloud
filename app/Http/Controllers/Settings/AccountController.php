@@ -44,6 +44,7 @@ class AccountController extends Controller
             ],
             'profile_public' => ['boolean'],
         ], [
+            'handle.lowercase' => 'Handles are lowercase letters, numbers, and hyphens.',
             'handle.regex' => 'Handles are lowercase letters, numbers, and hyphens.',
             'handle.not_in' => 'That handle is reserved.',
         ]);

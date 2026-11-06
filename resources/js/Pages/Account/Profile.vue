@@ -56,7 +56,7 @@ const yaml = computed(() => {
         <form id="settings-form" class="flex flex-col gap-8" @submit.prevent="save">
             <UiPanel title="Author details">
                 <UiInput v-model="form.name" label="Name" description="Name for bylines." required :error="form.errors.name" />
-                <UiInput v-model="form.email" label="Public email" type="email" description="Shown on your work. Your sign-in email under Settings > Account stays private." :error="form.errors.email" />
+                <UiInput v-model="form.email" label="Public email" type="email" description="Shown on your work and in new projects' author settings. Your sign-in email stays private unless you enter it here." :error="form.errors.email" />
                 <div class="grid gap-4 sm:grid-cols-2">
                     <UiInput v-model="form.url" label="Website" type="url" placeholder="https://" :error="form.errors.url" />
                     <UiInput v-model="form.orcid" label="ORCID iD" placeholder="0000-0002-1825-0097" :error="form.errors.orcid" />
