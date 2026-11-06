@@ -4,7 +4,8 @@ import { Link } from '@inertiajs/vue3';
 
 // Underlined tabs, as academic.page draws them. Each tab is a link (href) or switches v-model (value).
 // Arrow keys move between tabs that switch in place.
-const props = defineProps({ tabs: { type: Array, required: true }, label: { type: String, default: 'Sections' } });
+// compact: closer tabs, for a row of many short labels
+const props = defineProps({ tabs: { type: Array, required: true }, label: { type: String, default: 'Sections' }, compact: Boolean });
 const model = defineModel({ type: [String, Number], default: null });
 const list = ref(null);
 const selected = tab => tab.current ?? (tab.value !== undefined && tab.value === model.value);
@@ -24,7 +25,7 @@ const stateClass = tab => selected(tab)
 <template>
     <div class="relative">
         <div ref="list" :role="tabs.some(tab => tab.href === undefined) ? 'tablist' : undefined" :aria-label="label"
-            class="flex h-10 gap-6 overflow-x-auto overflow-y-hidden border-b border-slate-800/10 dark:border-white/15">
+            class="flex h-10 overflow-x-auto overflow-y-hidden border-b border-slate-800/10 dark:border-white/15" :class="compact ? 'gap-4' : 'gap-6'">
             <template v-for="(tab, index) in tabs" :key="tab.value ?? tab.href">
                 <Link v-if="tab.href !== undefined" :href="tab.href" :class="[tabClass, stateClass(tab)]" :aria-current="selected(tab) ? 'page' : undefined" preserve-scroll>
                     {{ tab.label }}<span v-if="tab.count !== undefined" class="rounded-md bg-slate-800/5 px-1.5 text-xs tabular-nums text-slate-500 dark:bg-white/10 dark:text-slate-400">{{ tab.count }}</span>

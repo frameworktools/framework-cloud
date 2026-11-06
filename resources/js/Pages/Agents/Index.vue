@@ -7,10 +7,12 @@ import SetupSteps from './SetupSteps.vue';
 
 const props = defineProps({ mcpUrl: String, plugin: Boolean, active: Boolean });
 
-const app = ref('claude-code');
+const app = ref('claude-code-app');
 const apps = [
-    { value: 'claude-code', label: 'Claude Code' },
-    { value: 'codex', label: 'Codex' },
+    { value: 'claude-code-app', label: 'Claude Code app' },
+    { value: 'claude-code-cli', label: 'Claude Code CLI' },
+    { value: 'codex-app', label: 'Codex app' },
+    { value: 'codex-cli', label: 'Codex CLI' },
     { value: 'claude', label: 'Claude' },
     { value: 'chatgpt', label: 'ChatGPT' },
 ];
@@ -20,10 +22,7 @@ const marketplace = 'frameworktools/plugins';
 const host = computed(() => new URL(props.mcpUrl).host);
 const signIn = 'In the browser that opens, sign in, choose the access, and select Connect.';
 
-/*
- * Each tab: how to switch to that app inside its desktop app, then one or more
- * sections (the app, the command line), each with plugin and manual steps.
- */
+// Each tab: how to switch to that app inside its desktop app, then plugin and manual steps
 const setup = computed(() => {
     const url = props.mcpUrl;
     const allowHost = ['In Settings, open Capabilities and add this to the allowed websites, exactly as shown. Claude needs it to upload files.', { copy: host.value }, 'Start a new chat afterward.'];
@@ -51,38 +50,34 @@ const setup = computed(() => {
     const codexSignIn = ['Sign in:', { cmd: 'codex mcp login framework' }, signIn];
 
     return {
-        'claude-code': {
+        'claude-code-app': {
             toggle: ['To switch to Claude Code in the Claude desktop app, select ', { code: '</>' }, ' at the top of the window.'],
-            sections: [
-                { title: 'Connect with the Claude Code app', plugin: claudePlugin, manual: claudeConnector },
-                {
-                    title: 'Connect with the Claude Code CLI',
-                    plugin: [['In a terminal, add the plugin:', { cmd: `claude plugin marketplace add ${marketplace}` }, { cmd: 'claude plugin install framework-cloud@framework' }], claudeCodeSignIn],
-                    manual: [['In a terminal, add the server:', { cmd: `claude mcp add --transport http framework ${url}` }], claudeCodeSignIn],
-                },
-            ],
-            note: 'Claude Code runs on your computer, so it uploads files itself.',
+            plugin: claudePlugin,
+            manual: claudeConnector,
         },
-        codex: {
+        'claude-code-cli': {
+            plugin: [['In a terminal, add the plugin:', { cmd: `claude plugin marketplace add ${marketplace}` }, { cmd: 'claude plugin install framework-cloud@framework' }], claudeCodeSignIn],
+            manual: [['In a terminal, add the server:', { cmd: `claude mcp add --transport http framework ${url}` }], claudeCodeSignIn],
+        },
+        'codex-app': {
             toggle: ['To switch to Codex in the ChatGPT desktop app, open the ChatGPT menu at the top left and choose Codex.'],
-            sections: [
-                { title: 'Connect with the Codex app', plugin: chatgptPlugin, manual: chatgptServer },
-                {
-                    title: 'Connect with the Codex CLI',
-                    plugin: [['In a terminal, add the plugin:', { cmd: `codex plugin marketplace add ${marketplace}` }, { cmd: 'codex plugin add framework-cloud@framework' }], codexSignIn],
-                    manual: [['In a terminal, add the server:', { cmd: `codex mcp add framework --url ${url}` }], codexSignIn],
-                },
-            ],
-            note: 'Codex runs on your computer, so it uploads files itself.',
+            plugin: chatgptPlugin,
+            manual: chatgptServer,
+        },
+        'codex-cli': {
+            plugin: [['In a terminal, add the plugin:', { cmd: `codex plugin marketplace add ${marketplace}` }, { cmd: 'codex plugin add framework-cloud@framework' }], codexSignIn],
+            manual: [['In a terminal, add the server:', { cmd: `codex mcp add framework --url ${url}` }], codexSignIn],
         },
         claude: {
             toggle: ['To switch to chat in the Claude desktop app, select the chat button at the top of the window. On claude.ai, chat is the default.'],
-            sections: [{ plugin: [...claudePlugin, allowHost], manual: [...claudeConnector, allowHost] }],
+            plugin: [...claudePlugin, allowHost],
+            manual: [...claudeConnector, allowHost],
             note: 'On Team and Enterprise plans, an owner adds custom connectors.',
         },
         chatgpt: {
             toggle: ['To switch to chat in the ChatGPT desktop app, open the menu at the top left and choose ChatGPT.'],
-            sections: [{ plugin: chatgptPlugin, manual: chatgptServer }],
+            plugin: chatgptPlugin,
+            manual: chatgptServer,
             note: 'On chatgpt.com, open Settings, then Apps and connectors. Turn on Developer mode, then select Create.',
         },
     }[app.value];
@@ -100,20 +95,17 @@ const label = 'text-sm font-semibold text-slate-900 dark:text-white';
 
             <section class="flex flex-col gap-6">
                 <p class="text-sm text-slate-500 dark:text-slate-400">Claude Code and Codex make it easier to work with Framework Cloud and the files on your computer. The Claude desktop app includes Claude Code, and the ChatGPT desktop app includes Codex.</p>
-                <UiTabs v-model="app" :tabs="apps" label="AI app" />
-                <p class="text-sm text-slate-500 dark:text-slate-400">
+                <UiTabs v-model="app" :tabs="apps" label="AI app" compact />
+                <p v-if="setup.toggle" class="text-sm text-slate-500 dark:text-slate-400">
                     <template v-for="(part, i) in setup.toggle" :key="i"><template v-if="typeof part === 'string'">{{ part }}</template><code v-else class="font-mono text-xs">{{ part.code }}</code></template>
                 </p>
 
-                <div v-for="(section, i) in setup.sections" :key="section.title ?? 'app'" class="flex flex-col gap-5" :class="i && 'border-t border-slate-800/10 pt-6 dark:border-white/15'">
-                    <h3 v-if="section.title" class="text-base font-medium text-slate-900 dark:text-white">{{ section.title }}</h3>
-                    <template v-if="plugin">
-                        <h4 :class="label">Plugin</h4>
-                        <SetupSteps :steps="section.plugin" />
-                    </template>
-                    <h4 :class="[label, plugin && 'mt-3']">Manual setup</h4>
-                    <SetupSteps :steps="section.manual" />
-                </div>
+                <template v-if="plugin">
+                    <h3 :class="label">Plugin</h3>
+                    <SetupSteps :steps="setup.plugin" />
+                </template>
+                <h3 :class="[label, plugin && 'mt-3']">Manual setup</h3>
+                <SetupSteps :steps="setup.manual" />
 
                 <p v-if="setup.note" class="text-sm text-slate-500 dark:text-slate-400">{{ setup.note }}</p>
             </section>
