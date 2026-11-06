@@ -33,7 +33,9 @@ const formFor = (group) => useForm(Object.fromEntries(
         .filter(([key, f]) => key.startsWith(`${group}.`) && f.source !== 'env')
         .map(([key, f]) => [key.replace('.', '__'), f.secret ? '' : f.value]),
 ));
-const forms = { github: formFor('github'), storage: formFor('storage'), mail: formFor('mail') };
+const forms = { github: formFor('github'), storage: formFor('storage'), mail: formFor('mail'), agents: formFor('agents') };
+// The select shows the current state whether it was saved here or is the default
+if (!['true', 'false'].includes(forms.agents.agents__enabled)) forms.agents.agents__enabled = props.status.agents ? 'true' : 'false';
 const field = (key) => props.fields[key];
 const save = (group) => forms[group].put(`/admin/setup/${group}`, {
     preserveScroll: true,
@@ -301,6 +303,27 @@ const pill = (ready) => (ready
                         <UiButton v-if="savedIn('mail')" variant="ghost" @click="clear('mail', 'email settings')">Remove saved settings</UiButton>
                         <UiButton variant="outline" :disabled="!mailReady" @click="testMail">Send a test email</UiButton>
                         <UiButton v-if="!allEnv('mail')" type="submit" form="mail-form" :disabled="forms.mail.processing">Save</UiButton>
+                    </div>
+                </template>
+            </UiPanel>
+
+            <UiPanel id="agents" title="Connected agents" class="scroll-mt-6">
+                <template #header>
+                    <span class="rounded-full px-2 py-0.5 text-xs" :class="pill(status.agents)">{{ status.agents ? 'On' : 'Off' }}</span>
+                </template>
+                <p class="-mt-4 text-sm text-slate-600 dark:text-slate-400">
+                    Lets people connect Claude, ChatGPT, and other AI agents to their accounts at <code class="font-mono text-xs">/mcp</code>.
+                    Turned off, agents can't connect, existing connections stop working, and the agent page is hidden until it is turned on again.
+                </p>
+                <form id="agents-form" @submit.prevent="save('agents')">
+                    <CredentialField v-if="field('agents.enabled').source === 'env'" :field="field('agents.enabled')" />
+                    <UiSelect v-else v-model="forms.agents.agents__enabled" label="Agent connections" :error="forms.agents.errors.agents__enabled"
+                        :options="[{ value: 'true', label: 'On' }, { value: 'false', label: 'Off' }]" />
+                </form>
+                <template #actions>
+                    <div class="flex flex-wrap items-center justify-end gap-2">
+                        <span v-if="flash === 'agents-saved'" class="text-sm text-slate-500">Saved.</span>
+                        <UiButton v-if="!allEnv('agents')" type="submit" form="agents-form" :disabled="forms.agents.processing">Save</UiButton>
                     </div>
                 </template>
             </UiPanel>

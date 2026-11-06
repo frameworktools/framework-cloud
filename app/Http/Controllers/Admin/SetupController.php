@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Services\GitHub\Scaffolder;
+use App\Support\Agents;
 use App\Support\Credentials;
 use App\Support\GettingStarted;
 use Illuminate\Http\Client\ConnectionException;
@@ -25,9 +26,10 @@ use Throwable;
  */
 class SetupController extends Controller
 {
-    public const GROUPS = ['github', 'storage', 'mail'];
+    public const GROUPS = ['github', 'storage', 'mail', 'agents'];
 
     private const LABELS = [
+        'agents.enabled' => 'Connected agents',
         'github.app_id' => 'App ID',
         'github.app_slug' => 'App slug',
         'github.client_id' => 'Client ID',
@@ -79,6 +81,7 @@ class SetupController extends Controller
                 'github' => Scaffolder::enabled() && filled(config('services.github.client_secret')) && filled(config('services.github.app_slug')),
                 'storage' => config('framework.documents_disk'),
                 'mail' => config('mail.default'),
+                'agents' => Agents::enabled(),
             ],
             'documentsDiskFromEnv' => Credentials::envSet('FW_DOCUMENTS_DISK'),
             'broken' => collect(array_keys(Credentials::REGISTRY))->filter(fn ($k) => Credentials::source($k) === 'broken')->values(),
@@ -103,6 +106,9 @@ class SetupController extends Controller
             $rules['mail__mailer'] = ['nullable', Rule::in(['smtp', 'ses', 'log'])];
             $rules['mail__from_address'] = ['nullable', 'email', 'max:190'];
             $rules['mail__smtp_port'] = ['nullable', 'integer', 'between:1,65535'];
+        }
+        if ($group === 'agents') {
+            $rules['agents__enabled'] = ['nullable', Rule::in(['true', 'false'])];
         }
         if ($group === 'storage') {
             $rules['storage__endpoint'] = ['nullable', 'url:https,http', 'max:500'];

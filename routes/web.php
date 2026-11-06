@@ -27,6 +27,7 @@ use App\Http\Controllers\Settings\DefaultsController;
 use App\Http\Controllers\Settings\GitHubController;
 use App\Http\Controllers\Settings\PackageSearchController;
 use App\Http\Controllers\Settings\PasskeysController;
+use App\Http\Middleware\EnsureAgentsEnabled;
 use App\Models\Document;
 use App\Models\User;
 use Illuminate\Support\Arr;
@@ -211,11 +212,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('tokens/{tokenId}', [TokensController::class, 'destroy']);
 
     // AI agents connected over MCP; the server and its OAuth sign-in are in routes/ai.php
-    Route::get('agents', [AgentsController::class, 'index'])->name('agents');
-    Route::get('agents/history', [AgentsController::class, 'history'])->name('agents.history');
-    Route::delete('agents/{connection}', [AgentsController::class, 'destroy'])->whereNumber('connection');
-    Route::patch('agents/apps/{app}', [AgentsController::class, 'updateApp'])->whereNumber('app');
-    Route::delete('agents/apps/{app}', [AgentsController::class, 'forgetApp'])->whereNumber('app');
+    Route::middleware(EnsureAgentsEnabled::class)->group(function () {
+        Route::get('agents', [AgentsController::class, 'index'])->name('agents');
+        Route::get('agents/history', [AgentsController::class, 'history'])->name('agents.history');
+        Route::delete('agents/{connection}', [AgentsController::class, 'destroy'])->whereNumber('connection');
+        Route::patch('agents/apps/{app}', [AgentsController::class, 'updateApp'])->whereNumber('app');
+        Route::delete('agents/apps/{app}', [AgentsController::class, 'forgetApp'])->whereNumber('app');
+    });
 
     // fw login, fw_login, and cloud_login() approve here; see routes/api.php
     // for the computer's half. The page itself is public (below).

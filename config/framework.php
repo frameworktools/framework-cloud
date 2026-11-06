@@ -68,6 +68,12 @@ return [
     'content_url' => env('FW_CONTENT_URL'),
 
     /*
+    | Whether AI agents may connect over MCP. On unless FW_AGENTS=false, or
+    | turned off in Server administration. See App\Support\Agents.
+    */
+    'agents' => env('FW_AGENTS', true),
+
+    /*
     | The homepage's worked example: a public artifact published by
     | `php artisan fw:homepage-example`. Unset, the homepage shows a labeled
     | preview image instead of the live reader page.

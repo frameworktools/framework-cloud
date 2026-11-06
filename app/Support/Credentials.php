@@ -49,6 +49,8 @@ class Credentials
         'mail.ses_key' => ['AWS_ACCESS_KEY_ID', 'services.ses.key', true],
         'mail.ses_secret' => ['AWS_SECRET_ACCESS_KEY', 'services.ses.secret', true],
         'mail.ses_region' => ['AWS_DEFAULT_REGION', 'services.ses.region', false],
+
+        'agents.enabled' => ['FW_AGENTS', 'framework.agents', false],
     ];
 
     /** Variables whose presence decides something without being a credential */

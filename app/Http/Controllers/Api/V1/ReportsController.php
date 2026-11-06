@@ -74,6 +74,8 @@ class ReportsController extends Controller
     /** DELETE: move a report to the Trash. Its links stop opening until it is restored. */
     public function destroy(Request $request, string $slug, string $report): JsonResponse
     {
+        // Deleting takes the account's own token, never a project token from a project's .env
+        abort_unless($request->user() instanceof User, 403, 'Deleting a report needs your account token.');
         $project = $this->project($request, $slug);
         $report = $this->report($project, $report);
         $report->delete();
