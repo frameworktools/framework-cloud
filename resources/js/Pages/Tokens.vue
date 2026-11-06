@@ -42,7 +42,7 @@ const revoke = async (id) => {
                 <template #description>
                     Tokens connect R, Python, Stata, and the CLI to your account.
                     Revoke each device’s token separately.
-                    <code class="font-mono text-xs">cloud_login()</code> in R or Python, <code class="font-mono text-xs">fw_login</code> in Stata, and <code class="font-mono text-xs">fw login</code> create a token for you after you approve the computer in your browser. Create one here for a computer without a browser.
+                    <code class="font-mono text-xs">cloud_login()</code> in R or Python, <code class="font-mono text-xs">fw_login</code> in Stata, and <code class="font-mono text-xs">fw login</code> create a token for you after you approve the computer in a browser. The browser can be on any device, so this also works on a server or a cluster. Create a token here for scripts and jobs that can't wait for approval.
                 </template>
             </PageHeader>
 
@@ -64,8 +64,13 @@ const revoke = async (id) => {
                     <div class="text-slate-500">In Python:</div>
                     <code class="break-all font-mono text-xs">framework.cloud_login("{{ plainToken }}"{{ pythonServerArg }})</code>
                 </div>
+                <div>
+                    <div class="text-slate-500">In a terminal, for fw and Stata, which share fw's login. fw asks for the token:</div>
+                    <code class="break-all font-mono text-xs">fw login --paste{{ serverFlag }}</code>
+                </div>
                 <p class="text-xs text-slate-500">
                     Stored in your system keychain (macOS Keychain, Windows Credential Manager, Linux Secret Service).
+                    In a batch job, set <code class="font-mono">FW_CLOUD_TOKEN</code> instead.
                 </p>
             </UiCallout>
 
