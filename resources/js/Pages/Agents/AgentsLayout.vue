@@ -4,8 +4,8 @@ import SectionLayout from '@/Layouts/SectionLayout.vue';
 // The AI agents section: setup steps for each app, then the connections and what agents did
 const items = [
     { label: 'Setup', href: '/agents', exact: true },
-    { label: 'Connections', href: '/agents/connections' },
     { label: 'Permissions', href: '/agents/permissions' },
+    { label: 'Connections', href: '/agents/connections' },
     { label: 'History', href: '/agents/history' },
 ];
 </script>
