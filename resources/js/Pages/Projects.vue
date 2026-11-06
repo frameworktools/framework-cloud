@@ -48,7 +48,7 @@ const titleClass = 'font-medium text-slate-900 hover:underline hover:underline-o
                         <li v-for="project in projects" :key="project.id" :class="rowClass">
                             <div class="min-w-0 flex-1 basis-full sm:basis-48">
                                 <Link :href="`/projects/${project.slug}`" :class="titleClass">{{ project.name }}</Link>
-                                <p class="mt-1 break-words text-xs text-slate-500"><span v-if="project.github?.repo" class="inline-flex items-center gap-1"><GitHubMark class="size-3" />{{ project.github.repo }}</span><span v-else>{{ project.slug }}</span><span v-if="project.description"> · {{ project.description }}</span></p>
+                                <p class="mt-1 break-words text-xs text-slate-500"><span v-if="project.github?.repo" class="inline-flex items-center gap-1"><GitHubMark class="size-3" />{{ project.github.repo }}</span><span v-else-if="project.slug !== project.name">{{ project.slug }}</span><span v-if="project.description"><template v-if="project.github?.repo || project.slug !== project.name"> · </template>{{ project.description }}</span></p>
                                 <p v-if="project.blueprint" class="mt-1 text-xs text-slate-500">Blueprint: {{ project.blueprint.handle }} v{{ project.blueprint.version }}</p>
                             </div>
                             <span class="text-xs text-slate-500">{{ typeName(project.project_type) }} · {{ languageNames[project.language] }}</span>

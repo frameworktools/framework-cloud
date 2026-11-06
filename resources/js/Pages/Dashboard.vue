@@ -64,7 +64,7 @@ const date = value => new Date(value).toLocaleDateString(undefined, { month: 'sh
                     <UiButton href="/projects" variant="ghost" size="sm">All projects</UiButton>
                 </div>
                 <UiTable v-if="projects.length" label="Recent projects" class="dashboard-projects">
-                    <thead><tr><th>Name</th><th class="max-sm:hidden">Environment</th><th class="actions"><span class="sr-only">Actions</span></th></tr></thead>
+                    <thead><tr><th>Name</th><th class="max-sm:hidden">Language</th><th class="actions"><span class="sr-only">Actions</span></th></tr></thead>
                     <tbody><tr v-for="project in projects.slice(0, 4)" :key="project.id">
                         <td class="strong max-w-96 truncate"><Link :href="`/projects/${project.slug}`" class="block truncate hover:underline">{{ project.name }}</Link></td>
                         <td class="max-sm:hidden">{{ languageNames[project.language] }}</td>
