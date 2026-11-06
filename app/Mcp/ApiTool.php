@@ -44,7 +44,8 @@ class ApiTool extends Tool
     /** @return array<string, mixed> */
     public function toArray(): array
     {
-        $read = $this->tool['method'] === 'GET';
+        // A preview computes without saving, so it reads only though it is a POST
+        $read = $this->tool['method'] === 'GET' || ($this->tool['read_only'] ?? false);
 
         return [
             'name' => $this->name(),

@@ -29,7 +29,7 @@ and select Connect.
 
 | Access | Allowed actions |
 |---|---|
-| Full access (recommended) | Read everything. Create, rename, and delete projects. Publish and delete artifacts. Create, edit, publish, and delete reports. Create, edit, and delete your own skills. |
+| Full access (recommended) | Read everything. Create, rename, and delete projects. Design and save blueprints. Publish and delete artifacts. Create, edit, publish, and delete reports. Create, edit, and delete your own skills. |
 | Read only | Read projects, artifacts, reports, skills, and blueprints. |
 
 Anything an agent deletes goes to the Trash, in the sidebar, where you can
@@ -59,6 +59,14 @@ Artifacts with no project.
 The R, Python, and Stata packages and `fw publish` check the project's private
 folders before publishing. An agent publishing a file directly cannot. Use the
 packages for results from a project. See [Publishing artifacts](publishing.md).
+
+## Blueprints
+
+An agent can design a blueprint from a description, such as "R with Quarto and
+renv, using the privacy-sensitive layout." It reads the parts there are, shows
+you the files and folders a project would get, and saves the blueprint once you
+agree. New blueprints start private. Agents can change only your own
+blueprints; to adapt a built-in one, an agent saves a copy.
 
 ## Linked projects
 

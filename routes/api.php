@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\GitHubWebhookController;
 use App\Http\Controllers\Api\V1\ArtifactsController;
+use App\Http\Controllers\Api\V1\BlueprintDesignController;
 use App\Http\Controllers\Api\V1\BlueprintsController;
 use App\Http\Controllers\Api\V1\CliDeviceController;
 use App\Http\Controllers\Api\V1\CollectionsController;
@@ -51,6 +52,12 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::get('/settings', [SettingsController::class, 'show']);
     Route::put('/settings', [SettingsController::class, 'update']);
     Route::get('/blueprints', BlueprintsController::class);
+    // Designing blueprints, as the web builder does (keys may be framework/x or @owner/x)
+    Route::get('/blueprints/options', [BlueprintDesignController::class, 'options']);
+    Route::post('/blueprints/preview', [BlueprintDesignController::class, 'preview'])->middleware('throttle:60,1');
+    Route::post('/blueprints', [BlueprintDesignController::class, 'store'])->middleware('throttle:30,1');
+    Route::get('/blueprints/{blueprint}', [BlueprintDesignController::class, 'show'])->where('blueprint', '.+');
+    Route::put('/blueprints/{blueprint}', [BlueprintDesignController::class, 'update'])->where('blueprint', '.+')->middleware('throttle:30,1');
     foreach (['structures' => 'structure', 'tools' => 'tool', 'package-sets' => 'package_set', 'skill-sets' => 'skill_set'] as $path => $kind) {
         Route::get("/{$path}", [PiecesController::class, 'index'])->defaults('kind', $kind);
     }

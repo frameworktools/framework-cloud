@@ -3,6 +3,7 @@
 namespace Tests\Feature\Mcp;
 
 use App\Http\Controllers\OAuth\RegisterMcpClientController;
+use App\Models\Blueprint;
 use App\Models\Document;
 use App\Models\McpApprovedApp;
 use App\Models\McpConnection;
@@ -237,10 +238,13 @@ class HostedMcpTest extends TestCase
         $this->assertNotContains('reports_update', $names);
         $this->assertNotContains('reports_publish', $names);
         $this->assertNotContains('artifacts_publish', $names);
-        foreach (['projects_create', 'projects_update', 'skills_create', 'skills_update', 'projects_delete', 'reports_delete', 'skills_delete'] as $write) {
+        foreach (['projects_create', 'projects_update', 'skills_create', 'skills_update', 'projects_delete', 'reports_delete', 'skills_delete', 'blueprints_create', 'blueprints_update'] as $write) {
             $this->assertNotContains($write, $names);
         }
         $this->assertContains('skills_show', $names);
+        foreach (['blueprints_options', 'blueprints_show', 'blueprints_preview'] as $read) {
+            $this->assertContains($read, $names);
+        }
 
         app('auth')->forgetGuards();
         $this->withToken($token)->postJson('/mcp', ['jsonrpc' => '2.0', 'id' => 1, 'method' => 'tools/call',
@@ -780,5 +784,45 @@ class HostedMcpTest extends TestCase
 
         $this->assertTrue(Document::withTrashed()->find($document->id)->trashed());
         $this->assertSame([], $this->tool($token, 'artifacts_list')['body']['artifacts']);
+    }
+
+    public function test_an_agent_proposes_and_creates_a_blueprint(): void
+    {
+        $this->seed(BlueprintSeeder::class);
+        $user = $this->owner();
+        $token = $this->connect($user, McpConnection::ACCESS_FULL);
+
+        $options = $this->tool($token, 'blueprints_options');
+        $this->assertContains('quarto', array_column($options['body']['tools'], 'key'));
+        $this->assertArrayNotHasKey('id', $options['body']['structures'][0]);
+
+        $standard = $this->tool($token, 'blueprints_show', ['blueprint' => 'framework/project']);
+        $this->assertFalse($standard['body']['editable']);
+        $choices = $standard['body']['choices'];
+
+        // Propose: R with Quarto and renv, previewed without saving
+        $proposal = ['language' => 'r', 'structure' => $choices['structure'], 'tools' => ['quarto' => true, 'renv' => true],
+            'package_sets' => $choices['package_sets'], 'skill_sets' => $choices['skill_sets'], 'settings' => ['sensitive' => false, 'git' => true, 'ai' => true]];
+        $preview = $this->tool($token, 'blueprints_preview', $proposal + ['workflow' => 'quarto']);
+        $this->assertFalse($preview['error'], json_encode($preview));
+        $this->assertNotEmpty($preview['body']['tree']);
+        $this->assertSame(0, Blueprint::where('user_id', $user->id)->count());
+
+        $made = $this->tool($token, 'blueprints_create', $proposal + ['name' => 'Quarto in R', 'description' => 'R with Quarto and renv.']);
+        $this->assertFalse($made['error'], json_encode($made));
+        $this->assertTrue($made['body']['editable']);
+        $this->assertSame('private', $made['body']['visibility']);
+        $this->assertTrue($made['body']['choices']['tools']['renv'] ?? false);
+
+        $updated = $this->tool($token, 'blueprints_update', array_merge($proposal, ['blueprint' => $made['body']['key'], 'name' => 'Quarto in R', 'tools' => ['quarto' => true]]));
+        $this->assertFalse($updated['error'], json_encode($updated));
+        $this->assertSame(2, $updated['body']['version']);
+        $this->assertArrayNotHasKey('renv', $updated['body']['choices']['tools']);
+
+        $refused = $this->tool($token, 'blueprints_update', ['blueprint' => 'framework/project'] + $proposal + ['name' => 'Mine']);
+        $this->assertSame(403, $refused['body']['error']['status']);
+
+        $project = $this->tool($token, 'projects_create', ['name' => 'Penguin chapter', 'blueprint' => $made['body']['key']]);
+        $this->assertFalse($project['error'], json_encode($project));
     }
 }

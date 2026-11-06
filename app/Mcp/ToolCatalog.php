@@ -163,6 +163,36 @@ class ToolCatalog
                 'title' => 'Delete a skill',
                 'description' => 'Delete one of the account\'s own skills. Projects that use it keep their copy.'.' It goes to the Trash in Framework Cloud, where the user can restore it. Delete only when the user asks, and name what you will delete first.',
             ],
+            'blueprints_options' => [
+                'level' => self::READ, 'method' => 'GET', 'path' => '/blueprints/options',
+                'title' => 'List blueprint parts',
+                'description' => 'What a blueprint is built from: structures (folder layouts), tools (quarto, jupyter, renv, uv, targets, and others, with the languages they fit and what they require), package sets, skill sets, and skills, each with its key and a summary. Use the keys in blueprints_preview and blueprints_create.',
+            ],
+            'blueprints_show' => [
+                'level' => self::READ, 'method' => 'GET', 'path' => '/blueprints/{blueprint}',
+                'path_params' => ['blueprint' => ['type' => 'string', 'description' => 'The blueprint key from blueprints_list, such as framework/project or @owner/name.']],
+                'title' => 'Show a blueprint',
+                'description' => 'One blueprint\'s choices (structure, tools, package sets, skill sets, skills, settings, extra YAML, languages, and workflows), its version, and whether this account can change it. Start a new blueprint from these choices to adapt a built-in one.',
+            ],
+            'blueprints_preview' => [
+                'level' => self::READ, 'method' => 'POST', 'path' => '/blueprints/preview', 'read_only' => true,
+                'body' => self::blueprintBody(preview: true),
+                'title' => 'Preview a blueprint',
+                'description' => 'The files and folders a project from these blueprint choices would get, for one language and workflow, without saving anything. Use it to propose a blueprint and show the user before creating it. A problem with the choices comes back as problem.',
+            ],
+            'blueprints_create' => [
+                'level' => self::FULL, 'method' => 'POST', 'path' => '/blueprints',
+                'body' => self::blueprintBody(),
+                'title' => 'Create a blueprint',
+                'description' => 'Save a blueprint from choices: a structure, tools, package sets, skill sets, skills, settings, and extra settings.yml YAML. Preview it with blueprints_preview and get the user\'s go-ahead first. It starts private. Projects can then start from it with projects_create.',
+            ],
+            'blueprints_update' => [
+                'level' => self::FULL, 'method' => 'PUT', 'path' => '/blueprints/{blueprint}',
+                'path_params' => ['blueprint' => ['type' => 'string', 'description' => 'The blueprint key from blueprints_list, such as framework/project or @owner/name.']],
+                'body' => self::blueprintBody(),
+                'title' => 'Update a blueprint',
+                'description' => 'Save a new version of one of the account\'s own blueprints from the full choices (read them with blueprints_show, change what is needed, send them all). Projects already made from it keep the version they used.',
+            ],
             'blueprints_list' => [
                 'level' => self::READ, 'method' => 'GET', 'path' => '/blueprints', 'query' => $language,
                 'title' => 'List blueprints',
@@ -201,6 +231,44 @@ class ToolCatalog
             self::FULL => $access === McpConnection::ACCESS_FULL,
             default => false,
         };
+    }
+
+    /** @return array{properties: array<string, mixed>, required: list<string>} */
+    private static function blueprintBody(bool $preview = false): array
+    {
+        $choices = [
+            'language' => ['type' => 'string', 'enum' => ['r', 'python', 'stata'], 'description' => 'The default language.'],
+            'structure' => ['type' => 'string', 'description' => 'A structure key from blueprints_options, such as framework/project.'],
+            'tools' => ['type' => 'object', 'additionalProperties' => ['type' => 'boolean'], 'description' => 'Tool keys from blueprints_options, each true to include, such as {"quarto": true, "renv": true}.'],
+            'package_sets' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Package set keys.'],
+            'skill_sets' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Skill set keys.'],
+            'skills' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Skill keys, beyond those the skill sets add.'],
+            'settings' => ['type' => 'object', 'properties' => [
+                'sensitive' => ['type' => 'boolean', 'description' => 'Private and public data folders, and rules that keep private data from AI assistants.'],
+                'git' => ['type' => 'boolean'],
+                'ai' => ['type' => 'boolean', 'description' => 'Agent files and skills for AI assistants.'],
+            ]],
+            'extra_yaml' => ['type' => 'string', 'description' => 'More settings.yml settings, as YAML.'],
+        ];
+        if ($preview) {
+            return [
+                'properties' => $choices + ['workflow' => ['type' => 'string', 'enum' => ['quarto', 'jupyter', 'scripts'], 'description' => 'Notebooks with Quarto or Jupyter, or scripts only. Stata uses scripts.']],
+                'required' => ['language', 'structure', 'workflow'],
+            ];
+        }
+
+        return [
+            'properties' => [
+                'name' => ['type' => 'string', 'maxLength' => 100],
+                'description' => ['type' => 'string', 'maxLength' => 1000],
+                'visibility' => ['type' => 'string', 'enum' => ['private', 'unlisted', 'public'], 'description' => 'Defaults to private.'],
+            ] + $choices + [
+                'languages' => ['type' => 'array', 'items' => ['type' => 'string', 'enum' => ['r', 'python', 'stata']], 'description' => 'Languages projects from it may use. Leave out for all.'],
+                'workflows' => ['type' => 'array', 'items' => ['type' => 'string', 'enum' => ['quarto', 'jupyter', 'scripts']], 'description' => 'Workflows projects from it may use. Leave out for all.'],
+                'notes' => ['type' => 'string', 'description' => 'A short note for the version history.'],
+            ],
+            'required' => ['name', 'language', 'structure'],
+        ];
     }
 
     /** @return array{properties: array<string, mixed>, required: list<string>} */

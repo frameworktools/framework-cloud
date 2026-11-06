@@ -5,15 +5,12 @@ namespace App\Http\Controllers\App;
 use App\Http\Controllers\Controller;
 use App\Models\Blueprint;
 use App\Models\BlueprintVersion;
-use App\Models\FacetVersion;
 use App\Models\Project;
+use App\Support\BlueprintInput;
 use App\Support\Catalog;
 use App\Support\DefaultsPreview;
-use App\Support\Layer;
 use App\Support\Library;
 use App\Support\ProjectDefaults;
-use App\Support\ProjectTree;
-use App\Support\Resolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -140,7 +137,7 @@ class BlueprintsController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $user = $request->user();
-        [$meta, $base, $facetVersionIds, $layer, $notes, $compatibility] = $this->validated($request);
+        [$meta, $base, $facetVersionIds, $layer, $notes, $compatibility] = BlueprintInput::validated($request);
 
         $blueprint = DB::transaction(function () use ($user, $meta, $base, $facetVersionIds, $layer, $notes, $compatibility) {
             $blueprint = Blueprint::create($meta + [
@@ -188,7 +185,7 @@ class BlueprintsController extends Controller
     {
         abort_unless($blueprint->isEditableBy($request->user()), 403);
 
-        [$meta, $base, $facetVersionIds, $layer, $notes, $compatibility] = $this->validated($request);
+        [$meta, $base, $facetVersionIds, $layer, $notes, $compatibility] = BlueprintInput::validated($request);
 
         DB::transaction(function () use ($blueprint, $meta, $base, $facetVersionIds, $layer, $notes, $compatibility) {
             $blueprint->update($meta);
@@ -272,121 +269,10 @@ class BlueprintsController extends Controller
         ]);
     }
 
-    /**
-     * The builder sends choices; the resolver turns them into the structure,
-     * pieces, and settings layer a version pins. Nobody's defaults apply.
-     *
-     * @return array{0: array<string, mixed>, 1: FacetVersion, 2: list<int>, 3: array<string, mixed>, 4: ?string}
-     */
-    private function validated(Request $request): array
-    {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:100'],
-            'description' => ['nullable', 'string', 'max:1000'],
-            'visibility' => ['required', Rule::in(Blueprint::VISIBILITIES)],
-            'language' => ['required', Rule::in(Project::LANGUAGES)],
-            'structure' => ['required', 'string', 'max:200'],
-            'tools' => ['nullable', 'array'],
-            'tools.*' => ['boolean'],
-            'package_sets' => ['nullable', 'array'],
-            'package_sets.*' => ['string', 'max:200'],
-            'skill_sets' => ['nullable', 'array'],
-            'skill_sets.*' => ['string', 'max:200'],
-            'skills' => ['nullable', 'array'],
-            'skills.*' => ['string', 'max:200'],
-            'settings' => ['nullable', 'array'],
-            'settings.sensitive' => ['boolean'],
-            'settings.git' => ['boolean'],
-            'settings.ai' => ['boolean'],
-            'extra_yaml' => ['nullable', 'string', 'max:20000'],
-            'notes' => ['nullable', 'string', 'max:500'],
-            'languages' => ['sometimes', 'array', 'min:1'],
-            'languages.*' => [Rule::in(Project::LANGUAGES)],
-            'workflows' => ['sometimes', 'array', 'min:1'],
-            'workflows.*' => [Rule::in(ProjectDefaults::WORKFLOW_KEYS)],
-        ]);
-        $compatibility = $this->compatibility($data);
-
-        $resolved = (new Resolver($request->user(), withDefaults: false))->resolve(Arr::only($data, [
-            'name', 'language', 'structure', 'tools', 'package_sets', 'skill_sets', 'skills', 'settings', 'extra_yaml',
-        ]));
-
-        return [
-            array_map(fn ($v) => is_string($v) ? trim($v) : $v, Arr::only($data, ['name', 'description', 'visibility', 'language'])),
-            $resolved['structure'],
-            array_map(fn (FacetVersion $v) => $v->id, $resolved['pieces']),
-            $resolved['layer'],
-            $data['notes'] ?? null,
-            $compatibility,
-        ];
-    }
-
-    /**
-     * What the blueprint supports, checked so every language it lists has a
-     * workflow: Stata has only Scripts only. Everything listed is stored as
-     * nothing listed, which means no restriction. What isn't sent stays as
-     * it was.
-     *
-     * @param  array<string, mixed>  $data
-     * @return array<string, mixed>
-     */
-    private function compatibility(array $data): array
-    {
-        if (! isset($data['languages']) && ! isset($data['workflows'])) {
-            return [];
-        }
-        $languages = array_values(array_intersect(Project::LANGUAGES, $data['languages'] ?? Project::LANGUAGES));
-        $workflows = array_values(array_intersect(ProjectDefaults::WORKFLOW_KEYS, $data['workflows'] ?? ProjectDefaults::WORKFLOW_KEYS));
-
-        if (! in_array($data['language'], $languages, true)) {
-            throw ValidationException::withMessages(['languages' => 'Include the default language, '.Project::LANGUAGE_NAMES[$data['language']].'.']);
-        }
-        foreach ($languages as $language) {
-            if (! array_filter($workflows, fn (string $w) => ProjectDefaults::workflowFits($w, $language))) {
-                throw ValidationException::withMessages(['workflows' => Project::LANGUAGE_NAMES[$language].' projects need '.($language === 'stata' ? 'Scripts only.' : 'one of these workflows.')]);
-            }
-        }
-
-        return [
-            'languages' => count($languages) === count(Project::LANGUAGES) ? null : $languages,
-            'workflows' => count($workflows) === count(ProjectDefaults::WORKFLOW_KEYS) ? null : $workflows,
-        ];
-    }
-
-    /**
-     * POST /blueprints/preview: the files and folders a project from the
-     * builder's unsaved choices would get, for one language and workflow.
-     * Nobody's defaults apply, as when the blueprint is saved.
-     */
+    /** POST /blueprints/preview: the files and folders the builder's unsaved choices would make. */
     public function preview(Request $request): JsonResponse
     {
-        $data = $request->validate([
-            'language' => ['required', Rule::in(Project::LANGUAGES)],
-            'workflow' => ['required', Rule::in(ProjectDefaults::WORKFLOW_KEYS)],
-            'structure' => ['required', 'string', 'max:200'],
-            'tools' => ['nullable', 'array'],
-            'tools.*' => ['boolean'],
-            'package_sets' => ['nullable', 'array'],
-            'skill_sets' => ['nullable', 'array'],
-            'skills' => ['nullable', 'array'],
-            'settings' => ['nullable', 'array'],
-            'extra_yaml' => ['nullable', 'string', 'max:20000'],
-        ]);
-
-        try {
-            $resolved = (new Resolver($request->user(), withDefaults: false))->resolve(['name' => 'project'] + $data);
-        } catch (ValidationException $e) {
-            return response()->json(['problem' => collect($e->errors())->flatten()->first()], 422);
-        }
-        $spec = ['name' => 'project'] + DefaultsPreview::merge($resolved['envelope']['layers']);
-        $tools = collect($resolved['pieces'])->filter(fn (FacetVersion $v) => $v->facet->kind === 'tool')->map(fn (FacetVersion $v) => $v->facet->key)->values()->all();
-        $sensitive = (bool) ($spec['security']['sensitive'] ?? false);
-
-        return response()->json([
-            'tree' => ProjectTree::for($spec, $resolved['language'], $tools, $sensitive),
-            'render_dirs' => collect((array) ($spec['render_dirs'] ?? []))->map(fn ($to, $key) => ['from' => $spec['directories'][$key] ?? $key, 'to' => $to])->values()->all(),
-            'sensitive' => $sensitive,
-        ]);
+        return BlueprintInput::preview($request);
     }
 
     private function forkedFrom(Blueprint $blueprint, $user): ?array

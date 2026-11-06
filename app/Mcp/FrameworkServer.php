@@ -34,6 +34,7 @@ Tools for reading one Framework Cloud account's projects and published results, 
 - When you can run commands inside a Framework project, publishing with fw publish or the R, Python, or Stata package is better still: they check the project's private folders first.
 - To use an artifact from elsewhere in a report, link it to the report's project with artifacts_link first.
 - Projects: projects_create makes one from the account's defaults or a blueprint; its files are made on the user's computer or in GitHub. projects_update renames one or changes its description. Create or rename only when the user asks.
+- Blueprints are reusable project setups. To design one: read the parts with blueprints_options (and blueprints_show for a built-in to start from), propose choices, show the user the files with blueprints_preview, and create it with blueprints_create once they agree. Then projects_create can start a project from it.
 - Skills are agent instructions (SKILL.md). skills_show reads one; skills_create and skills_update change the account's own. Built-in skills (framework/...) can't be changed; create your own from their text instead. Read a skill before updating it, and pass its version as expected_version.
 - projects_delete, artifacts_delete, reports_delete, and skills_delete move things to the Trash, where the user can restore them. Delete only when the user asks, and say what you will delete first. Built-in skills can't be deleted.
 - These tools cannot run code.

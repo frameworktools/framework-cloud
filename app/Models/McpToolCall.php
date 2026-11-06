@@ -31,7 +31,7 @@ class McpToolCall extends Model
      */
     public static function record(McpConnection $connection, string $tool, array $arguments, string $outcome, ?int $status = null, ?string $message = null): void
     {
-        $target = collect(['project', 'slug', 'report', 'artifact', 'skill'])
+        $target = collect(['project', 'slug', 'report', 'artifact', 'skill', 'blueprint'])
             ->map(fn (string $key) => is_scalar($arguments[$key] ?? null) ? (string) $arguments[$key] : null)
             ->filter()->implode(' / ');
 
