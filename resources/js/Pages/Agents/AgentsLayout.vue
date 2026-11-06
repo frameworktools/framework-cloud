@@ -5,6 +5,7 @@ import SectionLayout from '@/Layouts/SectionLayout.vue';
 const items = [
     { label: 'Setup', href: '/agents', exact: true },
     { label: 'Connections', href: '/agents/connections' },
+    { label: 'Permissions', href: '/agents/permissions' },
     { label: 'History', href: '/agents/history' },
 ];
 </script>

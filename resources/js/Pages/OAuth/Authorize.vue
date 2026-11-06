@@ -13,6 +13,7 @@ const props = defineProps({
     user: Object,
     authToken: String,
     csrfToken: String,
+    defaultAccess: { type: String, default: 'full' },
     redirectHost: String,
     redirectIsLocal: Boolean,
 });
@@ -30,7 +31,8 @@ const levels = [
     },
 ];
 
-const access = ref('full');
+// The account's default from AI agents, Permissions
+const access = ref(props.defaultAccess);
 const submitting = ref(false);
 </script>
 

@@ -110,16 +110,6 @@ const label = 'text-sm font-semibold text-slate-900 dark:text-white';
                 <p v-if="setup.note" class="text-sm text-slate-500 dark:text-slate-400">{{ setup.note }}</p>
             </section>
 
-            <section class="flex flex-col gap-3 border-t border-slate-800/10 pt-8 dark:border-white/15">
-                <h2 class="text-base font-medium text-slate-900 dark:text-white">Access levels</h2>
-                <dl class="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-[8rem_1fr]">
-                    <dt class="font-medium text-slate-800 dark:text-slate-200">Full access</dt>
-                    <dd class="text-slate-500 dark:text-slate-400">Recommended. Creates and changes projects, blueprints, artifacts, reports, and skills. Deletions go to the Trash.</dd>
-                    <dt class="font-medium text-slate-800 dark:text-slate-200">Read only</dt>
-                    <dd class="text-slate-500 dark:text-slate-400">Reads projects, artifacts, reports, skills, and blueprints.</dd>
-                </dl>
-                <p class="text-sm text-slate-500 dark:text-slate-400">Agents publish files up to 50 MB. What an agent reads goes to the company that runs it.</p>
-            </section>
         </div>
     </AgentsLayout>
 </template>

@@ -683,6 +683,21 @@ class HostedMcpTest extends TestCase
             ->assertInertia(fn (AssertableInertia $page) => $page->component('OAuth/Authorize'));
     }
 
+    public function test_the_default_access_is_selected_for_a_new_agent(): void
+    {
+        $user = $this->owner();
+        $this->connect($user, McpConnection::ACCESS_FULL, null, 'https://claude.ai/api/mcp/auth_callback');
+
+        $this->actingAs($user)->get('/agents/permissions')->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Agents/Permissions')->where('defaultAccess', 'full')->has('approvedApps', 1));
+        $this->patch('/agents/permissions', ['agent_access' => 'read'])->assertRedirect();
+        $this->patch('/agents/permissions', ['agent_access' => 'admin'])->assertInvalid('agent_access');
+        $this->assertSame('read', $user->fresh()->agent_access);
+
+        $this->authorizeAgain($user, 'http://localhost:33418/callback')->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page->component('OAuth/Authorize')->where('defaultAccess', 'read'));
+    }
+
     public function test_apps_on_a_computer_always_ask(): void
     {
         $user = $this->owner();

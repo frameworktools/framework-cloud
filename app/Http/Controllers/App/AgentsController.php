@@ -32,17 +32,12 @@ class AgentsController extends Controller
         ]);
     }
 
-    /** Approved apps, then each time the user approved an agent: active connections, then those that ended in the last 90 days. */
+    /** Each time the user approved an agent: active connections, then those that ended in the last 90 days. */
     public function connections(Request $request): Response
     {
         McpConnection::endExpired($request->user()->id);
 
         return Inertia::render('Agents/Connections', [
-            'approvedApps' => McpApprovedApp::where('user_id', $request->user()->id)->orderBy('client_name')->get()
-                ->map(fn (McpApprovedApp $app) => [
-                    'id' => $app->id, 'name' => $app->client_name, 'host' => $app->redirect_host,
-                    'access' => $app->access, 'approved_at' => $app->updated_at->diffForHumans(),
-                ]),
             'connections' => McpConnection::where('user_id', $request->user()->id)
                 ->where(fn ($query) => $query->whereNull('revoked_at')->orWhere('revoked_at', '>', now()->subDays(90)))
                 ->orderByRaw('revoked_at is not null')->latest()->limit(50)->get()
@@ -56,6 +51,27 @@ class AgentsController extends Controller
                     'last_used_at' => $connection->last_used_at?->diffForHumans(),
                 ]),
         ]);
+    }
+
+    /** The access a new agent gets by default, and the apps that reconnect without asking. */
+    public function permissions(Request $request): Response
+    {
+        return Inertia::render('Agents/Permissions', [
+            'defaultAccess' => $request->user()->agent_access ?? McpConnection::ACCESS_FULL,
+            'approvedApps' => McpApprovedApp::where('user_id', $request->user()->id)->orderBy('client_name')->get()
+                ->map(fn (McpApprovedApp $app) => [
+                    'id' => $app->id, 'name' => $app->client_name, 'host' => $app->redirect_host,
+                    'access' => $app->access, 'approved_at' => $app->updated_at->diffForHumans(),
+                ]),
+        ]);
+    }
+
+    public function updatePermissions(Request $request): RedirectResponse
+    {
+        $validated = $request->validate(['agent_access' => ['required', Rule::in(McpConnection::ACCESS_LEVELS)]]);
+        $request->user()->forceFill($validated)->save();
+
+        return back();
     }
 
     /** Change the access a remembered app gets when it connects again. Its current connection keeps its own. */

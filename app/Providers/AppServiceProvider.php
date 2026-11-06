@@ -79,6 +79,7 @@ class AppServiceProvider extends ServiceProvider
                 'user' => ['name' => $parameters['user']->name, 'email' => $parameters['user']->email],
                 'authToken' => $parameters['authToken'],
                 'csrfToken' => csrf_token(),
+                'defaultAccess' => $parameters['user']->agent_access ?? 'full',
                 'redirectHost' => $redirectHost,
                 'redirectIsLocal' => in_array($redirectHost, ['localhost', '127.0.0.1', '[::1]'], true),
             ]);

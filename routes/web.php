@@ -216,6 +216,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware(EnsureAgentsEnabled::class)->group(function () {
         Route::get('agents', [AgentsController::class, 'index'])->name('agents');
         Route::get('agents/connections', [AgentsController::class, 'connections'])->name('agents.connections');
+        Route::get('agents/permissions', [AgentsController::class, 'permissions'])->name('agents.permissions');
+        Route::patch('agents/permissions', [AgentsController::class, 'updatePermissions']);
         Route::get('agents/history', [AgentsController::class, 'history'])->name('agents.history');
         Route::delete('agents/{connection}', [AgentsController::class, 'destroy'])->whereNumber('connection');
         Route::patch('agents/apps/{app}', [AgentsController::class, 'updateApp'])->whereNumber('app');
