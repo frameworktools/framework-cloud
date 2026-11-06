@@ -41,7 +41,7 @@ const forget = async (app) => {
                     <h2 class="text-base font-medium text-slate-900 dark:text-white">Default access</h2>
                     <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">The approval screen selects this for a new agent. You can change it there.</p>
                 </div>
-                <UiRadioCards v-model="access" name="agent_access" legend="Default access" hide-legend stacked :options="levels" @update:model-value="saveDefault" />
+                <UiRadioCards class="mt-3" v-model="access" name="agent_access" legend="Default access" hide-legend stacked :options="levels" @update:model-value="saveDefault" />
             </section>
 
             <section v-if="approvedApps.length" class="flex flex-col gap-3">
