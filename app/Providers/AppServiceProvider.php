@@ -5,7 +5,9 @@ namespace App\Providers;
 use App\Http\Controllers\OAuth\ApproveMcpAuthorizationController;
 use App\Models\McpApprovedApp;
 use App\Support\Credentials;
+use App\Support\TrustedProxies;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Vite;
@@ -41,6 +43,9 @@ class AppServiceProvider extends ServiceProvider
         // Fill in this server's credentials saved on the admin setup page,
         // wherever the environment leaves them unset
         Credentials::apply();
+
+        // Proxies from config, so TRUSTED_PROXIES in .env works with a cached config too
+        TrustProxies::at(TrustedProxies::resolve(config('framework.trusted_proxies')));
 
         $this->configurePassport();
     }

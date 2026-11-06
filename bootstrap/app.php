@@ -6,6 +6,7 @@ use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\ServeBuiltAssetsThroughTunnels;
 use App\Http\Middleware\SingleUserMode;
 use App\Http\Middleware\ThrottleRequestsPerRoute;
+use App\Support\TrustedProxies;
 use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -26,12 +27,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // in front of a self-hosted server: "*" or a comma-separated list of
         // addresses and CIDR ranges. Read from the process environment, which
         // Docker sets.
-        $proxies = trim((string) env('TRUSTED_PROXIES', ''));
-        $middleware->trustProxies(at: match (true) {
-            $proxies === '*' => '*',
-            $proxies !== '' => array_values(array_filter(array_map('trim', explode(',', $proxies)))),
-            default => ['127.0.0.1', '::1'],
-        });
+        // TRUSTED_PROXIES as the process sees it (Docker sets it). AppServiceProvider applies it again
+        // from config, which also covers a value in .env with a cached config. "cloudflare" names
+        // Cloudflare's edge; see App\Support\TrustedProxies.
+        $middleware->trustProxies(at: TrustedProxies::resolve(env('TRUSTED_PROXIES')));
 
         // Library forms carry file text (SKILL.md, YAML, templates) whose
         // whitespace is content, so they skip input trimming.

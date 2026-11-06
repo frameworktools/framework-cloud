@@ -46,6 +46,13 @@ return [
     'artifacts_disk' => env('FW_ARTIFACTS_DISK', 'local'),
 
     /*
+    | Proxies trusted to report the visitor's address and https (X-Forwarded-*).
+    | Empty: loopback only. "cloudflare" for a site behind Cloudflare's proxy,
+    | "*" for any, or a comma-separated list. See App\Support\TrustedProxies.
+    */
+    'trusted_proxies' => env('TRUSTED_PROXIES'),
+
+    /*
     | Public base URL for document content (the R2 custom domain, e.g.
     | https://files.framework.pub). When set, the /d/{key} wrapper iframes
     | content from this separate origin (sandboxing uploaded HTML/JS away
