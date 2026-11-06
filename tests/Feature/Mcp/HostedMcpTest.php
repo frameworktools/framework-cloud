@@ -296,9 +296,7 @@ class HostedMcpTest extends TestCase
         $this->get('/agents')->assertInertia(fn (AssertableInertia $page) => $page->where('plugin', false));
 
         config(['framework.agent_plugin' => true]);
-        $this->get('/agents')->assertInertia(fn (AssertableInertia $page) => $page->where('plugin', true)->where('app', 'claude'));
-        $this->get('/agents/setup/codex')->assertInertia(fn (AssertableInertia $page) => $page->component('Agents/Index')->where('app', 'codex'));
-        $this->get('/agents/setup/elsewhere')->assertNotFound();
+        $this->get('/agents')->assertInertia(fn (AssertableInertia $page) => $page->where('plugin', true));
     }
 
     public function test_disconnecting_cuts_the_app_off(): void

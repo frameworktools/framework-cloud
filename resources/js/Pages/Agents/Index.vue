@@ -2,12 +2,22 @@
 import { computed, ref } from 'vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import UiButton from '@/Components/UiButton.vue';
+import UiTabs from '@/Components/UiTabs.vue';
 import AgentsLayout from './AgentsLayout.vue';
 import SetupSteps from './SetupSteps.vue';
 import { CheckIcon, ClipboardDocumentIcon } from '@heroicons/vue/24/outline';
 import { ChevronRightIcon } from '@heroicons/vue/20/solid';
 
-const props = defineProps({ app: String, mcpUrl: String, plugin: Boolean, active: Boolean });
+const props = defineProps({ mcpUrl: String, plugin: Boolean, active: Boolean });
+
+// Desktop and web apps first, then the terminal tools, so each tab is one way of working
+const app = ref('claude');
+const apps = [
+    { value: 'claude', label: 'Claude' },
+    { value: 'chatgpt', label: 'ChatGPT' },
+    { value: 'claude-code', label: 'Claude Code CLI' },
+    { value: 'codex', label: 'Codex CLI' },
+];
 
 const copied = ref(false);
 async function copy() {
@@ -83,18 +93,20 @@ const setup = computed(() => {
                 codexSignIn,
             ],
         },
-    }[props.app];
+    }[app.value];
 });
 </script>
 
 <template>
-    <Head :title="`${setup.title} setup`" />
+    <Head :title="active ? 'Connected agents' : 'Connect your agent'" />
 
     <AgentsLayout>
         <div class="flex flex-col gap-8">
-            <PageHeader :title="setup.title" :description="setup.description" />
+            <PageHeader :title="active ? 'Connected agents' : 'Connect your agent'" description="Connect Claude, ChatGPT, or another AI agent to your account. You approve each agent and choose its access." />
 
             <section class="flex flex-col gap-5">
+                <UiTabs v-model="app" :tabs="apps" label="AI app" />
+                <p class="text-sm text-slate-500 dark:text-slate-400">{{ setup.description }}</p>
                 <SetupSteps v-if="plugin" :steps="setup.plugin" />
 
                 <component :is="plugin ? 'details' : 'div'" class="group">

@@ -19,18 +19,13 @@ use Inertia\Response;
  */
 class AgentsController extends Controller
 {
-    /** The apps with setup steps; the first is the section's landing page. */
-    public const APPS = ['claude', 'chatgpt', 'claude-code', 'codex'];
-
-    /** Setup steps for one app. */
-    public function index(Request $request, string $app = 'claude'): Response
+    /** Setup steps for each app. */
+    public function index(Request $request): Response
     {
-        abort_unless(in_array($app, self::APPS, true), 404);
         // Apps disconnected on their side, or unused past their refresh window, stop showing as connected
         McpConnection::endExpired($request->user()->id);
 
         return Inertia::render('Agents/Index', [
-            'app' => $app,
             'mcpUrl' => url('/mcp'),
             'plugin' => (bool) (config('framework.agent_plugin') ?? url('/mcp') === 'https://framework.pub/mcp'),
             'active' => McpConnection::active()->where('user_id', $request->user()->id)->exists(),
