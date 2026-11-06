@@ -97,8 +97,15 @@ class WelcomeController extends Controller
         Arr::set($doc, 'ai.assistants', $validated['ai'] ? ProjectDefaults::agents($validated['agents'] ?? []) : ProjectDefaults::agents(Arr::get($doc, 'ai.assistants')));
         $setting->replaceDocument($doc, client: ['device' => 'web', 'app' => 'framework.pub']);
 
+        // A privacy-sensitive setup with Git turns on secret detection and the
+        // private folder check, unless hooks were already chosen
+        $hooks = $user->project_defaults['hooks'] ?? [];
+        if ($validated['project_type'] === 'project_sensitive' && $validated['git'] && ! array_filter($hooks)) {
+            $hooks = ['data_security' => true, 'check_sensitive_dirs' => true];
+        }
+
         $user->forceFill([
-            'project_defaults' => ['language' => $validated['language'], 'ai_other' => (bool) ($validated['other_agents'] ?? false)] + ($user->project_defaults ?? []),
+            'project_defaults' => ['language' => $validated['language'], 'ai_other' => (bool) ($validated['other_agents'] ?? false), 'hooks' => $hooks] + ($user->project_defaults ?? []),
             'setup_completed_at' => now(),
         ])->save();
 

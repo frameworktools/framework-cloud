@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Support\ProjectDefaults;
 use App\Support\Resolver;
 use Database\Seeders\BlueprintSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -67,6 +68,24 @@ class WelcomeTest extends TestCase
 
         // Running it again shows the saved answers
         $this->actingAs($user)->get('/welcome')->assertInertia(fn (Assert $page) => $page->where('again', true)->where('values.language', 'python'));
+    }
+
+    public function test_a_privacy_sensitive_setup_with_git_turns_on_the_safety_hooks(): void
+    {
+        $answers = ['language' => 'python', 'workflow' => 'jupyter', 'editors' => [], 'ai' => false, 'agents' => []];
+
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $this->actingAs($user)->post('/welcome', $answers + ['project_type' => 'project_sensitive', 'git' => true])->assertSessionHasNoErrors();
+        $this->assertSame(['data_security' => true, 'check_sensitive_dirs' => true], $user->fresh()->project_defaults['hooks']);
+        $this->assertSame(['data_security', 'check_sensitive_dirs'], ProjectDefaults::for($user->fresh())['settings']['hooks']);
+
+        // Without Git, or with another structure, nothing is turned on
+        $plain = User::factory()->create(['email_verified_at' => now()]);
+        $this->actingAs($plain)->post('/welcome', $answers + ['project_type' => 'project', 'git' => true])->assertSessionHasNoErrors();
+        $this->assertSame([], $plain->fresh()->project_defaults['hooks']);
+        $noGit = User::factory()->create(['email_verified_at' => now()]);
+        $this->actingAs($noGit)->post('/welcome', $answers + ['project_type' => 'project_sensitive', 'git' => false])->assertSessionHasNoErrors();
+        $this->assertSame([], $noGit->fresh()->project_defaults['hooks']);
     }
 
     public function test_answers_the_project_type_cant_take_are_refused(): void

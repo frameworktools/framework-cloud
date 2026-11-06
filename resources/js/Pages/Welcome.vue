@@ -158,6 +158,9 @@ const ide = computed(() => {
 });
 const aiOn = computed(() => fromChoices(draft.agents).enabled);
 const named = computed(() => fromChoices(draft.agents).agents);
+const sensitiveHooks = computed(() => (draft.project_type === 'project_sensitive' && draft.git && !Object.values(props.values.hooks ?? {}).some(Boolean)
+    ? { data_security: true, check_sensitive_dirs: true }
+    : null));
 const previewValues = computed(() => {
     const w = workflow.value;
     return {
@@ -166,6 +169,8 @@ const previewValues = computed(() => {
         rmarkdown: draft.language === 'r' ? w === 'rmarkdown' : props.values.rmarkdown,
         ide: ide.value,
         use_git: draft.git,
+        // A privacy-sensitive setup turns on the safety hooks, unless you chose some already
+        hooks: sensitiveHooks.value ?? props.values.hooks,
         ai_enabled: aiOn.value,
         ai_agents: aiOn.value ? named.value : props.values.ai_agents,
     };
