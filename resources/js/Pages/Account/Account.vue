@@ -25,7 +25,8 @@ const save = () => form.patch('/account/account');
 
 const showDelete = ref(false);
 const deleteForm = useForm({ confirm_email: '' });
-const destroy = () => deleteForm.delete('/account/account');
+// Keep the dialog open on an error, so the message shows where the email was typed
+const destroy = () => deleteForm.delete('/account/account', { preserveScroll: true, preserveState: true });
 </script>
 
 <template>
@@ -63,8 +64,8 @@ const destroy = () => deleteForm.delete('/account/account');
 
         <UiModal v-model="showDelete" title="Account deletion">
             <p class="text-sm text-slate-600 dark:text-slate-400">
-                All of your resources will be permanently deleted. Type your account
-                email to confirm.
+                Your projects, artifacts, collections, reports, settings, and tokens
+                are deleted for good. Type your account email to confirm.
             </p>
             <UiInput v-model="deleteForm.confirm_email" label="Account email" type="email" :error="deleteForm.errors.confirm_email" />
             <div class="flex justify-end gap-2">

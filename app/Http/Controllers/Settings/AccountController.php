@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class AccountController extends Controller
 {
@@ -69,7 +70,7 @@ class AccountController extends Controller
     /**
      * Passwordless account deletion: confirmed by typing the account email.
      */
-    public function destroy(Request $request, AccountDeletion $deletion): RedirectResponse
+    public function destroy(Request $request, AccountDeletion $deletion): SymfonyResponse
     {
         $request->validate([
             'confirm_email' => ['required', 'string', 'in:'.$request->user()->email],
@@ -85,6 +86,7 @@ class AccountController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        // The home page isn't an Inertia page, so the browser loads it in full
+        return Inertia::location(url('/'));
     }
 }
