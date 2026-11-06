@@ -8,7 +8,7 @@ import EmptyState from '@/Components/EmptyState.vue';
 import AgentsTabs from './AgentsTabs.vue';
 import { ClockIcon } from '@heroicons/vue/24/outline';
 
-defineProps({ calls: Object, keepDays: Number, historyCount: Number });
+defineProps({ calls: Object, keepDays: Number, connectionCount: Number, historyCount: Number });
 
 const outcomes = {
     ok: ['green', 'Done'],
@@ -29,7 +29,7 @@ const outcomes = {
                         Each action a connected agent took, newest first. Kept for {{ keepDays }} days. Request contents are not stored.
                     </template>
                 </PageHeader>
-                <AgentsTabs :history-count="historyCount" />
+                <AgentsTabs :connection-count="connectionCount" :history-count="historyCount" />
             </div>
 
             <template v-if="calls.data.length">
