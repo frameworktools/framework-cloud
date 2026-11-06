@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Support\ArtifactContentAccess;
+use App\Support\ContentHost;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Storage;
@@ -70,7 +71,7 @@ class DocumentVersion extends Model
         return route('documents.version.raw', ['key' => $this->document->key, 'number' => $this->number]);
     }
 
-    /** Where the content loads from: the documents domain when set, else the app. */
+    /** Where the content loads from: the documents domain for old files, the content host when set, else the app. */
     public function contentUrl(): string
     {
         if (($this->driver ?? 'cloud') !== 'cloud') {
@@ -81,6 +82,14 @@ class DocumentVersion extends Model
         if ($this->usesExternalUrl()) {
             return rtrim($base, '/').'/'.$this->entryPath();
         }
+        // Its own host: a signed link for every file, since the content host has no session
+        if (ContentHost::enabled()) {
+            return ContentHost::route('documents.content', [
+                'key' => $this->document->key, 'number' => $this->number,
+                'access' => ArtifactContentAccess::issue($this), 'path' => $this->isBundle() ? $this->entrypoint : $this->contentFilename(),
+            ]);
+        }
+
         if ($this->isBundle()) {
             return route('documents.content', [
                 'key' => $this->document->key, 'number' => $this->number,
@@ -94,10 +103,18 @@ class DocumentVersion extends Model
     /** The sandboxed page that draws a Vega-Lite chart. */
     public function chartUrl(): string
     {
-        return route('documents.chart', [
+        return ContentHost::route('documents.chart', [
             'key' => $this->document->key, 'number' => $this->number,
             'access' => ArtifactContentAccess::issue($this),
         ]);
+    }
+
+    /** The name a single file is served under on the content host: its own, made safe for a path. */
+    public function contentFilename(): string
+    {
+        $name = basename(str_replace('\\', '/', (string) ($this->original_filename ?: 'content')));
+
+        return preg_replace('/[^A-Za-z0-9._-]+/', '-', $name) ?: 'content';
     }
 
     /** A typed table built from a CSV or TSV when it was published, stored beside the file. */

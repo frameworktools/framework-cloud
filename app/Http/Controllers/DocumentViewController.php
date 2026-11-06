@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Support\ArtifactContentAccess;
 use App\Support\ArtifactPreview;
 use App\Support\BundleExtractor;
+use App\Support\ContentHost;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -79,7 +80,11 @@ class DocumentViewController extends Controller
     {
         $version = $this->version($this->byKey($key), $number);
         abort_unless(ArtifactContentAccess::accepts($version, $access), 403);
-        abort_unless($version->isBundle() && ! $version->usesExternalUrl(), 404);
+        abort_if($version->usesExternalUrl() || ($version->document->driver ?? 'cloud') !== 'cloud', 404);
+        // A single file, under its own name (any name works; the signed access names the version)
+        if (! $version->isBundle()) {
+            return $this->serveFile($version);
+        }
         abort_if(str_contains($path, '..') || str_contains($path, '\\') || str_contains($path, "\0") || str_starts_with($path, '/'), 404);
         $disk = Storage::disk($version->disk());
         $full = $version->disk_path.'/'.$path;
@@ -97,7 +102,7 @@ class DocumentViewController extends Controller
             'Content-Type' => BundleExtractor::contentType($path),
             'Access-Control-Allow-Origin' => '*',
             'X-Content-Type-Options' => 'nosniff',
-            'Content-Security-Policy' => "sandbox allow-scripts allow-downloads; frame-ancestors 'self'",
+            'Content-Security-Policy' => 'sandbox allow-scripts allow-downloads; '.ContentHost::frameAncestors(),
             'Referrer-Policy' => 'no-referrer',
             'Cache-Control' => 'private, no-store',
         ]);
@@ -160,7 +165,7 @@ class DocumentViewController extends Controller
             'scripts' => Assets::cdn()->scripts(),
             'dark' => $dark,
         ])->withHeaders([
-            'Content-Security-Policy' => "sandbox allow-scripts; default-src 'none'; script-src https://cdn.jsdelivr.net 'unsafe-inline' 'unsafe-eval'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; frame-ancestors 'self'",
+            'Content-Security-Policy' => "sandbox allow-scripts; default-src 'none'; script-src https://cdn.jsdelivr.net 'unsafe-inline' 'unsafe-eval'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; ".ContentHost::frameAncestors(),
             'X-Content-Type-Options' => 'nosniff',
             'Referrer-Policy' => 'no-referrer',
             'Cache-Control' => 'private, no-store',
@@ -230,18 +235,26 @@ class DocumentViewController extends Controller
             return redirect()->away($version->contentUrl());
         }
 
-        if ($version->isBundle() && dirname($version->entrypoint) !== '.') {
-            return redirect()->to($version->contentUrl());
+        // With a content host, files open there, never on the app
+        if (ContentHost::enabled() || ($version->isBundle() && dirname($version->entrypoint) !== '.')) {
+            return redirect()->away($version->contentUrl());
         }
 
+        return $this->serveFile($version);
+    }
+
+    /** One stored file in the opaque sandbox: inline when a browser shows it, else a download. */
+    private function serveFile(DocumentVersion $version): StreamedResponse
+    {
         $disk = Storage::disk($version->disk());
         abort_unless($disk->exists($version->entryPath()), 404);
 
         return $disk->response($version->entryPath(), $version->original_filename ?? $version->document->slug.'.html', [
             'Content-Type' => $version->content_type,
-            'X-Frame-Options' => 'SAMEORIGIN',
+            ...ContentHost::frameOptions(),
             'X-Content-Type-Options' => 'nosniff',
-            'Content-Security-Policy' => "sandbox allow-scripts allow-downloads; frame-ancestors 'self'",
+            'Content-Security-Policy' => 'sandbox allow-scripts allow-downloads; '.ContentHost::frameAncestors(),
+            'Referrer-Policy' => 'no-referrer',
             'Cache-Control' => 'private, no-store',
         ], (str_starts_with($version->content_type, 'text/') || str_starts_with($version->content_type, 'image/') || in_array($version->content_type, ['application/pdf', 'application/xhtml+xml'])) ? 'inline' : 'attachment');
     }
@@ -258,6 +271,12 @@ class DocumentViewController extends Controller
 
             return redirect()->away(rtrim($base, '/').'/'.$version->disk_path.'/'.$path);
         }
+        if (ContentHost::enabled()) {
+            return redirect()->away(ContentHost::route('documents.content', [
+                'key' => $version->document->key, 'number' => $version->number,
+                'access' => ArtifactContentAccess::issue($version), 'path' => $path,
+            ]));
+        }
 
         $disk = Storage::disk($version->disk());
         $full = $version->disk_path.'/'.$path;
@@ -265,9 +284,9 @@ class DocumentViewController extends Controller
 
         return $disk->response($full, basename($path), [
             'Content-Type' => BundleExtractor::contentType($path),
-            'X-Frame-Options' => 'SAMEORIGIN',
+            ...ContentHost::frameOptions(),
             'X-Content-Type-Options' => 'nosniff',
-            'Content-Security-Policy' => "sandbox allow-scripts allow-downloads; frame-ancestors 'self'",
+            'Content-Security-Policy' => 'sandbox allow-scripts allow-downloads; '.ContentHost::frameAncestors(),
             'Cache-Control' => 'private, no-store',
         ]);
     }

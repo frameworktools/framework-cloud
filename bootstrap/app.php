@@ -4,6 +4,7 @@ use App\Http\Middleware\EnsureAdmin;
 use App\Http\Middleware\EnsurePasswordsEnabled;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\ServeBuiltAssetsThroughTunnels;
+use App\Http\Middleware\ServeContentHost;
 use App\Http\Middleware\SingleUserMode;
 use App\Http\Middleware\ThrottleRequestsPerRoute;
 use App\Support\TrustedProxies;
@@ -37,6 +38,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trimStrings(except: [
             fn (Request $request) => $request->is('blueprints*', 'facets*', 'structures*', 'skills*'),
         ]);
+
+        // Every request, API and MCP included: the content host serves only published files, without cookies
+        $middleware->prepend(ServeContentHost::class);
 
         $middleware->web(append: [
             ServeBuiltAssetsThroughTunnels::class,

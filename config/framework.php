@@ -62,6 +62,12 @@ return [
     'documents_base_url' => env('FW_DOCUMENTS_BASE_URL'),
 
     /*
+    | A host of its own for published files, such as https://content.framework.pub,
+    | pointing at this app. Unset, the app serves them. See App\Support\ContentHost.
+    */
+    'content_url' => env('FW_CONTENT_URL'),
+
+    /*
     | The homepage's worked example: a public artifact published by
     | `php artisan fw:homepage-example`. Unset, the homepage shows a labeled
     | preview image instead of the live reader page.
