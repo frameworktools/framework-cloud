@@ -76,10 +76,10 @@ const command = 'mt-2 block overflow-x-auto whitespace-nowrap rounded-lg bg-[#0c
                     <h2 class="text-base font-medium text-slate-900 dark:text-white">Server address</h2>
                     <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Add this address to your AI app as a connector, or custom MCP server.</p>
                 </div>
-                <div class="flex flex-wrap items-center gap-2">
-                    <code class="rounded-lg bg-slate-800/5 px-3 py-2 font-mono text-sm text-slate-900 dark:bg-white/10 dark:text-white">{{ mcpUrl }}</code>
-                    <UiButton variant="ghost" @click="copy">
-                        <component :is="copied ? CheckIcon : ClipboardDocumentIcon" class="size-4 text-slate-500 dark:text-slate-400" aria-hidden="true" />{{ copied ? 'Copied' : 'Copy address' }}
+                <div class="flex w-full max-w-2xl items-center gap-2 rounded-lg bg-slate-800/5 py-1 ps-4 pe-1 dark:bg-white/10">
+                    <code class="min-w-0 flex-1 truncate font-mono text-sm text-slate-900 dark:text-white">{{ mcpUrl }}</code>
+                    <UiButton variant="ghost" size="sm" class="shrink-0" @click="copy">
+                        <component :is="copied ? CheckIcon : ClipboardDocumentIcon" class="size-4 text-slate-500 dark:text-slate-400" aria-hidden="true" /><template v-if="copied">Copied</template><template v-else>Copy<span class="hidden sm:inline">&nbsp;address</span></template>
                     </UiButton>
                 </div>
             </section>
