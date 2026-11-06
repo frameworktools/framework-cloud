@@ -100,6 +100,12 @@ class BlueprintSeeder extends Seeder
      * (masters/skills/python, copied at the commit in its lock.json). A
      * skill is for the languages that have its text.
      */
+    /**
+     * Skills written for one language only. Their SKILL.md is that language's
+     * text, so they offer no R default.
+     */
+    private const SINGLE_LANGUAGE_SKILLS = ['matplotlib-exploring' => 'python', 'stata-graphs' => 'stata'];
+
     private function seedSkills(string $dir): void
     {
         $registry = File::exists(dirname($dir).'/skill-bundles.json') ? $this->json(dirname($dir).'/skill-bundles.json') : [];
@@ -126,7 +132,12 @@ class BlueprintSeeder extends Seeder
             }
             $skill = Skill::updateOrCreate(['user_id' => null, 'key' => $key], [
                 'name' => $frontmatter['title'], 'description' => $frontmatter['description'], 'summary' => $frontmatter['summary'],
-                'language' => isset($registry[$key]) ? array_keys($registry[$key]) : ($texts ? array_keys($texts + ['r' => $content]) : ['r']), 'visibility' => 'public',
+                'language' => match (true) {
+                    isset($registry[$key]) => array_keys($registry[$key]),
+                    isset(self::SINGLE_LANGUAGE_SKILLS[$key]) => [self::SINGLE_LANGUAGE_SKILLS[$key]],
+                    (bool) $texts => array_keys($texts + ['r' => $content]),
+                    default => ['r'],
+                }, 'visibility' => 'public',
             ]);
             if ($skill->wasRecentlyCreated) {
                 $skill->tags()->sync(SkillTag::whereIn('key', SkillTags::SKILLS[$key] ?? [])->pluck('id'));

@@ -23,6 +23,8 @@ class SkillTags
         'ggplot2-exploring' => ['visualization', 'exploration'],
         'ggplot2-publishing' => ['visualization', 'publication'],
         'framework-stata' => ['framework', 'notebooks'],
+        'matplotlib-exploring' => ['visualization', 'exploration'],
+        'stata-graphs' => ['visualization', 'exploration'],
     ];
 
     public static function seed(): void
