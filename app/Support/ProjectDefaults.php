@@ -234,10 +234,11 @@ class ProjectDefaults
         if ($language !== 'stata') {
             $layer['scaffold']['ide'] = $settings['ide'];
             $keys = $language === 'r' ? array_keys(self::SCAFFOLD) : ['seed_on_scaffold', 'seed', 'source_all_functions'];
+            // Every key is sent. The packages fill a missing key with their own
+            // default, which differs from Cloud's (R turns the ggplot2 theme
+            // on, and both turn seeding off), so leaving one out changes it
             foreach ($keys as $key) {
-                if ($settings['scaffold'][$key] !== self::SCAFFOLD[$key]) {
-                    $layer['scaffold'][$key] = $settings['scaffold'][$key];
-                }
+                $layer['scaffold'][$key] = $settings['scaffold'][$key];
             }
             foreach (self::QUARTO as $format => $values) {
                 foreach ($values as $key => $value) {

@@ -268,11 +268,12 @@ class SettingsAndAdminTest extends TestCase
         $this->assertTrue($defaults['set_theme_on_scaffold']);
         $this->assertFalse($defaults['source_all_functions']);
 
-        // Your defaults layer holds what differs from Framework's own, plus the editor
+        // Your defaults layer holds the editor and every scaffold setting for
+        // the language, since the packages fill gaps with their own defaults
         $scaffold = fn (string $language) => $this->personal((new Resolver($user->fresh()))->resolve(['name' => 'Survey', 'language' => $language])['envelope']['layers'])['scaffold'] ?? [];
-        $this->assertSame(['ide' => 'vscode', 'seed' => '20241107', 'set_theme_on_scaffold' => true, 'ggplot_theme' => 'theme_bw', 'source_all_functions' => false], $scaffold('r'));
+        $this->assertSame(['ide' => 'vscode', 'seed_on_scaffold' => true, 'seed' => '20241107', 'set_theme_on_scaffold' => true, 'ggplot_theme' => 'theme_bw', 'source_all_functions' => false], $scaffold('r'));
         // Python seeds and puts functions/ on the import path; the theme is R's
-        $this->assertSame(['ide' => 'vscode', 'seed' => '20241107', 'source_all_functions' => false], $scaffold('python'));
+        $this->assertSame(['ide' => 'vscode', 'seed_on_scaffold' => true, 'seed' => '20241107', 'source_all_functions' => false], $scaffold('python'));
         $this->assertSame([], $scaffold('stata'));
 
         $this->actingAs($user)->patch('/settings', $base + ['seed' => 'abc', 'ggplot_theme' => 'theme_neon'])

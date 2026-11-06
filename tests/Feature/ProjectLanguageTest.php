@@ -143,7 +143,7 @@ class ProjectLanguageTest extends TestCase
         $layer = end($layers)['layer'];
         $this->assertSame(['language' => 'r'], Arr::except($layer, ['tools']));
         $this->assertSame([
-            'scaffold' => ['ide' => 'positron'],
+            'scaffold' => ['ide' => 'positron', 'seed_on_scaffold' => true, 'seed' => '123', 'set_theme_on_scaffold' => false, 'ggplot_theme' => 'theme_minimal', 'source_all_functions' => true],
             'ai' => ['assistants' => ['claude' => false, 'codex' => false, 'copilot' => false]],
         ], collect($layers)->firstWhere('kind', 'settings')['layer']);
         // With the spec's tools key on, every R tool is named on or off, and the workflow's are on
