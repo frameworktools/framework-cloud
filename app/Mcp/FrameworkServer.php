@@ -33,6 +33,9 @@ Tools for reading one Framework Cloud account's projects and published results, 
 - To publish a file: for anything larger than a few hundred KB, or a file on disk, call artifacts_upload and run the curl command it returns (or give it to the user). Never paste a large file into a call. artifacts_publish takes small files inline. HTML publishes as a notebook, PNG or SVG as a figure, CSV as a table; a rendered Quarto site goes as a zip with its entrypoint. A project is optional. New artifacts start private.
 - When you can run commands inside a Framework project, publishing with fw publish or the R, Python, or Stata package is better still: they check the project's private folders first.
 - To use an artifact from elsewhere in a report, link it to the report's project with artifacts_link first.
+- Projects: projects_create makes one from the account's defaults or a blueprint; its files are made on the user's computer or in GitHub. projects_update renames one or changes its description. Create or rename only when the user asks.
+- Skills are agent instructions (SKILL.md). skills_show reads one; skills_create and skills_update change the account's own. Built-in skills (framework/...) can't be changed; create your own from their text instead. Read a skill before updating it, and pass its version as expected_version.
+- Nothing here deletes projects, artifacts, reports, or skills. The user does that in Framework Cloud.
 - These tools cannot run code.
 - Every tool accepts dry_run=true to preview the request without sending it.
 - Errors come back as JSON {error: {status, code, message}}, with errors for validation failures.

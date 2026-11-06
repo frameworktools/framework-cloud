@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\V1\ProjectPullController;
 use App\Http\Controllers\Api\V1\ProjectsController;
 use App\Http\Controllers\Api\V1\ReportsController;
 use App\Http\Controllers\Api\V1\SettingsController;
+use App\Http\Controllers\Api\V1\SkillsController;
 use App\Http\Controllers\Api\V1\SkillSyncController;
 use App\Http\Controllers\Api\V1\StructuresController;
 use App\Http\Controllers\Api\V1\TokenController;
@@ -58,6 +59,10 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::post('/skills/sync', [SkillSyncController::class, 'store'])->middleware('throttle:60,1');
     Route::get('/skills/sync/{id}/history', [SkillSyncController::class, 'history']);
     Route::get('/skills/sync/{id}', [SkillSyncController::class, 'show']);
+    // One skill as SKILL.md text: read, create, and save a new version (keys may be framework/x or @owner/x)
+    Route::post('/skills', [SkillsController::class, 'store'])->middleware('throttle:30,1');
+    Route::get('/skills/{skill}', [SkillsController::class, 'show'])->where('skill', '.+');
+    Route::put('/skills/{skill}', [SkillsController::class, 'update'])->where('skill', '.+')->middleware('throttle:60,1');
     Route::get('/defaults', [PiecesController::class, 'defaults']);
     Route::get('/destinations', [PiecesController::class, 'destinations']);
     Route::post('/resolve', [PiecesController::class, 'resolve'])->middleware('throttle:60,1');
@@ -67,6 +72,7 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::post('/projects', [ProjectsController::class, 'store'])->middleware('throttle:20,1');
     Route::get('/projects/pull', [ProjectLayersController::class, 'pull']);
     Route::get('/projects/{slug}', [ProjectLayersController::class, 'show']);
+    Route::patch('/projects/{slug}', [ProjectsController::class, 'update'])->middleware('throttle:60,1');
     Route::get('/projects/{slug}/download', [ProjectLayersController::class, 'download'])->middleware('throttle:10,1');
     Route::get('/projects/{slug}/layers', [ProjectLayersController::class, 'layers']);
     Route::post('/projects/{slug}/pull-tokens', [ProjectLayersController::class, 'issuePullToken'])->middleware('throttle:30,1');

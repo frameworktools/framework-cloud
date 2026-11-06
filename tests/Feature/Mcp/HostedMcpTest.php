@@ -9,9 +9,11 @@ use App\Models\McpConnection;
 use App\Models\McpToolCall;
 use App\Models\Project;
 use App\Models\Report;
+use App\Models\Skill;
 use App\Models\User;
 use App\Support\AccountDeletion;
 use App\Support\ArtifactPublisher;
+use Database\Seeders\BlueprintSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -235,6 +237,10 @@ class HostedMcpTest extends TestCase
         $this->assertNotContains('reports_update', $names);
         $this->assertNotContains('reports_publish', $names);
         $this->assertNotContains('artifacts_publish', $names);
+        foreach (['projects_create', 'projects_update', 'skills_create', 'skills_update'] as $write) {
+            $this->assertNotContains($write, $names);
+        }
+        $this->assertContains('skills_show', $names);
 
         app('auth')->forgetGuards();
         $this->withToken($token)->postJson('/mcp', ['jsonrpc' => '2.0', 'id' => 1, 'method' => 'tools/call',
@@ -670,5 +676,53 @@ class HostedMcpTest extends TestCase
         $this->assertSame(0, McpApprovedApp::count());
         $this->authorizeAgain($user, 'http://localhost:33418/callback')->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page->component('OAuth/Authorize'));
+    }
+
+    public function test_an_agent_reads_creates_and_updates_skills(): void
+    {
+        $user = $this->owner();
+        $builtIn = Skill::create(['user_id' => null, 'key' => 'framework-reports', 'name' => 'Reports', 'description' => 'Reports.', 'visibility' => 'public']);
+        $builtIn->publishVersion(['content' => "---\nname: framework-reports\ndescription: Reports.\n---\n\nBuilt in.", 'files' => []]);
+        $token = $this->connect($user, McpConnection::ACCESS_FULL);
+
+        $shown = $this->tool($token, 'skills_show', ['skill' => 'framework/framework-reports']);
+        $this->assertFalse($shown['error'], json_encode($shown));
+        $this->assertStringContainsString('Built in.', $shown['body']['content']);
+        $this->assertFalse($shown['body']['editable']);
+
+        $refused = $this->tool($token, 'skills_update', ['skill' => 'framework/framework-reports', 'content' => "---\nname: framework-reports\ndescription: X.\n---\nMine."]);
+        $this->assertSame(403, $refused['body']['error']['status']);
+
+        $made = $this->tool($token, 'skills_create', ['content' => "---\nname: penguin-checks\ndescription: Check penguin data.\n---\n\nVersion one."]);
+        $this->assertFalse($made['error'], json_encode($made));
+        $this->assertSame(1, $made['body']['version']);
+        $this->assertSame('private', $made['body']['visibility']);
+
+        $stale = $this->tool($token, 'skills_update', ['skill' => 'penguin-checks', 'expected_version' => 9, 'content' => "---\nname: penguin-checks\ndescription: Check.\n---\n\nTwo."]);
+        $this->assertSame(422, $stale['body']['error']['status']);
+
+        $updated = $this->tool($token, 'skills_update', ['skill' => 'penguin-checks', 'expected_version' => 1, 'notes' => 'Clearer', 'content' => "---\nname: penguin-checks\ndescription: Check penguin data.\n---\n\nVersion two."]);
+        $this->assertFalse($updated['error'], json_encode($updated));
+        $this->assertSame(2, $updated['body']['version']);
+        $this->assertStringContainsString('Version two.', $this->tool($token, 'skills_show', ['skill' => 'penguin-checks'])['body']['content']);
+
+        $renamed = $this->tool($token, 'skills_update', ['skill' => 'penguin-checks', 'content' => "---\nname: other-name\ndescription: X.\n---\nY"]);
+        $this->assertSame(422, $renamed['body']['error']['status']);
+    }
+
+    public function test_an_agent_creates_and_renames_projects_without_seeing_tokens(): void
+    {
+        $this->seed(BlueprintSeeder::class);
+        $user = $this->owner();
+        $token = $this->connect($user, McpConnection::ACCESS_FULL);
+
+        $this->tool($token, 'projects_update', ['slug' => 'penguin-study', 'name' => 'Penguin body mass', 'description' => 'Palmer penguins.']);
+        $this->assertSame('Penguin body mass', $user->projects()->where('slug', 'penguin-study')->value('name'));
+
+        $made = $this->tool($token, 'projects_create', ['name' => 'Thesis chapter two']);
+        $this->assertFalse($made['error'], json_encode($made));
+        $this->assertSame('thesis-chapter-two', $made['body']['slug']);
+        $this->assertArrayNotHasKey('token', $made['body']);
+        $this->assertTrue($user->projects()->where('slug', 'thesis-chapter-two')->exists());
     }
 }

@@ -21,12 +21,12 @@ const levels = [
     {
         value: 'full',
         label: 'Full access (recommended)',
-        description: 'Read your projects, published results, and reports. Publish files as artifacts, and create, edit, and publish reports.',
+        description: 'Read your projects, published results, reports, and skills. Create projects, publish files as artifacts, write and publish reports, and edit your skills. It cannot delete anything.',
     },
     {
         value: 'read',
         label: 'Read only',
-        description: 'Read your projects, published results, and reports. It cannot change anything.',
+        description: 'Read your projects, published results, reports, and skills. It cannot change anything.',
     },
 ];
 

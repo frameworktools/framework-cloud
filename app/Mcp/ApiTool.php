@@ -114,7 +114,10 @@ class ApiTool extends Tool
             return Response::json(['ok' => true, 'status' => $result['status']]);
         }
 
-        return is_array($result['body']) ? Response::json($result['body']) : Response::text((string) $result['body']);
+        // Fields the agent should never see, such as a new project's token
+        $body = is_array($result['body']) ? array_diff_key($result['body'], array_flip($this->tool['hide'] ?? [])) : $result['body'];
+
+        return is_array($body) ? Response::json($body) : Response::text((string) $body);
     }
 
     /**

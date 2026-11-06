@@ -37,6 +37,18 @@ class ProjectsController extends Controller
         return $this->register($request);
     }
 
+    /** PATCH /projects/{slug}: rename a project or change its description. Its slug, and so its links, stay. */
+    public function update(Request $request, string $slug): JsonResponse
+    {
+        $project = $this->user($request)->projects()->listed()->where('slug', $slug)->firstOrFail();
+        $project->update($request->validate([
+            'name' => ['sometimes', 'string', 'max:100'],
+            'description' => ['sometimes', 'nullable', 'string', 'max:500'],
+        ]));
+
+        return response()->json($project->only('slug', 'name', 'description') + ['url' => route('projects.show', $project->slug)]);
+    }
+
     /** framework::new() and framework.new() register by name and type, and get a pull token for .env. */
     private function register(Request $request): JsonResponse
     {

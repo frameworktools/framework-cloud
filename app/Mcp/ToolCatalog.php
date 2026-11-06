@@ -41,6 +41,32 @@ class ToolCatalog
                 'title' => 'Show a project',
                 'description' => 'One project: its blueprint, its GitHub repository and Pages site, and when it was created.',
             ],
+            'projects_create' => [
+                'level' => self::FULL, 'method' => 'POST', 'path' => '/projects',
+                'hide' => ['token'],
+                'body' => ['properties' => [
+                    'name' => ['type' => 'string', 'maxLength' => 100],
+                    'description' => ['type' => 'string', 'maxLength' => 500],
+                    'language' => ['type' => 'string', 'enum' => ['r', 'python', 'stata'], 'description' => 'Defaults to the account\'s default language.'],
+                    'blueprint' => ['type' => 'string', 'description' => 'A blueprint key from blueprints_list. Defaults to the account\'s default blueprint.'],
+                    'github' => ['type' => 'object', 'description' => 'Also create its GitHub repository. Needs the account\'s GitHub connection.', 'properties' => [
+                        'owner' => ['type' => 'string', 'description' => 'The GitHub user or organization.'],
+                        'name' => ['type' => 'string', 'description' => 'The repository name. Defaults to the project slug.'],
+                        'private' => ['type' => 'boolean'],
+                    ], 'required' => ['owner']],
+                ], 'required' => ['name']],
+                'title' => 'Create a project',
+                'description' => 'Create a Framework project from the account\'s defaults or a blueprint. Its files are made on the user\'s computer (framework::new_project, fw new) or in a GitHub repository with github. Create one only when the user asks.',
+            ],
+            'projects_update' => [
+                'level' => self::FULL, 'method' => 'PATCH', 'path' => '/projects/{slug}', 'path_params' => $project,
+                'body' => ['properties' => [
+                    'name' => ['type' => 'string', 'maxLength' => 100],
+                    'description' => ['type' => 'string', 'maxLength' => 500],
+                ], 'required' => []],
+                'title' => 'Update a project',
+                'description' => 'Rename a project or change its description. Its slug and links stay the same.',
+            ],
             'artifacts_list' => [
                 'level' => self::READ, 'method' => 'GET', 'path' => '/artifacts', 'query' => $optionalProject,
                 'title' => 'List published artifacts',
@@ -99,6 +125,26 @@ class ToolCatalog
                 'title' => 'List skills',
                 'description' => 'The Framework skills the account can use: agent instructions for working in Framework projects.',
             ],
+            'skills_show' => [
+                'level' => self::READ, 'method' => 'GET', 'path' => '/skills/{skill}',
+                'path_params' => ['skill' => ['type' => 'string', 'description' => 'The skill key from skills_list, such as framework-reports, framework/framework-reports, or @owner/name.']],
+                'query' => ['language' => ['type' => 'string', 'enum' => ['r', 'python', 'stata'], 'description' => 'The language version to read. Defaults to the skill\'s first.']],
+                'title' => 'Show a skill',
+                'description' => 'One skill\'s SKILL.md text, its version, and whether this account can change it.',
+            ],
+            'skills_create' => [
+                'level' => self::FULL, 'method' => 'POST', 'path' => '/skills',
+                'body' => self::skillBody(),
+                'title' => 'Create a skill',
+                'description' => 'Create a skill from SKILL.md text: frontmatter with name: and description:, then the instructions. It starts private. To change a built-in skill, create your own from its text under a new name.',
+            ],
+            'skills_update' => [
+                'level' => self::FULL, 'method' => 'PUT', 'path' => '/skills/{skill}',
+                'path_params' => ['skill' => ['type' => 'string', 'description' => 'The skill key from skills_list, such as framework-reports, framework/framework-reports, or @owner/name.']],
+                'body' => self::skillBody(),
+                'title' => 'Update a skill',
+                'description' => 'Save a new version of one of the account\'s own skills from its full SKILL.md text. Read it with skills_show first and pass its version as expected_version. Keep its name: in the frontmatter. Earlier versions stay in its history.',
+            ],
             'blueprints_list' => [
                 'level' => self::READ, 'method' => 'GET', 'path' => '/blueprints', 'query' => $language,
                 'title' => 'List blueprints',
@@ -132,6 +178,21 @@ class ToolCatalog
             self::FULL => $access === McpConnection::ACCESS_FULL,
             default => false,
         };
+    }
+
+    /** @return array{properties: array<string, mixed>, required: list<string>} */
+    private static function skillBody(): array
+    {
+        return [
+            'properties' => [
+                'content' => ['type' => 'string', 'description' => 'The whole SKILL.md: frontmatter (name:, description:) and the instructions. Up to 64 KB.'],
+                'language' => ['type' => 'string', 'enum' => ['r', 'python', 'stata'], 'description' => 'For a skill with a version per language: which one this text is.'],
+                'visibility' => ['type' => 'string', 'enum' => ['private', 'unlisted', 'public']],
+                'notes' => ['type' => 'string', 'description' => 'A short note for the version history.'],
+                'expected_version' => ['type' => 'integer', 'minimum' => 1, 'description' => 'For updates: the version you read. A newer one stops the save.'],
+            ],
+            'required' => ['content'],
+        ];
     }
 
     /** @return array{properties: array<string, mixed>, required: list<string>} */
