@@ -19,23 +19,18 @@ const props = defineProps({
 
 const levels = [
     {
-        value: 'drafts',
-        label: 'Drafts only (recommended)',
-        description: 'Read your projects and published results, and write report drafts. It cannot publish or change who can read anything.',
+        value: 'full',
+        label: 'Full access (recommended)',
+        description: 'Read your projects, published results, and reports. Create, edit, and publish reports, and change who can read them.',
     },
     {
         value: 'read',
         label: 'Read only',
         description: 'Read your projects, published results, and reports. It cannot change anything.',
     },
-    {
-        value: 'full',
-        label: 'Full access',
-        description: 'Everything above, and publish reports and change who can read them. Choose this only for an app you trust with your public work.',
-    },
 ];
 
-const access = ref('drafts');
+const access = ref('full');
 const submitting = ref(false);
 </script>
 

@@ -38,10 +38,6 @@ class ApiTool extends Tool
     {
         $text = $this->tool['description'];
 
-        if ($this->connection->access === McpConnection::ACCESS_DRAFTS && $this->tool['level'] === ToolCatalog::DRAFTS) {
-            $text .= ' This connection may only work on drafts: do not send publish, visibility, or password.';
-        }
-
         return $text.' API: '.$this->tool['method'].' /api/v1'.$this->tool['path'].'.';
     }
 

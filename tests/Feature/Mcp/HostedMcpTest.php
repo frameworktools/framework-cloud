@@ -187,16 +187,16 @@ class HostedMcpTest extends TestCase
             ->assertRedirect(route('login'));
     }
 
-    public function test_a_drafts_connection_reads_and_writes_drafts_but_cannot_publish(): void
+    public function test_a_full_connection_reads_artifacts_and_writes_reports(): void
     {
         $user = $this->owner();
         $this->figure($user);
-        $token = $this->connect($user, McpConnection::ACCESS_DRAFTS);
+        $token = $this->connect($user, McpConnection::ACCESS_FULL);
 
         $names = $this->toolNames($token);
         $this->assertContains('projects_list', $names);
         $this->assertContains('reports_create', $names);
-        $this->assertNotContains('reports_publish', $names);
+        $this->assertContains('reports_publish', $names);
 
         $projects = $this->tool($token, 'projects_list');
         $this->assertFalse($projects['error']);
@@ -205,10 +205,6 @@ class HostedMcpTest extends TestCase
         $artifact = $this->tool($token, 'artifacts_show', ['slug' => 'penguin-study', 'artifact' => 'mass-model']);
         $this->assertFalse($artifact['error'], json_encode($artifact));
         $this->assertSame('{"estimate": 4207.1}', $artifact['body']['content']);
-
-        $refused = $this->tool($token, 'reports_create', ['slug' => 'penguin-study', 'title' => 'Body mass', 'publish' => true]);
-        $this->assertTrue($refused['error']);
-        $this->assertSame('mcp_drafts_only', $refused['body']['error']['code']);
 
         $draft = $this->tool($token, 'reports_create', ['slug' => 'penguin-study', 'title' => 'Body mass',
             'blocks' => [['type' => 'text', 'text' => '## Results'], ['type' => 'artifact', 'artifact' => 'mass-model']]]);
@@ -228,6 +224,7 @@ class HostedMcpTest extends TestCase
         $this->assertContains('reports_list', $names);
         $this->assertNotContains('reports_create', $names);
         $this->assertNotContains('reports_update', $names);
+        $this->assertNotContains('reports_publish', $names);
 
         app('auth')->forgetGuards();
         $this->withToken($token)->postJson('/mcp', ['jsonrpc' => '2.0', 'id' => 1, 'method' => 'tools/call',
@@ -350,13 +347,13 @@ class HostedMcpTest extends TestCase
     public function test_history_records_each_call_without_its_contents(): void
     {
         $user = $this->owner();
-        $token = $this->connect($user, McpConnection::ACCESS_DRAFTS);
+        $token = $this->connect($user, McpConnection::ACCESS_FULL);
 
         $this->tool($token, 'reports_list', ['slug' => 'penguin-study']);
-        $this->tool($token, 'reports_create', ['slug' => 'penguin-study', 'title' => 'Secret title', 'publish' => true]);
+        $this->tool($token, 'reports_create', ['slug' => 'penguin-study', 'title' => 'Secret title', 'dry_run' => true]);
         $this->tool($token, 'reports_list', ['slug' => 'missing']);
 
-        $this->assertSame(['ok', 'refused', 'error'], McpToolCall::orderBy('id')->pluck('outcome')->all());
+        $this->assertSame(['ok', 'dry_run', 'error'], McpToolCall::orderBy('id')->pluck('outcome')->all());
         $this->assertSame('penguin-study', McpToolCall::first()->target);
         $this->assertStringNotContainsString('Secret title', McpToolCall::all()->toJson());
 

@@ -22,11 +22,9 @@ class McpConnection extends Model
 {
     public const ACCESS_READ = 'read';
 
-    public const ACCESS_DRAFTS = 'drafts';
-
     public const ACCESS_FULL = 'full';
 
-    public const ACCESS_LEVELS = [self::ACCESS_DRAFTS, self::ACCESS_READ, self::ACCESS_FULL];
+    public const ACCESS_LEVELS = [self::ACCESS_FULL, self::ACCESS_READ];
 
     /** The hidden API token's name, so the API tokens page can leave it out. */
     public const TOKEN_PREFIX = 'AI app: ';
@@ -72,7 +70,6 @@ class McpConnection extends Model
     {
         return match ($access) {
             self::ACCESS_READ => 'Read only',
-            self::ACCESS_DRAFTS => 'Drafts only',
             self::ACCESS_FULL => 'Full access',
             default => $access,
         };

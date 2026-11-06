@@ -15,8 +15,6 @@ class ToolCatalog
 {
     public const READ = 'read';
 
-    public const DRAFTS = 'drafts';
-
     public const FULL = 'full';
 
     /** @return array<string, array<string, mixed>> */
@@ -75,13 +73,13 @@ class ToolCatalog
                 'description' => 'The project blueprints the account can start from.',
             ],
             'reports_create' => [
-                'level' => self::DRAFTS, 'method' => 'POST', 'path' => '/projects/{slug}/reports', 'path_params' => $project,
+                'level' => self::FULL, 'method' => 'POST', 'path' => '/projects/{slug}/reports', 'path_params' => $project,
                 'body' => self::reportBody(creating: true),
                 'title' => 'Create a report',
                 'description' => 'Create a report: an ordered page of Markdown text and published artifacts. It starts private and unpublished unless publish is true.',
             ],
             'reports_update' => [
-                'level' => self::DRAFTS, 'method' => 'PATCH', 'path' => '/projects/{slug}/reports/{report}', 'path_params' => $project + $report,
+                'level' => self::FULL, 'method' => 'PATCH', 'path' => '/projects/{slug}/reports/{report}', 'path_params' => $project + $report,
                 'body' => self::reportBody(creating: false),
                 'title' => 'Update a report draft',
                 'description' => 'Change a report\'s draft. blocks replaces the whole draft, so send every block you want to keep. Published versions do not change until you publish.',
@@ -99,7 +97,6 @@ class ToolCatalog
     {
         return match ($level) {
             self::READ => true,
-            self::DRAFTS => in_array($access, [McpConnection::ACCESS_DRAFTS, McpConnection::ACCESS_FULL], true),
             self::FULL => $access === McpConnection::ACCESS_FULL,
             default => false,
         };

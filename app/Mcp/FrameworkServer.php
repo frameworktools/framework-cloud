@@ -23,7 +23,7 @@ Tools for reading one Framework Cloud account's projects and published results, 
 - A report is one page of Markdown text with published artifacts placed between the paragraphs. Build it with reports_create, revise it with reports_update, which replaces the whole draft, and publish it with reports_publish. Each publish adds a version at the same stable link.
 - Write report text from the published results. Take estimates, counts, and names from artifacts_show; never invent numbers.
 - Reports start private. Ask before making one unlisted or public. A public report may only show public artifacts.
-- Publish only when the user asks. With "Drafts only" access you cannot publish or change visibility; tell the user the draft is ready and where to find it.
+- Publish only when the user asks. With "Read only" access you can read but not create or change reports.
 - Publishing reports needs a paid plan. A 402 error means the account has none; tell the user.
 - These tools cannot run code or publish new artifacts. Results are published from the project on the user's computer.
 - Every tool accepts dry_run=true to preview the request without sending it.

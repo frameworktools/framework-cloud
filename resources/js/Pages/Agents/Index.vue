@@ -121,12 +121,10 @@ const command = 'mt-2 block overflow-x-auto whitespace-nowrap rounded-lg bg-[#0c
             <section class="flex flex-col gap-3">
                 <h2 class="text-base font-medium text-slate-900 dark:text-white">Access levels</h2>
                 <dl class="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-[8rem_1fr]">
-                    <dt class="font-medium text-slate-800 dark:text-slate-200">Drafts only</dt>
-                    <dd class="text-slate-500 dark:text-slate-400">Reads projects, artifacts, and reports. Creates and edits report drafts. Recommended.</dd>
+                    <dt class="font-medium text-slate-800 dark:text-slate-200">Full access</dt>
+                    <dd class="text-slate-500 dark:text-slate-400">Reads projects, artifacts, and reports. Creates, edits, and publishes reports, and changes who can read them. Recommended.</dd>
                     <dt class="font-medium text-slate-800 dark:text-slate-200">Read only</dt>
                     <dd class="text-slate-500 dark:text-slate-400">Reads projects, artifacts, and reports.</dd>
-                    <dt class="font-medium text-slate-800 dark:text-slate-200">Full access</dt>
-                    <dd class="text-slate-500 dark:text-slate-400">Also publishes reports and changes who can read them.</dd>
                 </dl>
                 <p class="text-sm text-slate-500 dark:text-slate-400">
                     Agents cannot run code or publish new artifacts. What an agent reads, including private projects and drafts, goes to the company that runs it.

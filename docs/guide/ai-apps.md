@@ -29,9 +29,8 @@ and select Connect.
 
 | Access | Allowed actions |
 |---|---|
-| Drafts only (recommended) | Read projects, artifacts, and reports. Create and edit report drafts. |
+| Full access (recommended) | Read projects, artifacts, and reports. Create, edit, and publish reports, and change who can read them. |
 | Read only | Read projects, artifacts, and reports. |
-| Full access | Everything above. Publish reports and change who can read them. |
 
 A connected app works across all your projects. It cannot run code or publish
 new artifacts. Publish results from the project on your computer first. See
