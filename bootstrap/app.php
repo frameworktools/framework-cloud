@@ -59,5 +59,9 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        // API clients (curl, Stata, scripts) may omit Accept: application/json.
+        // They still get a JSON 401 or 422, never a redirect to the login page.
+        $exceptions->shouldRenderJsonWhen(
+            fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
+        );
     })->create();
