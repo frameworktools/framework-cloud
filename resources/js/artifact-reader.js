@@ -11,6 +11,19 @@ export function displayValue(value, precision = 3, decimal = false) {
     return String(value);
 }
 
+// A p-value that rounds to zero reads as "< 0.001" at three decimal places
+const pValueColumns = new Set(['p_value', 'p.value', 'p-value', 'pr(>|t|)', 'pr(>|z|)', 'pvalue']);
+export function isPValueColumn(name) {
+    return pValueColumns.has(String(name ?? '').toLowerCase());
+}
+
+export function displayPValue(value, precision = 3) {
+    if (typeof value === 'number' && Number.isFinite(value) && precision !== 'full' && value > 0 && value < 10 ** -precision) {
+        return `< ${(10 ** -precision).toFixed(precision)}`;
+    }
+    return displayValue(value, precision, true);
+}
+
 export function compareValues(left, right, type = 'string', direction = 'asc') {
     // Missing values stay last in either direction.
     const leftMissing = left === null || left === undefined || (type === 'number' && left === '');
@@ -80,7 +93,7 @@ export function mountTable(container) {
                 if (column.type === 'number') cell.classList.add('text-right', 'tabular-nums');
                 if (row[index] === null) cell.classList.add('text-slate-400');
                 const reported = row[index] !== null && row[index] !== undefined;
-                cell.textContent = !reported && modelTable ? '—' : displayValue(row[index], state.precision, decimal[index]);
+                cell.textContent = !reported && modelTable ? '—' : isPValueColumn(column.name) ? displayPValue(row[index], state.precision) : displayValue(row[index], state.precision, decimal[index]);
                 cell.title = reported ? String(row[index]) : modelTable ? 'Not reported' : 'Missing value';
                 tr.append(cell);
             });

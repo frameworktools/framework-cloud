@@ -60,3 +60,15 @@ test('display rounds results while preserving exact strings, integers, and CSV v
     assert.equal(displayValue(37.2272701164472, 'full'), '37.2272701164472');
     assert.ok(tableCsv({columns:[{name:'estimate'}],rows:[[37.2272701164472]]}).includes('37.2272701164472'));
 });
+
+test('p-values that round to zero read as below the precision', async () => {
+    const { displayPValue, isPValueColumn } = await import('../../resources/js/artifact-reader.js');
+    assert.equal(displayPValue(1.2e-9, 3), '< 0.001');
+    assert.equal(displayPValue(1.2e-9, 5), '< 0.00001');
+    assert.equal(displayPValue(0.0123, 3), '0.012');
+    assert.equal(displayPValue(0, 3), '0.000');
+    assert.equal(displayPValue(null, 3), 'NA');
+    assert.ok(isPValueColumn('p_value'));
+    assert.ok(isPValueColumn('p.value'));
+    assert.ok(!isPValueColumn('estimate'));
+});
