@@ -78,8 +78,11 @@ class SkillsController extends Controller
         $user = $request->user();
         $data = $this->validated($request, null);
 
-        if (Skill::where('user_id', $user->id)->where('key', $data['key'])->exists()) {
-            throw ValidationException::withMessages(['content' => "You already have a skill named {$data['key']}."]);
+        $existing = Skill::withTrashed()->where('user_id', $user->id)->where('key', $data['key'])->first();
+        if ($existing) {
+            throw ValidationException::withMessages(['content' => $existing->trashed()
+                ? "A deleted skill is named {$data['key']}. Restore it from the Trash, or choose another name."
+                : "You already have a skill named {$data['key']}."]);
         }
 
         $skill = Skill::create([

@@ -71,6 +71,16 @@ class ReportsController extends Controller
         return response()->json($this->detail($report->refresh()));
     }
 
+    /** DELETE: move a report to the Trash. Its links stop opening until it is restored. */
+    public function destroy(Request $request, string $slug, string $report): JsonResponse
+    {
+        $project = $this->project($request, $slug);
+        $report = $this->report($project, $report);
+        $report->delete();
+
+        return response()->json(['deleted' => $report->slug, 'restore' => route('trash')]);
+    }
+
     /** The project, for a user token on one of its projects or a project token on its own. */
     private function project(Request $request, string $slug): Project
     {

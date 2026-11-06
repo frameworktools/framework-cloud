@@ -67,6 +67,11 @@ class ToolCatalog
                 'title' => 'Update a project',
                 'description' => 'Rename a project or change its description. Its slug and links stay the same.',
             ],
+            'projects_delete' => [
+                'level' => self::FULL, 'method' => 'DELETE', 'path' => '/projects/{slug}', 'path_params' => $project,
+                'title' => 'Delete a project',
+                'description' => 'Delete a project. Its artifacts, reports, and collections stop opening, and its tokens stop working.'.' It goes to the Trash in Framework Cloud, where the user can restore it. Delete only when the user asks, and name what you will delete first.',
+            ],
             'artifacts_list' => [
                 'level' => self::READ, 'method' => 'GET', 'path' => '/artifacts', 'query' => $optionalProject,
                 'title' => 'List published artifacts',
@@ -145,6 +150,12 @@ class ToolCatalog
                 'title' => 'Update a skill',
                 'description' => 'Save a new version of one of the account\'s own skills from its full SKILL.md text. Read it with skills_show first and pass its version as expected_version. Keep its name: in the frontmatter. Earlier versions stay in its history.',
             ],
+            'skills_delete' => [
+                'level' => self::FULL, 'method' => 'DELETE', 'path' => '/skills/{skill}',
+                'path_params' => ['skill' => ['type' => 'string', 'description' => 'One of the account\'s own skills, by key.']],
+                'title' => 'Delete a skill',
+                'description' => 'Delete one of the account\'s own skills. Projects that use it keep their copy.'.' It goes to the Trash in Framework Cloud, where the user can restore it. Delete only when the user asks, and name what you will delete first.',
+            ],
             'blueprints_list' => [
                 'level' => self::READ, 'method' => 'GET', 'path' => '/blueprints', 'query' => $language,
                 'title' => 'List blueprints',
@@ -161,6 +172,11 @@ class ToolCatalog
                 'body' => self::reportBody(creating: false),
                 'title' => 'Update a report draft',
                 'description' => 'Change a report\'s draft. blocks replaces the whole draft, so send every block you want to keep. Published versions do not change until you publish.',
+            ],
+            'reports_delete' => [
+                'level' => self::FULL, 'method' => 'DELETE', 'path' => '/projects/{slug}/reports/{report}', 'path_params' => $project + $report,
+                'title' => 'Delete a report',
+                'description' => 'Delete a report. Its links, and every published version, stop opening.'.' It goes to the Trash in Framework Cloud, where the user can restore it. Delete only when the user asks, and name what you will delete first.',
             ],
             'reports_publish' => [
                 'level' => self::FULL, 'method' => 'POST', 'path' => '/projects/{slug}/reports/{report}/publish', 'path_params' => $project + $report,

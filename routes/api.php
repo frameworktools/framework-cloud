@@ -63,6 +63,7 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::post('/skills', [SkillsController::class, 'store'])->middleware('throttle:30,1');
     Route::get('/skills/{skill}', [SkillsController::class, 'show'])->where('skill', '.+');
     Route::put('/skills/{skill}', [SkillsController::class, 'update'])->where('skill', '.+')->middleware('throttle:60,1');
+    Route::delete('/skills/{skill}', [SkillsController::class, 'destroy'])->where('skill', '.+')->middleware('throttle:30,1');
     Route::get('/defaults', [PiecesController::class, 'defaults']);
     Route::get('/destinations', [PiecesController::class, 'destinations']);
     Route::post('/resolve', [PiecesController::class, 'resolve'])->middleware('throttle:60,1');
@@ -73,6 +74,7 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::get('/projects/pull', [ProjectLayersController::class, 'pull']);
     Route::get('/projects/{slug}', [ProjectLayersController::class, 'show']);
     Route::patch('/projects/{slug}', [ProjectsController::class, 'update'])->middleware('throttle:60,1');
+    Route::delete('/projects/{slug}', [ProjectsController::class, 'destroy'])->middleware('throttle:30,1');
     Route::get('/projects/{slug}/download', [ProjectLayersController::class, 'download'])->middleware('throttle:10,1');
     Route::get('/projects/{slug}/layers', [ProjectLayersController::class, 'layers']);
     Route::post('/projects/{slug}/pull-tokens', [ProjectLayersController::class, 'issuePullToken'])->middleware('throttle:30,1');
@@ -101,6 +103,7 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::get('/projects/{slug}/reports/{report}', [ReportsController::class, 'show']);
     Route::patch('/projects/{slug}/reports/{report}', [ReportsController::class, 'update'])->middleware('throttle:60,1');
     Route::post('/projects/{slug}/reports/{report}/publish', [ReportsController::class, 'publish'])->middleware('throttle:30,1');
+    Route::delete('/projects/{slug}/reports/{report}', [ReportsController::class, 'destroy'])->middleware('throttle:30,1');
 
     // Collections
     Route::get('/collections', [CollectionsController::class, 'index']);

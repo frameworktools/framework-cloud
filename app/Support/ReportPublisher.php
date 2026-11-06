@@ -91,7 +91,8 @@ class ReportPublisher
         }
         if (array_key_exists('slug', $data) && filled($data['slug'])) {
             $slug = substr(Str::slug($data['slug']), 0, 120);
-            if (! $slug || Report::where('project_id', $report->project_id)->where('slug', $slug)->when($report->exists, fn ($q) => $q->whereKeyNot($report->id))->exists()) {
+            // A report in the Trash keeps its name, so it can be restored
+            if (! $slug || Report::withTrashed()->where('project_id', $report->project_id)->where('slug', $slug)->when($report->exists, fn ($q) => $q->whereKeyNot($report->id))->exists()) {
                 throw ValidationException::withMessages(['slug' => 'Choose a unique report name within this project.']);
             }
             $report->slug = $slug;

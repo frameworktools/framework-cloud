@@ -13,6 +13,7 @@ use App\Http\Controllers\App\ReportsController;
 use App\Http\Controllers\App\SkillsController;
 use App\Http\Controllers\App\SkillTagsController;
 use App\Http\Controllers\App\TokensController;
+use App\Http\Controllers\App\TrashController;
 use App\Http\Controllers\App\WelcomeController;
 use App\Http\Controllers\Auth\PasskeyPromptController;
 use App\Http\Controllers\CollectionViewController;
@@ -200,6 +201,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('blueprints', BlueprintsController::class);
     Route::post('skills/{skill}/restore', [SkillsController::class, 'restore']);
     Route::resource('skills', SkillsController::class);
+
+    // Deleted projects, reports, and skills, until restored
+    Route::get('trash', [TrashController::class, 'index'])->name('trash');
+    Route::post('trash/{type}/{id}/restore', [TrashController::class, 'restore'])->whereIn('type', ['project', 'report', 'skill'])->whereNumber('id');
 
     Route::get('tokens', [TokensController::class, 'index'])->name('tokens');
     Route::post('tokens', [TokensController::class, 'store']);

@@ -37,6 +37,16 @@ class ProjectsController extends Controller
         return $this->register($request);
     }
 
+    /** DELETE /projects/{slug}: move a project to the Trash. Its artifacts, reports, and collections stop opening until it is restored; its tokens stop working for good. */
+    public function destroy(Request $request, string $slug): JsonResponse
+    {
+        $project = $this->user($request)->projects()->listed()->where('slug', $slug)->firstOrFail();
+        $project->tokens()->delete();
+        $project->delete();
+
+        return response()->json(['deleted' => $project->slug, 'restore' => route('trash')]);
+    }
+
     /** PATCH /projects/{slug}: rename a project or change its description. Its slug, and so its links, stay. */
     public function update(Request $request, string $slug): JsonResponse
     {
@@ -67,7 +77,8 @@ class ProjectsController extends Controller
 
         $slug = Str::slug($validated['name']);
 
-        if ($user->projects()->where('slug', $slug)->exists()) {
+        // A project in the Trash keeps its name, so it can be restored
+        if ($user->projects()->withTrashed()->where('slug', $slug)->exists()) {
             return response()->json([
                 'message' => "You already have a project named '{$slug}' on Framework Cloud.",
             ], 422);

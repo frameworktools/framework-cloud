@@ -35,7 +35,7 @@ Tools for reading one Framework Cloud account's projects and published results, 
 - To use an artifact from elsewhere in a report, link it to the report's project with artifacts_link first.
 - Projects: projects_create makes one from the account's defaults or a blueprint; its files are made on the user's computer or in GitHub. projects_update renames one or changes its description. Create or rename only when the user asks.
 - Skills are agent instructions (SKILL.md). skills_show reads one; skills_create and skills_update change the account's own. Built-in skills (framework/...) can't be changed; create your own from their text instead. Read a skill before updating it, and pass its version as expected_version.
-- Nothing here deletes projects, artifacts, reports, or skills. The user does that in Framework Cloud.
+- projects_delete, reports_delete, and skills_delete move things to the Trash, where the user can restore them. Delete only when the user asks, and say what you will delete first. Artifacts can't be deleted here; the user does that in Framework Cloud.
 - These tools cannot run code.
 - Every tool accepts dry_run=true to preview the request without sending it.
 - Errors come back as JSON {error: {status, code, message}}, with errors for validation failures.

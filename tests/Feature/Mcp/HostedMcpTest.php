@@ -237,7 +237,7 @@ class HostedMcpTest extends TestCase
         $this->assertNotContains('reports_update', $names);
         $this->assertNotContains('reports_publish', $names);
         $this->assertNotContains('artifacts_publish', $names);
-        foreach (['projects_create', 'projects_update', 'skills_create', 'skills_update'] as $write) {
+        foreach (['projects_create', 'projects_update', 'skills_create', 'skills_update', 'projects_delete', 'reports_delete', 'skills_delete'] as $write) {
             $this->assertNotContains($write, $names);
         }
         $this->assertContains('skills_show', $names);
@@ -724,5 +724,50 @@ class HostedMcpTest extends TestCase
         $this->assertSame('thesis-chapter-two', $made['body']['slug']);
         $this->assertArrayNotHasKey('token', $made['body']);
         $this->assertTrue($user->projects()->where('slug', 'thesis-chapter-two')->exists());
+    }
+
+    public function test_agent_deletes_go_to_the_trash_and_can_be_restored(): void
+    {
+        $user = $this->owner();
+        $document = $this->figure($user);
+        $token = $this->connect($user, McpConnection::ACCESS_FULL);
+        $report = $this->tool($token, 'reports_create', ['slug' => 'penguin-study', 'title' => 'Body mass', 'markdown' => 'Text']);
+        $this->tool($token, 'skills_create', ['content' => "---\nname: penguin-checks\ndescription: Check.\n---\nOne."]);
+
+        $this->assertFalse($this->tool($token, 'reports_delete', ['slug' => 'penguin-study', 'report' => $report['body']['slug']])['error']);
+        $this->assertFalse($this->tool($token, 'skills_delete', ['skill' => 'penguin-checks'])['error']);
+        $this->assertFalse($this->tool($token, 'projects_delete', ['slug' => 'penguin-study'])['error']);
+
+        // Gone from readers and lists
+        app('auth')->forgetGuards();
+        $this->get(route('documents.show', ['key' => $document->key]))->assertNotFound();
+        $this->assertSame([], $this->tool($token, 'projects_list')['body']['projects']);
+        $again = $this->tool($token, 'skills_create', ['content' => "---\nname: penguin-checks\ndescription: Check.\n---\nTwo."]);
+        $this->assertStringContainsString('restore it from the Trash', json_encode($again['body']));
+
+        // The Trash lists all three; a report waits for its project
+        app('auth')->forgetGuards();
+        $this->actingAs($user)->get('/trash')->assertInertia(fn (AssertableInertia $page) => $page->component('Trash')->has('items', 3));
+        $reportId = Report::onlyTrashed()->sole()->id;
+        $this->post("/trash/report/{$reportId}/restore")->assertInvalid('restore');
+        $projectId = Project::onlyTrashed()->where('slug', 'penguin-study')->sole()->id;
+        $this->post("/trash/project/{$projectId}/restore")->assertRedirect();
+        $this->post("/trash/report/{$reportId}/restore")->assertRedirect();
+        $this->post('/trash/skill/'.Skill::onlyTrashed()->sole()->id.'/restore')->assertRedirect();
+
+        $this->get(route('documents.show', ['key' => $document->key]))->assertOk();
+        $this->get('/trash')->assertInertia(fn (AssertableInertia $page) => $page->has('items', 0));
+    }
+
+    public function test_agents_cannot_delete_built_in_skills_or_artifacts(): void
+    {
+        $user = $this->owner();
+        $builtIn = Skill::create(['user_id' => null, 'key' => 'framework-reports', 'name' => 'Reports', 'description' => 'Reports.', 'visibility' => 'public']);
+        $builtIn->publishVersion(['content' => "---\nname: framework-reports\ndescription: Reports.\n---\nBuilt in.", 'files' => []]);
+        $token = $this->connect($user, McpConnection::ACCESS_FULL);
+
+        $this->assertSame(403, $this->tool($token, 'skills_delete', ['skill' => 'framework/framework-reports'])['body']['error']['status']);
+        $this->assertNotContains('artifacts_delete', $this->toolNames($token));
+        $this->assertFalse($builtIn->fresh()->trashed());
     }
 }

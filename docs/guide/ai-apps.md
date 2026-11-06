@@ -29,11 +29,14 @@ and select Connect.
 
 | Access | Allowed actions |
 |---|---|
-| Full access (recommended) | Read everything. Create and rename projects. Publish saved files as artifacts. Create, edit, and publish reports. Create and edit your own skills. |
+| Full access (recommended) | Read everything. Create, rename, and delete projects. Publish saved files as artifacts. Create, edit, publish, and delete reports. Create, edit, and delete your own skills. |
 | Read only | Read projects, artifacts, reports, skills, and blueprints. |
 
-No agent can delete projects, artifacts, reports, or skills. Built-in skills
-cannot be changed; an agent makes your own copy instead.
+Projects, reports, and skills an agent deletes go to the Trash, in the
+sidebar, where you can restore them. A deleted project's artifacts, reports,
+and collections stop opening until it is restored. Agents cannot delete
+artifacts or built-in skills; an agent makes your own copy of a built-in skill
+instead.
 
 A connected app works across all your projects. It cannot run code.
 

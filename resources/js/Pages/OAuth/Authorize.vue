@@ -21,7 +21,7 @@ const levels = [
     {
         value: 'full',
         label: 'Full access (recommended)',
-        description: 'Read your projects, published results, reports, and skills. Create projects, publish files as artifacts, write and publish reports, and edit your skills. It cannot delete anything.',
+        description: 'Read your projects, published results, reports, and skills. Create projects, publish files as artifacts, write and publish reports, and edit your skills. What it deletes goes to the Trash, where you can restore it.',
     },
     {
         value: 'read',

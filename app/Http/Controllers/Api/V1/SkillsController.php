@@ -33,8 +33,11 @@ class SkillsController extends Controller
         $data = $this->validated($request);
         $meta = Skill::frontmatter($data['content'], 'content');
 
-        if (Skill::where('user_id', $user->id)->where('key', $meta['key'])->exists()) {
-            throw ValidationException::withMessages(['content' => "You already have a skill named {$meta['key']}. Update it instead."]);
+        $existing = Skill::withTrashed()->where('user_id', $user->id)->where('key', $meta['key'])->first();
+        if ($existing) {
+            throw ValidationException::withMessages(['content' => $existing->trashed()
+                ? "A deleted skill is named {$meta['key']}. The user can restore it from the Trash, or choose another name."
+                : "You already have a skill named {$meta['key']}. Update it instead."]);
         }
 
         $skill = Skill::create([
@@ -80,6 +83,17 @@ class SkillsController extends Controller
         });
 
         return response()->json($this->detail($skill->refresh(), $variant, $user));
+    }
+
+    /** Move one of the account's own skills to the Trash, where the user can restore it. */
+    public function destroy(Request $request, string $skill): JsonResponse
+    {
+        $user = $this->user($request);
+        $skill = $this->find($request, $skill);
+        abort_unless($skill->user_id === $user->id, 403, 'Only your own skills can be deleted.');
+        $skill->delete();
+
+        return response()->json(['deleted' => $skill->handle, 'restore' => route('trash')]);
     }
 
     /** @return array<string, mixed> */
