@@ -26,33 +26,25 @@ The Framework Cloud plugin adds the server to Claude, Claude Code, ChatGPT,
 and Codex. Its marketplace is `frameworktools/plugins`. The plugin connects to
 framework.pub only. On a self-hosted server, use the manual setup below.
 
-- **Claude:** Customize, then Plugins, then Add and Add marketplace. Enter
-  `frameworktools/plugins`. Under Discover, choose Framework Cloud and select
-  Add. Then add `framework.pub` to Claude's allowed websites, as described
-  under Manual setup.
-- **Claude Code:** if you added the plugin in Claude, it is already there.
-  Otherwise run
+- **Claude** (desktop app or claude.ai): Customize, then Plugins, then Add
+  and Add marketplace. Enter `frameworktools/plugins`. Under Discover, choose
+  Framework Cloud and select Add. It then works in chats and in Claude Code
+  inside the desktop app. Add `framework.pub` to Claude's allowed websites, as
+  described under Manual setup.
+- **ChatGPT** (desktop app): Settings, then Plugins, then Add and Add a
+  marketplace. Enter `frameworktools/plugins`, then install Framework Cloud.
+- **Claude Code CLI:** run
   `claude plugin marketplace add frameworktools/plugins` and
   `claude plugin install framework-cloud@framework`, then `/mcp` in Claude
   Code to sign in.
-- **ChatGPT:** in the desktop app, open Settings, then Plugins, then Add and
-  Add a marketplace. Enter `frameworktools/plugins`, then install Framework
-  Cloud.
-- **Codex:** run `codex plugin marketplace add frameworktools/plugins` and
-  `codex plugin add framework-cloud@framework`.
+- **Codex CLI:** run `codex plugin marketplace add frameworktools/plugins`,
+  `codex plugin add framework-cloud@framework`, and
+  `codex mcp login framework`.
 
 ## Manual setup
 
-- **Claude Code:** in the Claude desktop app, select the code button (`</>`)
-  at the top of the window, or run `claude` in a terminal. If you added the
-  Claude connector below, it is already there. Otherwise run
-  `claude mcp add --transport http framework https://framework.pub/mcp`, then
-  `/mcp` in Claude Code to sign in.
-- **Codex:** in the ChatGPT desktop app, open the ChatGPT menu at the top left
-  and choose Codex, or run `codex` in a terminal. Then run
-  `codex mcp add framework --url https://framework.pub/mcp` and
-  `codex mcp login framework`.
-- **Claude:** Customize, then Connectors, then Add and Custom connector.
+- **Claude** (desktop app or claude.ai): Customize, then Connectors, then Add
+  and Custom connector.
   Choose Sign in now and Register automatically. Claude detects both. The
   connector also works in Claude Code when you sign in to it with the same
   Claude account.
@@ -67,6 +59,11 @@ framework.pub only. On a self-hosted server, use the manual setup below.
   Authenticate next to framework under MCPs. On chatgpt.com, use Settings,
   then Apps and connectors, then Create; custom connectors need developer mode
   on some plans.
+- **Claude Code CLI:**
+  `claude mcp add --transport http framework https://framework.pub/mcp`, then
+  `/mcp` in Claude Code to sign in.
+- **Codex CLI:** `codex mcp add framework --url https://framework.pub/mcp`,
+  then `codex mcp login framework`.
 
 Setup steps for each app are under AI Agents, Connect your agent. The app opens
 Framework Cloud in a browser. Sign in, choose the app's access,

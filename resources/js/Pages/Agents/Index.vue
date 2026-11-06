@@ -33,12 +33,13 @@ async function copy() {
     setTimeout(() => (copied.value = false), 1500);
 }
 
-const app = ref('claude-code');
+// Desktop and web apps first, then the terminal tools, so each tab is one way of working
+const app = ref('claude');
 const apps = [
-    { value: 'claude-code', label: 'Claude Code' },
-    { value: 'codex', label: 'Codex' },
     { value: 'claude', label: 'Claude' },
     { value: 'chatgpt', label: 'ChatGPT' },
+    { value: 'claude-code', label: 'Claude Code CLI' },
+    { value: 'codex', label: 'Codex CLI' },
 ];
 
 // The Framework Cloud plugin connects to framework.pub only; other servers show manual setup alone
@@ -48,48 +49,24 @@ const signIn = 'In the browser that opens, sign in, choose the access, and selec
 
 const setup = computed(() => {
     const allowHost = ['In Settings, open Capabilities and add ', { code: host.value }, ' to the allowed websites, exactly as shown. Claude needs it to upload files. Start a new chat afterward.'];
-    const openClaudeCode = ['Open Claude Code: select ', { code: '</>' }, ' at the top of the Claude desktop app, or run ', { code: 'claude' }, ' in a terminal.'];
-    const openCodex = ['Open Codex: in the ChatGPT desktop app, choose Codex from the ChatGPT menu, or run ', { code: 'codex' }, ' in a terminal.'];
+    const claudeCodeSignIn = ['Run ', { code: 'claude' }, ', then ', { code: '/mcp' }, '. Choose framework and authenticate. ', signIn];
+    const codexSignIn = ['Sign in:', { cmd: 'codex mcp login framework' }, signIn];
 
     return {
-        'claude-code': {
-            plugin: [
-                openClaudeCode,
-                ['Install the plugin. Skip this if you added it in Claude.', { cmd: `claude plugin marketplace add ${marketplace}` }, { cmd: 'claude plugin install framework-cloud@framework' }],
-                ['Run ', { code: '/mcp' }, ', choose framework, and authenticate. ', signIn],
-            ],
-            manual: [
-                openClaudeCode,
-                ['Add the server:', { cmd: `claude mcp add --transport http framework ${props.mcpUrl}` }],
-                ['Run ', { code: '/mcp' }, ', choose framework, and authenticate. ', signIn],
-            ],
-        },
-        codex: {
-            plugin: [
-                openCodex,
-                ['Install the plugin:', { cmd: `codex plugin marketplace add ${marketplace}` }, { cmd: 'codex plugin add framework-cloud@framework' }],
-                ['Sign in:', { cmd: 'codex mcp login framework' }, signIn],
-            ],
-            manual: [
-                openCodex,
-                ['Add the server:', { cmd: `codex mcp add framework --url ${props.mcpUrl}` }],
-                ['Sign in:', { cmd: 'codex mcp login framework' }, signIn],
-            ],
-        },
         claude: {
             plugin: [
-                ['In Claude, open Customize, then Plugins. Select Add, then Add marketplace, and enter ', { code: marketplace }, '.'],
+                ['In the Claude desktop app or on claude.ai, open Customize, then Plugins. Select Add, then Add marketplace, and enter ', { code: marketplace }, '.'],
                 ['Under Discover, add Framework Cloud.'],
                 [signIn],
                 allowHost,
             ],
             manual: [
-                ['In Claude, open Customize, then Connectors. Select Add, then Custom connector, and paste the server address.'],
+                ['In the Claude desktop app or on claude.ai, open Customize, then Connectors. Select Add, then Custom connector, and paste the server address.'],
                 ['Choose Sign in now and Register automatically. Leave Request headers empty.'],
                 [signIn],
                 allowHost,
             ],
-            note: 'On Team and Enterprise plans, an owner adds custom connectors.',
+            note: 'Framework Cloud then works in chats and in Claude Code inside the desktop app. On Team and Enterprise plans, an owner adds custom connectors.',
         },
         chatgpt: {
             plugin: [
@@ -103,6 +80,26 @@ const setup = computed(() => {
                 ['Select Authenticate next to framework. ', signIn],
             ],
             note: 'On chatgpt.com, open Settings, then Apps and connectors. Turn on Developer mode, then select Create.',
+        },
+        'claude-code': {
+            plugin: [
+                ['In a terminal, add the plugin:', { cmd: `claude plugin marketplace add ${marketplace}` }, { cmd: 'claude plugin install framework-cloud@framework' }],
+                claudeCodeSignIn,
+            ],
+            manual: [
+                ['In a terminal, add the server:', { cmd: `claude mcp add --transport http framework ${props.mcpUrl}` }],
+                claudeCodeSignIn,
+            ],
+        },
+        codex: {
+            plugin: [
+                ['In a terminal, add the plugin:', { cmd: `codex plugin marketplace add ${marketplace}` }, { cmd: 'codex plugin add framework-cloud@framework' }],
+                codexSignIn,
+            ],
+            manual: [
+                ['In a terminal, add the server:', { cmd: `codex mcp add framework --url ${props.mcpUrl}` }],
+                codexSignIn,
+            ],
         },
     }[app.value];
 });
@@ -144,7 +141,7 @@ const setup = computed(() => {
             </section>
 
             <section class="flex flex-col gap-4">
-                <p class="text-sm text-slate-500 dark:text-slate-400">Claude Code and Codex run on your computer, so they upload files themselves.</p>
+                <p class="text-sm text-slate-500 dark:text-slate-400">Use the tab for the app you work in. Claude Code and Codex run on your computer, so they upload files themselves.</p>
                 <UiTabs v-model="app" :tabs="apps" label="AI app" />
 
                 <SetupSteps v-if="plugin" :steps="setup.plugin" />
