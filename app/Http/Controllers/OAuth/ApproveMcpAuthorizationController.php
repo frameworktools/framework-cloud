@@ -49,7 +49,7 @@ class ApproveMcpAuthorizationController
                 ->where('user_id', $user->id)
                 ->where('oauth_client_id', $client->id)
                 ->get()
-                ->each(fn (McpConnection $old) => $old->revoke());
+                ->each(fn (McpConnection $old) => $old->revoke(McpConnection::ENDED_REPLACED));
 
             $token = $user->createToken(McpConnection::TOKEN_PREFIX.$client->name);
 

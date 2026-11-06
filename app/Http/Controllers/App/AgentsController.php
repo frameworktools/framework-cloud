@@ -19,6 +19,9 @@ class AgentsController extends Controller
 {
     public function index(Request $request): Response
     {
+        // Apps disconnected on their side, or unused past their refresh window, stop showing as connected
+        McpConnection::endExpired($request->user()->id);
+
         return Inertia::render('Agents/Index', [
             'mcpUrl' => url('/mcp'),
             'connections' => McpConnection::active()->where('user_id', $request->user()->id)->latest()->get()
@@ -36,14 +39,14 @@ class AgentsController extends Controller
     public function history(Request $request): Response
     {
         $titles = collect(ToolCatalog::tools())->map(fn (array $tool) => $tool['title']);
-        $calls = McpToolCall::where('user_id', $request->user()->id)->with('connection:id,client_name,revoked_at')
+        $calls = McpToolCall::where('user_id', $request->user()->id)->with('connection:id,client_name,revoked_at,ended_reason')
             ->latest('id')->paginate(50);
 
         return Inertia::render('Agents/History', [
             'calls' => $calls->through(fn (McpToolCall $call) => [
                 'id' => $call->id,
                 'agent' => $call->connection?->client_name,
-                'disconnected' => $call->connection?->revoked_at !== null,
+                'ended' => $call->connection?->revoked_at !== null ? McpConnection::endedLabel($call->connection->ended_reason) ?? 'disconnected' : null,
                 'tool' => $titles[$call->tool] ?? $call->tool,
                 'target' => $call->target,
                 'outcome' => $call->outcome,

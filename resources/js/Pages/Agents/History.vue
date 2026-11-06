@@ -40,7 +40,7 @@ const outcomes = {
                     <tbody>
                         <tr v-for="call in calls.data" :key="call.id">
                             <td><time :datetime="call.at_iso" :title="call.at_iso">{{ call.at }}</time></td>
-                            <td class="strong">{{ call.agent ?? 'Removed agent' }}<span v-if="call.disconnected" class="ms-1.5 text-xs font-normal text-slate-500">(disconnected)</span></td>
+                            <td class="strong">{{ call.agent ?? 'Removed agent' }}<span v-if="call.ended" class="ms-1.5 text-xs font-normal text-slate-500">({{ call.ended }})</span></td>
                             <td>{{ call.tool }}</td>
                             <td class="font-mono text-xs">{{ call.target ?? '' }}</td>
                             <td class="whitespace-normal">

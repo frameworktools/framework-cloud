@@ -68,7 +68,8 @@ that runs it.
 Under AI Agents, Connect your agent has the server address and setup steps for
 each app. After an agent connects, the page is named Connected agents and lists
 each agent with its access. Select Disconnect to end an agent's access. Its
-tokens stop working at once. To change an agent's access, disconnect it and
+tokens stop working at once. Disconnecting in the app also ends the connection
+here when the app reports it. A connection unused for 30 days expires. To change an agent's access, disconnect it and
 connect it again.
 
 The History tab lists each action an agent took, with the project and item it

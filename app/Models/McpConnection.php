@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Laravel\Passport\Client;
+use Laravel\Passport\RefreshToken;
 use Laravel\Passport\Token;
 use Laravel\Sanctum\PersonalAccessToken;
 
@@ -26,12 +27,21 @@ class McpConnection extends Model
 
     public const ACCESS_LEVELS = [self::ACCESS_FULL, self::ACCESS_READ];
 
+    /** How a connection ended (ended_reason). */
+    public const ENDED_BY_USER = 'user';
+
+    public const ENDED_BY_APP = 'app';
+
+    public const ENDED_EXPIRED = 'expired';
+
+    public const ENDED_REPLACED = 'replaced';
+
     /** The hidden API token's name, so the API tokens page can leave it out. */
     public const TOKEN_PREFIX = 'AI app: ';
 
     protected $fillable = [
         'user_id', 'oauth_client_id', 'client_name', 'redirect_host',
-        'access', 'personal_access_token_id', 'api_key', 'last_used_at', 'revoked_at',
+        'access', 'personal_access_token_id', 'api_key', 'last_used_at', 'revoked_at', 'ended_reason',
     ];
 
     protected $hidden = ['api_key'];
@@ -75,8 +85,45 @@ class McpConnection extends Model
         };
     }
 
+    /**
+     * Whether the app can no longer get in: none of its access or refresh tokens
+     * is still valid. A connection gets an hour after approval to trade its code
+     * for tokens before it counts.
+     */
+    public function hasExpired(): bool
+    {
+        if ($this->created_at === null || $this->created_at->gt(now()->subHour())) {
+            return false;
+        }
+
+        $tokens = Token::query()->where('client_id', $this->oauth_client_id)->where('user_id', $this->user_id)->where('revoked', false);
+
+        return ! (clone $tokens)->where('expires_at', '>', now())->exists()
+            && ! RefreshToken::query()->whereIn('access_token_id', (clone $tokens)->select('id'))
+                ->where('revoked', false)->where('expires_at', '>', now())->exists();
+    }
+
+    /** End a user's connections whose apps can no longer get in, such as one disconnected in the app. */
+    public static function endExpired(int $userId): void
+    {
+        static::query()->active()->where('user_id', $userId)->where('created_at', '<', now()->subHour())->get()
+            ->filter(fn (McpConnection $connection) => $connection->hasExpired())
+            ->each(fn (McpConnection $connection) => $connection->revoke(self::ENDED_EXPIRED));
+    }
+
+    public static function endedLabel(?string $reason): ?string
+    {
+        return match ($reason) {
+            self::ENDED_BY_USER => 'disconnected',
+            self::ENDED_BY_APP => 'disconnected in the app',
+            self::ENDED_EXPIRED => 'expired',
+            self::ENDED_REPLACED => 'reconnected',
+            default => null,
+        };
+    }
+
     /** Cut the app off: its OAuth tokens, its refresh tokens, and its API token. */
-    public function revoke(): void
+    public function revoke(string $reason = self::ENDED_BY_USER): void
     {
         $tokens = Token::query()
             ->where('client_id', $this->oauth_client_id)
@@ -90,6 +137,6 @@ class McpConnection extends Model
 
         $this->apiToken?->delete();
 
-        $this->forceFill(['revoked_at' => now(), 'personal_access_token_id' => null])->save();
+        $this->forceFill(['revoked_at' => now(), 'personal_access_token_id' => null, 'ended_reason' => $reason])->save();
     }
 }

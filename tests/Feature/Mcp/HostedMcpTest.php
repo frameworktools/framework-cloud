@@ -31,6 +31,10 @@ class HostedMcpTest extends TestCase
 
     private static ?array $keys = null;
 
+    private ?string $lastRefreshToken = null;
+
+    private ?string $lastClientId = null;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -86,13 +90,16 @@ class HostedMcpTest extends TestCase
         parse_str((string) parse_url($approved->headers->get('Location'), PHP_URL_QUERY), $query);
         $this->assertSame('state-1', $query['state']);
 
-        $token = $this->postJson('/oauth/token', [
+        $issued = $this->postJson('/oauth/token', [
             'grant_type' => 'authorization_code',
             'client_id' => $clientId,
             'redirect_uri' => $redirect,
             'code_verifier' => $verifier,
             'code' => $query['code'],
-        ])->assertOk()->json('access_token');
+        ])->assertOk();
+        $token = $issued->json('access_token');
+        $this->lastRefreshToken = $issued->json('refresh_token');
+        $this->lastClientId = $clientId;
 
         // Not logout(): Passport's controller keeps the guard it was built with across a test's requests
         app('auth')->forgetGuards();
@@ -543,5 +550,54 @@ class HostedMcpTest extends TestCase
 
         $this->delete("/artifacts/{$document->id}/projects/{$thesis->id}")->assertRedirect();
         $this->assertSame(0, $document->linkedProjects()->count());
+    }
+
+    public function test_an_app_revoking_its_token_ends_the_connection(): void
+    {
+        $user = $this->owner();
+        $token = $this->connect($user, McpConnection::ACCESS_READ);
+
+        $this->getJson('/.well-known/oauth-authorization-server')->assertJsonPath('revocation_endpoint', url('/oauth/revoke'));
+
+        // Nonsense, and another client's claim, change nothing
+        $this->post('/oauth/revoke', ['token' => 'nonsense'])->assertOk();
+        $this->post('/oauth/revoke', ['token' => $token, 'client_id' => 'someone-else'])->assertOk();
+        $this->assertNull(McpConnection::sole()->revoked_at);
+
+        $this->post('/oauth/revoke', ['token' => $token, 'token_type_hint' => 'access_token', 'client_id' => $this->lastClientId])->assertOk();
+
+        $connection = McpConnection::sole();
+        $this->assertNotNull($connection->revoked_at);
+        $this->assertSame(McpConnection::ENDED_BY_APP, $connection->ended_reason);
+        app('auth')->forgetGuards();
+        $this->withToken($token)->postJson('/mcp', ['jsonrpc' => '2.0', 'id' => 1, 'method' => 'tools/list'])->assertUnauthorized();
+    }
+
+    public function test_revoking_a_refresh_token_ends_the_connection(): void
+    {
+        $user = $this->owner();
+        $this->connect($user, McpConnection::ACCESS_READ);
+
+        $this->post('/oauth/revoke', ['token' => $this->lastRefreshToken])->assertOk();
+
+        $this->assertSame(McpConnection::ENDED_BY_APP, McpConnection::sole()->ended_reason);
+        $this->assertSame(0, PersonalAccessToken::count());
+    }
+
+    public function test_a_connection_whose_tokens_lapsed_shows_as_ended(): void
+    {
+        $user = $this->owner();
+        $token = $this->connect($user, McpConnection::ACCESS_READ);
+        $this->tool($token, 'projects_list');
+        app('auth')->forgetGuards();
+
+        $nav = fn () => collect($this->actingAs($user)->get('/agents')->viewData('page')['props']['nav'])->firstWhere('href', '/agents')['label'];
+        $this->travel(2)->days();
+        $this->assertSame('Connected agents', $nav());
+
+        $this->travel(31)->days();
+        $this->assertSame('Connect your agent', $nav());
+        $this->assertSame(McpConnection::ENDED_EXPIRED, McpConnection::sole()->ended_reason);
+        $this->get('/agents/history')->assertInertia(fn (AssertableInertia $page) => $page->where('calls.data.0.ended', 'expired'));
     }
 }

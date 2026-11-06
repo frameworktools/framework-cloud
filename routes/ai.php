@@ -3,6 +3,7 @@
 use App\Http\Controllers\OAuth\ApproveMcpAuthorizationController;
 use App\Http\Controllers\OAuth\OAuthMetadataController;
 use App\Http\Controllers\OAuth\RegisterMcpClientController;
+use App\Http\Controllers\OAuth\RevokeTokenController;
 use App\Http\Middleware\ResolveMcpConnection;
 use App\Mcp\FrameworkServer;
 use Illuminate\Support\Facades\Route;
@@ -30,6 +31,10 @@ Route::prefix('oauth')->name('passport.')->group(function () {
     Route::post('/register', RegisterMcpClientController::class)
         ->middleware('throttle:mcp-oauth')
         ->name('register');
+
+    Route::post('/revoke', RevokeTokenController::class)
+        ->middleware('throttle:mcp-oauth')
+        ->name('revoke');
 
     Route::post('/token', [AccessTokenController::class, 'issueToken'])
         ->middleware('throttle:mcp-oauth')

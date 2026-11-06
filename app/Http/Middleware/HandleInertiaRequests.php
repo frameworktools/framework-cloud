@@ -41,7 +41,8 @@ class HandleInertiaRequests extends Middleware
 
             // Sidebar groups: main (no section), Framework, Agents, and the
             // utility items (You) at the bottom. Packages may append items here.
-            'nav' => array_values(array_filter([
+            // Resolved when the page renders, after the controller (the Agents page may end expired connections)
+            'nav' => fn () => array_values(array_filter([
                 ['label' => 'Default settings', 'href' => '/settings/language', 'match' => '/settings'],
                 ['label' => 'Artifacts', 'href' => '/published', 'match' => ['/published', '/artifacts'], 'section' => 'Your research'],
                 ['label' => 'Collections', 'href' => '/collections', 'section' => 'Your research'],

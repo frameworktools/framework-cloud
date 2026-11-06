@@ -62,6 +62,6 @@ return Application::configure(basePath: dirname(__DIR__))
         // API clients (curl, Stata, scripts) may omit Accept: application/json.
         // They still get a JSON 401 or 422, never a redirect to the login page.
         $exceptions->shouldRenderJsonWhen(
-            fn (Request $request) => $request->is('api/*', 'mcp', 'oauth/token', 'oauth/register') || $request->expectsJson(),
+            fn (Request $request) => $request->is('api/*', 'mcp', 'oauth/token', 'oauth/register', 'oauth/revoke') || $request->expectsJson(),
         );
     })->create();
