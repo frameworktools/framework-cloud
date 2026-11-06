@@ -74,8 +74,8 @@ const destroy = async () => {
         <Link href="/skills" class="text-sm text-slate-500 hover:underline">Skills</Link>
         <PageHeader :title="skill ? skill.name : 'New skill'">
             <template #description>
-                <code class="font-mono">name</code> identifies the skill to assistants.
-                <code class="font-mono">description</code> tells assistants when to load the skill.
+                In the SKILL.md front matter, the <code class="font-mono">name</code> field identifies the skill to assistants,
+                and <code class="font-mono">description</code> tells them when to load it.
                 <code class="font-mono">metadata.title</code> sets its display name.
                 <template v-if="skill?.is_system"> Framework skills use the canonical copy for each environment.</template>
             </template>

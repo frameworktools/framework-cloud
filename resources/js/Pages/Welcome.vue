@@ -244,7 +244,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                 <UiRadioCards v-if="step.key === 'language'" v-model="draft.language" name="language" :legend="step.title" hide-legend :options="languageOptions" stacked />
 
                 <div v-else-if="step.key === 'project'" class="flex flex-col gap-3">
-                    <p :class="note">These recommended structures organize your files from a small analysis to a larger project. Choose a default here; you can use a different structure for each project.</p>
+                    <p :class="note">These structures suit anything from a small analysis to a larger project. Choose a default here. Each project can still use a different one.</p>
                     <p class="text-sm text-slate-500 dark:text-slate-400">Choose Bare for a custom folder layout. You can also <Link href="/structures/create" class="text-sky-600 hover:underline dark:text-sky-400" @click="remember">create a custom project structure</Link>.</p>
                     <p v-if="problems.project" class="text-sm text-amber-800 dark:text-amber-300" role="alert">{{ problems.project }}</p>
                     <!-- The chosen structure's folders beside the choices -->

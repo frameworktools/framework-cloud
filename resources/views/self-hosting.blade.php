@@ -20,7 +20,7 @@
 
         $includes = [
             ['heroicon-o-square-3-stack-3d', 'Blueprints and projects', 'Built-in and custom blueprints, skills, and project setup. Projects can be local or on GitHub.'],
-            ['heroicon-o-paper-airplane', 'Artifact publishing', 'Every account can publish artifacts. Framework Public Cloud includes 1 GB of artifact storage.'],
+            ['heroicon-o-paper-airplane', 'Artifact publishing', 'Every account can publish artifacts. You set the storage, on the server or in a bucket.'],
             ['heroicon-o-user-circle', 'Account management', 'Email links, passkeys, passwords, and optional GitHub sign-in. Registration is configurable.'],
             ['heroicon-o-computer-desktop', 'Single-user mode', 'Local installation with no sign-in screen. Requests from that computer are signed in as you.'],
         ];

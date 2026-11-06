@@ -17,7 +17,7 @@
 <section id="data" class="border-t border-slate-800/10 py-14 sm:py-20 dark:border-white/10">
     <div class="mx-auto max-w-3xl text-center">
         <h2 class="text-3xl font-semibold tracking-tight">Data security and integrity</h2>
-        <p class="mt-4 leading-relaxed text-slate-600 dark:text-slate-400">Framework makes it easy to keep your data secure, prevent accidental changes, and prove its integrity to collaborators and reviewers.</p>
+        <p class="mt-4 leading-relaxed text-slate-600 dark:text-slate-400">Framework keeps private data out of Git, guards inputs against accidental changes, and records fingerprints you can show collaborators and reviewers.</p>
     </div>
     <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         @foreach ([

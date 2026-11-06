@@ -97,7 +97,7 @@
                                             <x-dynamic-component :component="$item['icon']" class="size-3.5 shrink-0 text-slate-500 group-hover:text-emerald-600 dark:group-hover:text-emerald-300" />
                                             <span class="w-12 shrink-0 text-slate-500">{{ $item['kind'] }}</span>
                                             <span class="truncate font-mono text-slate-800 group-hover:text-slate-950 dark:text-slate-200 dark:group-hover:text-white">{{ $item['slug'] }}</span>
-                                            @if ($base)<span class="ml-auto shrink-0 text-slate-500 group-hover:text-emerald-600 dark:group-hover:text-emerald-300">(Click to view)</span>@endif
+                                            @if ($base)<span class="ml-auto shrink-0 text-slate-500 group-hover:text-emerald-600 dark:group-hover:text-emerald-300">View</span>@endif
                                         </a>
                                     </li>
                                 @endforeach

@@ -8,7 +8,7 @@
             ['settings-hooks', 'Stop commits that contain secrets, private folders, or notebook outputs.', 'Data safety hooks: secret detection, private folder warnings, and notebook output checks, all switched on'],
             ['settings-quarto', 'Set the theme, contents, and code options for documents.', 'Quarto defaults for HTML documents: theme, table of contents, and code options'],
         ]],
-        'templates' => ['Templates', 'Manage AI skills, .gitignore rules, folder layouts, and package sets.', [
+        'templates' => ['Project pieces', 'Manage AI skills, .gitignore rules, folder layouts, and package sets.', [
             ['template-gitignore', 'Edit the rules that keep private data out of Git.', 'Project structure editor with its .gitignore rules for private data and credentials'],
             ['template-skills', 'Copy, edit, or import the skills your AI agent uses.', 'AI agent skills for R, Python, and Stata, with tags and Copy and edit'],
             ['template-package-sets', 'Group packages you use together and add them in one step.', 'Package sets that add a group of packages to a project'],
