@@ -131,7 +131,9 @@ class ArtifactsController extends Controller
             'expires_at' => $upload->expires_at->toIso8601String(),
             'max_bytes' => self::MAX_UPLOAD_BYTES,
             'command' => "curl -sS --fail-with-body -X PUT -H 'Content-Type: application/octet-stream' --data-binary @".escapeshellarg($data['filename'])." '".$url."'",
-            'note' => 'Run the command from the folder with the file, or replace the path after @. The link works once.',
+            'note' => 'Run the command from the folder with the file, or replace the path after @. The link works once. '
+                .'If a sandbox blocks '.parse_url($url, PHP_URL_HOST).', as Claude\'s does by default, tell the user to add '
+                .parse_url($url, PHP_URL_HOST).' exactly to Settings, Capabilities, allowed websites, and to start a new chat. Or give them the command to run.',
         ], 201);
     }
 
