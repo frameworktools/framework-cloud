@@ -296,7 +296,9 @@ class HostedMcpTest extends TestCase
         $this->get('/agents')->assertInertia(fn (AssertableInertia $page) => $page->where('plugin', false));
 
         config(['framework.agent_plugin' => true]);
-        $this->get('/agents')->assertInertia(fn (AssertableInertia $page) => $page->where('plugin', true));
+        $this->get('/agents')->assertInertia(fn (AssertableInertia $page) => $page->where('plugin', true)->where('app', 'claude'));
+        $this->get('/agents/setup/codex')->assertInertia(fn (AssertableInertia $page) => $page->component('Agents/Index')->where('app', 'codex'));
+        $this->get('/agents/setup/elsewhere')->assertNotFound();
     }
 
     public function test_disconnecting_cuts_the_app_off(): void
@@ -313,7 +315,7 @@ class HostedMcpTest extends TestCase
         // It stays in the connection history, marked as ended
         $this->get('/agents')->assertInertia(fn (AssertableInertia $page) => $page->where('active', false));
         $this->get('/agents/connections')->assertInertia(fn (AssertableInertia $page) => $page
-            ->where('connectionCount', 0)->where('connections.0.status', 'Disconnected')->where('connections.0.active', false));
+            ->where('connections.0.status', 'Disconnected')->where('connections.0.active', false));
         auth()->guard('web')->logout();
         app('auth')->forgetGuards();
 

@@ -19,30 +19,35 @@ use Inertia\Response;
  */
 class AgentsController extends Controller
 {
-    public function index(Request $request): Response
+    /** The apps with setup steps; the first is the section's landing page. */
+    public const APPS = ['claude', 'chatgpt', 'claude-code', 'codex'];
+
+    /** Setup steps for one app. */
+    public function index(Request $request, string $app = 'claude'): Response
     {
+        abort_unless(in_array($app, self::APPS, true), 404);
         // Apps disconnected on their side, or unused past their refresh window, stop showing as connected
         McpConnection::endExpired($request->user()->id);
 
         return Inertia::render('Agents/Index', [
+            'app' => $app,
             'mcpUrl' => url('/mcp'),
             'plugin' => (bool) (config('framework.agent_plugin') ?? url('/mcp') === 'https://framework.pub/mcp'),
             'active' => McpConnection::active()->where('user_id', $request->user()->id)->exists(),
-            'approvedApps' => McpApprovedApp::where('user_id', $request->user()->id)->orderBy('client_name')->get()
-                ->map(fn (McpApprovedApp $app) => [
-                    'id' => $app->id, 'name' => $app->client_name, 'host' => $app->redirect_host,
-                    'access' => $app->access, 'approved_at' => $app->updated_at->diffForHumans(),
-                ]),
-            ...$this->counts($request),
         ]);
     }
 
-    /** Each time the user approved an agent: active connections, then those that ended in the last 90 days. */
+    /** Approved apps, then each time the user approved an agent: active connections, then those that ended in the last 90 days. */
     public function connections(Request $request): Response
     {
         McpConnection::endExpired($request->user()->id);
 
         return Inertia::render('Agents/Connections', [
+            'approvedApps' => McpApprovedApp::where('user_id', $request->user()->id)->orderBy('client_name')->get()
+                ->map(fn (McpApprovedApp $app) => [
+                    'id' => $app->id, 'name' => $app->client_name, 'host' => $app->redirect_host,
+                    'access' => $app->access, 'approved_at' => $app->updated_at->diffForHumans(),
+                ]),
             'connections' => McpConnection::where('user_id', $request->user()->id)
                 ->where(fn ($query) => $query->whereNull('revoked_at')->orWhere('revoked_at', '>', now()->subDays(90)))
                 ->orderByRaw('revoked_at is not null')->latest()->limit(50)->get()
@@ -55,17 +60,7 @@ class AgentsController extends Controller
                     'created_at' => $connection->created_at->diffForHumans(),
                     'last_used_at' => $connection->last_used_at?->diffForHumans(),
                 ]),
-            ...$this->counts($request),
         ]);
-    }
-
-    /** Counts for the Agents tabs. */
-    private function counts(Request $request): array
-    {
-        return [
-            'connectionCount' => McpConnection::active()->where('user_id', $request->user()->id)->count(),
-            'historyCount' => McpToolCall::where('user_id', $request->user()->id)->count(),
-        ];
     }
 
     /** Change the access a remembered app gets when it connects again. Its current connection keeps its own. */
@@ -105,7 +100,6 @@ class AgentsController extends Controller
                 'at_iso' => $call->created_at->toIso8601String(),
             ]),
             'keepDays' => McpToolCall::KEEP_DAYS,
-            ...$this->counts($request),
         ]);
     }
 

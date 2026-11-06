@@ -1,14 +1,22 @@
 <script setup>
 import { router } from '@inertiajs/vue3';
 import { ask } from '@/confirm.js';
-import AppLayout from '@/Layouts/AppLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import UiBadge from '@/Components/UiBadge.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiTable from '@/Components/UiTable.vue';
-import AgentsTabs from './AgentsTabs.vue';
+import AgentsLayout from './AgentsLayout.vue';
 
-defineProps({ connections: Array, connectionCount: Number, historyCount: Number });
+defineProps({ approvedApps: { type: Array, default: () => [] }, connections: Array });
+
+// Web apps approved once reconnect with this access, without the consent screen
+const accessOptions = [{ value: 'full', label: 'Full access' }, { value: 'read', label: 'Read only' }];
+const setAccess = (app, access) => router.patch(`/agents/apps/${app.id}`, { access }, { preserveScroll: true });
+const forget = async (app) => {
+    if (await ask(`Forget ${app.name}? It asks for approval the next time it connects. Its current connection stays.`)) {
+        router.delete(`/agents/apps/${app.id}`, { preserveScroll: true });
+    }
+};
 
 const disconnect = async (connection) => {
     if (await ask(`Disconnect ${connection.name}? It loses access to your account at once.`)) {
@@ -20,18 +28,42 @@ const disconnect = async (connection) => {
 <template>
     <Head title="Agent connections" />
 
-    <AppLayout>
-        <div class="flex max-w-4xl flex-col gap-8">
-            <div class="flex flex-col gap-6">
-                <PageHeader title="Agent connections">
-                    <template #description>
-                        Each approval, with ended connections from the last 90 days.
-                        Removing an app in Claude or ChatGPT does not end its connection here. Disconnect it here, or it ends after 30 days unused.
-                    </template>
-                </PageHeader>
-                <AgentsTabs :connection-count="connectionCount" :history-count="historyCount" />
-            </div>
+    <AgentsLayout>
+        <div class="flex flex-col gap-8">
+            <PageHeader title="Agent connections">
+                <template #description>
+                    Removing an app in Claude or ChatGPT does not end its connection here. Disconnect it here, or it ends after 30 days unused.
+                </template>
+            </PageHeader>
 
+            <section v-if="approvedApps.length" class="flex flex-col gap-3">
+                <div>
+                    <h2 class="text-base font-medium text-slate-900 dark:text-white">Approved apps</h2>
+                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">These apps reconnect with this access without asking. Apps on your computer always ask.</p>
+                </div>
+                <UiTable label="Approved apps">
+                    <thead><tr><th>App</th><th>Access</th><th>Approved</th><th class="actions"><span class="sr-only">Actions</span></th></tr></thead>
+                    <tbody>
+                        <tr v-for="approved in approvedApps" :key="approved.id">
+                            <td class="strong">{{ approved.name }} <span class="font-normal text-slate-500">({{ approved.host }})</span></td>
+                            <td>
+                                <select :value="approved.access" :aria-label="`Access for ${approved.name}`" class="rounded-md border border-slate-800/15 bg-white py-1 pr-8 pl-2 text-sm text-slate-800 dark:border-white/15 dark:bg-slate-900 dark:text-white"
+                                    @change="setAccess(approved, $event.target.value)">
+                                    <option v-for="option in accessOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+                                </select>
+                            </td>
+                            <td>{{ approved.approved_at }}</td>
+                            <td class="actions"><UiButton variant="ghost" size="sm" @click="forget(approved)">Forget</UiButton></td>
+                        </tr>
+                    </tbody>
+                </UiTable>
+            </section>
+
+            <section class="flex flex-col gap-3">
+                <div>
+                    <h2 class="text-base font-medium text-slate-900 dark:text-white">Connection history</h2>
+                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Each approval, with ended connections from the last 90 days.</p>
+                </div>
             <template v-if="connections.length">
                 <UiTable label="Agent connections">
                     <thead>
@@ -51,6 +83,7 @@ const disconnect = async (connection) => {
                 <p class="text-sm text-slate-500 dark:text-slate-400">To change an agent's access, disconnect it and connect it again.</p>
             </template>
             <p v-else class="text-sm text-slate-500 dark:text-slate-400">No connections yet. When you approve an agent, it will appear here.</p>
+            </section>
         </div>
-    </AppLayout>
+    </AgentsLayout>
 </template>

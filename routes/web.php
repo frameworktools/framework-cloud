@@ -215,6 +215,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // AI agents connected over MCP; the server and its OAuth sign-in are in routes/ai.php
     Route::middleware(EnsureAgentsEnabled::class)->group(function () {
         Route::get('agents', [AgentsController::class, 'index'])->name('agents');
+        Route::get('agents/setup/{app}', [AgentsController::class, 'index'])->name('agents.setup');
         Route::get('agents/connections', [AgentsController::class, 'connections'])->name('agents.connections');
         Route::get('agents/history', [AgentsController::class, 'history'])->name('agents.history');
         Route::delete('agents/{connection}', [AgentsController::class, 'destroy'])->whereNumber('connection');

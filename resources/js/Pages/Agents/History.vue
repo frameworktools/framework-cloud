@@ -1,12 +1,11 @@
 <script setup>
-import AppLayout from '@/Layouts/AppLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import UiBadge from '@/Components/UiBadge.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiTable from '@/Components/UiTable.vue';
-import AgentsTabs from './AgentsTabs.vue';
+import AgentsLayout from './AgentsLayout.vue';
 
-defineProps({ calls: Object, keepDays: Number, connectionCount: Number, historyCount: Number });
+defineProps({ calls: Object, keepDays: Number });
 
 const outcomes = {
     ok: ['green', 'Done'],
@@ -19,15 +18,14 @@ const outcomes = {
 <template>
     <Head title="Agent history" />
 
-    <AppLayout>
-        <div class="flex max-w-4xl flex-col gap-8">
+    <AgentsLayout>
+        <div class="flex flex-col gap-8">
             <div class="flex flex-col gap-6">
                 <PageHeader title="Agent history">
                     <template #description>
                         Each action a connected agent took, newest first. Kept for {{ keepDays }} days. Request contents are not stored.
                     </template>
                 </PageHeader>
-                <AgentsTabs :connection-count="connectionCount" :history-count="historyCount" />
             </div>
 
             <template v-if="calls.data.length">
@@ -58,5 +56,5 @@ const outcomes = {
             </template>
             <p v-else class="text-sm text-slate-500 dark:text-slate-400">No activity yet. When an agent takes an action, it will appear here.</p>
         </div>
-    </AppLayout>
+    </AgentsLayout>
 </template>

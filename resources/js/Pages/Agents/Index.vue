@@ -1,30 +1,13 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { router } from '@inertiajs/vue3';
-import { ask } from '@/confirm.js';
-import AppLayout from '@/Layouts/AppLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import UiButton from '@/Components/UiButton.vue';
-import UiTabs from '@/Components/UiTabs.vue';
-import UiTable from '@/Components/UiTable.vue';
-import AgentsTabs from './AgentsTabs.vue';
+import AgentsLayout from './AgentsLayout.vue';
 import SetupSteps from './SetupSteps.vue';
 import { CheckIcon, ClipboardDocumentIcon } from '@heroicons/vue/24/outline';
 import { ChevronRightIcon } from '@heroicons/vue/20/solid';
 
-const props = defineProps({
-    mcpUrl: String, plugin: Boolean, active: Boolean, connectionCount: Number, historyCount: Number,
-    approvedApps: { type: Array, default: () => [] },
-});
-
-// Web apps approved once reconnect with this access, without the consent screen
-const accessOptions = [{ value: 'full', label: 'Full access' }, { value: 'read', label: 'Read only' }];
-const setAccess = (app, access) => router.patch(`/agents/apps/${app.id}`, { access }, { preserveScroll: true });
-const forget = async (app) => {
-    if (await ask(`Forget ${app.name}? It asks for approval the next time it connects. Its current connection stays.`)) {
-        router.delete(`/agents/apps/${app.id}`, { preserveScroll: true });
-    }
-};
+const props = defineProps({ app: String, mcpUrl: String, plugin: Boolean, active: Boolean });
 
 const copied = ref(false);
 async function copy() {
@@ -32,15 +15,6 @@ async function copy() {
     copied.value = true;
     setTimeout(() => (copied.value = false), 1500);
 }
-
-// Desktop and web apps first, then the terminal tools, so each tab is one way of working
-const app = ref('claude');
-const apps = [
-    { value: 'claude', label: 'Claude' },
-    { value: 'chatgpt', label: 'ChatGPT' },
-    { value: 'claude-code', label: 'Claude Code CLI' },
-    { value: 'codex', label: 'Codex CLI' },
-];
 
 // The Framework Cloud plugin connects to framework.pub only; other servers show manual setup alone
 const marketplace = 'frameworktools/plugins';
@@ -54,6 +28,8 @@ const setup = computed(() => {
 
     return {
         claude: {
+            title: 'Claude',
+            description: 'The Claude desktop app and claude.ai. Framework Cloud then works in chats and in Claude Code inside the desktop app.',
             plugin: [
                 ['In the Claude desktop app or on claude.ai, open Customize, then Plugins. Select Add, then Add marketplace, and enter ', { code: marketplace }, '.'],
                 ['Under Discover, add Framework Cloud.'],
@@ -66,9 +42,11 @@ const setup = computed(() => {
                 [signIn],
                 allowHost,
             ],
-            note: 'Framework Cloud then works in chats and in Claude Code inside the desktop app. On Team and Enterprise plans, an owner adds custom connectors.',
+            note: 'On Team and Enterprise plans, an owner adds custom connectors.',
         },
         chatgpt: {
+            title: 'ChatGPT',
+            description: 'The ChatGPT desktop app, or chatgpt.com with developer mode.',
             plugin: [
                 ['In the ChatGPT desktop app, open Settings, then Plugins. Select Add, then Add a marketplace, and enter ', { code: marketplace }, '.'],
                 ['Install Framework Cloud.'],
@@ -82,6 +60,8 @@ const setup = computed(() => {
             note: 'On chatgpt.com, open Settings, then Apps and connectors. Turn on Developer mode, then select Create.',
         },
         'claude-code': {
+            title: 'Claude Code CLI',
+            description: 'Claude Code in a terminal. It runs on your computer, so it uploads files itself.',
             plugin: [
                 ['In a terminal, add the plugin:', { cmd: `claude plugin marketplace add ${marketplace}` }, { cmd: 'claude plugin install framework-cloud@framework' }],
                 claudeCodeSignIn,
@@ -92,6 +72,8 @@ const setup = computed(() => {
             ],
         },
         codex: {
+            title: 'Codex CLI',
+            description: 'Codex in a terminal. It runs on your computer, so it uploads files itself.',
             plugin: [
                 ['In a terminal, add the plugin:', { cmd: `codex plugin marketplace add ${marketplace}` }, { cmd: 'codex plugin add framework-cloud@framework' }],
                 codexSignIn,
@@ -101,56 +83,25 @@ const setup = computed(() => {
                 codexSignIn,
             ],
         },
-    }[app.value];
+    }[props.app];
 });
 </script>
 
 <template>
-    <Head :title="active ? 'Connected agents' : 'Connect your agent'" />
+    <Head :title="`${setup.title} setup`" />
 
-    <AppLayout>
-        <div class="flex max-w-4xl flex-col gap-8">
-            <div class="flex flex-col gap-6">
-                <PageHeader :title="active ? 'Connected agents' : 'Connect your agent'">
-                    <template #description>Connect Claude, ChatGPT, or another AI agent to your account. You approve each agent and choose its access.</template>
-                </PageHeader>
-                <AgentsTabs :connection-count="connectionCount" :history-count="historyCount" />
-            </div>
+    <AgentsLayout>
+        <div class="flex flex-col gap-8">
+            <PageHeader :title="setup.title" :description="setup.description" />
 
-            <section v-if="approvedApps.length" class="flex flex-col gap-3">
-                <div>
-                    <h2 class="text-base font-medium text-slate-900 dark:text-white">Approved apps</h2>
-                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">These apps reconnect with this access without asking. Apps on your computer always ask.</p>
-                </div>
-                <UiTable label="Approved apps">
-                    <thead><tr><th>App</th><th>Access</th><th>Approved</th><th class="actions"><span class="sr-only">Actions</span></th></tr></thead>
-                    <tbody>
-                        <tr v-for="approved in approvedApps" :key="approved.id">
-                            <td class="strong">{{ approved.name }} <span class="font-normal text-slate-500">({{ approved.host }})</span></td>
-                            <td>
-                                <select :value="approved.access" :aria-label="`Access for ${approved.name}`" class="rounded-md border border-slate-800/15 bg-white py-1 pr-8 pl-2 text-sm text-slate-800 dark:border-white/15 dark:bg-slate-900 dark:text-white"
-                                    @change="setAccess(approved, $event.target.value)">
-                                    <option v-for="option in accessOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-                                </select>
-                            </td>
-                            <td>{{ approved.approved_at }}</td>
-                            <td class="actions"><UiButton variant="ghost" size="sm" @click="forget(approved)">Forget</UiButton></td>
-                        </tr>
-                    </tbody>
-                </UiTable>
-            </section>
-
-            <section class="flex flex-col gap-4">
-                <p class="text-sm text-slate-500 dark:text-slate-400">Use the tab for the app you work in. Claude Code and Codex run on your computer, so they upload files themselves.</p>
-                <UiTabs v-model="app" :tabs="apps" label="AI app" />
-
+            <section class="flex flex-col gap-5">
                 <SetupSteps v-if="plugin" :steps="setup.plugin" />
 
                 <component :is="plugin ? 'details' : 'div'" class="group">
                     <summary v-if="plugin" class="flex cursor-pointer list-none items-center gap-1 text-sm font-medium text-slate-800 dark:text-slate-200 [&::-webkit-details-marker]:hidden">
                         <ChevronRightIcon class="size-4 text-slate-500 transition-transform group-open:rotate-90" aria-hidden="true" />Manual setup
                     </summary>
-                    <div class="flex flex-col gap-4" :class="plugin && 'mt-4'">
+                    <div class="flex flex-col gap-5" :class="plugin && 'mt-5'">
                         <div class="flex w-full max-w-2xl items-center gap-2 rounded-lg bg-slate-800/5 py-1 ps-4 pe-1 dark:bg-white/10">
                             <code class="min-w-0 flex-1 truncate font-mono text-sm text-slate-900 dark:text-white">{{ mcpUrl }}</code>
                             <UiButton variant="ghost" size="sm" class="shrink-0" @click="copy">
@@ -164,7 +115,7 @@ const setup = computed(() => {
                 <p v-if="setup.note" class="text-sm text-slate-500 dark:text-slate-400">{{ setup.note }}</p>
             </section>
 
-            <section class="flex flex-col gap-3">
+            <section class="flex flex-col gap-3 border-t border-slate-800/10 pt-8 dark:border-white/15">
                 <h2 class="text-base font-medium text-slate-900 dark:text-white">Access levels</h2>
                 <dl class="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-[8rem_1fr]">
                     <dt class="font-medium text-slate-800 dark:text-slate-200">Full access</dt>
@@ -175,5 +126,5 @@ const setup = computed(() => {
                 <p class="text-sm text-slate-500 dark:text-slate-400">Agents publish files up to 50 MB. What an agent reads goes to the company that runs it.</p>
             </section>
         </div>
-    </AppLayout>
+    </AgentsLayout>
 </template>

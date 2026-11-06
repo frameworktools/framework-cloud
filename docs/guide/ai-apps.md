@@ -123,16 +123,16 @@ that runs it.
 
 ## Connected agents
 
-Under AI Agents, Connect your agent has the setup steps for each app. After an
-agent connects, the page is named Connected agents. Its tabs are Setup,
-Connections, and History.
+Under AI Agents, Connect your agent has setup steps for each app: Claude,
+ChatGPT, Claude Code CLI, and Codex CLI. After an agent connects, the page is
+named Connected agents.
 
-Setup lists approved apps. A web app such as Claude or ChatGPT asks for
+Connections lists approved apps. A web app such as Claude or ChatGPT asks for
 approval once, then reconnects with the same access. Change its access or
 forget it there. Apps on your computer, such as Claude Code and Codex, always
 ask.
 
-Connections lists each approval and its access. Select Disconnect to end an
+It also lists each approval and its access. Select Disconnect to end an
 agent's access. Its tokens stop working at once. Removing a connector in Claude
 or ChatGPT does not end the connection here. A connection unused for 30 days
 ends on its own. To change an agent's access, disconnect it and connect it
