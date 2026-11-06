@@ -54,9 +54,9 @@ const setup = computed(() => {
         'claude-code': {
             toggle: ['To switch to Claude Code in the Claude desktop app, select ', { code: '</>' }, ' at the top of the window.'],
             sections: [
-                { title: 'Using the Claude Code app', plugin: claudePlugin, manual: claudeConnector },
+                { title: 'Connect with the Claude Code app', plugin: claudePlugin, manual: claudeConnector },
                 {
-                    title: 'Using the Claude Code CLI',
+                    title: 'Connect with the Claude Code CLI',
                     plugin: [['In a terminal, add the plugin:', { cmd: `claude plugin marketplace add ${marketplace}` }, { cmd: 'claude plugin install framework-cloud@framework' }], claudeCodeSignIn],
                     manual: [['In a terminal, add the server:', { cmd: `claude mcp add --transport http framework ${url}` }], claudeCodeSignIn],
                 },
@@ -66,9 +66,9 @@ const setup = computed(() => {
         codex: {
             toggle: ['To switch to Codex in the ChatGPT desktop app, open the ChatGPT menu at the top left and choose Codex.'],
             sections: [
-                { title: 'Using the Codex app', plugin: chatgptPlugin, manual: chatgptServer },
+                { title: 'Connect with the Codex app', plugin: chatgptPlugin, manual: chatgptServer },
                 {
-                    title: 'Using the Codex CLI',
+                    title: 'Connect with the Codex CLI',
                     plugin: [['In a terminal, add the plugin:', { cmd: `codex plugin marketplace add ${marketplace}` }, { cmd: 'codex plugin add framework-cloud@framework' }], codexSignIn],
                     manual: [['In a terminal, add the server:', { cmd: `codex mcp add framework --url ${url}` }], codexSignIn],
                 },
@@ -108,7 +108,7 @@ const label = 'text-sm font-semibold text-slate-900 dark:text-white';
                 <div v-for="(section, i) in setup.sections" :key="section.title ?? 'app'" class="flex flex-col gap-5" :class="i && 'border-t border-slate-800/10 pt-6 dark:border-white/15'">
                     <h3 v-if="section.title" class="text-base font-medium text-slate-900 dark:text-white">{{ section.title }}</h3>
                     <template v-if="plugin">
-                        <h4 :class="label">Using a plugin</h4>
+                        <h4 :class="label">Plugin</h4>
                         <SetupSteps :steps="section.plugin" />
                     </template>
                     <h4 :class="[label, plugin && 'mt-3']">Manual setup</h4>
