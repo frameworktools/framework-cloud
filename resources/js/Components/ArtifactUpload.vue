@@ -6,6 +6,7 @@ import UiInput from '@/Components/UiInput.vue';
 import UiPanel from '@/Components/UiPanel.vue';
 
 const props = defineProps({ projects: { type: Array, default: () => [] }, projectId: [Number, String] });
+const emit = defineEmits(['published']);
 const form = useForm({ project_id: props.projectId ?? props.projects[0]?.id ?? '', file: null, slug: '', title: '', description: '', visibility: 'unlisted', password: '', entrypoint: 'index.html' });
 const bundle = ref(false);
 const fileInput = ref(null);
@@ -19,7 +20,7 @@ const submit = () => form.transform((data) => {
 }).post(`/projects/${selectedProject.value}/artifacts`, {
     forceFormData: true,
     preserveScroll: true,
-    onSuccess: () => { form.reset('file', 'slug', 'title', 'description', 'password'); if (fileInput.value) fileInput.value.value = ''; },
+    onSuccess: () => { form.reset('file', 'slug', 'title', 'description', 'password'); if (fileInput.value) fileInput.value.value = ''; emit('published'); },
 });
 const fieldClass = 'w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100';
 </script>
@@ -49,13 +50,13 @@ const fieldClass = 'w-full rounded-md border border-slate-300 bg-white px-3 py-2
             <div class="grid gap-4 sm:grid-cols-2">
                 <label class="flex flex-col gap-1.5 text-sm font-medium">Sharing
                     <select v-model="form.visibility" :class="fieldClass">
-                        <option value="private">Private, owner only</option><option value="unlisted">Unlisted — anyone with the link</option>
-                        <option value="public">Public — enable a readable link</option>
+                        <option value="private">Private, only you</option><option value="unlisted">Anyone with the link</option>
+                        <option value="public">Public, with a readable link</option>
                     </select>
                 </label>
-                <UiInput v-model="form.password" type="password" label="Password (optional)" autocomplete="new-password" description="Readers need the password to open the artifact and its files." />
+                <UiInput v-model="form.password" type="password" label="Password (optional)" autocomplete="new-password" description="At least 8 characters. Readers need it to open the artifact and its files." />
             </div>
-            <p class="text-xs text-slate-500">Passwords require at least 8 characters. A blank password preserves existing protection during updates.</p>
+            <p class="text-xs text-slate-500">A new version keeps the current password when this field is blank.</p>
             <ul v-if="Object.keys(form.errors).length" role="alert" class="text-sm text-red-600 dark:text-red-400">
                 <li v-for="(error, key) in form.errors" :key="key">{{ error }}</li>
             </ul>

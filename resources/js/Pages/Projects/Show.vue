@@ -329,7 +329,7 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                 <template #actions>
                     <UiButton v-if="canPublish" :variant="publishing ? 'outline' : 'primary'" @click="publishing = !publishing">{{ publishing ? 'Close' : 'Publish an artifact' }}</UiButton>
                 </template>
-                <ArtifactUpload v-if="canPublish && publishing" :project-id="project.id" />
+                <ArtifactUpload v-if="canPublish && publishing" :project-id="project.id" @published="publishing = false" />
                 <UiTable v-if="project.documents.length" label="Published artifacts">
                     <thead>
                         <tr><th>Name</th><th class="max-sm:hidden">Kind</th><th class="max-xl:hidden">Sharing</th><th class="max-sm:hidden">Updated</th><th class="actions"><span class="sr-only">Actions</span></th></tr>

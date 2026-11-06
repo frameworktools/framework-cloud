@@ -1,5 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
+import { usePage } from '@inertiajs/vue3';
+import UiCallout from '@/Components/UiCallout.vue';
 import ArtifactUpload from '@/Components/ArtifactUpload.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import UiButton from '@/Components/UiButton.vue';
@@ -13,6 +15,8 @@ import { inputClass, selectClass } from '@/ui.js';
 
 const props = defineProps({ documents: Array, projects: { type: Array, default: () => [] }, canPublish: Boolean, handle: String, storage: Object });
 const uploading = ref(false);
+const page = usePage();
+const notices = { 'artifact-published': 'Artifact published.', 'document-deleted': 'Artifact taken down.' };
 const query = ref('');
 const project = ref('');
 const shown = computed(() => {
@@ -32,11 +36,11 @@ const date = (value) => new Date(value).toLocaleDateString(undefined, { year: 'n
                 <template #actions><UiButton v-if="canPublish && projects.length" :variant="uploading ? 'ghost' : 'primary'" @click="uploading = !uploading">{{ uploading ? 'Close' : 'Publish an artifact' }}</UiButton></template>
             </PageHeader>
 
-
+            <UiCallout v-if="notices[page.props.flash.status]" variant="success">{{ notices[page.props.flash.status] }}</UiCallout>
 
             <p v-if="storage?.limit" class="text-xs text-slate-500">Artifact storage: <span class="font-mono">{{ (storage.used / 1048576).toFixed(1) }} MB</span> of <span class="font-mono">{{ (storage.limit / 1073741824).toFixed(1) }} GB</span>. Versions share this limit.</p>
 
-            <ArtifactUpload v-if="canPublish && uploading" :projects="projects" />
+            <ArtifactUpload v-if="canPublish && uploading" :projects="projects" @published="uploading = false" />
 
             <template v-if="documents.length">
                 <div class="flex flex-wrap gap-3">
