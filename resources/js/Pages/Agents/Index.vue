@@ -38,7 +38,6 @@ const setup = computed(() => {
 
     return {
         claude: {
-            title: 'Claude',
             description: 'The Claude desktop app and claude.ai. Framework Cloud then works in chats and in Claude Code inside the desktop app.',
             plugin: [
                 ['In the Claude desktop app or on claude.ai, open Customize, then Plugins. Select Add, then Add marketplace, and enter ', { code: marketplace }, '.'],
@@ -55,7 +54,6 @@ const setup = computed(() => {
             note: 'On Team and Enterprise plans, an owner adds custom connectors.',
         },
         chatgpt: {
-            title: 'ChatGPT',
             description: 'The ChatGPT desktop app, or chatgpt.com with developer mode.',
             plugin: [
                 ['In the ChatGPT desktop app, open Settings, then Plugins. Select Add, then Add a marketplace, and enter ', { code: marketplace }, '.'],
@@ -70,7 +68,6 @@ const setup = computed(() => {
             note: 'On chatgpt.com, open Settings, then Apps and connectors. Turn on Developer mode, then select Create.',
         },
         'claude-code': {
-            title: 'Claude Code CLI',
             description: 'Claude Code in a terminal. It runs on your computer, so it uploads files itself.',
             plugin: [
                 ['In a terminal, add the plugin:', { cmd: `claude plugin marketplace add ${marketplace}` }, { cmd: 'claude plugin install framework-cloud@framework' }],
@@ -82,7 +79,6 @@ const setup = computed(() => {
             ],
         },
         codex: {
-            title: 'Codex CLI',
             description: 'Codex in a terminal. It runs on your computer, so it uploads files itself.',
             plugin: [
                 ['In a terminal, add the plugin:', { cmd: `codex plugin marketplace add ${marketplace}` }, { cmd: 'codex plugin add framework-cloud@framework' }],
