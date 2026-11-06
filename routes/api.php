@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\CliDeviceController;
 use App\Http\Controllers\Api\V1\DocumentsController;
 use App\Http\Controllers\Api\V1\LedgerController;
 use App\Http\Controllers\Api\V1\MeController;
+use App\Http\Controllers\Api\V1\TokenController;
 use App\Http\Controllers\Api\V1\ProjectPullController;
 use App\Http\Controllers\Api\V1\ProjectsController;
 use App\Http\Controllers\Api\V1\SettingsController;
@@ -35,6 +36,7 @@ Route::prefix('v1/cli')->group(function () {
 
 Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::get('/me', MeController::class);
+    Route::delete('/token', [TokenController::class, 'destroy']);
 
     // User-token endpoints
     Route::get('/settings', [SettingsController::class, 'show']);
