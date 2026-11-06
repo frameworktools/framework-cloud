@@ -11,6 +11,7 @@ defineProps({
     rows: { type: Number, default: 6 },
     code: Boolean, // monospace, no spellcheck: for YAML and Markdown sources
     optional: Boolean,
+    ariaLabel: String, // names a field that has no visible label
 });
 
 const id = useId();
@@ -21,7 +22,7 @@ const model = defineModel({ type: String, default: '' });
     <UiField :id="id" :label="label" :description="description" :error="error" :optional="optional">
         <textarea
             :id="id" v-model="model" :rows="rows" :placeholder="placeholder" :spellcheck="!code"
-            :aria-invalid="error ? 'true' : undefined" :class="[textareaClass, code && 'font-mono text-xs leading-relaxed']"
+            :aria-label="label ? undefined : ariaLabel" :aria-invalid="error ? 'true' : undefined" :class="[textareaClass, code && 'font-mono text-xs leading-relaxed']"
         />
     </UiField>
 </template>

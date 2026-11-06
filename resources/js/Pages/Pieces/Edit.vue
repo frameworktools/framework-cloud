@@ -170,7 +170,7 @@ const errorFor = (prefix) => Object.entries(form.errors).filter(([k]) => k.start
                 v-if="!isStructure" id="packages" title="Packages" class="scroll-mt-6"
                 :description="isSkillSet ? 'Packages these skills need. Projects that use the skill set get them.' : 'One package per line. For R, write owner/name to install from GitHub.'"
             >
-                <UiTextarea v-model="form.packages" code :rows="8" :placeholder="form.language === 'python' ? 'pandas\nmatplotlib' : 'dplyr\nggplot2'" :error="form.errors.packages" />
+                <UiTextarea v-model="form.packages" code :rows="8" aria-label="Packages" :placeholder="form.language === 'python' ? 'pandas\nmatplotlib' : 'dplyr\nggplot2'" :error="form.errors.packages" />
                 <UiTextarea
                     v-if="kind === 'package_set'" v-model="form.requirements" :rows="2" label="Requirements (optional)"
                     description="Anything the packages need that Framework doesn't install, such as Java or a C++ compiler."

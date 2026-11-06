@@ -122,7 +122,7 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
             <PageHeader :title="section === 'overview' ? project.name : sectionTitles[section]">
                 <template #description>
                     <template v-if="section === 'overview'">
-                        <span class="font-mono text-xs">{{ project.slug }}</span><span v-if="project.description"> · {{ project.description }}</span>
+                        <span v-if="project.slug !== project.name" class="font-mono text-xs">{{ project.slug }}</span><span v-if="project.description"><template v-if="project.slug !== project.name"> · </template>{{ project.description }}</span>
                     </template>
                     <template v-else>{{ project.name }}</template>
                 </template>

@@ -152,9 +152,11 @@ const repoName = computed(() => (form.github.nameEdited ? form.github.name : slu
 const editRepoName = (value) => { form.github.name = value; form.github.nameEdited = true; };
 const ownerOptions = computed(() => (props.github.owners ?? []).map((o) => ({ value: o.login, label: o.login })));
 watch(sensitive, (value) => { if (value) form.github.private = true; });
-// A blueprint's language is the default for projects made from it, unless the page was opened with one
+// A blueprint's language is the default for projects made from it, unless the page was opened with one.
+// Framework's own blueprints take every language, so they start from the account's language.
+const accountLanguage = (value) => (value?.handle?.startsWith('framework/') && value?.choices?.languages?.includes(props.defaults?.language) ? props.defaults.language : null);
 watch(blueprint, (value, old) => {
-    form.language = (old === undefined && props.start?.language) || value?.language || 'r';
+    form.language = (old === undefined && props.start?.language) || accountLanguage(value) || value?.language || 'r';
 }, { immediate: true });
 const stata = computed(() => form.language === 'stata');
 // What the blueprint supports, from its own metadata
