@@ -62,7 +62,7 @@ const disconnect = async (connection) => {
             <section class="flex flex-col gap-3">
                 <div>
                     <h2 class="text-base font-medium text-slate-900 dark:text-white">Connection history</h2>
-                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Current connections, and those that ended in the last 90 days.</p>
+                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">This list shows your current connections and any that ended in the last 90 days.</p>
                 </div>
             <template v-if="connections.length">
                 <UiTable label="Agent connections">
