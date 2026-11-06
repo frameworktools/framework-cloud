@@ -4,9 +4,7 @@ import PageHeader from '@/Components/PageHeader.vue';
 import UiBadge from '@/Components/UiBadge.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiTable from '@/Components/UiTable.vue';
-import EmptyState from '@/Components/EmptyState.vue';
 import AgentsTabs from './AgentsTabs.vue';
-import { ClockIcon } from '@heroicons/vue/24/outline';
 
 defineProps({ calls: Object, keepDays: Number, connectionCount: Number, historyCount: Number });
 
@@ -58,7 +56,7 @@ const outcomes = {
                     </div>
                 </div>
             </template>
-            <EmptyState v-else :icon="ClockIcon" title="No agent activity" description="Actions by connected agents appear here." />
+            <p v-else class="text-sm text-slate-500 dark:text-slate-400">No activity yet. When an agent takes an action, it will appear here.</p>
         </div>
     </AppLayout>
 </template>

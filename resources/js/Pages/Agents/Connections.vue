@@ -6,9 +6,7 @@ import PageHeader from '@/Components/PageHeader.vue';
 import UiBadge from '@/Components/UiBadge.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiTable from '@/Components/UiTable.vue';
-import EmptyState from '@/Components/EmptyState.vue';
 import AgentsTabs from './AgentsTabs.vue';
-import { LinkIcon } from '@heroicons/vue/24/outline';
 
 defineProps({ connections: Array, connectionCount: Number, historyCount: Number });
 
@@ -52,7 +50,7 @@ const disconnect = async (connection) => {
                 </UiTable>
                 <p class="text-sm text-slate-500 dark:text-slate-400">To change an agent's access, disconnect it and connect it again.</p>
             </template>
-            <EmptyState v-else :icon="LinkIcon" title="No connections" description="Agents you approve appear here." />
+            <p v-else class="text-sm text-slate-500 dark:text-slate-400">No connections yet. When you approve an agent, it will appear here.</p>
         </div>
     </AppLayout>
 </template>
