@@ -12,7 +12,7 @@ import { ClockIcon, LockClosedIcon, RectangleStackIcon } from '@heroicons/vue/20
 const props = defineProps({ projects: { type: Array, default: () => [] }, project: Object, collections: Array });
 const form = useForm({ title: '' });
 const selectedProject = ref(props.project?.id ?? props.projects[0]?.id ?? '');
-const sharing = { private: 'Only you', unlisted: 'Anyone with the link', public: 'Public' };
+const sharing = { private: 'Private', unlisted: 'Anyone with the link', public: 'Public' };
 const day = value => new Date(value).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 </script>
 

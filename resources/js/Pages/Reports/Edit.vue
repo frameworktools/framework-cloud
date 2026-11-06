@@ -324,7 +324,7 @@ const controlClass = 'inline-flex size-7 items-center justify-center rounded-md 
                     <section aria-labelledby="sharing-title" class="space-y-4 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
                         <h2 id="sharing-title" class="text-xs font-semibold uppercase tracking-wide text-slate-500">Sharing</h2>
                         <label class="block text-sm font-medium text-slate-800 dark:text-slate-200">Reader access
-                            <select v-model="form.visibility" :class="fieldClass"><option value="private">Only me</option><option value="unlisted">Anyone with the link</option><option value="public">Everyone</option></select>
+                            <select v-model="form.visibility" :class="fieldClass"><option value="private">Private, only you</option><option value="unlisted">Anyone with the link</option><option value="public">Public</option></select>
                         </label>
                         <p class="-mt-2 text-xs text-slate-500">{{ visibilityText[form.visibility] }} The change applies to every published version.</p>
                         <UiInput v-model="form.password" type="password" :label="report.password_protected ? 'New password' : 'Password (optional)'" autocomplete="new-password" description="At least 8 characters. Readers enter it to open the report." :error="form.errors.password" />

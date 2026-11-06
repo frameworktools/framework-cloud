@@ -12,7 +12,7 @@ import { DocumentTextIcon, LockClosedIcon } from '@heroicons/vue/20/solid';
 const props = defineProps({ projects: { type: Array, default: () => [] }, project: Object, reports: Array, canPublish: { type: Boolean, default: true } });
 const form = useForm({ title: '' });
 const selectedProject = ref(props.project?.id ?? props.projects[0]?.id ?? '');
-const sharing = { private: 'Only you', unlisted: 'Anyone with the link', public: 'Public' };
+const sharing = { private: 'Private', unlisted: 'Anyone with the link', public: 'Public' };
 const date = value => value ? new Date(value).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
 </script>
 

@@ -1,9 +1,9 @@
 // Shared bits for the blueprint, structure, package set, and skill pages.
 
 export const visibilityOptions = [
-    { value: 'private', label: 'Private: only you' },
-    { value: 'unlisted', label: 'Unlisted: anyone with the link' },
-    { value: 'public', label: 'Public: listed for everyone' },
+    { value: 'private', label: 'Private, only you' },
+    { value: 'unlisted', label: 'Anyone with the link' },
+    { value: 'public', label: 'Public, listed for everyone' },
 ];
 
 // "mine", "framework", or "community", for grouping library listings

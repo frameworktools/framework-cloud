@@ -223,7 +223,7 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public', privat
                 <!-- Sharing -->
                 <form v-else-if="tab === 'sharing' && !external" class="max-w-xl space-y-6 pt-6" @submit.prevent="saveSharing">
                     <UiSelect v-model="sharing.visibility" label="Reader access" :error="sharing.errors.visibility"
-                        description="Private artifacts require your sign-in. Unlisted artifacts open to anyone with the link. Public artifacts also get a readable address."
+                        description="Private artifacts need your sign-in. Anyone with the link can open the others. Public artifacts also get a readable address."
                         :options="[{ value: 'private', label: 'Private, only you' }, { value: 'unlisted', label: 'Anyone with the link' }, { value: 'public', label: 'Public, with a readable link' }]" />
                     <UiSeparator />
                     <section aria-label="Links" class="space-y-3">

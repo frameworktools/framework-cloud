@@ -274,7 +274,7 @@ onBeforeUnmount(() => { clearInterval(clock); clearTimeout(timer); window.remove
                     <form aria-labelledby="sharing-title" class="space-y-4" @submit.prevent="saveSharing">
                         <h2 id="sharing-title" class="text-base font-medium text-slate-900 dark:text-white">Sharing</h2>
                         <label class="block text-sm font-medium text-slate-800 dark:text-slate-200">Reader access
-                            <select v-model="sharing.visibility" :class="fieldClass"><option value="private">Only me</option><option value="unlisted">Anyone with the link</option><option value="public">Everyone</option></select>
+                            <select v-model="sharing.visibility" :class="fieldClass"><option value="private">Private, only you</option><option value="unlisted">Anyone with the link</option><option value="public">Public</option></select>
                         </label>
                         <p class="-mt-2 text-xs text-slate-500">{{ visibilityText[sharing.visibility] }} Artifacts keep their own passwords.</p>
                         <p v-if="sharing.errors.visibility" class="-mt-2 text-xs text-red-700 dark:text-red-400">{{ sharing.errors.visibility }}</p>
