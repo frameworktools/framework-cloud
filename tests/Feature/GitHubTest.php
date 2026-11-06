@@ -140,7 +140,8 @@ class GitHubTest extends TestCase
         $this->assertSame(['base', 'facet', 'facet', 'facet', 'facet', 'blueprint', 'settings', 'project'], array_column($envelope['layers'], 'kind'));
         $this->assertSame(['framework/project', 'framework/framework', 'framework/ggplot2', 'framework/quarto', 'framework/workflow-quarto'], array_slice(array_column($envelope['layers'], 'key'), 0, 5));
         $this->assertSame('framework/project', $envelope['source']['blueprint']['key']);
-        $this->assertSame(['name' => 'Ada Lovelace', 'email' => 'ada@example.org', 'affiliation' => ''], $envelope['author']);
+        // The sign-in email stays private: only a public email the person entered goes in
+        $this->assertSame(['name' => 'Ada Lovelace', 'email' => '', 'affiliation' => ''], $envelope['author']);
 
         // Empty maps stay objects in the committed JSON
         $this->assertStringContainsString('"layer": {}', ProjectLayers::toJson($envelope));

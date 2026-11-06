@@ -97,6 +97,8 @@ class SettingsAndAdminTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Account/Profile')
                 ->where('author.name', 'Ada Lovelace')
+                // The private sign-in address is never offered as the public one
+                ->where('author.email', '')
                 ->where('author.affiliations', []));
 
         $this->actingAs($user)
@@ -122,6 +124,7 @@ class SettingsAndAdminTest extends TestCase
         $envelope = ProjectLayers::for(
             $user->projects()->create(['name' => 'P', 'slug' => 'p', 'project_type' => 'bare'])
         );
+        $this->assertSame('ada@example.edu', $envelope['author']['email']);
         $this->assertSame('Analytical Engine Lab', $envelope['author']['affiliation']);
         $this->assertSame('0000-0002-1825-0097', $envelope['author']['orcid']);
         $this->assertCount(2, $envelope['author']['affiliations']);

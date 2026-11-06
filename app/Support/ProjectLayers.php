@@ -219,7 +219,8 @@ class ProjectLayers
             'name' => $name,
             'author' => [
                 'name' => (string) (($author['name'] ?? '') ?: $user->name),
-                'email' => (string) (($author['email'] ?? '') ?: $user->email),
+                // The public email only. The sign-in address never goes into projects
+                'email' => (string) ($author['email'] ?? ''),
                 'affiliation' => (string) ($author['affiliation'] ?? ''),
             ] + array_filter([
                 'orcid' => (string) ($author['orcid'] ?? ''),

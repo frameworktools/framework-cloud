@@ -36,7 +36,8 @@ class AuthorController extends Controller
         return Inertia::render('Account/Profile', [
             'author' => [
                 'name' => ($author['name'] ?? '') ?: $user->name,
-                'email' => ($author['email'] ?? '') ?: $user->email,
+                // Only an address the person entered: the sign-in email stays private
+                'email' => $author['email'] ?? '',
                 'orcid' => $author['orcid'] ?? '',
                 'url' => $author['url'] ?? '',
                 'affiliations' => $affiliations,
