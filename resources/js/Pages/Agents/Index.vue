@@ -96,7 +96,7 @@ const label = 'text-sm font-semibold text-slate-900 dark:text-white';
 
     <AgentsLayout>
         <div class="flex flex-col gap-8">
-            <PageHeader :title="active ? 'Connected agents' : 'Connect your agent'" description="Connect Claude, ChatGPT, or another AI agent to your account. You approve each agent and choose its access." />
+            <PageHeader :title="active ? 'Connected agents' : 'Connect your agent'" description="Connect Claude, ChatGPT, or another AI agent to your account." />
 
             <section class="flex flex-col gap-6">
                 <p class="text-sm text-slate-500 dark:text-slate-400">Claude Code and Codex make it easier to work with Framework Cloud and the files on your computer. The Claude desktop app includes Claude Code, and the ChatGPT desktop app includes Codex.</p>
