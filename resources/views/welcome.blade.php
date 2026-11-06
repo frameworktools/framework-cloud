@@ -32,7 +32,7 @@
                         'cli' => ['CLI tool', 'heroicon-o-command-line'],
                     ])->only(array_keys(\App\Support\Docs\Products::listed()));
                 @endphp
-                <div class="mt-8 flex flex-wrap items-center gap-3">
+                <div class="mt-10 flex flex-wrap items-center gap-3">
                     <a href="{{ auth()->check() ? route('dashboard') : route('register') }}" class="rounded-md bg-sky-600 px-5 py-2.5 font-medium text-white hover:bg-sky-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500">{{ auth()->check() ? 'Open dashboard' : 'Create a Framework Cloud account' }}</a>
                     <a href="{{ route('guide') }}" class="rounded-md px-4 py-2.5 font-medium text-slate-700 hover:bg-white/50 dark:text-slate-200 dark:hover:bg-white/5">Read the docs <span aria-hidden="true">&rarr;</span></a>
                 </div>
