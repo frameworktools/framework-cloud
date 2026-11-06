@@ -10,7 +10,7 @@ use Illuminate\Console\Command;
  * Homelab affordance: a single-user self-hosted instance has no reason to
  * configure SMTP just to log itself in. Prints a magic link to the console.
  *
- *   php artisan fw:login-link erik@lab.edu
+ *   php artisan fw:login-link email@example.com
  */
 class LoginLinkCommand extends Command
 {

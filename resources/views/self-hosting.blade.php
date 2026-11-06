@@ -138,7 +138,7 @@ docker compose up -d</x-code-panel>
                     <p>
                         Published HTML can contain scripts. On shared servers, serve HTML
                         from a separate domain, such as
-                        <code class="{{ $code }}">files.example.edu</code>.
+                        <code class="{{ $code }}">files.example.com</code>.
                         <a href="{{ route('guide', 'server-setup') }}#published-artifacts" class="{{ $link }}">Artifact storage configuration</a>
                     </p>
                 </div>

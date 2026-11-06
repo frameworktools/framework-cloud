@@ -75,7 +75,7 @@ async function signInWithPasskey() {
                 v-model="form.email"
                 label="Email address"
                 type="email"
-                placeholder="you@university.edu"
+                placeholder="email@example.com"
                 autocomplete="email"
                 required
                 autofocus

@@ -9,8 +9,8 @@ use Illuminate\Console\Command;
  * Turn hosted publishing on or off for an account, until billing exists.
  * Only matters with FW_MODE=hosted; a self-hosted server lets everyone publish.
  *
- *   php artisan fw:publishing erik@lab.edu
- *   php artisan fw:publishing erik@lab.edu --off
+ *   php artisan fw:publishing email@example.com
+ *   php artisan fw:publishing email@example.com --off
  */
 class PublishingCommand extends Command
 {

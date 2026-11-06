@@ -11,7 +11,7 @@ use Illuminate\Validation\Rules\Password;
  * Set an account's password from the server, for a self-hosted server
  * without email.
  *
- *   php artisan fw:password you@example.edu
+ *   php artisan fw:password email@example.com
  */
 class PasswordCommand extends Command
 {
