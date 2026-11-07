@@ -12,6 +12,15 @@ use Tests\Feature\Docs\DocsTestCase;
  */
 class DocsSiteTest extends DocsTestCase
 {
+    public function test_a_guide_titled_like_its_section_is_the_sections_overview(): void
+    {
+        $site = ['guides' => ['project-types' => ['title' => 'Project types'], 'standard-project' => ['title' => 'Standard project']]];
+        $section = ['title' => 'Project types'];
+
+        $this->assertSame('Overview', \App\Support\Docs\Sites::navTitle($site, $section, 'project-types'));
+        $this->assertSame('Standard project', \App\Support\Docs\Sites::navTitle($site, $section, 'standard-project'));
+    }
+
     public function test_home_lists_guides_and_categories(): void
     {
         $this->docs('r')

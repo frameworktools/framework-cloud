@@ -10,11 +10,26 @@ pieces:
 - **Tools.** Optional tools that add their own files, folders, and packages:
   Quarto, Quarto manuscript, Quarto slides, targets, and renv. Stata projects
   have no tools.
-- **Package sets.** Named lists of packages for one language.
+- **Package sets.** Named lists of packages for one language. Sets stack: a
+  blueprint can turn on several, and a package in more than one installs
+  once.
 - **Skills.** Instructions for coding agents, chosen one at a time or as a
   skill set.
 - **Settings.** Whether the project holds sensitive data, whether it is set
   up for coding agents, and whether it uses git.
+
+Framework's built-in blueprints are Standard, Privacy sensitive,
+Presentation, Course, and Bare, plus four app blueprints:
+
+| Blueprint | Language | Starter files |
+|---|---|---|
+| Shiny app | R | `app.R`, `R/`, `www/`, `tests/` |
+| Plumber API | R | `plumber.R`, `run.R`, `R/`, `tests/` |
+| Shiny for Python | Python | `app.py`, `www/`, `tests/` |
+| FastAPI app | Python | `app/main.py`, `tests/test_main.py` |
+
+Each app blueprint brings the package set its starter files use, and each
+starter app runs as created.
 
 **Blueprints** lists the built-in blueprints, the ones other people have made
 public, and your own. Open one to see what it sets up. **Project

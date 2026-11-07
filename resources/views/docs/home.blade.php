@@ -13,7 +13,7 @@
             'reference' => $section['reference'],
             'items' => $section['reference']
                 ? collect($site['categories'])->map(fn ($c) => ['url' => '/reference#'.$c['id'], 'title' => $c['title'], 'text' => $c['description']])->all()
-                : collect($section['guides'])->map(fn ($id) => ['url' => '/guides/'.$id, 'title' => $site['guides'][$id]['title'], 'text' => $site['guides'][$id]['description']])->all(),
+                : collect($section['guides'])->map(fn ($id) => ['url' => '/guides/'.$id, 'title' => \App\Support\Docs\Sites::navTitle($site, $section, $id), 'text' => $site['guides'][$id]['description']])->all(),
         ])
         ->filter(fn ($group) => $group['items'] !== [])
         ->values();

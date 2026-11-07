@@ -23,7 +23,7 @@
                         @php
                             $items = $section['reference']
                                 ? collect($site['categories'])->map(fn ($c) => ['url' => '/reference#'.$c['id'], 'title' => $c['title'], 'text' => $c['description']])
-                                : collect($section['guides'])->map(fn ($id) => ['url' => '/guides/'.$id, 'title' => $site['guides'][$id]['title'], 'text' => $site['guides'][$id]['description']]);
+                                : collect($section['guides'])->map(fn ($id) => ['url' => '/guides/'.$id, 'title' => \App\Support\Docs\Sites::navTitle($site, $section, $id), 'text' => $site['guides'][$id]['description']]);
                             $wide = $items->count() > 6;
                         @endphp
                         @continue($items->isEmpty())

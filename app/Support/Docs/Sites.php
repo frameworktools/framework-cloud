@@ -8,6 +8,21 @@ namespace App\Support\Docs;
  */
 class Sites
 {
+    /**
+     * A guide's name in the menus and lists. The guide that shares its
+     * section's title (Project types under Project types) is that section's
+     * Overview.
+     *
+     * @param  array<string, mixed>  $site
+     * @param  array<string, mixed>  $section
+     */
+    public static function navTitle(array $site, array $section, string $id): string
+    {
+        $title = (string) ($site['guides'][$id]['title'] ?? $id);
+
+        return strcasecmp(trim($title), trim((string) ($section['title'] ?? ''))) === 0 ? 'Overview' : $title;
+    }
+
     /** @return array<string, mixed>|null */
     public static function site(string $product): ?array
     {
