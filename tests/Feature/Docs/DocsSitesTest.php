@@ -13,7 +13,7 @@ class DocsSitesTest extends DocsTestCase
         $this->import('cli');
 
         $this->docs('r')->assertOk()->assertSee('Framework for R');
-        $this->docs('py')->assertOk()->assertSee('Framework for Python')->assertSee('uv add framework-py');
+        $this->docs('py')->assertOk()->assertSee('Framework for Python')->assertSeeText('uv add framework-py');
         $this->docs('cli')->assertOk()->assertSee('The Framework command line tool');
 
         // Each host has its own pages
@@ -30,7 +30,7 @@ class DocsSitesTest extends DocsTestCase
             // The sidebar, the install command, and "Contents" as on every other page
             ->assertSee('aria-label="Sidebar"', false)
             ->assertSee('<h2 id="install">Install</h2>', false)
-            ->assertSee('uv add framework-py')
+            ->assertSeeText('uv add framework-py')
             ->assertSee('<h2 id="getting-started">', false)
             ->assertSeeInOrder(['Installation', 'Install framework-py with uv or pip'])
             ->assertSee('Contents')
@@ -49,7 +49,7 @@ class DocsSitesTest extends DocsTestCase
         $this->docs('stata')
             ->assertOk()
             ->assertSee('Framework for Stata')
-            ->assertSee('net install framework');
+            ->assertSeeText('net install framework');
         $this->docs('stata', '/guides/installation')
             ->assertOk()
             ->assertSee('href="http://r.framework.test/guides/installation"', false);

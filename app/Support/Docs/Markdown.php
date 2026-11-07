@@ -7,6 +7,7 @@ use League\CommonMark\Event\DocumentParsedEvent;
 use League\CommonMark\Extension\CommonMark\CommonMarkCoreExtension;
 use League\CommonMark\Extension\CommonMark\Node\Block\BlockQuote;
 use League\CommonMark\Extension\CommonMark\Node\Block\FencedCode;
+use League\CommonMark\Extension\CommonMark\Node\Block\IndentedCode;
 use League\CommonMark\Extension\CommonMark\Node\Inline\Image;
 use League\CommonMark\Extension\CommonMark\Node\Inline\Link;
 use League\CommonMark\Extension\GithubFlavoredMarkdownExtension;
@@ -32,9 +33,10 @@ class Markdown
     ];
 
     /**
+     * @param  string|null  $language  the language for untagged code blocks that look like code
      * @return array{html: string, toc: list<array{level: int, id: string, text: string}>}
      */
-    public static function render(string $markdown, ?Links $links = null): array
+    public static function render(string $markdown, ?Links $links = null, ?string $language = null): array
     {
         $environment = new Environment([
             'html_input' => 'strip',
@@ -49,7 +51,9 @@ class Markdown
         $environment->addExtension(new CommonMarkCoreExtension);
         $environment->addExtension(new GithubFlavoredMarkdownExtension);
         $environment->addExtension(new HeadingPermalinkExtension);
-        $environment->addRenderer(FencedCode::class, new CodeBlocks, 10);
+        $code = new CodeBlocks($language);
+        $environment->addRenderer(FencedCode::class, $code, 10);
+        $environment->addRenderer(IndentedCode::class, $code, 10);
         $environment->addEventListener(DocumentParsedEvent::class, function (DocumentParsedEvent $event) use ($links) {
             // Collect first: alert() detaches nodes, which upsets a live walk
             $nodes = iterator_to_array($event->getDocument()->iterator(), false);
@@ -75,13 +79,13 @@ class Markdown
     }
 
     /** A Markdown fragment from reference.json, without headings for the TOC */
-    public static function html(?string $markdown, ?Links $links = null): ?string
+    public static function html(?string $markdown, ?Links $links = null, ?string $language = null): ?string
     {
         if ($markdown === null || trim($markdown) === '') {
             return null;
         }
 
-        return self::render($markdown, $links)['html'];
+        return self::render($markdown, $links, $language)['html'];
     }
 
     /** > [!NOTE] … becomes a blockquote with callout classes and a title line */

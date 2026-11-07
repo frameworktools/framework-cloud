@@ -86,7 +86,7 @@ class Compiler
         $compiledGuides = [];
         foreach ($guides as $id => $guide) {
             $links->context = "guides/{$guide['file']}";
-            $rendered = Markdown::render($guide['body'], $links);
+            $rendered = Markdown::render($guide['body'], $links, CodeBlocks::productLanguage($product));
             $compiledGuides[$id] = [
                 'id' => $id,
                 'title' => $guide['title'],
@@ -156,6 +156,7 @@ class Compiler
             'tagline' => $site['tagline'] ?? '',
             'repository' => $site['repository'] ?? null,
             'install' => $site['install'] ?? null,
+            'install_html' => isset($site['install']) ? CodeBlocks::install($site['install'], $product) : null,
             'version' => $reference['version'] ?? null,
             'imported_at' => now()->toIso8601String(),
             'sections' => $sections,
@@ -391,6 +392,7 @@ class Compiler
     /** @return array<string, mixed> */
     private function entry(array $entry, Links $links): array
     {
+        $language = CodeBlocks::productLanguage($this->product);
         $replacedBy = null;
         if (isset($entry['replaced_by'])) {
             $target = $links->entryId($entry['replaced_by']);
@@ -412,33 +414,33 @@ class Compiler
             'summary' => Markdown::plain($entry['summary']),
             'summary_html' => Markdown::inline($entry['summary'], $links),
             'usage' => $entry['usage'] ?? null,
-            'usage_html' => isset($entry['usage']) ? CodeBlocks::tokens($entry['usage'], CodeBlocks::PRODUCT_LANGUAGES[$this->product] ?? '') : null,
-            'description' => Markdown::html($entry['description'] ?? null, $links),
-            'details' => Markdown::html($entry['details'] ?? null, $links),
-            'returns' => Markdown::html($entry['returns'] ?? null, $links),
-            'note' => Markdown::html($entry['note'] ?? null, $links),
+            'usage_html' => isset($entry['usage']) ? CodeBlocks::tokens($entry['usage'], $language ?? '') : null,
+            'description' => Markdown::html($entry['description'] ?? null, $links, $language),
+            'details' => Markdown::html($entry['details'] ?? null, $links, $language),
+            'returns' => Markdown::html($entry['returns'] ?? null, $links, $language),
+            'note' => Markdown::html($entry['note'] ?? null, $links, $language),
             'parameters' => array_map(fn ($p) => [
                 'name' => $p['name'],
                 'type' => $p['type'] ?? null,
                 'default' => $p['default'] ?? null,
                 'required' => $p['required'] ?? false,
                 'env' => $p['env'] ?? null,
-                'description' => Markdown::html($p['description'], $links) ?? '',
+                'description' => Markdown::html($p['description'], $links, $language) ?? '',
             ], $entry['parameters'] ?? []),
             'sections' => array_map(fn ($s) => [
                 'id' => Str::slug($s['title']),
                 'title' => $s['title'],
-                'html' => Markdown::html($s['content'], $links) ?? '',
+                'html' => Markdown::html($s['content'], $links, $language) ?? '',
                 'subsections' => array_map(fn ($sub) => [
                     'id' => Str::slug($sub['title']),
                     'title' => $sub['title'],
-                    'html' => Markdown::html($sub['content'], $links) ?? '',
+                    'html' => Markdown::html($sub['content'], $links, $language) ?? '',
                 ], $s['subsections'] ?? []),
             ], $entry['sections'] ?? []),
             'examples' => array_map(fn ($e) => [
                 'title' => $e['title'] ?? null,
                 'code' => $e['code'],
-                'html' => CodeBlocks::tokens($e['code'], CodeBlocks::PRODUCT_LANGUAGES[$this->product] ?? ''),
+                'html' => CodeBlocks::tokens($e['code'], $language ?? ''),
                 'runnable' => $e['runnable'] ?? true,
             ], $entry['examples'] ?? []),
             'see_also' => array_values(array_filter(array_map(

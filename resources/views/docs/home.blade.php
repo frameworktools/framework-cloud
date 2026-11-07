@@ -21,6 +21,10 @@
         ...($site['install'] ? [['level' => 2, 'id' => 'install', 'text' => 'Install']] : []),
         ...$groups->map(fn ($g) => ['level' => 2, 'id' => $g['id'], 'text' => $g['title']])->all(),
     ];
+    // Colored at import; sites imported before that are colored here
+    $installHtml = $site['install']
+        ? ($site['install_html'] ?? \App\Support\Docs\CodeBlocks::install($site['install'], $site['product'] ?? $product))
+        : null;
 @endphp
 
 @section('content')
@@ -37,7 +41,7 @@
             @if ($site['install'])
                 <h2 id="install">Install</h2>
                 <div class="relative my-6">
-                    <pre class="my-0! pr-28"><code id="docs-install">{{ $site['install'] }}</code></pre>
+                    <pre class="my-0! pr-28"><code id="docs-install">@if ($installHtml){!! $installHtml !!}@else{{ $site['install'] }}@endif</code></pre>
                     {{-- A solid strip at the right edge, so a long command scrolls under the button --}}
                     <div class="absolute inset-y-0 right-0 z-10 flex items-start rounded-r-xl bg-linear-to-l from-slate-900 from-70% to-transparent pt-2.5 pr-2.5 pl-8 dark:from-[#1a2233]">
                         <button type="button" data-copy="docs-install" class="rounded-lg bg-slate-700 px-3 py-1 text-xs font-medium text-slate-100 ring-1 ring-white/10 hover:bg-slate-600 hover:text-white"><span data-copy-label>Copy</span></button>
