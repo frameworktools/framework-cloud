@@ -9,12 +9,12 @@
     'dark bg-blue-950' => View::hasSection('hero'),
     'bg-white shadow-md shadow-slate-900/5 dark:bg-slate-900/95 dark:shadow-none dark:backdrop-blur dark:[@supports(backdrop-filter:blur(0))]:bg-slate-900/80' => ! View::hasSection('hero'),
 ])>
-    <div class="mx-auto flex max-w-8xl items-center justify-between gap-6 px-6 sm:px-8 lg:px-12">
+    <div class="mx-auto flex max-w-8xl items-center justify-between gap-3 px-6 sm:gap-6 sm:px-8 lg:px-12">
         <div class="flex min-w-0 items-center gap-8">
-            <a href="/" aria-label="{{ $siteTitle }} home" class="flex shrink-0 items-center gap-3">
-                <img src="/images/logo.png" alt="" class="h-8 w-auto">
+            <a href="/" aria-label="{{ $siteTitle }} home" class="flex min-w-0 items-center gap-3">
+                <img src="/images/logo.png" alt="" class="h-8 w-auto shrink-0">
                 {{-- The command-line tool's name is set in monospace, as in running text --}}
-                <span @class(["text-lg font-bold whitespace-nowrap text-slate-900 dark:text-white", "font-mono" => $siteTitle === 'fw'])>{{ $siteTitle }}</span>
+                <span @class(["truncate text-lg font-bold whitespace-nowrap text-slate-900 dark:text-white", "font-mono" => $siteTitle === 'fw'])>{{ $siteTitle }}</span>
             </a>
 
             @if ($site)
@@ -58,7 +58,7 @@
             @endif
         </div>
 
-        <div class="flex shrink-0 items-center gap-2">
+        <div class="flex shrink-0 items-center gap-1 sm:gap-2">
             <nav class="hidden items-center gap-0.5 rounded-lg bg-slate-100 p-0.5 text-sm md:flex dark:bg-slate-800" aria-label="Products">
                 @foreach (Products::listed($product) as $other => $label)
                     <a href="{{ Products::url($other) }}" @if ($other === $product) aria-current="page" @endif
@@ -71,7 +71,7 @@
             </nav>
 
             @if ($site)
-                <button type="button" data-search-open class="group flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-500 hover:border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-slate-600 dark:hover:bg-slate-700">
+                <button type="button" data-search-open class="group flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 sm:px-3 text-sm text-slate-500 hover:border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-slate-600 dark:hover:bg-slate-700">
                     <svg class="size-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.45 4.39l3.08 3.08a.75.75 0 1 1-1.06 1.06l-3.08-3.08A7 7 0 0 1 2 9Z" clip-rule="evenodd"/></svg>
                     <span class="hidden sm:inline">Search</span>
                     <kbd class="hidden rounded border border-slate-300 bg-white px-1.5 py-0.5 font-mono text-[11px] leading-none text-slate-400 sm:inline-block dark:border-slate-600 dark:bg-slate-700">⌘K</kbd>
@@ -84,7 +84,8 @@
             </button>
 
             @if ($repository)
-                <a href="{{ $repository }}" class="flex size-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-300" aria-label="GitHub repository">
+                {{-- On a phone the overview links to GitHub, so the header leaves it out --}}
+                <a href="{{ $repository }}" class="hidden size-8 sm:flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-300" aria-label="GitHub repository">
                     <svg class="size-5" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
                 </a>
             @endif
