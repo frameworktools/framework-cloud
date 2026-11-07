@@ -82,7 +82,7 @@ const date = value => new Date(value).toLocaleDateString(undefined, { month: 'sh
                     <thead><tr><th>Title</th><th class="max-sm:hidden">Type</th><th class="max-lg:hidden">Updated</th><th class="actions"><span class="sr-only">Actions</span></th></tr></thead>
                     <tbody><tr v-for="item in activity" :key="item.activityKey">
                         <td class="strong max-w-96 truncate">
-                            <Link :href="item.management_url" class="block truncate hover:underline">{{ item.title }}</Link>
+                            <Link :href="item.management_url" class="block truncate py-0.5 hover:underline">{{ item.title }}</Link>
                             <Link :href="`/projects/${item.project.slug}`" class="block truncate py-1 text-xs font-normal text-slate-500 dark:text-slate-400 hover:underline">{{ item.project.name }}</Link>
                         </td>
                         <td class="max-sm:hidden">{{ item.type }}</td>
@@ -103,7 +103,7 @@ const date = value => new Date(value).toLocaleDateString(undefined, { month: 'sh
                 <UiTable v-if="projects.length" label="Recent projects" class="dashboard-projects">
                     <thead><tr><th>Name</th><th class="max-sm:hidden">Language</th><th class="actions"><span class="sr-only">Actions</span></th></tr></thead>
                     <tbody><tr v-for="project in projects.slice(0, 4)" :key="project.id">
-                        <td class="strong max-w-96 truncate"><Link :href="`/projects/${project.slug}`" class="block truncate hover:underline">{{ project.name }}</Link></td>
+                        <td class="strong max-w-96 truncate"><Link :href="`/projects/${project.slug}`" class="block truncate py-0.5 hover:underline">{{ project.name }}</Link></td>
                         <td class="max-sm:hidden">{{ languageNames[project.language] }}</td>
                         <td class="actions"><UiButton :href="`/projects/${project.slug}`" variant="ghost" size="sm">Open</UiButton></td>
                     </tr></tbody>

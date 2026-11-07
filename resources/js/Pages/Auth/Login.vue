@@ -1,4 +1,6 @@
 <script setup>
+// Sets window.passkeys; only the passkey pages load it
+import '@/passkeys.js';
 import { ref, computed } from 'vue';
 import { router, useForm, usePage } from '@inertiajs/vue3';
 import AuthLayout from '@/Layouts/AuthLayout.vue';
