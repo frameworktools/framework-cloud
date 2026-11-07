@@ -251,8 +251,8 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public', privat
                                     <code class="min-w-0 flex-1 truncate rounded-lg bg-slate-800/5 px-3 py-2 text-xs text-slate-700 dark:bg-white/10 dark:text-slate-300">{{ artifact.readable_url }}</code>
                                     <UiButton variant="ghost" size="sm" @click="copy('readable', artifact.readable_url)">{{ copied === 'readable' ? 'Copied' : 'Copy' }}</UiButton>
                                 </div>
-                                <p v-else-if="artifact.readable && !handle" class="mt-1 text-sm text-slate-500">Needs a handle. <UiLink href="/account/account">Set one in your account</UiLink>.</p>
-                                <p v-else class="mt-1 text-sm text-slate-500">Turns on when the artifact is public.</p>
+                                <p v-else-if="artifact.readable && !handle" class="mt-1 text-sm text-slate-500 dark:text-slate-400">Needs a handle. <UiLink href="/account/account">Set one in your account</UiLink>.</p>
+                                <p v-else class="mt-1 text-sm text-slate-500 dark:text-slate-400">Turns on when the artifact is public.</p>
                             </div>
                         </div>
                     </section>

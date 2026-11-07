@@ -151,14 +151,14 @@ const pill = (on) => on
                 <!-- Nothing in the collection at all -->
                 <p v-if="!section.all.length" class="text-sm text-slate-500 dark:text-slate-400">
                     You haven't made a blueprint yet.
-                    <Link href="/blueprints/create" class="font-medium text-sky-600 hover:underline dark:text-sky-400">New blueprint</Link>
+                    <Link href="/blueprints/create" class="font-medium text-sky-700 hover:underline dark:text-sky-400">New blueprint</Link>
                 </p>
 
                 <!-- Some, but none for this language and workflow -->
                 <div v-else-if="!section.rows.length" class="rounded-lg border border-dashed border-slate-300 px-4 py-4 text-sm dark:border-slate-700">
                     <p class="text-slate-700 dark:text-slate-300">No matching blueprints for {{ languageNames[language] }} with {{ workflowNames[workflow] }}.</p>
                     <div class="mt-2 flex flex-wrap items-center gap-2">
-                        <span class="text-xs text-slate-500">Try</span>
+                        <span class="text-xs text-slate-500 dark:text-slate-400">Try</span>
                         <button
                             v-for="c in elsewhere(section)" :key="`${c.lang}-${c.wf}`" type="button"
                             class="rounded-full border border-slate-300 px-2.5 py-0.5 text-xs text-slate-700 hover:border-sky-500 hover:text-sky-700 dark:border-slate-600 dark:text-slate-300 dark:hover:text-sky-300"
@@ -183,7 +183,7 @@ const pill = (on) => on
                                     <span v-if="isDefault(b)" class="rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700 ring-1 ring-sky-200 dark:bg-sky-950/50 dark:text-sky-300 dark:ring-sky-800">Your default</span>
                                 </div>
                                 <p v-if="b.description" class="mt-0.5 line-clamp-2 text-sm text-slate-600 dark:text-slate-400">{{ b.description }}</p>
-                                <p class="mt-1 text-xs text-slate-500">{{ supportLine(b) }}</p>
+                                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ supportLine(b) }}</p>
                             </div>
                             <div class="flex shrink-0 flex-wrap items-center gap-2">
                                 <Link :href="newProject(b)"><UiButton size="sm">New project</UiButton></Link>
@@ -195,7 +195,7 @@ const pill = (on) => on
                         <div class="px-4 pb-3 sm:px-5" :class="openIn(section) === b.id ? '' : '-mt-2'">
                             <button
                                 type="button" :aria-expanded="openIn(section) === b.id" :aria-controls="`blueprint-${b.id}`"
-                                class="-ml-1.5 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-2 focus-visible:outline-sky-500 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                                class="-ml-1.5 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-sm text-slate-500 dark:text-slate-400 hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-2 focus-visible:outline-sky-500 dark:hover:bg-slate-800 dark:hover:text-slate-200"
                                 @click="choose(section, b.id)"
                             >
                                 <ChevronRightIcon class="size-4 transition-transform" :class="openIn(section) === b.id ? 'rotate-90' : ''" />

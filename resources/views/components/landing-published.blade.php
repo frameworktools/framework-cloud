@@ -48,7 +48,7 @@
                     <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-white/10 dark:text-slate-300">Version 2</span>
                 </p>
                 @foreach ($languages as $key => $language)
-                    <p data-pd-lang="{{ $key }}" @unless ($loop->first) hidden @endunless class="mt-1 font-mono text-xs text-slate-500"><span class="text-sky-700 dark:text-sky-400">{{ $language['source'] }}</span> · {{ $language['formula'] }}</p>
+                    <p data-pd-lang="{{ $key }}" @unless ($loop->first) hidden @endunless class="mt-1 font-mono text-xs text-slate-500 dark:text-slate-400"><span class="text-sky-700 dark:text-sky-400">{{ $language['source'] }}</span> · {{ $language['formula'] }}</p>
                 @endforeach
             </div>
             <div class="flex items-center gap-4">
@@ -59,13 +59,13 @@
         </div>
 
             <div role="group" aria-label="Model view" class="mt-3 inline-flex rounded-lg bg-slate-100 p-0.5 dark:bg-white/5">
-                    <button type="button" data-pd-view="formatted" aria-pressed="true" class="{{ $toggle }} text-slate-500 hover:text-slate-900 aria-pressed:bg-white aria-pressed:text-slate-900 aria-pressed:shadow-sm dark:hover:text-white dark:aria-pressed:bg-slate-700 dark:aria-pressed:text-white">Formatted</button>
-                    <button type="button" data-pd-view="raw" aria-pressed="false" class="{{ $toggle }} text-slate-500 hover:text-slate-900 aria-pressed:bg-white aria-pressed:text-slate-900 aria-pressed:shadow-sm dark:hover:text-white dark:aria-pressed:bg-slate-700 dark:aria-pressed:text-white">Raw output</button>
+                    <button type="button" data-pd-view="formatted" aria-pressed="true" class="{{ $toggle }} text-slate-600 dark:text-slate-400 hover:text-slate-900 aria-pressed:bg-white aria-pressed:text-slate-900 aria-pressed:shadow-sm dark:hover:text-white dark:aria-pressed:bg-slate-700 dark:aria-pressed:text-white">Formatted</button>
+                    <button type="button" data-pd-view="raw" aria-pressed="false" class="{{ $toggle }} text-slate-600 dark:text-slate-400 hover:text-slate-900 aria-pressed:bg-white aria-pressed:text-slate-900 aria-pressed:shadow-sm dark:hover:text-white dark:aria-pressed:bg-slate-700 dark:aria-pressed:text-white">Raw output</button>
                 </div>
         <div class="mt-3 grid">
             @foreach ($languages as $key => $language)
                 {{-- Formatted --}}
-                <div data-pd-lang="{{ $key }}" data-pd-pane="formatted" @unless ($loop->first) hidden @endunless class="[grid-area:1/1] self-start overflow-x-auto rounded-lg ring-1 ring-slate-800/10 dark:ring-white/10">
+                <div data-pd-lang="{{ $key }}" data-pd-pane="formatted" @unless ($loop->first) hidden @endunless tabindex="0" class="focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-sky-500 [grid-area:1/1] self-start overflow-x-auto rounded-lg ring-1 ring-slate-800/10 dark:ring-white/10">
                     <table class="w-full text-[13px] whitespace-nowrap">
                         <thead class="bg-slate-50 text-slate-600 dark:bg-white/5 dark:text-slate-400">
                             <tr>
@@ -88,7 +88,7 @@
                     </table>
                 </div>
                 {{-- Raw: what the tool printed --}}
-                <pre data-pd-lang="{{ $key }}" data-pd-pane="raw" hidden class="[grid-area:1/1] overflow-x-auto rounded-lg bg-slate-50 px-3 py-2.5 font-mono text-[11px] leading-[1.55] text-slate-700 ring-1 ring-slate-800/10 dark:bg-black/30 dark:text-slate-300 dark:ring-white/10"><code>{{ implode("\n", $language['raw']) }}</code></pre>
+                <pre data-pd-lang="{{ $key }}" data-pd-pane="raw" hidden tabindex="0" class="focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-sky-500 [grid-area:1/1] overflow-x-auto rounded-lg bg-slate-50 px-3 py-2.5 font-mono text-[11px] leading-[1.55] text-slate-700 ring-1 ring-slate-800/10 dark:bg-black/30 dark:text-slate-300 dark:ring-white/10"><code>{{ implode("\n", $language['raw']) }}</code></pre>
             @endforeach
         </div>
     </div>

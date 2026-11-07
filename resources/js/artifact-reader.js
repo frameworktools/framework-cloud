@@ -103,7 +103,7 @@ export function mountTable(container) {
             const tr = document.createElement('tr');
             const cell = document.createElement('td');
             cell.colSpan = Math.max(1, table.columns.length);
-            cell.className = 'px-4 py-8 text-center text-slate-500';
+            cell.className = 'px-4 py-8 text-center text-slate-500 dark:text-slate-400';
             cell.textContent = state.query ? 'No matching rows.' : 'This table has no rows.';
             tr.append(cell);
             fragment.append(tr);

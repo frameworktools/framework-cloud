@@ -161,7 +161,7 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                     <template v-else>The command connects to {{ serverUrl }}.</template>
                     <template v-if="viewingElsewhere"> You're viewing this page at {{ viewingOrigin }}, so check that your computer can reach it.</template>
                     <button v-if="reachable !== 'checking'" type="button" class="ml-1 text-sky-700 underline dark:text-sky-400" @click="checkServer">Check browser connection</button>
-                    <span v-else class="ml-1 text-slate-500">Checking…</span>
+                    <span v-else class="ml-1 text-slate-500 dark:text-slate-400">Checking…</span>
                 </p>
                 <p v-if="reachable === 'yes'" class="text-sm">This browser reached {{ serverUrl }}.</p>
                 <p v-else-if="reachable === 'no'" class="text-sm text-red-700 dark:text-red-300">This browser couldn't reach {{ serverUrl }}. Ask whoever runs this server to set FW_CLIENT_URL to an address your computer can reach.</p>
@@ -169,7 +169,7 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
 
             <UiPanel v-if="section === 'overview'" title="Configuration">
                 <template #header>
-                    <Link :href="`/projects/${project.slug}/setup`" class="text-sm text-sky-600 hover:underline dark:text-sky-400">Project setup</Link>
+                    <Link :href="`/projects/${project.slug}/setup`" class="text-sm text-sky-700 hover:underline dark:text-sky-400">Project setup</Link>
                 </template>
                 <dl class="flex flex-col divide-y divide-slate-200 dark:divide-slate-700/70">
                     <div :class="rowClass">
@@ -177,9 +177,9 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                         <dd class="text-sm text-slate-700 dark:text-slate-300">
                             <Link
                                 v-if="project.blueprint" :href="`/blueprints/${project.blueprint.id}?version=${project.blueprint.version}`"
-                                class="hover:text-sky-600 hover:underline dark:hover:text-sky-400"
-                            >{{ project.blueprint.name }} <span class="font-mono text-xs text-slate-500">{{ project.blueprint.handle }} v{{ project.blueprint.version }}</span></Link>
-                            <span v-else class="text-slate-500">None</span>
+                                class="hover:text-sky-700 hover:underline dark:hover:text-sky-400"
+                            >{{ project.blueprint.name }} <span class="font-mono text-xs text-slate-500 dark:text-slate-400">{{ project.blueprint.handle }} v{{ project.blueprint.version }}</span></Link>
+                            <span v-else class="text-slate-500 dark:text-slate-400">None</span>
                         </dd>
                     </div>
                     <div :class="rowClass">
@@ -205,7 +205,7 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                             <UiBadge v-if="github?.status && github.status !== 'done'" :variant="statusVariant[github.status]">{{ statusLabel[github.status] }}</UiBadge>
                             <a v-if="github?.repo" :href="github.url" class="font-mono text-xs hover:underline">{{ github.repo }}</a>
                             <UiBadge v-if="github?.pages_url" variant="green">Pages</UiBadge>
-                            <Link v-if="!github" :href="`/projects/${project.slug}/github`" class="text-slate-500 hover:underline">Not on GitHub</Link>
+                            <Link v-if="!github" :href="`/projects/${project.slug}/github`" class="text-slate-500 dark:text-slate-400 hover:underline">Not on GitHub</Link>
                         </dd>
                     </div>
                     <div :class="rowClass">
@@ -220,7 +220,7 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                         <dt :class="termClass">Last sync</dt>
                         <dd class="text-sm text-slate-700 dark:text-slate-300">
                             <template v-if="project.spec">{{ date(project.spec.received_at) }}</template>
-                            <span v-else class="text-slate-500">No computer has sent this project's settings yet.</span>
+                            <span v-else class="text-slate-500 dark:text-slate-400">No computer has sent this project's settings yet.</span>
                         </dd>
                     </div>
                     <div :class="rowClass">
@@ -248,7 +248,7 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                 <p class="text-sm text-slate-600 dark:text-slate-400">
                     <template v-if="project.blueprint">
                         From the blueprint
-                        <Link :href="`/blueprints/${project.blueprint.id}?version=${project.blueprint.version}`" class="text-sky-600 hover:underline dark:text-sky-400">{{ project.blueprint.name }}</Link>
+                        <Link :href="`/blueprints/${project.blueprint.id}?version=${project.blueprint.version}`" class="text-sky-700 hover:underline dark:text-sky-400">{{ project.blueprint.name }}</Link>
                         v{{ project.blueprint.version }}<template v-if="setup.customized">, with pieces changed when the project was made</template>.
                     </template>
                     <template v-else>Made from pieces chosen one by one.</template>
@@ -259,9 +259,9 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                         <dt :class="termClass">{{ group.title }}</dt>
                         <dd class="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-700 dark:text-slate-300">
                             <span v-for="piece in group.pieces" :key="piece.handle">
-                                <Link v-if="piecePaths[piece.kind]" :href="`/${piecePaths[piece.kind]}/${piece.id}/edit`" class="hover:text-sky-600 hover:underline dark:hover:text-sky-400">{{ piece.name }}</Link>
+                                <Link v-if="piecePaths[piece.kind]" :href="`/${piecePaths[piece.kind]}/${piece.id}/edit`" class="hover:text-sky-700 hover:underline dark:hover:text-sky-400">{{ piece.name }}</Link>
                                 <template v-else>{{ piece.name }}</template>
-                                <span v-if="piece.version" class="ml-1 font-mono text-xs text-slate-500">v{{ piece.version }}</span>
+                                <span v-if="piece.version" class="ml-1 font-mono text-xs text-slate-500 dark:text-slate-400">v{{ piece.version }}</span>
                             </span>
                         </dd>
                     </div>
@@ -269,7 +269,7 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                         <dt :class="termClass">Skills</dt>
                         <dd class="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-700 dark:text-slate-300">
                             <span v-for="skill in setup.skills" :key="skill.key">{{ skill.name }}</span>
-                            <span v-if="!setup.skills.length" class="text-slate-500">None</span>
+                            <span v-if="!setup.skills.length" class="text-slate-500 dark:text-slate-400">None</span>
                         </dd>
                     </div>
                     <div :class="rowClass">
@@ -299,8 +299,8 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                         <div class="flex flex-wrap items-center gap-2">
                             <UiBadge :variant="statusVariant[github.status]">{{ statusLabel[github.status] }}</UiBadge>
                             <a v-if="github.url" :href="github.url" class="font-mono text-xs text-slate-700 hover:underline dark:text-slate-300">{{ github.repo }}</a>
-                            <span v-if="github.private" class="text-xs text-slate-500">private</span>
-                            <a v-if="github.run_url" :href="github.run_url" class="text-xs text-slate-500 hover:underline">Run log</a>
+                            <span v-if="github.private" class="text-xs text-slate-500 dark:text-slate-400">private</span>
+                            <a v-if="github.run_url" :href="github.run_url" class="text-xs text-slate-500 dark:text-slate-400 hover:underline">Run log</a>
                             <UiButton v-if="github.status === 'running'" variant="ghost" size="sm" @click="refresh">Check status</UiButton>
                             <UiButton v-if="github.status === 'failed' && github.url" variant="outline" size="sm" @click="retry">Retry</UiButton>
                         </div>
@@ -313,14 +313,14 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                         <div v-if="github.pages_url" class="flex flex-wrap items-center gap-2 text-sm">
                             <UiBadge variant="green">Publishing</UiBadge>
                             <a :href="github.pages_url" class="font-mono text-xs text-slate-700 hover:underline dark:text-slate-300">{{ github.pages_url }}</a>
-                            <span class="text-xs text-slate-500">Public. Deploys the published/ folder on each push.</span>
+                            <span class="text-xs text-slate-500 dark:text-slate-400">Public. Deploys the published/ folder on each push.</span>
                             <UiButton variant="ghost" size="sm" :disabled="pagesBusy" @click="disablePages">Turn off</UiButton>
                         </div>
                         <div v-else class="flex flex-wrap items-center gap-3 text-sm">
                             <UiButton variant="outline" size="sm" :disabled="pagesBusy" @click="enablePages">
                                 {{ pagesBusy ? 'Setting up…' : 'Publish with GitHub Pages' }}
                             </UiButton>
-                            <span class="text-xs text-slate-500">Free. Notebooks you render into published/ go on a public site.</span>
+                            <span class="text-xs text-slate-500 dark:text-slate-400">Free. Notebooks you render into published/ go on a public site.</span>
                         </div>
                     </div>
                 </template>
@@ -385,7 +385,7 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                 <ul v-if="project.tokens.length" class="flex flex-col divide-y divide-slate-200 rounded-md bg-white text-xs dark:divide-slate-700 dark:bg-slate-900">
                     <li v-for="token in project.tokens" :key="token.id" class="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2">
                         <span class="font-medium text-slate-700 dark:text-slate-300">{{ token.name }}</span>
-                        <span class="flex-1 text-slate-500">Created {{ date(token.created_at) }} · last used {{ date(token.last_used_at) }}</span>
+                        <span class="flex-1 text-slate-500 dark:text-slate-400">Created {{ date(token.created_at) }} · last used {{ date(token.last_used_at) }}</span>
                         <button type="button" class="text-red-600 hover:underline dark:text-red-400" @click="revokeToken(token.id)">Revoke</button>
                     </li>
                 </ul>

@@ -53,7 +53,7 @@ const forget = async (app) => {
                     <thead><tr><th>App</th><th>Access</th><th>Approved</th><th class="actions"><span class="sr-only">Actions</span></th></tr></thead>
                     <tbody>
                         <tr v-for="approved in approvedApps" :key="approved.id">
-                            <td class="strong">{{ approved.name }} <span class="font-normal text-slate-500">({{ approved.host }})</span></td>
+                            <td class="strong">{{ approved.name }} <span class="font-normal text-slate-500 dark:text-slate-400">({{ approved.host }})</span></td>
                             <td>
                                 <select :value="approved.access" :aria-label="`Access for ${approved.name}`" class="rounded-md border border-slate-800/15 bg-white py-1 pr-8 pl-2 text-sm text-slate-800 dark:border-white/15 dark:bg-slate-900 dark:text-white"
                                     @change="setAccess(approved, $event.target.value)">

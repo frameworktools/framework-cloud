@@ -56,7 +56,7 @@ const values = computed(() => {
                         <span class="flex min-w-0 flex-col gap-0.5">
                             <span class="text-sm font-medium text-slate-900 dark:text-white">{{ b.name }}</span>
                             <span class="text-sm text-slate-600 dark:text-slate-400">{{ b.description }}</span>
-                            <span class="mt-0.5 text-xs text-slate-500">
+                            <span class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                                 <template v-if="supports(b)">Workflows: {{ workflowsFor(b).map((w) => workflowNames[w]).join(', ') }}</template>
                                 <template v-else>Not available for {{ languageNames[language] }}: new {{ languageNames[language] }} projects use the standard project instead.</template>
                             </span>
@@ -64,7 +64,7 @@ const values = computed(() => {
                     </label>
                     <button
                         type="button" :aria-expanded="open.has(b.key)" :aria-controls="`blueprint-${b.key}`"
-                        class="inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-2 focus-visible:outline-sky-500 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                        class="inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-sm text-slate-500 dark:text-slate-400 hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-2 focus-visible:outline-sky-500 dark:hover:bg-slate-800 dark:hover:text-slate-200"
                         @click="toggleOpen(b.key)"
                     >
                         Details

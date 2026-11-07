@@ -67,7 +67,7 @@ const fork = id => router.post(`/skills/${id}/fork`);
                 <fieldset>
                     <legend class="sr-only">Tags</legend>
                     <div class="mb-2 flex items-center justify-between gap-2">
-                        <span class="text-sm font-medium text-slate-800 dark:text-white">Tags <span v-if="selectedTags.length > 1" class="ml-1 font-normal text-slate-500">All selected tags</span></span>
+                        <span class="text-sm font-medium text-slate-800 dark:text-white">Tags <span v-if="selectedTags.length > 1" class="ml-1 font-normal text-slate-500 dark:text-slate-400">All selected tags</span></span>
                         <UiLink v-if="page.props.auth.user.is_admin" href="/admin/skill-tags" class="text-xs">Manage tags</UiLink>
                     </div>
                     <div class="flex flex-wrap gap-2">
@@ -78,11 +78,11 @@ const fork = id => router.post(`/skills/${id}/fork`);
                 </fieldset>
             </section>
             <div class="flex min-h-8 items-center justify-between border-b border-slate-800/10 pb-3 text-sm dark:border-white/15">
-                <p role="status" aria-live="polite" class="text-slate-500"><span class="font-mono">{{ rows.length }}</span> {{ rows.length === 1 ? 'skill' : 'skills' }} · {{ languageNames[language] }}</p>
+                <p role="status" aria-live="polite" class="text-slate-500 dark:text-slate-400"><span class="font-mono">{{ rows.length }}</span> {{ rows.length === 1 ? 'skill' : 'skills' }} · {{ languageNames[language] }}</p>
                 <UiButton v-if="filtered" variant="ghost" size="sm" @click="clear">Clear filters</UiButton>
             </div>
             <section v-for="section in sections" :key="section.key" class="min-w-0">
-                <h2 class="mb-2 text-base font-medium text-slate-900 dark:text-white">{{ section.label }} <span class="ml-1 font-mono text-xs font-normal text-slate-500">{{ section.rows.length }}</span></h2>
+                <h2 class="mb-2 text-base font-medium text-slate-900 dark:text-white">{{ section.label }} <span class="ml-1 font-mono text-xs font-normal text-slate-500 dark:text-slate-400">{{ section.rows.length }}</span></h2>
                 <UiTable :label="`${section.label} skills`" class="skill-results">
                     <thead><tr><th>Skill</th><th class="hidden lg:table-cell">Tags</th><th class="actions"><span class="sr-only">Actions</span></th></tr></thead>
                     <tbody><tr v-for="skill in section.rows" :key="skill.id">
@@ -90,11 +90,11 @@ const fork = id => router.post(`/skills/${id}/fork`);
                             <Link :href="read(skill)" class="font-medium text-slate-900 hover:underline dark:text-white">{{ skill.name }}</Link>
                             <p class="mt-1 max-w-xl text-sm leading-relaxed">{{ skill.summary ?? skill.descriptions?.[language] ?? skill.description }}</p>
                             <div class="mt-2 flex flex-wrap gap-x-3 gap-y-1 lg:hidden">
-                                <button v-for="tag in skill.tags" :key="tag.id" type="button" class="whitespace-nowrap text-xs underline decoration-slate-300 underline-offset-2 dark:decoration-slate-600" :aria-pressed="selectedTags.includes(tag.key)" @click="toggleTag(tag.key)">{{ tag.name }}</button>
+                                <button v-for="tag in skill.tags" :key="tag.id" type="button" class="inline-block whitespace-nowrap py-1 text-xs underline decoration-slate-300 underline-offset-2 dark:decoration-slate-600" :aria-pressed="selectedTags.includes(tag.key)" @click="toggleTag(tag.key)">{{ tag.name }}</button>
                             </div>
                         </td>
                         <td class="hidden max-w-56 whitespace-normal lg:table-cell"><div class="flex flex-wrap gap-x-3 gap-y-1">
-                            <button v-for="tag in skill.tags" :key="tag.id" type="button" class="whitespace-nowrap text-xs underline decoration-slate-300 underline-offset-2 hover:text-slate-900 dark:decoration-slate-600 dark:hover:text-white" :aria-pressed="selectedTags.includes(tag.key)" @click="toggleTag(tag.key)">{{ tag.name }}</button>
+                            <button v-for="tag in skill.tags" :key="tag.id" type="button" class="inline-block whitespace-nowrap py-1 text-xs underline decoration-slate-300 underline-offset-2 hover:text-slate-900 dark:decoration-slate-600 dark:hover:text-white" :aria-pressed="selectedTags.includes(tag.key)" @click="toggleTag(tag.key)">{{ tag.name }}</button>
                         </div></td>
                         <td class="actions align-top">
                             <UiButton v-if="skill.editable" :href="`/skills/${skill.id}/edit?language=${language}`" :aria-label="`Edit ${skill.name}`" size="sm" variant="ghost"><PencilSquareIcon class="sm:hidden" /><span class="hidden sm:inline">Edit</span></UiButton>
@@ -103,7 +103,7 @@ const fork = id => router.post(`/skills/${id}/fork`);
                     </tr></tbody>
                 </UiTable>
             </section>
-            <div v-if="!rows.length" class="py-8 text-sm text-slate-500">
+            <div v-if="!rows.length" class="py-8 text-sm text-slate-500 dark:text-slate-400">
                 <h2 class="mb-2 text-base font-medium text-slate-900 dark:text-white">No matching skills</h2>
                 <p>Try another search, source, or tag.</p>
                 <UiButton v-if="filtered" variant="ghost" class="mt-3" @click="clear">Clear filters</UiButton>

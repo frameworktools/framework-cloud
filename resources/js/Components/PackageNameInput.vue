@@ -91,7 +91,7 @@ const sourceNames = { cran: 'CRAN', bioc: 'Bioconductor', pypi: 'PyPI' };
             >
                 <span class="min-w-0">
                     <span class="block font-mono text-sm text-slate-900 dark:text-white">{{ pkg.name }}</span>
-                    <span v-if="pkg.title" class="block truncate text-xs text-slate-500">{{ pkg.title }}</span>
+                    <span v-if="pkg.title" class="block truncate text-xs text-slate-500 dark:text-slate-400">{{ pkg.title }}</span>
                 </span>
                 <span class="shrink-0 text-xs text-slate-400">{{ sourceNames[pkg.source] }} · v{{ pkg.version }}</span>
             </li>

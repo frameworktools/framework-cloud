@@ -22,7 +22,7 @@ REGEX;
                     continue;
                 }
                 $color = match (true) {
-                    str_starts_with($token, '#'), str_starts_with($token, '//') => 'text-slate-500',
+                    str_starts_with($token, '#'), str_starts_with($token, '//') => 'text-slate-400',
                     str_starts_with($token, '"'), str_starts_with($token, "'") => 'text-emerald-300',
                     is_numeric($token) => 'text-amber-200',
                     in_array($token, ['import', 'from', 'as', 'def', 'return', 'if', 'else', 'for', 'in', 'True', 'False', 'None', 'TRUE', 'FALSE', 'NULL'], true) => 'text-violet-300',

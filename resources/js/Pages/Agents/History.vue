@@ -36,7 +36,7 @@ const outcomes = {
                     <tbody>
                         <tr v-for="call in calls.data" :key="call.id">
                             <td><time :datetime="call.at_iso" :title="call.at_iso">{{ call.at }}</time></td>
-                            <td class="strong">{{ call.agent ?? 'Removed agent' }}<span v-if="call.ended" class="ms-1.5 text-xs font-normal text-slate-500">({{ call.ended }})</span></td>
+                            <td class="strong">{{ call.agent ?? 'Removed agent' }}<span v-if="call.ended" class="ms-1.5 text-xs font-normal text-slate-500 dark:text-slate-400">({{ call.ended }})</span></td>
                             <td>{{ call.tool }}</td>
                             <td class="font-mono text-xs">{{ call.target ?? '' }}</td>
                             <td class="whitespace-normal">
@@ -46,7 +46,7 @@ const outcomes = {
                         </tr>
                     </tbody>
                 </UiTable>
-                <div v-if="calls.prev_page_url || calls.next_page_url" class="flex items-center justify-between text-sm text-slate-500">
+                <div v-if="calls.prev_page_url || calls.next_page_url" class="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
                     <span>{{ calls.from }}–{{ calls.to }} of {{ calls.total }}</span>
                     <div class="flex gap-2">
                         <UiButton v-if="calls.prev_page_url" variant="ghost" size="sm" :href="calls.prev_page_url">Newer</UiButton>

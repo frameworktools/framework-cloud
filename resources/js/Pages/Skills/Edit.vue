@@ -71,7 +71,7 @@ const destroy = async () => {
     <Head :title="skill ? skill.name : 'New skill'" />
 
     <SectionLayout heading="Skill" :items="items">
-        <Link href="/skills" class="text-sm text-slate-500 hover:underline">Skills</Link>
+        <Link href="/skills" class="text-sm text-slate-500 dark:text-slate-400 hover:underline">Skills</Link>
         <PageHeader :title="skill ? skill.name : 'New skill'">
             <template #description>
                 In the SKILL.md front matter, the <code class="font-mono">name</code> field identifies the skill to assistants,
@@ -80,8 +80,8 @@ const destroy = async () => {
                 <template v-if="skill?.is_system"> Framework skills use the canonical copy for each environment.</template>
             </template>
         </PageHeader>
-        <p v-if="skill?.parent" class="mt-3 text-sm text-slate-500">Forked from <Link :href="`/skills/${skill.parent.id}`" class="underline">{{ skill.parent.name }}</Link>, version {{ skill.parent.version }}.</p>
-        <div v-if="skill" class="mt-2 font-mono text-xs text-slate-500">{{ skill.handle }} · v{{ skill.version }}</div>
+        <p v-if="skill?.parent" class="mt-3 text-sm text-slate-500 dark:text-slate-400">Forked from <Link :href="`/skills/${skill.parent.id}`" class="underline">{{ skill.parent.name }}</Link>, version {{ skill.parent.version }}.</p>
+        <div v-if="skill" class="mt-2 font-mono text-xs text-slate-500 dark:text-slate-400">{{ skill.handle }} · v{{ skill.version }}</div>
 
         <UiCallout v-if="saved" variant="success" heading="Saved" class="mt-8">Version {{ skill?.version }} is saved.</UiCallout>
         <UiCallout v-else-if="skill && freshCopy" heading="New copy" class="mt-8">
@@ -104,15 +104,15 @@ const destroy = async () => {
                             <input v-model="form.tags" type="checkbox" :value="tag.id" class="size-4 accent-sky-700" />{{ tag.name }}
                         </label>
                     </div>
-                    <p class="text-xs text-slate-500">Curated tags. Select all that apply.</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Curated tags. Select all that apply.</p>
                     <p v-if="form.errors.tags || Object.keys(form.errors).some(key => key.startsWith('tags.'))" class="text-sm text-red-600">Select tags from the curated list.</p>
                 </fieldset>
                 <UiInput v-if="skill" v-model="form.notes" label="Version notes (optional)" :error="form.errors.notes" />
-                <p v-if="skill?.source_url" class="text-sm text-slate-500">
+                <p v-if="skill?.source_url" class="text-sm text-slate-500 dark:text-slate-400">
                     Imported from <a :href="skill.source_url" class="underline">{{ skill.source_url }}</a>
                 </p>
             </UiPanel>
-            <p v-else-if="skill?.source_url" class="text-sm text-slate-500">
+            <p v-else-if="skill?.source_url" class="text-sm text-slate-500 dark:text-slate-400">
                 Imported from <a :href="skill.source_url" class="underline">{{ skill.source_url }}</a>
             </p>
 

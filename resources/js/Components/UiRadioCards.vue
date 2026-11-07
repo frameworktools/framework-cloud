@@ -36,7 +36,7 @@ const model = defineModel({ type: String });
                         <span class="font-medium text-slate-900 dark:text-white" :class="stacked ? 'text-base' : 'text-sm'">{{ option.label }}</span>
                         <span v-if="option.badge" class="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">{{ option.badge }}</span>
                     </span>
-                    <span v-if="option.description" class="text-slate-500 dark:text-slate-400" :class="stacked ? 'mt-0.5 text-sm' : 'text-xs'">{{ option.description }}</span>
+                    <span v-if="option.description" class="text-slate-600 dark:text-slate-400" :class="stacked ? 'mt-0.5 text-sm' : 'text-xs'">{{ option.description }}</span>
                 </span>
             </label>
         </div>

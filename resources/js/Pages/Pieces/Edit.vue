@@ -93,14 +93,14 @@ const errorFor = (prefix) => Object.entries(form.errors).filter(([k]) => k.start
     <Head :title="facet ? `Edit ${facet.name}` : `New ${copy.noun}`" />
 
     <SectionLayout :heading="copy.title" :items="items">
-        <Link :href="`/${path}`" class="text-sm text-slate-500 hover:underline">{{ copy.title }}</Link>
+        <Link :href="`/${path}`" class="text-sm text-slate-500 dark:text-slate-400 hover:underline">{{ copy.title }}</Link>
         <PageHeader :title="facet ? `Edit ${facet.name}` : `New ${copy.noun}`">
             <template #description>
                 {{ copy.description }}
                 Saving makes a new version. Blueprints and projects keep the version they chose.
             </template>
         </PageHeader>
-        <div v-if="facet" class="mt-2 font-mono text-xs text-slate-500">{{ facet.handle }} · v{{ facet.version }}</div>
+        <div v-if="facet" class="mt-2 font-mono text-xs text-slate-500 dark:text-slate-400">{{ facet.handle }} · v{{ facet.version }}</div>
 
         <UiCallout v-if="saved" variant="success" heading="Saved" class="mt-8">Version {{ facet?.version }} is ready to use.</UiCallout>
         <UiCallout v-else-if="facet && freshCopy" heading="New copy" class="mt-8">
@@ -161,7 +161,7 @@ const errorFor = (prefix) => Object.entries(form.errors).filter(([k]) => k.start
                     <div v-for="(skill, index) in form.skills" :key="skill.name" class="flex items-center justify-between gap-3 px-3 py-2">
                         <div class="min-w-0">
                             <div class="text-sm font-medium text-slate-900 dark:text-white">{{ skillTitle(skill) }}</div>
-                            <div class="font-mono text-xs text-slate-500">{{ skill.name }}</div>
+                            <div class="font-mono text-xs text-slate-500 dark:text-slate-400">{{ skill.name }}</div>
                         </div>
                         <UiButton size="sm" variant="ghost" @click="removeSkill(index)">Remove</UiButton>
                     </div>
@@ -190,8 +190,8 @@ const errorFor = (prefix) => Object.entries(form.errors).filter(([k]) => k.start
                 <div v-if="facet.versions?.length" class="flex flex-col gap-1">
                     <div v-for="v in [...facet.versions].reverse()" :key="v.id" class="text-sm">
                         <span class="font-mono">v{{ v.version }}</span>
-                        <span class="text-slate-500"> · {{ new Date(v.created_at).toLocaleDateString() }}</span>
-                        <span v-if="v.notes" class="text-slate-500"> · {{ v.notes }}</span>
+                        <span class="text-slate-500 dark:text-slate-400"> · {{ new Date(v.created_at).toLocaleDateString() }}</span>
+                        <span v-if="v.notes" class="text-slate-500 dark:text-slate-400"> · {{ v.notes }}</span>
                     </div>
                 </div>
             </UiPanel>

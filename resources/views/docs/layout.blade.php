@@ -17,11 +17,12 @@
     @vite(['resources/css/docs.css'])
 </head>
 <body class="flex min-h-full flex-col bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100">
+    <a href="#main" class="sr-only rounded-md bg-white px-4 py-2 text-sm font-medium text-slate-900 shadow-lg ring-1 ring-slate-900/10 focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] dark:bg-slate-800 dark:text-white">Skip to content</a>
 
     @include('docs.partials.header')
 
     @hasSection('full')
-        <main class="flex-1">@yield('full')</main>
+        <main id="main" tabindex="-1" class="flex-1 focus:outline-none">@yield('full')</main>
     @else
         <div class="mx-auto flex w-full max-w-8xl flex-1 justify-center px-6 sm:px-8 lg:px-12">
             @if ($site)
@@ -32,7 +33,7 @@
                 </aside>
             @endif
 
-            <main class="min-w-0 max-w-3xl flex-auto py-10 lg:pl-8 xl:px-12">
+            <main id="main" tabindex="-1" class="min-w-0 max-w-3xl flex-auto focus:outline-none py-10 lg:pl-8 xl:px-12">
                 @yield('content')
             </main>
 

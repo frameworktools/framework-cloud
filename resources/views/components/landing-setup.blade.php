@@ -34,8 +34,8 @@
         ],
     ];
     $card = 'overflow-hidden rounded-lg bg-slate-50 ring-1 ring-slate-200 dark:bg-white/[0.03] dark:ring-white/10';
-    $cardHead = 'border-b border-slate-200 px-3 py-1.5 font-mono text-[11px] text-slate-500 dark:border-white/10';
-    $pre = 'overflow-x-auto py-2 font-mono text-[11px] leading-[1.5] text-slate-700 dark:text-slate-300';
+    $cardHead = 'border-b border-slate-200 px-3 py-1.5 font-mono text-[11px] text-slate-500 dark:text-slate-400 dark:border-white/10';
+    $pre = 'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-sky-500 overflow-x-auto py-2 font-mono text-[11px] leading-[1.5] text-slate-700 dark:text-slate-300';
     $cli = "Publishing penguins.csv, 15 KB, to this project on framework.pub.\nUpload it? [y/N] y\nPublished penguins, version 1.\nLink: https://framework.pub/@examples/penguin-study/penguins\n…\nPublished mass-by-species, version 1.\n…\nPublished penguin-body-mass, version 1.\n…\nPublished flipper-and-mass, version 1.\nLink: https://framework.pub/@examples/penguin-study/flipper-and-mass";
 @endphp
 <section id="setup" class="scroll-mt-6 border-t border-slate-800/10 py-14 sm:py-20 dark:border-white/10">
@@ -54,7 +54,7 @@
                 @endforeach
             </div>
             </div>
-            <div class="hidden items-center justify-end border-b border-slate-200 bg-white px-4 lg:flex dark:border-white/10 dark:bg-black/25"><span class="text-[11px] text-slate-500">Palmer penguins data</span></div>
+            <div class="hidden items-center justify-end border-b border-slate-200 bg-white px-4 lg:flex dark:border-white/10 dark:bg-black/25"><span class="text-[11px] text-slate-500 dark:text-slate-400">Palmer penguins data</span></div>
         </div>
         <div>
             @foreach ($languages as $key => $language)
@@ -62,8 +62,8 @@
                 <div role="tabpanel" id="setup-panel-{{ $key }}" aria-labelledby="setup-tab-{{ $key }}" data-setup-panel="{{ $key }}" @unless ($loop->first) hidden @endunless class="grid min-w-0 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                     {{-- Code --}}
                     <div class="min-w-0 border-white/10 max-lg:border-b lg:border-r">
-                        <p class="border-b border-white/5 px-4 py-2 font-mono text-[11px] text-slate-500">{{ $language['path'] }}</p>
-                        <pre class="overflow-x-auto px-4 py-4 font-mono text-xs leading-[1.65]"><code>{!! \App\Support\ExampleCode::highlight($language['code'], false) !!}</code></pre>
+                        <p class="border-b border-white/5 px-4 py-2 font-mono text-[11px] text-slate-400">{{ $language['path'] }}</p>
+                        <pre tabindex="0" class="focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-sky-500 overflow-x-auto px-4 py-4 font-mono text-xs leading-[1.65]"><code>{!! \App\Support\ExampleCode::highlight($language['code'], false) !!}</code></pre>
                     </div>
 
                     {{-- Output: real console output, trimmed --}}
@@ -72,32 +72,32 @@
                             @foreach ([['Data', 0, 'data', false], ['Model', 2, 'model', false]] as [$title, $label, $part, $open])
                                 <details @if ($open) open @endif class="group/section {{ $card }}">
                                     <summary class="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-xs text-slate-700 hover:bg-slate-100 group-open/section:border-b group-open/section:border-slate-200 dark:text-slate-300 dark:hover:bg-white/[0.03] dark:group-open/section:border-white/10 [&::-webkit-details-marker]:hidden">
-                                        <x-heroicon-m-chevron-right class="size-3.5 shrink-0 text-slate-500 transition group-open/section:rotate-90" />
+                                        <x-heroicon-m-chevron-right class="size-3.5 shrink-0 text-slate-400 transition group-open/section:rotate-90" />
                                         <span class="font-medium">{{ $title }}</span>
-                                        <span class="ml-auto truncate font-mono text-[11px] text-slate-500">{{ $language['labels'][$label] }}</span>
+                                        <span class="ml-auto truncate font-mono text-[11px] text-slate-500 dark:text-slate-400">{{ $language['labels'][$label] }}</span>
                                     </summary>
-                                    <pre class="{{ $pre }} px-3"><code>{{ implode("\n", $output[$part]) }}</code></pre>
+                                    <pre tabindex="0" class="{{ $pre }} px-3"><code>{{ implode("\n", $output[$part]) }}</code></pre>
                                 </details>
                             @endforeach
                             <div class="grid gap-3 sm:grid-cols-2">
-                                <div class="{{ $card }}"><p class="{{ $cardHead }}">{{ $language['labels'][1] }}</p><pre class="{{ $pre }} px-2.5"><code>{{ implode("\n", $output['table']) }}</code></pre></div>
+                                <div class="{{ $card }}"><p class="{{ $cardHead }}">{{ $language['labels'][1] }}</p><pre tabindex="0" class="{{ $pre }} px-2.5"><code>{{ implode("\n", $output['table']) }}</code></pre></div>
                                 <img src="/images/landing/setup/{{ $key }}-figure.svg" alt="Scatterplot of body mass against flipper length for 342 penguins, colored by species" loading="lazy" class="aspect-[3/2] w-full self-start rounded-lg bg-white object-contain p-1 ring-1 ring-slate-200 dark:ring-0">
                             </div>
                         @else
-                            <div class="{{ $card }}"><pre class="{{ $pre }} px-3"><code>{{ $cli }}</code></pre></div>
+                            <div class="{{ $card }}"><pre tabindex="0" class="{{ $pre }} px-3"><code>{{ $cli }}</code></pre></div>
                         @endif
 
                         {{-- Published --}}
                         <div class="{{ $card }}">
-                            <div class="flex items-center justify-between gap-3 border-b border-slate-200 px-3 py-1.5 dark:border-white/10"><span class="text-[11px] font-medium text-emerald-700 dark:text-emerald-300">Published to Framework Cloud</span><span class="text-[11px] text-slate-500">version 1</span></div>
+                            <div class="flex items-center justify-between gap-3 border-b border-slate-200 px-3 py-1.5 dark:border-white/10"><span class="text-[11px] font-medium text-emerald-700 dark:text-emerald-300">Published to Framework Cloud</span><span class="text-[11px] text-slate-500 dark:text-slate-400">version 1</span></div>
                             <ul>
                                 @foreach ($published as $item)
                                     <li>
                                         <a @if ($base) href="{{ $base }}/{{ $item['slug'] }}" target="_blank" rel="noopener" @endif class="group flex items-center gap-2.5 border-t border-slate-200 px-3 py-1.5 text-[11px] hover:bg-slate-100 dark:border-white/5 dark:hover:bg-white/5">
-                                            <x-dynamic-component :component="$item['icon']" class="size-3.5 shrink-0 text-slate-500 group-hover:text-emerald-600 dark:group-hover:text-emerald-300" />
-                                            <span class="w-12 shrink-0 text-slate-500">{{ $item['kind'] }}</span>
+                                            <x-dynamic-component :component="$item['icon']" class="size-3.5 shrink-0 text-slate-500 dark:text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-300" />
+                                            <span class="w-12 shrink-0 text-slate-500 dark:text-slate-400">{{ $item['kind'] }}</span>
                                             <span class="truncate font-mono text-slate-800 group-hover:text-slate-950 dark:text-slate-200 dark:group-hover:text-white">{{ $item['slug'] }}</span>
-                                            @if ($base)<span class="ml-auto shrink-0 text-slate-500 group-hover:text-emerald-600 dark:group-hover:text-emerald-300">View</span>@endif
+                                            @if ($base)<span class="ml-auto shrink-0 text-slate-500 dark:text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-300">View</span>@endif
                                         </a>
                                     </li>
                                 @endforeach

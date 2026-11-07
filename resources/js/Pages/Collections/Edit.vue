@@ -54,10 +54,10 @@ watch(() => [details.title, details.description], () => {
 const now = ref(Date.now());
 let clock;
 const status = computed(() => {
-    if (details.processing) return { text: 'Saving…', icon: ArrowPathIcon, tone: 'text-slate-500', spin: true };
+    if (details.processing) return { text: 'Saving…', icon: ArrowPathIcon, tone: 'text-slate-500 dark:text-slate-400', spin: true };
     if (failed.value) return { text: 'Not saved', icon: ExclamationTriangleIcon, tone: 'text-amber-700 dark:text-amber-400' };
-    if (details.isDirty) return { text: details.title.trim() ? 'Unsaved changes' : 'Add a title to save', icon: null, tone: 'text-slate-500' };
-    if (!lastSaved.value) return { text: 'All changes saved', icon: CheckCircleIcon, tone: 'text-slate-500' };
+    if (details.isDirty) return { text: details.title.trim() ? 'Unsaved changes' : 'Add a title to save', icon: null, tone: 'text-slate-500 dark:text-slate-400' };
+    if (!lastSaved.value) return { text: 'All changes saved', icon: CheckCircleIcon, tone: 'text-slate-500 dark:text-slate-400' };
     const seconds = Math.max(0, Math.round((now.value - lastSaved.value) / 1000));
     return { text: seconds < 20 ? 'Saved' : `Saved ${Math.round(seconds / 60) || 1} min ago`, icon: CheckCircleIcon, tone: 'text-emerald-700 dark:text-emerald-400' };
 });
@@ -202,7 +202,7 @@ onBeforeUnmount(() => { clearInterval(clock); clearTimeout(timer); window.remove
             </UiBreadcrumbs>
 
             <div :class="[pageClass, 'grid gap-10 lg:grid-cols-[minmax(0,1fr)_18rem]']">
-                <main class="min-w-0">
+                <div class="min-w-0">
                     <div v-if="Object.keys(errors).length" role="alert" class="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
                         <p v-for="(error, key) in errors" :key="key">{{ error }}</p>
                     </div>
@@ -225,9 +225,9 @@ onBeforeUnmount(() => { clearInterval(clock); clearTimeout(timer); window.remove
 
                         <div v-if="!order.length" class="mt-3 rounded-xl border-2 border-dashed border-slate-200 px-6 py-12 text-center dark:border-slate-700">
                             <p class="font-medium text-slate-900 dark:text-white">No artifacts yet</p>
-                            <p class="mx-auto mt-1 max-w-sm text-sm text-slate-500">Add the figures, tables, models, and documents you want readers to see together.</p>
+                            <p class="mx-auto mt-1 max-w-sm text-sm text-slate-500 dark:text-slate-400">Add the figures, tables, models, and documents you want readers to see together.</p>
                             <UiButton class="mt-5" variant="ghost" size="sm" :disabled="!available.length" @click="picking = true"><PlusIcon class="size-4" aria-hidden="true" />Add artifact</UiButton>
-                            <p v-if="!artifacts.length" class="mt-3 text-xs text-slate-500">Publish an artifact to this project first.</p>
+                            <p v-if="!artifacts.length" class="mt-3 text-xs text-slate-500 dark:text-slate-400">Publish an artifact to this project first.</p>
                         </div>
 
                         <ol v-else class="mt-3 divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
@@ -254,7 +254,7 @@ onBeforeUnmount(() => { clearInterval(clock); clearTimeout(timer); window.remove
                                         <LockClosedIcon v-if="artifactFor(item)?.password_protected" class="size-3.5" aria-label="Password protected" />
                                     </p>
                                     <p v-if="item.caption" class="mt-1.5 line-clamp-2 whitespace-pre-line text-sm text-slate-600 dark:text-slate-300">{{ item.caption }}</p>
-                                    <p v-if="notice(item)" class="mt-1.5 flex items-start gap-1.5 text-xs" :class="notice(item).warn ? 'text-amber-700 dark:text-amber-400' : 'text-slate-500'">
+                                    <p v-if="notice(item)" class="mt-1.5 flex items-start gap-1.5 text-xs" :class="notice(item).warn ? 'text-amber-700 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400'">
                                         <ExclamationTriangleIcon v-if="notice(item).warn" class="mt-px size-3.5 shrink-0" aria-hidden="true" />
                                         <span>{{ notice(item).text }}
                                             <button v-if="notice(item).allow" type="button" class="font-medium underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-200" @click="update(item, { share_unlisted: true })">Share it</button>
@@ -269,7 +269,7 @@ onBeforeUnmount(() => { clearInterval(clock); clearTimeout(timer); window.remove
                             </li>
                         </ol>
                     </section>
-                </main>
+                </div>
 
                 <aside class="min-w-0 space-y-8 lg:sticky lg:top-20 lg:self-start">
                     <form aria-labelledby="sharing-title" class="space-y-4" @submit.prevent="saveSharing">
@@ -277,7 +277,7 @@ onBeforeUnmount(() => { clearInterval(clock); clearTimeout(timer); window.remove
                         <label class="block text-sm font-medium text-slate-800 dark:text-slate-200">Reader access
                             <select v-model="sharing.visibility" :class="fieldClass"><option value="private">Private, only you</option><option value="unlisted">Anyone with the link</option><option value="public">Public</option></select>
                         </label>
-                        <p class="-mt-2 text-xs text-slate-500">{{ visibilityText[sharing.visibility] }} Artifacts keep their own passwords.</p>
+                        <p class="-mt-2 text-xs text-slate-500 dark:text-slate-400">{{ visibilityText[sharing.visibility] }} Artifacts keep their own passwords.</p>
                         <p v-if="sharing.errors.visibility" class="-mt-2 text-xs text-red-700 dark:text-red-400">{{ sharing.errors.visibility }}</p>
 
                         <div v-if="sharing.visibility !== 'private'">
@@ -290,7 +290,7 @@ onBeforeUnmount(() => { clearInterval(clock); clearTimeout(timer); window.remove
                             <label v-if="expiry === 'date'" class="mt-2 block text-sm"><span class="sr-only">Expiry date</span>
                                 <input v-model="sharing.expires_on" type="date" :min="inDays(0)" required :class="dateClass">
                             </label>
-                            <p v-if="sharing.expires_on" class="mt-1.5 text-xs text-slate-500">Readers can open it through the end of {{ day(`${sharing.expires_on}T12:00:00`) }}. You can still open it afterward.</p>
+                            <p v-if="sharing.expires_on" class="mt-1.5 text-xs text-slate-500 dark:text-slate-400">Readers can open it through the end of {{ day(`${sharing.expires_on}T12:00:00`) }}. You can still open it afterward.</p>
                             <p v-if="sharing.errors.expires_at" class="mt-1.5 text-xs text-red-700 dark:text-red-400">{{ sharing.errors.expires_at }}</p>
                         </div>
 
@@ -305,10 +305,10 @@ onBeforeUnmount(() => { clearInterval(clock); clearTimeout(timer); window.remove
                             <a :href="collection.url" target="_blank" rel="noopener" class="min-w-0 flex-1 truncate font-mono text-xs text-slate-700 hover:underline dark:text-slate-300">{{ collection.url.replace(/^https?:\/\//, '') }}</a>
                             <button type="button" class="inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-slate-600 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-700" @click="copyLink"><ClipboardDocumentIcon class="size-3.5" aria-hidden="true" />{{ copied ? 'Copied' : 'Copy' }}</button>
                         </div>
-                        <p v-if="collection.expires_at" class="flex items-center gap-1.5 text-xs" :class="collection.expired ? 'text-amber-700 dark:text-amber-400' : 'text-slate-500'">
+                        <p v-if="collection.expires_at" class="flex items-center gap-1.5 text-xs" :class="collection.expired ? 'text-amber-700 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400'">
                             <ClockIcon class="size-3.5" aria-hidden="true" />{{ collection.expired ? `Expired ${day(collection.expires_at)}. Readers can’t open it.` : `Works until ${day(collection.expires_at)}` }}
                         </p>
-                        <p v-if="collection.protected" class="flex items-center gap-1.5 text-xs text-slate-500"><LockClosedIcon class="size-3.5" aria-hidden="true" />Password protected</p>
+                        <p v-if="collection.protected" class="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400"><LockClosedIcon class="size-3.5" aria-hidden="true" />Password protected</p>
                     </div>
 
                     <div class="border-t border-slate-800/10 pt-6 dark:border-white/10">
@@ -336,7 +336,7 @@ onBeforeUnmount(() => { clearInterval(clock); clearTimeout(timer); window.remove
                         <option v-for="version in editingArtifact.versions" :key="version.number" :value="version.number">Version {{ version.number }}<template v-if="version.created_at">, {{ day(version.created_at) }}</template></option>
                     </select>
                 </label>
-                <p v-if="editingArtifact" class="-mt-2 text-xs text-slate-500">Choose a version to keep showing it after you publish newer ones.</p>
+                <p v-if="editingArtifact" class="-mt-2 text-xs text-slate-500 dark:text-slate-400">Choose a version to keep showing it after you publish newer ones.</p>
                 <label class="block text-sm font-medium text-slate-800 dark:text-slate-200">Caption
                     <textarea v-model="entry.caption" rows="3" placeholder="Caption" :class="areaClass" />
                 </label>

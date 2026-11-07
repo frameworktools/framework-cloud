@@ -53,14 +53,14 @@ const pill = (on) => on
                     <h1 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{{ skill.name }}</h1>
                     <p v-if="skill.summary" class="mt-2 text-base text-slate-700 dark:text-slate-300">{{ skill.summary }}</p>
                     <details class="group mt-2 text-sm">
-                        <summary class="cursor-pointer list-none text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 [&::-webkit-details-marker]:hidden">
+                        <summary class="cursor-pointer list-none text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 [&::-webkit-details-marker]:hidden">
                             <span class="group-open:hidden">Agent instructions ›</span><span class="hidden group-open:inline">Agent instructions ⌄</span>
                         </summary>
                         <p class="mt-1 text-slate-600 dark:text-slate-400">{{ skill.descriptions?.[language] ?? skill.description }}</p>
                     </details>
-                    <p class="mt-2 text-xs text-slate-500">{{ languageScope(skill.language) }}</p>
+                    <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">{{ languageScope(skill.language) }}</p>
                     <div v-if="skill.tags?.length" class="mt-3 flex flex-wrap gap-3">
-                        <Link v-for="tag in skill.tags" :key="tag.id" :href="`/skills?tag=${tag.key}`" class="text-xs text-slate-500 underline underline-offset-4">{{ tag.name }}</Link>
+                        <Link v-for="tag in skill.tags" :key="tag.id" :href="`/skills?tag=${tag.key}`" class="text-xs text-slate-500 dark:text-slate-400 underline underline-offset-4">{{ tag.name }}</Link>
                     </div>
                 </div>
                 <div class="flex shrink-0 gap-2">
@@ -81,20 +81,20 @@ const pill = (on) => on
                         {{ languageNames[l] }}
                     </button>
                 </div>
-                <span v-if="variants.length > 1" class="text-xs text-slate-500">{{ languageNames[language] }} project instructions</span>
+                <span v-if="variants.length > 1" class="text-xs text-slate-500 dark:text-slate-400">{{ languageNames[language] }} project instructions</span>
                 <button type="button" class="ml-auto inline-flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white" @click="copy">
                     <component :is="copied ? CheckIcon : ClipboardDocumentIcon" class="size-4" />{{ copied ? 'Copied' : 'Copy source' }}
                 </button>
             </div>
 
-            <p v-if="skill.parent" class="text-sm text-slate-500">Forked from <Link :href="`/skills/${skill.parent.id}`" class="underline">{{ skill.parent.name }}</Link>, version {{ skill.parent.version }}.</p>
+            <p v-if="skill.parent" class="text-sm text-slate-500 dark:text-slate-400">Forked from <Link :href="`/skills/${skill.parent.id}`" class="underline">{{ skill.parent.name }}</Link>, version {{ skill.parent.version }}.</p>
             <article v-if="view === 'read'" class="skill-prose" v-html="html" />
             <pre v-else class="max-w-[90ch] overflow-x-auto whitespace-pre-wrap break-words rounded-lg bg-slate-50 p-4 font-mono text-[0.8125rem] leading-relaxed text-slate-800 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-200 dark:ring-slate-800">{{ source }}</pre>
 
-            <footer class="flex flex-wrap gap-x-3 gap-y-1 border-t border-slate-200 pt-3 text-xs text-slate-500 dark:border-slate-800">
+            <footer class="flex flex-wrap gap-x-3 gap-y-1 border-t border-slate-200 pt-3 text-xs text-slate-500 dark:text-slate-400 dark:border-slate-800">
                 <span class="font-mono">{{ skill.handle }} v{{ skill.version }}</span>
                 <span v-if="!skill.is_system && skill.owner">by {{ skill.owner.name ?? skill.owner }}</span>
-                <a v-if="skill.source_url" :href="skill.source_url" class="text-sky-600 hover:underline dark:text-sky-400" rel="noopener" target="_blank">Source on GitHub</a>
+                <a v-if="skill.source_url" :href="skill.source_url" class="text-sky-700 hover:underline dark:text-sky-400" rel="noopener" target="_blank">Source on GitHub</a>
             </footer>
         </div>
     </AppLayout>

@@ -1,6 +1,8 @@
 <script setup>
 defineProps({
     label: String,
+    // A name for screen readers when the row shows no label of its own
+    srLabel: String,
     description: String,
     disabled: Boolean,
 });
@@ -10,8 +12,9 @@ const model = defineModel({ type: Boolean, default: false });
 
 <template>
     <label class="flex items-start justify-between gap-4" :class="disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'">
-        <span class="flex flex-col gap-0.5">
-            <span class="text-sm font-medium text-slate-800 dark:text-slate-200">{{ label }}</span>
+        <span v-if="srLabel && !label" class="sr-only">{{ srLabel }}</span>
+        <span v-if="label || description" class="flex flex-col gap-0.5">
+            <span v-if="label" class="text-sm font-medium text-slate-800 dark:text-slate-200">{{ label }}</span>
             <span v-if="description" class="text-xs text-slate-500 dark:text-slate-400">{{ description }}</span>
         </span>
         <button

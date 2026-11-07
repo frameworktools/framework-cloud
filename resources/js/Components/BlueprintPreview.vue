@@ -49,13 +49,13 @@ watch([() => props.blueprint.key, () => props.language, () => JSON.stringify(pro
 onBeforeUnmount(() => clearTimeout(timer));
 
 const hookNames = { data_security: 'Check for secrets', check_sensitive_dirs: 'Check private folders', check_notebook_outputs: 'Check notebook outputs' };
-const label = 'text-xs font-semibold uppercase tracking-wider text-slate-500';
-const link = 'text-sky-600 hover:underline dark:text-sky-400';
+const label = 'text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400';
+const link = 'text-sky-700 hover:underline dark:text-sky-400';
 </script>
 
 <template>
     <div v-if="treeOnly" :class="loading ? 'opacity-60' : ''">
-        <div v-if="!preview" class="text-sm text-slate-500">Loading…</div>
+        <div v-if="!preview" class="text-sm text-slate-500 dark:text-slate-400">Loading…</div>
         <p v-else-if="!preview.available" class="text-sm text-slate-600 dark:text-slate-400">{{ preview.problem }}</p>
         <ProjectTreeView v-else :entries="preview.tree" />
     </div>
@@ -68,7 +68,7 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
         <!-- The project's folders and files -->
         <div class="min-w-0">
             <div :class="label" class="mb-2">Project structure</div>
-            <div v-if="!preview" class="text-sm text-slate-500">Loading…</div>
+            <div v-if="!preview" class="text-sm text-slate-500 dark:text-slate-400">Loading…</div>
             <p v-else-if="!preview.available" class="text-sm text-slate-600 dark:text-slate-400">{{ preview.problem }}</p>
             <ProjectTreeView v-else :entries="preview.tree" :class="loading ? 'opacity-60' : ''" />
         </div>
@@ -80,28 +80,28 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
                 <ul class="mt-1 flex flex-col gap-1">
                     <li v-for="p in preview.packages" :key="p.name" class="flex flex-wrap items-baseline gap-x-1.5">
                         <span class="font-mono text-xs">{{ p.name }}</span>
-                        <span class="text-xs text-slate-500" :title="p.from ? `From ${p.from}` : 'From your Project defaults'">{{ p.from ? `with ${p.from}` : 'your default' }}</span>
+                        <span class="text-xs text-slate-500 dark:text-slate-400" :title="p.from ? `From ${p.from}` : 'From your Project defaults'">{{ p.from ? `with ${p.from}` : 'your default' }}</span>
                     </li>
-                    <li v-if="!preview.packages.length" class="text-slate-500">None</li>
+                    <li v-if="!preview.packages.length" class="text-slate-500 dark:text-slate-400">None</li>
                 </ul>
             </section>
 
             <section>
                 <div :class="label">AI agents</div>
-                <div class="mt-1">{{ agentSummary(preview.agents, preview.agent_keys, preview.agent_other) }} <span v-if="preview.settings.agents.from === 'defaults'" class="text-xs text-slate-500" title="From your Project defaults">· your default</span></div>
+                <div class="mt-1">{{ agentSummary(preview.agents, preview.agent_keys, preview.agent_other) }} <span v-if="preview.settings.agents.from === 'defaults'" class="text-xs text-slate-500 dark:text-slate-400" title="From your Project defaults">· your default</span></div>
             </section>
 
             <!-- Each skill on its own line, under the set it comes from -->
             <section>
                 <div :class="label">Skills</div>
-                <p v-if="!preview.agents" class="mt-1 text-slate-500">None, with agent setup off</p>
+                <p v-if="!preview.agents" class="mt-1 text-slate-500 dark:text-slate-400">None, with agent setup off</p>
                 <template v-else>
                     <!-- A set opens to its skills -->
                     <details v-for="set in preview.skill_sets" :key="set.id" class="group mt-2 first-of-type:mt-1">
                         <summary class="flex cursor-pointer list-none items-center gap-1 [&::-webkit-details-marker]:hidden">
                             <ChevronRightIcon class="-ml-1 size-4 shrink-0 text-slate-400 transition-transform group-open:rotate-90" />
                             <span>{{ set.name }}</span>
-                            <span v-if="set.from === 'defaults'" class="text-xs text-slate-500" title="From your Project defaults">· your default</span>
+                            <span v-if="set.from === 'defaults'" class="text-xs text-slate-500 dark:text-slate-400" title="From your Project defaults">· your default</span>
                         </summary>
                         <ul class="mb-1 mt-1.5 flex flex-col gap-1 pl-4 text-xs text-slate-600 dark:text-slate-400">
                             <li v-for="skill in set.skills" :key="skill">{{ skill }}</li>
@@ -110,7 +110,7 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
                     <ul v-if="preview.skills.length" class="mt-2 flex flex-col gap-1 pl-4">
                         <li v-for="skill in preview.skills" :key="skill">{{ skill }}</li>
                     </ul>
-                    <p v-if="!preview.skill_sets.length && !preview.skills.length" class="mt-1 text-slate-500">None</p>
+                    <p v-if="!preview.skill_sets.length && !preview.skills.length" class="mt-1 text-slate-500 dark:text-slate-400">None</p>
                 </template>
             </section>
 
@@ -120,12 +120,12 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
                     <template v-for="(t, i) in preview.tools" :key="t.name">{{ i ? ' · ' : '' }}{{ t.name }}</template>
                     <span v-if="!preview.tools.length">None</span>
                 </div>
-                <div v-for="name in preview.tools_off" :key="name" class="mt-0.5 text-slate-500" title="Turned off in your Project defaults"><s>{{ name }}</s> off in your defaults</div>
+                <div v-for="name in preview.tools_off" :key="name" class="mt-0.5 text-slate-500 dark:text-slate-400" title="Turned off in your Project defaults"><s>{{ name }}</s> off in your defaults</div>
             </section>
 
             <section>
                 <div :class="label">Git</div>
-                <div class="mt-1">{{ preview.settings.git.on ? 'On' : 'Off' }} <span v-if="preview.settings.git.from === 'defaults'" class="text-xs text-slate-500" title="From your Project defaults">· your default</span></div>
+                <div class="mt-1">{{ preview.settings.git.on ? 'On' : 'Off' }} <span v-if="preview.settings.git.from === 'defaults'" class="text-xs text-slate-500 dark:text-slate-400" title="From your Project defaults">· your default</span></div>
             </section>
 
             <!-- Hooks need Git, so they only show with it on -->
@@ -133,7 +133,7 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
                 <div :class="label">Data safety hooks</div>
                 <ul class="mt-1 flex flex-col gap-1">
                     <li v-for="hook in preview.settings.hooks.on" :key="hook">{{ hookNames[hook] ?? hook }}</li>
-                    <li v-if="!preview.settings.hooks.on.length" class="text-slate-500">None</li>
+                    <li v-if="!preview.settings.hooks.on.length" class="text-slate-500 dark:text-slate-400">None</li>
                 </ul>
             </section>
 
@@ -143,7 +143,7 @@ const link = 'text-sky-600 hover:underline dark:text-sky-400';
             </section>
         </div>
 
-        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-slate-200 pt-3 text-xs text-slate-500 xl:col-span-2 dark:border-slate-800">
+        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-slate-200 pt-3 text-xs text-slate-500 dark:text-slate-400 xl:col-span-2 dark:border-slate-800">
             <span class="font-mono">{{ blueprint.handle }} v{{ blueprint.version }}</span>
             <Link :href="`/blueprints/${blueprint.id}`" :class="link">View the blueprint</Link>
         </div>

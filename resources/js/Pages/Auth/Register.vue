@@ -47,7 +47,7 @@ const send = () => form.post('/auth/magic-link');
 
         <p class="text-center text-sm text-slate-500 dark:text-slate-400">
             Already have an account?
-            <Link href="/login" class="text-sky-600 hover:underline dark:text-sky-400">Sign in</Link>
+            <Link href="/login" class="text-sky-700 hover:underline dark:text-sky-400">Sign in</Link>
         </p>
     </AuthLayout>
 </template>

@@ -41,7 +41,7 @@ const day = value => new Date(value).toLocaleDateString(undefined, { year: 'nume
                                 <RectangleStackIcon class="size-4 shrink-0 text-slate-400" aria-hidden="true" />
                                 <Link :href="`/collections/${collection.id}/edit`" class="truncate hover:underline hover:underline-offset-4">{{ collection.title }}</Link>
                             </span>
-                            <Link v-if="!project" :href="`/projects/${collection.project.slug}`" class="mt-1 block truncate text-xs font-normal text-slate-500 hover:underline">{{ collection.project.name }}</Link>
+                            <Link v-if="!project" :href="`/projects/${collection.project.slug}`" class="mt-1 block truncate text-xs font-normal text-slate-500 dark:text-slate-400 hover:underline">{{ collection.project.name }}</Link>
                         </td>
                         <td class="numeric max-sm:hidden">{{ collection.items_count }}</td>
                         <td class="max-md:hidden"><span class="inline-flex items-center gap-1.5">{{ sharing[collection.visibility] }}<LockClosedIcon v-if="collection.protected" class="size-3.5" aria-label="Password protected" /></span></td>

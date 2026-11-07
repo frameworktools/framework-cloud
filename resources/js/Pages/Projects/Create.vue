@@ -234,12 +234,12 @@ const items = computed(() => [
         <form id="create-form" class="mt-8 flex flex-col gap-8" @submit.prevent="create">
             <UiPanel id="blueprint" title="Blueprint" class="scroll-mt-6">
                 <template #header>
-                    <Link href="/blueprints/create" class="text-sm text-sky-600 hover:underline dark:text-sky-400">Build your own</Link>
+                    <Link href="/blueprints/create" class="text-sm text-sky-700 hover:underline dark:text-sky-400">Build your own</Link>
                 </template>
                 <p v-if="form.errors.blueprint_id" class="text-sm text-red-600 dark:text-red-400">{{ form.errors.blueprint_id }}</p>
 
                 <div v-for="section in sections" :key="section.key" class="flex flex-col gap-2">
-                    <h3 v-if="sections.length > 1" class="text-xs font-medium uppercase tracking-wide text-slate-500">{{ section.label }}</h3>
+                    <h3 v-if="sections.length > 1" class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ section.label }}</h3>
                     <div class="flex flex-col divide-y divide-slate-200 overflow-hidden rounded-lg border border-slate-200 bg-white dark:divide-slate-700 dark:border-slate-700 dark:bg-slate-900">
                         <div
                             v-for="b in section.rows" :key="b.id"
@@ -271,28 +271,28 @@ const items = computed(() => [
                             </button>
                             <div v-if="b.id === form.blueprint_id" class="flex flex-col gap-2 px-4 pb-4 pl-11 text-sm">
                                 <!-- What the project gets: the blueprint with your defaults, or the pieces chosen below -->
-                                <p v-if="!shownFor(b)" class="text-slate-500">Resolving…</p>
+                                <p v-if="!shownFor(b)" class="text-slate-500 dark:text-slate-400">Resolving…</p>
                                 <p v-else-if="shownFor(b).problem" class="text-amber-800 dark:text-amber-300">{{ shownFor(b).problem }}</p>
                                 <dl v-else class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1 text-slate-600 dark:text-slate-400">
-                                    <dt class="text-xs text-slate-500">Structure</dt><dd>{{ pieceName('structures', shownFor(b).structure) }}</dd>
-                                    <template v-if="shownFor(b).workflow"><dt class="text-xs text-slate-500">Workflow</dt><dd>{{ shownFor(b).workflow.name }}</dd></template>
-                                    <dt class="text-xs text-slate-500">Tools</dt>
+                                    <dt class="text-xs text-slate-500 dark:text-slate-400">Structure</dt><dd>{{ pieceName('structures', shownFor(b).structure) }}</dd>
+                                    <template v-if="shownFor(b).workflow"><dt class="text-xs text-slate-500 dark:text-slate-400">Workflow</dt><dd>{{ shownFor(b).workflow.name }}</dd></template>
+                                    <dt class="text-xs text-slate-500 dark:text-slate-400">Tools</dt>
                                     <dd>{{ Object.entries(shownFor(b).tools).filter(([, t]) => t.on).map(([k]) => pieceName('tools', k)).join(', ') || 'None' }}</dd>
                                     <template v-if="shownFor(b).package_sets.length">
-                                        <dt class="text-xs text-slate-500">Packages</dt>
-                                        <dd><template v-for="(s, i) in shownFor(b).package_sets" :key="s.key">{{ i ? ', ' : '' }}{{ s.name }}<span v-if="s.from === 'yours'" class="text-xs text-slate-500"> (your default)</span></template></dd>
+                                        <dt class="text-xs text-slate-500 dark:text-slate-400">Packages</dt>
+                                        <dd><template v-for="(s, i) in shownFor(b).package_sets" :key="s.key">{{ i ? ', ' : '' }}{{ s.name }}<span v-if="s.from === 'yours'" class="text-xs text-slate-500 dark:text-slate-400"> (your default)</span></template></dd>
                                     </template>
-                                    <dt class="text-xs text-slate-500">Agents</dt><dd>{{ agentSummary(shownFor(b).agents.enabled, shownFor(b).agents.named, shownFor(b).agents.other) }}</dd>
+                                    <dt class="text-xs text-slate-500 dark:text-slate-400">Agents</dt><dd>{{ agentSummary(shownFor(b).agents.enabled, shownFor(b).agents.named, shownFor(b).agents.other) }}</dd>
                                     <template v-if="shownFor(b).agents.enabled && shownFor(b).skill_sets.length">
-                                        <dt class="text-xs text-slate-500">Skills</dt>
-                                        <dd><template v-for="(s, i) in shownFor(b).skill_sets" :key="s.key">{{ i ? ', ' : '' }}{{ s.name }}<span v-if="s.from === 'yours'" class="text-xs text-slate-500"> (your default)</span></template></dd>
+                                        <dt class="text-xs text-slate-500 dark:text-slate-400">Skills</dt>
+                                        <dd><template v-for="(s, i) in shownFor(b).skill_sets" :key="s.key">{{ i ? ', ' : '' }}{{ s.name }}<span v-if="s.from === 'yours'" class="text-xs text-slate-500 dark:text-slate-400"> (your default)</span></template></dd>
                                     </template>
                                     <template v-for="n in shownFor(b).notices" :key="n"><dt class="sr-only">Note</dt><dd class="col-span-2 text-xs text-amber-800 dark:text-amber-300">{{ n }}</dd></template>
                                 </dl>
                                 <div class="flex items-center gap-3">
                                     <UiButton v-if="!form.customized" size="sm" variant="outline" :disabled="!shownFor(b) || !!shownFor(b).problem" @click="customize">Change pieces</UiButton>
                                     <UiButton v-else size="sm" variant="ghost" @click="form.customized = false">Use the blueprint as is</UiButton>
-                                    <Link :href="`/blueprints/${b.id}`" class="font-mono text-xs text-slate-500 hover:underline">{{ b.handle }} v{{ b.version }}</Link>
+                                    <Link :href="`/blueprints/${b.id}`" class="font-mono text-xs text-slate-500 dark:text-slate-400 hover:underline">{{ b.handle }} v{{ b.version }}</Link>
                                 </div>
                             </div>
                         </div>
@@ -319,21 +319,21 @@ const items = computed(() => [
             <UiPanel id="name" title="Name" class="scroll-mt-6">
                 <div>
                     <UiInput v-model="form.name" label="Project name" placeholder="e.g. NHANES Study" :error="form.errors.name" />
-                    <p v-if="slug" class="mt-1.5 text-xs text-slate-500">Folder name: <span class="font-mono">{{ slug }}</span></p>
+                    <p v-if="slug" class="mt-1.5 text-xs text-slate-500 dark:text-slate-400">Folder name: <span class="font-mono">{{ slug }}</span></p>
                 </div>
                 <UiTextarea v-model="form.description" label="Description (optional)" :rows="3" :error="form.errors.description" />
                 <div>
                     <UiSelect v-model="form.language" label="Language" :options="languages" :error="form.errors.language" />
-                    <p v-if="!stataAllowed" class="mt-1.5 text-xs text-slate-500">
+                    <p v-if="!stataAllowed" class="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
                         This blueprint doesn't support Stata.
                     </p>
-                    <p v-else-if="stata" class="mt-1.5 text-xs text-slate-500">
+                    <p v-else-if="stata" class="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
                         Stata projects use do-files and the framework Stata package for paths, data, and publishing.
                     </p>
                 </div>
                 <div v-if="!stata">
                     <UiSelect v-model="form.workflow" label="Notebook workflow" :options="workflowOptions" :error="form.errors.workflow" />
-                    <p v-if="!form.workflow && current?.workflow" class="mt-1.5 text-xs text-slate-500">Your default for {{ languageNames[form.language] }} here is {{ current.workflow.name }}.</p>
+                    <p v-if="!form.workflow && current?.workflow" class="mt-1.5 text-xs text-slate-500 dark:text-slate-400">Your default for {{ languageNames[form.language] }} here is {{ current.workflow.name }}.</p>
                 </div>
             </UiPanel>
 
@@ -361,13 +361,13 @@ const items = computed(() => [
 
                 <div v-if="onGitHub" class="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
                     <p v-if="!github.login" class="text-sm text-slate-600 dark:text-slate-400">
-                        <Link href="/account/github" class="text-sky-600 hover:underline dark:text-sky-400">Connect GitHub</Link> first.
+                        <Link href="/account/github" class="text-sky-700 hover:underline dark:text-sky-400">Connect GitHub</Link> first.
                     </p>
                     <p v-else-if="github.owners === null" class="text-sm text-slate-600 dark:text-slate-400">
                         GitHub could not be reached. Reload to try again.
                     </p>
                     <p v-else-if="!ownerOptions.length" class="text-sm text-slate-600 dark:text-slate-400">
-                        <a :href="github.install_url" class="text-sky-600 hover:underline dark:text-sky-400">Install the Framework app</a>
+                        <a :href="github.install_url" class="text-sky-700 hover:underline dark:text-sky-400">Install the Framework app</a>
                         on your account or an organization, then reload this page.
                     </p>
                     <template v-else>
@@ -401,18 +401,18 @@ const items = computed(() => [
         <template #aside>
             <div v-if="blueprint" class="flex flex-col gap-3 rounded-lg bg-slate-50 p-4 text-sm dark:bg-slate-800/50">
                 <div>
-                    <div class="text-xs font-medium uppercase tracking-wide text-slate-500">Summary</div>
+                    <div class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Summary</div>
                     <div class="mt-1 break-words font-semibold text-slate-900 dark:text-white">{{ form.name || 'Your project' }}</div>
-                    <Link :href="`/blueprints/${blueprint.id}`" class="break-all font-mono text-xs text-slate-500 hover:underline">
+                    <Link :href="`/blueprints/${blueprint.id}`" class="break-all font-mono text-xs text-slate-500 dark:text-slate-400 hover:underline">
                         {{ blueprint.handle }} v{{ blueprint.version }}
                     </Link>
                 </div>
 
                 <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 border-t border-slate-200 pt-3 text-xs text-slate-600 dark:border-slate-700 dark:text-slate-400">
-                    <dt class="text-slate-500">Language</dt><dd>{{ languages.find((l) => l.value === form.language)?.label ?? form.language }}</dd>
-                    <template v-if="current?.workflow"><dt class="text-slate-500">Workflow</dt><dd>{{ current.workflow.name }}</dd></template>
-                    <dt class="text-slate-500">Pieces</dt><dd>{{ form.customized ? 'Changed for this project' : 'As the blueprint has them' }}</dd>
-                    <dt class="text-slate-500">Set up</dt><dd>{{ destinationName }}</dd>
+                    <dt class="text-slate-500 dark:text-slate-400">Language</dt><dd>{{ languages.find((l) => l.value === form.language)?.label ?? form.language }}</dd>
+                    <template v-if="current?.workflow"><dt class="text-slate-500 dark:text-slate-400">Workflow</dt><dd>{{ current.workflow.name }}</dd></template>
+                    <dt class="text-slate-500 dark:text-slate-400">Pieces</dt><dd>{{ form.customized ? 'Changed for this project' : 'As the blueprint has them' }}</dd>
+                    <dt class="text-slate-500 dark:text-slate-400">Set up</dt><dd>{{ destinationName }}</dd>
                 </dl>
             </div>
         </template>

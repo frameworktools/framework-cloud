@@ -9,7 +9,7 @@
         <span class="flex min-w-0 items-center gap-1.5 text-slate-400"><span data-project-terminal aria-hidden="true"><x-heroicon-o-command-line class="size-3.5 shrink-0" /></span><span data-project-path class="max-w-full truncate font-mono text-[11px]">{{ reset($panels)['path'] }}</span></span>
     </div>
     <div class="grid min-w-0 md:grid-cols-[10.5rem_minmax(0,1fr)]">
-        <aside class="min-w-0 border-b border-white/10 bg-white/[0.02] md:border-r md:border-b-0" aria-label="Project files">
+        <aside class="min-w-0 border-b border-white/10 bg-white/[0.02] md:border-r md:border-b-0" aria-label="{{ $title }}: project files">
             <div class="px-3 py-3">
                 <div class="mb-2 flex items-center gap-2 text-xs font-medium text-slate-400">@if ($arrow)<x-heroicon-o-arrow-right class="size-3.5" aria-hidden="true" />@endif Project files</div>
                 @foreach ($panels as $language => $panel)
@@ -59,17 +59,17 @@
                         @else
                             <x-landing-files :nodes="$tree" :expand-agents="$expandAgents" :main="$inTree ? $panel['path'] : null" :open-folders="$openFolders" />
                         @endif
-                        <p class="mt-1 px-1.5 text-base text-slate-500" title="Additional project files" aria-label="Additional project files">…</p>
+                        <p class="mt-1 px-1.5 text-base text-slate-400" title="Additional project files" aria-label="Additional project files">…</p>
                     </div>
                 @endforeach
-                <p class="mt-3 text-[11px] leading-4 text-slate-500">Select a file to inspect it.</p>
+                <p class="mt-3 text-[11px] leading-4 text-slate-400">Select a file to inspect it.</p>
             </div>
         </aside>
         <div class="min-w-0">
             @foreach ($panels as $language => $panel)
                 @php $sources = ['main' => ['path' => $panel['path'], 'code' => $panel['code']], ...collect($files[$language] ?? [])->reject(fn ($code, $path) => str_ends_with($path, '/'))->mapWithKeys(fn ($code, $path) => [$path => ['path' => $path, 'code' => $code]])->all()]; @endphp
                 @foreach ($sources as $key => $source)
-                    <pre data-project-content="{{ $key === 'main' ? '' : \App\Support\LandingProject::registerSource($source['code']) }}" data-project-source="{{ $key }}" data-project-source-language="{{ $language }}" data-project-source-path="{{ $source['path'] }}" @unless ($loop->parent->first && $loop->first) hidden @endunless class="project-code {{ $maxHeight }} overflow-y-auto px-3 py-5 font-mono text-[12px] leading-[18px] text-slate-200"><code>@if ($key === 'main'){!! \App\Support\ExampleCode::highlight($source['code']) !!}@endif</code></pre>
+                    <pre data-project-content="{{ $key === 'main' ? '' : \App\Support\LandingProject::registerSource($source['code']) }}" data-project-source="{{ $key }}" data-project-source-language="{{ $language }}" data-project-source-path="{{ $source['path'] }}" @unless ($loop->parent->first && $loop->first) hidden @endunless tabindex="0" class="focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-sky-500 project-code {{ $maxHeight }} overflow-y-auto px-3 py-5 font-mono text-[12px] leading-[18px] text-slate-200"><code>@if ($key === 'main'){!! \App\Support\ExampleCode::highlight($source['code']) !!}@endif</code></pre>
                 @endforeach
             @endforeach
             @if ($helper)

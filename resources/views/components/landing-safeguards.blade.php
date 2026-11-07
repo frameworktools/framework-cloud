@@ -27,11 +27,11 @@
             ['check-badge', 'Data verification ledger', 'Share input fingerprints and verification metadata through Framework Cloud for transparency. Your datasets stay on your machine.'],
         ] as [$icon, $heading, $body])
             <x-landing-frame class="p-5">
-                <div><x-dynamic-component :component="'heroicon-o-'.$icon" class="mb-3 size-5 text-slate-500" /><h3 class="text-sm font-semibold">{{ $heading }}</h3></div>
+                <div><x-dynamic-component :component="'heroicon-o-'.$icon" class="mb-3 size-5 text-slate-500 dark:text-slate-400" /><h3 class="text-sm font-semibold">{{ $heading }}</h3></div>
                 <p class="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{!! preg_replace('/\b(\w+\(\))/', '<code class="font-mono text-[0.9em] text-slate-800 dark:text-slate-200">$1</code>', e($body)) !!}</p>
             </x-landing-frame>
         @endforeach
     </div>
     <div id="integrity" class="mt-8 rounded-xl shadow-panel-deep dark:shadow-panel-deep-dark"><x-landing-editor :panels="$securityPanels" :files="$securityFiles" title="Data safeguards" /></div>
-    <p class="mt-4 text-center text-xs leading-relaxed text-slate-500">Output excerpt from a synthetic example. The commit was blocked. Local Git hooks can be bypassed.</p>
+    <p class="mt-4 text-center text-xs leading-relaxed text-slate-500 dark:text-slate-400">Output excerpt from a synthetic example. The commit was blocked. Local Git hooks can be bypassed.</p>
 </section>

@@ -11,6 +11,7 @@
     @vite(['resources/css/app.css'])
 </head>
 <body class="bg-white text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100">
+    <a href="#content" class="sr-only rounded-md bg-white px-4 py-2 text-sm font-medium text-slate-900 shadow-lg ring-1 ring-slate-900/10 focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] dark:bg-slate-800 dark:text-white">Skip to content</a>
 
 
 
@@ -19,10 +20,10 @@
     <x-site-header overlay />
 
     {{-- Hero: a light sky gradient, or slate in dark mode --}}
-    <section class="relative">
+    <section id="content" tabindex="-1" class="relative focus:outline-none" aria-labelledby="hero-title">
         <div class="relative mx-auto grid max-w-7xl items-start gap-12 px-6 py-14 sm:py-16 lg:grid-cols-[1fr_1.05fr] lg:gap-14">
             <div class="min-w-0 lg:pt-10">
-                <h1 class="text-4xl font-semibold leading-[1.06] tracking-tight text-balance sm:text-5xl xl:text-[3.5rem]">Structured data science workflows</h1>
+                <h1 id="hero-title" class="text-4xl font-semibold leading-[1.06] tracking-tight text-balance sm:text-5xl xl:text-[3.5rem]">Structured data science workflows</h1>
                 <p class="mt-6 max-w-xl text-lg leading-relaxed text-slate-700 dark:text-slate-200">Framework helps you set up a data science project, keep track of the data and settings you use, and share your results. Start a project in Framework Cloud, or with our R, Python, {{ isset(\App\Support\Docs\Products::listed()['stata']) ? 'Stata, ' : '' }}or command-line tools.</p>
                 @php
                     // The tools a visitor can use without Cloud, each linking to its docs site
@@ -39,7 +40,7 @@
                 </div>
                 <nav aria-label="Framework tools" class="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm">
                     @foreach ($tools as $product => [$name, $icon])
-                        <a href="{{ \App\Support\Docs\Products::publicUrl($product) }}" class="group inline-flex items-center gap-1.5 font-medium text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white"><x-dynamic-component :component="$icon" class="size-4 shrink-0 text-slate-500 group-hover:text-slate-800 dark:group-hover:text-slate-200" />{{ $name }}</a>
+                        <a href="{{ \App\Support\Docs\Products::publicUrl($product) }}" class="group inline-flex items-center gap-1.5 font-medium text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white"><x-dynamic-component :component="$icon" class="size-4 shrink-0 text-slate-500 dark:text-slate-400 group-hover:text-slate-800 dark:group-hover:text-slate-200" />{{ $name }}</a>
                     @endforeach
                 </nav>
             </div>

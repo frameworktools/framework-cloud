@@ -32,7 +32,7 @@ const date = (value) => new Date(value).toLocaleDateString(undefined, { year: 'n
                 <template #actions><UiButton v-if="canPublish" :variant="uploading ? 'ghost' : 'primary'" @click="uploading = !uploading">{{ uploading ? 'Close' : 'Publish an artifact' }}</UiButton></template>
             </PageHeader>
 
-            <p v-if="storage?.limit" class="text-xs text-slate-500">Artifact storage: <span class="font-mono">{{ (storage.used / 1048576).toFixed(1) }} MB</span> of <span class="font-mono">{{ (storage.limit / 1073741824).toFixed(1) }} GB</span>. Versions share this limit.</p>
+            <p v-if="storage?.limit" class="text-xs text-slate-500 dark:text-slate-400">Artifact storage: <span class="font-mono">{{ (storage.used / 1048576).toFixed(1) }} MB</span> of <span class="font-mono">{{ (storage.limit / 1073741824).toFixed(1) }} GB</span>. Versions share this limit.</p>
 
             <ArtifactUpload v-if="canPublish && uploading" :projects="projects" @published="uploading = false" />
 
@@ -57,13 +57,13 @@ const date = (value) => new Date(value).toLocaleDateString(undefined, { year: 'n
                             <td class="strong max-w-72 truncate">
                                 <span class="flex items-center gap-2.5">
                                     <component :is="artifactKind(doc.kind).icon" class="size-4 shrink-0 text-slate-400" aria-hidden="true" />
-                                    <Link :href="`/artifacts/${doc.id}`" class="truncate hover:underline hover:underline-offset-4">{{ doc.title }}</Link>
-                                    <span v-if="doc.merged_into_id" class="rounded-md bg-slate-800/5 px-1.5 text-xs font-normal text-slate-500 dark:bg-white/10">Merged</span>
+                                    <Link :href="`/artifacts/${doc.id}`" class="truncate py-0.5 hover:underline hover:underline-offset-4">{{ doc.title }}</Link>
+                                    <span v-if="doc.merged_into_id" class="rounded-md bg-slate-800/5 px-1.5 text-xs font-normal text-slate-500 dark:text-slate-400 dark:bg-white/10">Merged</span>
                                 </span>
-                                <span class="mt-1 block truncate text-xs font-normal text-slate-500">
-                                    <Link v-if="!doc.project.is_home" :href="`/projects/${doc.project.slug}/published`" class="hover:underline">{{ doc.project.name }}</Link>
+                                <span class="mt-1 block truncate text-xs font-normal text-slate-500 dark:text-slate-400">
+                                    <Link v-if="!doc.project.is_home" :href="`/projects/${doc.project.slug}/published`" class="inline-block py-1 hover:underline">{{ doc.project.name }}</Link>
                                     <template v-else-if="!doc.linked_projects?.length">No project</template>
-                                    <template v-for="(linked, index) in doc.linked_projects ?? []" :key="linked.id"><template v-if="index || !doc.project.is_home">, </template><Link :href="`/projects/${linked.slug}/published`" class="hover:underline">{{ linked.name }}</Link></template>
+                                    <template v-for="(linked, index) in doc.linked_projects ?? []" :key="linked.id"><template v-if="index || !doc.project.is_home">, </template><Link :href="`/projects/${linked.slug}/published`" class="inline-block py-1 hover:underline">{{ linked.name }}</Link></template>
                                 </span>
                             </td>
                             <td class="max-sm:hidden">{{ artifactKind(doc.kind).label }}</td><td class="max-lg:hidden">{{ doc.location ?? 'Framework Cloud' }}</td>
@@ -79,7 +79,7 @@ const date = (value) => new Date(value).toLocaleDateString(undefined, { year: 'n
                         </tr>
                     </tbody>
                 </UiTable>
-                <p v-if="!shown.length" class="text-sm text-slate-500">Nothing matches that search.</p>
+                <p v-if="!shown.length" class="text-sm text-slate-500 dark:text-slate-400">Nothing matches that search.</p>
             </template>
 
             <EmptyState v-else-if="canPublish" :icon="GlobeAltIcon" title="No published artifacts">

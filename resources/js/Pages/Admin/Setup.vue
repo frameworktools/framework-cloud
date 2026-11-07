@@ -118,9 +118,9 @@ const pill = (ready) => (ready
                 <ol class="-mx-1 flex flex-col divide-y divide-slate-200 dark:divide-slate-800">
                     <li v-for="(step, index) in steps" :key="step.key">
                         <Link :href="stepCopy[step.key].href" class="flex items-start gap-3 rounded-md px-1 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                            <span class="w-5 shrink-0 text-sm text-slate-500">{{ step.done ? '✓' : index + 1 }}</span>
+                            <span class="w-5 shrink-0 text-sm text-slate-500 dark:text-slate-400">{{ step.done ? '✓' : index + 1 }}</span>
                             <span class="flex min-w-0 flex-col">
-                                <span class="text-sm font-medium" :class="step.done ? 'text-slate-500 line-through' : 'text-slate-900 dark:text-white'">{{ stepCopy[step.key].title }}</span>
+                                <span class="text-sm font-medium" :class="step.done ? 'text-slate-500 dark:text-slate-400 line-through' : 'text-slate-900 dark:text-white'">{{ stepCopy[step.key].title }}</span>
                                 <span v-if="!step.done" class="text-sm text-slate-600 dark:text-slate-400">{{ stepCopy[step.key].text }}</span>
                             </span>
                         </Link>
@@ -174,7 +174,7 @@ const pill = (ready) => (ready
                         </div>
                         <div><UiButton type="submit">Create GitHub App</UiButton></div>
                     </form>
-                    <button type="button" class="self-start text-sm text-slate-500 hover:underline" @click="showManualGitHub = !showManualGitHub">
+                    <button type="button" class="self-start text-sm text-slate-500 dark:text-slate-400 hover:underline" @click="showManualGitHub = !showManualGitHub">
                         {{ showManualGitHub ? 'Hide' : 'Or enter an app you already have' }}
                     </button>
                 </template>
@@ -193,14 +193,14 @@ const pill = (ready) => (ready
                     <CredentialField v-model="forms.github.github__private_key" :field="field('github.private_key')" multiline placeholder="-----BEGIN RSA PRIVATE KEY-----" :error="forms.github.errors.github__private_key" />
 
                     <dl class="grid gap-x-3 gap-y-1 text-xs sm:grid-cols-[auto_1fr]">
-                        <dt class="text-slate-500">Sign-in callback</dt><dd class="break-all font-mono">{{ github.callback_url }}</dd>
-                        <dt class="text-slate-500">Webhook</dt><dd class="break-all font-mono">{{ github.webhook_url }}</dd>
+                        <dt class="text-slate-500 dark:text-slate-400">Sign-in callback</dt><dd class="break-all font-mono">{{ github.callback_url }}</dd>
+                        <dt class="text-slate-500 dark:text-slate-400">Webhook</dt><dd class="break-all font-mono">{{ github.webhook_url }}</dd>
                     </dl>
                 </form>
 
                 <template v-if="(githubFromEnv || field('github.client_id').set || showManualGitHub) && !allEnv('github')" #actions>
                     <div class="flex flex-wrap items-center justify-end gap-2">
-                        <span v-if="flash === 'github-saved'" class="text-sm text-slate-500">Saved.</span>
+                        <span v-if="flash === 'github-saved'" class="text-sm text-slate-500 dark:text-slate-400">Saved.</span>
                         <UiButton v-if="savedIn('github')" variant="ghost" @click="clear('github', 'GitHub App')">Remove saved app</UiButton>
                         <a v-if="installUrl" :href="installUrl" target="_blank"><UiButton variant="outline">Install the app</UiButton></a>
                         <UiButton type="submit" form="github-form" :disabled="forms.github.processing">Save</UiButton>
@@ -245,7 +245,7 @@ const pill = (ready) => (ready
                         v-model="forms.storage.storage__public_url" :field="field('storage.public_url')"
                         placeholder="https://files.example.org (optional)" :error="forms.storage.errors.storage__public_url"
                     />
-                    <p class="-mt-2 text-xs text-slate-500">
+                    <p class="-mt-2 text-xs text-slate-500 dark:text-slate-400">
                         Optional: a public domain attached to the bucket. Artifacts then load from there, a separate site from this one, which keeps
                         scripts in published pages away from people's sign-ins. Without it, this server streams them.
                     </p>
@@ -253,7 +253,7 @@ const pill = (ready) => (ready
 
                 <template v-if="!allEnv('storage')" #actions>
                     <div class="flex flex-wrap items-center justify-end gap-2">
-                        <span v-if="flash === 'storage-saved'" class="text-sm text-slate-500">Saved.</span>
+                        <span v-if="flash === 'storage-saved'" class="text-sm text-slate-500 dark:text-slate-400">Saved.</span>
                         <UiButton v-if="savedIn('storage')" variant="ghost" @click="clear('storage', 'bucket')">Remove saved bucket</UiButton>
                         <UiButton variant="outline" :disabled="forms.storage.processing" @click="testStorage">Test connection</UiButton>
                         <UiButton type="submit" form="storage-form" :disabled="forms.storage.processing">Save</UiButton>
@@ -299,7 +299,7 @@ const pill = (ready) => (ready
 
                 <template #actions>
                     <div class="flex flex-wrap items-center justify-end gap-2">
-                        <span v-if="flash === 'mail-saved'" class="text-sm text-slate-500">Saved. Send a test email to check it.</span>
+                        <span v-if="flash === 'mail-saved'" class="text-sm text-slate-500 dark:text-slate-400">Saved. Send a test email to check it.</span>
                         <UiButton v-if="savedIn('mail')" variant="ghost" @click="clear('mail', 'email settings')">Remove saved settings</UiButton>
                         <UiButton variant="outline" :disabled="!mailReady" @click="testMail">Send a test email</UiButton>
                         <UiButton v-if="!allEnv('mail')" type="submit" form="mail-form" :disabled="forms.mail.processing">Save</UiButton>
@@ -322,7 +322,7 @@ const pill = (ready) => (ready
                 </form>
                 <template #actions>
                     <div class="flex flex-wrap items-center justify-end gap-2">
-                        <span v-if="flash === 'agents-saved'" class="text-sm text-slate-500">Saved.</span>
+                        <span v-if="flash === 'agents-saved'" class="text-sm text-slate-500 dark:text-slate-400">Saved.</span>
                         <UiButton v-if="!allEnv('agents')" type="submit" form="agents-form" :disabled="forms.agents.processing">Save</UiButton>
                     </div>
                 </template>

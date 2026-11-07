@@ -159,11 +159,11 @@ const warnBeforeLeaving = event => { if (form.isDirty) event.preventDefault(); }
 onMounted(() => { clock = setInterval(() => { now.value = Date.now(); }, 15000); window.addEventListener('beforeunload', warnBeforeLeaving); });
 onBeforeUnmount(() => { clearInterval(clock); clearTimeout(timer); window.removeEventListener('beforeunload', warnBeforeLeaving); });
 const status = computed(() => {
-    if (publication.processing) return { text: 'Publishing…', icon: ArrowPathIcon, tone: 'text-slate-500', spin: true };
-    if (form.processing) return { text: 'Saving…', icon: ArrowPathIcon, tone: 'text-slate-500', spin: true };
+    if (publication.processing) return { text: 'Publishing…', icon: ArrowPathIcon, tone: 'text-slate-500 dark:text-slate-400', spin: true };
+    if (form.processing) return { text: 'Saving…', icon: ArrowPathIcon, tone: 'text-slate-500 dark:text-slate-400', spin: true };
     if (failed.value) return { text: 'Not saved. Check the messages above.', icon: ExclamationTriangleIcon, tone: 'text-amber-700 dark:text-amber-400' };
-    if (form.isDirty) return { text: passwordPending.value ? 'Save to apply the password' : 'Unsaved changes', icon: null, tone: 'text-slate-500' };
-    if (!lastSaved.value) return { text: 'All changes saved', icon: CheckCircleIcon, tone: 'text-slate-500' };
+    if (form.isDirty) return { text: passwordPending.value ? 'Save to apply the password' : 'Unsaved changes', icon: null, tone: 'text-slate-500 dark:text-slate-400' };
+    if (!lastSaved.value) return { text: 'All changes saved', icon: CheckCircleIcon, tone: 'text-slate-500 dark:text-slate-400' };
     const seconds = Math.max(0, Math.round((now.value - lastSaved.value) / 1000));
     return { text: seconds < 20 ? 'Saved' : `Saved ${Math.round(seconds / 60) || 1} min ago`, icon: CheckCircleIcon, tone: 'text-emerald-700 dark:text-emerald-400' };
 });
@@ -194,7 +194,7 @@ const controlClass = 'inline-flex size-7 items-center justify-center rounded-md 
             </UiBreadcrumbs>
 
             <div :class="[pageClass, 'grid gap-8 lg:grid-cols-[minmax(0,1fr)_17rem]']">
-                <main class="min-w-0">
+                <div class="min-w-0">
                     <p v-if="!canPublish" class="mx-auto mb-4 max-w-3xl rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">You can write and preview drafts. Publishing a report is part of a paid plan.</p>
                     <div v-if="Object.keys(errors).length" role="alert" class="mx-auto mb-4 max-w-3xl rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
                         <p class="mb-1 font-semibold">Fix these before saving or publishing.</p>
@@ -218,12 +218,12 @@ const controlClass = 'inline-flex size-7 items-center justify-center rounded-md 
                         <div class="mt-10 border-t border-slate-100 pt-8 dark:border-slate-800">
                             <div v-if="!form.blocks.length" class="rounded-xl border-2 border-dashed border-slate-200 px-6 py-12 text-center dark:border-slate-700">
                                 <p class="font-medium text-slate-900 dark:text-white">Start with some text or an artifact</p>
-                                <p class="mx-auto mt-1 max-w-sm text-sm text-slate-500">Write your findings, then place the figures, tables, and models that support them.</p>
+                                <p class="mx-auto mt-1 max-w-sm text-sm text-slate-500 dark:text-slate-400">Write your findings, then place the figures, tables, and models that support them.</p>
                                 <div class="mt-5 flex justify-center gap-2">
                                     <UiButton variant="ghost" size="sm" @click="insertText(0)"><DocumentTextIcon class="size-4" aria-hidden="true" />Add text</UiButton>
                                     <UiButton variant="ghost" size="sm" :disabled="!artifacts.length" @click="pickArtifact(0)"><PhotoIcon class="size-4" aria-hidden="true" />Add artifact</UiButton>
                                 </div>
-                                <p v-if="!artifacts.length" class="mt-3 text-xs text-slate-500">Publish an artifact to this project to place it in a report.</p>
+                                <p v-if="!artifacts.length" class="mt-3 text-xs text-slate-500 dark:text-slate-400">Publish an artifact to this project to place it in a report.</p>
                             </div>
 
                             <template v-for="(block, index) in form.blocks" :key="block.id">
@@ -265,9 +265,9 @@ const controlClass = 'inline-flex size-7 items-center justify-center rounded-md 
                                             </span>
                                             <div class="min-w-0 flex-1">
                                                 <p class="truncate text-sm font-medium text-slate-900 dark:text-white">{{ artifactFor(block) ? artifactFor(block).title || artifactFor(block).slug : 'This artifact is no longer available' }}</p>
-                                                <p v-if="artifactFor(block)" class="text-xs text-slate-500">{{ artifactKind(artifactFor(block).kind).label }}</p>
+                                                <p v-if="artifactFor(block)" class="text-xs text-slate-500 dark:text-slate-400">{{ artifactKind(artifactFor(block).kind).label }}</p>
                                             </div>
-                                            <label v-if="artifactFor(block)" class="flex items-center gap-2 text-xs text-slate-500">
+                                            <label v-if="artifactFor(block)" class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                                                 <span class="sr-only sm:not-sr-only">Version</span>
                                                 <select v-model="block.version_number" :aria-label="`Version of the artifact in section ${index + 1}`" class="rounded-md border border-slate-300 bg-white py-1 pl-2 pr-7 text-xs text-slate-800 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
                                                     <option :value="null">Latest when published</option>
@@ -299,16 +299,16 @@ const controlClass = 'inline-flex size-7 items-center justify-center rounded-md 
                                 @dragover.prevent="dragging !== null && (dropAt = form.blocks.length)" @drop.prevent="drop">
                                 <UiButton variant="ghost" size="sm" :disabled="form.blocks.length >= 100" @click="insertText(form.blocks.length)"><DocumentTextIcon class="size-4" aria-hidden="true" />Add text</UiButton>
                                 <UiButton variant="ghost" size="sm" :disabled="!artifacts.length || form.blocks.length >= 100" @click="pickArtifact(form.blocks.length)"><PhotoIcon class="size-4" aria-hidden="true" />Add artifact</UiButton>
-                                <span v-if="form.blocks.length >= 100" class="text-xs text-slate-500">A report can hold up to 100 sections.</span>
+                                <span v-if="form.blocks.length >= 100" class="text-xs text-slate-500 dark:text-slate-400">A report can hold up to 100 sections.</span>
                             </div>
                         </div>
                     </section>
-                </main>
+                </div>
 
                 <aside class="space-y-5 lg:sticky lg:top-20 lg:self-start">
                     <section v-if="outline.length" aria-labelledby="outline-title" class="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
                         <div class="flex items-baseline justify-between gap-2">
-                            <h2 id="outline-title" class="text-xs font-semibold uppercase tracking-wide text-slate-500">Outline</h2>
+                            <h2 id="outline-title" class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Outline</h2>
                             <span class="text-xs tabular-nums text-slate-400">{{ words.toLocaleString() }} {{ words === 1 ? 'word' : 'words' }}</span>
                         </div>
                         <ol class="mt-3 max-h-72 space-y-0.5 overflow-y-auto">
@@ -322,29 +322,29 @@ const controlClass = 'inline-flex size-7 items-center justify-center rounded-md 
                     </section>
 
                     <section aria-labelledby="sharing-title" class="space-y-4 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                        <h2 id="sharing-title" class="text-xs font-semibold uppercase tracking-wide text-slate-500">Sharing</h2>
+                        <h2 id="sharing-title" class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Sharing</h2>
                         <label class="block text-sm font-medium text-slate-800 dark:text-slate-200">Reader access
                             <select v-model="form.visibility" :class="fieldClass"><option value="private">Private, only you</option><option value="unlisted">Anyone with the link</option><option value="public">Public</option></select>
                         </label>
-                        <p class="-mt-2 text-xs text-slate-500">{{ visibilityText[form.visibility] }} The change applies to every published version.</p>
+                        <p class="-mt-2 text-xs text-slate-500 dark:text-slate-400">{{ visibilityText[form.visibility] }} The change applies to every published version.</p>
                         <UiInput v-model="form.password" type="password" :label="report.password_protected ? 'New password' : 'Password (optional)'" autocomplete="new-password" description="At least 8 characters. Readers enter it to open the report." :error="form.errors.password" />
                         <label v-if="report.password_protected" class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300"><input v-model="form.remove_password" type="checkbox" class="rounded border-slate-300">Remove the password</label>
                         <UiInput v-model="form.slug" label="Short name" description="Used in the report’s address." :error="form.errors.slug" />
                     </section>
 
                     <section v-if="report.versions?.length" aria-labelledby="versions-title" class="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                        <h2 id="versions-title" class="text-xs font-semibold uppercase tracking-wide text-slate-500">Published versions</h2>
+                        <h2 id="versions-title" class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Published versions</h2>
                         <ol class="mt-3 space-y-2">
                             <li v-for="version in report.versions" :key="version.number" class="flex items-baseline justify-between gap-3 text-sm">
                                 <a :href="version.url" target="_blank" rel="noopener" class="truncate text-sky-700 hover:underline dark:text-sky-400">Version {{ version.number }}</a>
-                                <span class="shrink-0 text-xs text-slate-500">{{ date(version.created_at) }}</span>
+                                <span class="shrink-0 text-xs text-slate-500 dark:text-slate-400">{{ date(version.created_at) }}</span>
                             </li>
                         </ol>
                     </section>
 
                     <details class="rounded-xl border border-slate-200 bg-white p-4 text-sm dark:border-slate-800 dark:bg-slate-900">
-                        <summary class="cursor-pointer text-slate-500">Delete report</summary>
-                        <p class="mt-3 text-xs text-slate-500">This removes the draft and every published version. The artifacts stay in the project.</p>
+                        <summary class="cursor-pointer text-slate-500 dark:text-slate-400">Delete report</summary>
+                        <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">This removes the draft and every published version. The artifacts stay in the project.</p>
                         <UiButton class="mt-3" variant="danger" size="sm" :disabled="busy" @click="destroy">Delete report</UiButton>
                     </details>
                 </aside>

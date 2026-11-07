@@ -38,7 +38,7 @@
     <div class="mt-8 grid gap-4 md:grid-cols-3">
         @foreach ($tools as $tool)
             <x-landing-frame class="flex flex-col p-5">
-                <x-dynamic-component :component="'heroicon-o-'.$tool['icon']" class="mb-3 size-5 text-slate-500" />
+                <x-dynamic-component :component="'heroicon-o-'.$tool['icon']" class="mb-3 size-5 text-slate-500 dark:text-slate-400" />
                 <h3 class="text-sm font-semibold">{{ $tool['title'] }}</h3>
                 <p class="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{{ $tool['body'] }}</p>
                 <pre class="mt-4 overflow-x-auto rounded-lg bg-[#0c1526] px-3 py-2.5 font-mono text-xs leading-[1.6] text-slate-100 ring-1 ring-slate-400/20" style="color-scheme: dark"><code>{!! \App\Support\ExampleCode::highlight($tool['code'], false) !!}</code></pre>

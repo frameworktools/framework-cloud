@@ -238,7 +238,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
     <AppLayout bleed>
         <div :class="[pageClass, 'flex flex-col gap-8']">
             <div>
-                <p class="text-sm text-slate-500">{{ step.key === 'review' ? 'Review' : `Step ${index + 1} of ${steps.length - 1}` }}</p>
+                <p class="text-sm text-slate-500 dark:text-slate-400">{{ step.key === 'review' ? 'Review' : `Step ${index + 1} of ${steps.length - 1}` }}</p>
                 <h1 class="mt-1 text-2xl font-semibold text-slate-900 dark:text-white">{{ step.title }}</h1>
                 <p v-if="index === 0" :class="note" class="mt-2">Your answers set the defaults for new projects. You can change them later in Default settings.</p>
             </div>
@@ -249,13 +249,13 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
 
                 <div v-else-if="step.key === 'project'" class="flex flex-col gap-3">
                     <p :class="note">These structures suit anything from a small analysis to a larger project. Choose a default here. Each project can still use a different one.</p>
-                    <p class="text-sm text-slate-500 dark:text-slate-400">Choose Bare for a custom folder layout. You can also <Link href="/structures/create" class="text-sky-600 hover:underline dark:text-sky-400" @click="remember">create a custom project structure</Link>.</p>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">Choose Bare for a custom folder layout. You can also <Link href="/structures/create" class="text-sky-700 hover:underline dark:text-sky-400" @click="remember">create a custom project structure</Link>.</p>
                     <p v-if="problems.project" class="text-sm text-amber-800 dark:text-amber-300" role="alert">{{ problems.project }}</p>
                     <!-- The chosen structure's folders beside the choices -->
                     <div class="grid gap-8 lg:grid-cols-[minmax(0,28rem)_minmax(0,1fr)]">
                         <UiRadioCards v-model="draft.project_type" name="project_type" :legend="step.title" hide-legend :options="projectOptions" stacked />
                         <section class="self-start rounded-lg border border-slate-200 p-4 lg:sticky lg:top-6 dark:border-slate-700" aria-live="polite">
-                            <h2 class="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">{{ blueprint?.name }}</h2>
+                            <h2 class="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{{ blueprint?.name }}</h2>
                             <BlueprintPreview v-if="blueprint && supports(blueprint)" tree-only :blueprint="blueprint" :language="draft.language" :values="previewValues" />
                         </section>
                     </div>
@@ -290,14 +290,14 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                 <div v-else class="flex max-w-3xl flex-col gap-6">
                     <dl class="divide-y divide-slate-200 rounded-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-700">
                         <div v-for="row in review" :key="row.key" class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-2.5 text-sm">
-                            <dt class="text-slate-500">{{ row.label }}</dt>
+                            <dt class="text-slate-500 dark:text-slate-400">{{ row.label }}</dt>
                             <dd class="flex items-center gap-4 text-right">
                                 <span class="flex flex-col items-end">
                                     <span class="text-slate-900 dark:text-white">{{ row.value }}</span>
-                                    <span v-if="row.before" class="text-xs text-slate-500">Was {{ row.before }}</span>
+                                    <span v-if="row.before" class="text-xs text-slate-500 dark:text-slate-400">Was {{ row.before }}</span>
                                     <span v-if="row.problem" class="text-xs text-amber-800 dark:text-amber-300">{{ row.problem }}</span>
                                 </span>
-                                <button v-if="!row.fixed" type="button" class="text-sky-600 hover:underline dark:text-sky-400" @click="edit(row.key)">Edit<span class="sr-only"> {{ row.label }}</span></button>
+                                <button v-if="!row.fixed" type="button" class="text-sky-700 hover:underline dark:text-sky-400" @click="edit(row.key)">Edit<span class="sr-only"> {{ row.label }}</span></button>
                             </dd>
                         </div>
                     </dl>
@@ -307,7 +307,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                             <BlueprintPreview v-if="blueprint && savable" :blueprint="blueprint" :language="draft.language" :values="previewValues" />
                         </div>
                     </section>
-                    <p class="text-sm text-slate-500">Nothing is saved until you choose Save defaults.</p>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">Nothing is saved until you choose Save defaults.</p>
                     <p v-if="Object.keys(draft.errors).length" class="text-sm text-red-600">{{ Object.values(draft.errors)[0] }}</p>
                 </div>
             </div>

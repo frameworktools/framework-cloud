@@ -27,7 +27,7 @@ defineProps({
                         </Link>
                     </li>
                     <li v-for="(item, index) in items" :key="index" class="flex min-w-0" :class="{ 'max-sm:hidden': !inline && index < items.length - 1, 'shrink-0': index < items.length - 1 }">
-                        <ChevronRightIcon aria-hidden="true" class="size-4 shrink-0 self-center text-slate-400 dark:text-slate-500" />
+                        <ChevronRightIcon aria-hidden="true" class="size-4 shrink-0 self-center text-slate-500 dark:text-slate-400" />
                         <div v-if="item.links" class="ml-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium text-slate-500 dark:text-slate-400"><template v-for="(link, linkIndex) in item.links" :key="link.href"><span v-if="linkIndex" aria-hidden="true">,</span><Link :href="link.href" class="inline-flex items-center gap-1.5 hover:text-slate-800 dark:hover:text-white"><Square2StackIcon v-if="link.icon === 'collection'" class="size-4 shrink-0 text-slate-400" aria-hidden="true" />{{ link.label }}</Link></template></div>
                         <Link v-else-if="item.href && (trailing || index < items.length - 1)" :href="item.href"
                             class="ml-2 flex max-w-60 items-center gap-1.5 truncate text-sm font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white">
@@ -37,7 +37,7 @@ defineProps({
                             <span class="truncate">{{ item.label }}</span>
                         </span>
                     </li>
-                    <li v-if="trailing" aria-hidden="true" class="flex"><ChevronRightIcon class="size-4 text-slate-400 dark:text-slate-500" /></li>
+                    <li v-if="trailing" aria-hidden="true" class="flex"><ChevronRightIcon class="size-4 text-slate-500 dark:text-slate-400" /></li>
                 </ol>
             </nav>
             <div v-if="$slots.actions" class="flex shrink-0 items-center gap-3 py-1 max-sm:ml-auto">

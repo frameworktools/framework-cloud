@@ -39,9 +39,9 @@ const date = value => value ? new Date(value).toLocaleDateString(undefined, { ye
                         <td class="strong max-w-96 truncate">
                             <span class="flex items-center gap-2.5">
                                 <DocumentTextIcon class="size-4 shrink-0 text-slate-400" aria-hidden="true" />
-                                <Link :href="`/reports/${report.id}/edit`" class="truncate hover:underline hover:underline-offset-4">{{ report.title }}</Link>
+                                <Link :href="`/reports/${report.id}/edit`" class="truncate py-0.5 hover:underline hover:underline-offset-4">{{ report.title }}</Link>
                             </span>
-                            <Link v-if="!project" :href="`/projects/${report.project.slug}`" class="mt-1 block truncate text-xs font-normal text-slate-500 hover:underline">{{ report.project.name }}</Link>
+                            <Link v-if="!project" :href="`/projects/${report.project.slug}`" class="block truncate py-1 text-xs font-normal text-slate-500 dark:text-slate-400 hover:underline">{{ report.project.name }}</Link>
                         </td>
                         <td class="max-md:hidden"><span class="inline-flex items-center gap-1.5">{{ sharing[report.visibility] }}<LockClosedIcon v-if="report.password_protected" class="size-3.5" aria-label="Password protected" /></span></td>
                         <td class="max-sm:hidden">{{ report.versions?.length ? `Version ${report.versions[0].number}, ${date(report.versions[0].created_at)}` : 'Draft' }}</td>

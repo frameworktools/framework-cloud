@@ -20,7 +20,7 @@
     <div class="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         @foreach ($cards as [$icon, $title, $body, $command])
             <x-landing-frame class="flex flex-col p-5">
-                <x-dynamic-component :component="$icon" class="size-5 text-slate-500" />
+                <x-dynamic-component :component="$icon" class="size-5 text-slate-500 dark:text-slate-400" />
                 <h3 class="mt-3 font-semibold">{{ $title }}</h3>
                 <p class="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{{ $body }}</p>
                 <div class="mt-auto space-y-2 pt-4">

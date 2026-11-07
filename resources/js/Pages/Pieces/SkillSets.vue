@@ -68,11 +68,11 @@ const sourceNames = { cran: 'CRAN', bioc: 'Bioconductor', github: 'GitHub', pypi
 
                 <p v-if="!section.all.length" class="text-sm text-slate-500 dark:text-slate-400">
                     {{ copy.empty }}
-                    <Link href="/skill-sets/create" class="font-medium text-sky-600 hover:underline dark:text-sky-400">New skill set</Link>
+                    <Link href="/skill-sets/create" class="font-medium text-sky-700 hover:underline dark:text-sky-400">New skill set</Link>
                 </p>
                 <p v-else-if="!section.rows.length" class="text-sm text-slate-500 dark:text-slate-400">
                     No skill sets here for {{ languageNames[language] }}.
-                    <button type="button" class="ml-1 font-medium text-sky-600 hover:underline dark:text-sky-400" @click="language = other">Show {{ languageNames[other] }}</button>
+                    <button type="button" class="ml-1 font-medium text-sky-700 hover:underline dark:text-sky-400" @click="language = other">Show {{ languageNames[other] }}</button>
                 </p>
 
                 <div v-else class="divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
@@ -87,7 +87,7 @@ const sourceNames = { cran: 'CRAN', bioc: 'Bioconductor', github: 'GitHub', pypi
                                 <span class="min-w-0">
                                     <span class="flex flex-wrap items-baseline gap-x-2">
                                         <span class="font-semibold text-slate-900 dark:text-white">{{ s.name }}</span>
-                                        <span class="text-xs text-slate-500">{{ languageScope(s.language) }} · {{ skillsFor(s).length }} {{ skillsFor(s).length === 1 ? 'skill' : 'skills' }}</span>
+                                        <span class="text-xs text-slate-500 dark:text-slate-400">{{ languageScope(s.language) }} · {{ skillsFor(s).length }} {{ skillsFor(s).length === 1 ? 'skill' : 'skills' }}</span>
                                     </span>
                                     <span v-if="s.description" class="mt-0.5 block text-sm text-slate-600 dark:text-slate-400">{{ s.description }}</span>
                                 </span>
@@ -103,21 +103,21 @@ const sourceNames = { cran: 'CRAN', bioc: 'Bioconductor', github: 'GitHub', pypi
                                         <div class="text-sm font-medium text-slate-900 dark:text-white">{{ skill.name }}</div>
                                         <p v-if="skill.description" class="mt-0.5 text-xs text-slate-600 dark:text-slate-400">{{ skill.summary ?? skill.descriptions?.[language] ?? skill.description }}</p>
                                     </div>
-                                    <Link v-if="skill.id" :href="read(skill)" class="shrink-0 text-sm font-medium text-sky-600 hover:underline dark:text-sky-400">Read skill</Link>
+                                    <Link v-if="skill.id" :href="read(skill)" class="shrink-0 text-sm font-medium text-sky-700 hover:underline dark:text-sky-400">Read skill</Link>
                                 </li>
                             </ul>
-                            <p v-if="skillsFor(s).length < s.skills.length" class="mt-1 text-xs text-slate-500">
+                            <p v-if="skillsFor(s).length < s.skills.length" class="mt-1 text-xs text-slate-500 dark:text-slate-400">
                                 {{ s.skills.length - skillsFor(s).length }} skills for other languages.
                             </p>
 
                             <div v-if="s.packages.length" class="mt-4">
-                                <div class="text-xs font-semibold uppercase tracking-wider text-slate-500">Packages these skills need</div>
+                                <div class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Packages these skills need</div>
                                 <p class="mt-1 text-sm text-slate-700 dark:text-slate-300">
-                                    <template v-for="(p, i) in s.packages" :key="p.name">{{ i ? ', ' : '' }}<span class="font-mono text-xs">{{ p.name }}</span> <span class="text-xs text-slate-500">({{ sourceNames[p.source] ?? p.source }})</span></template>
+                                    <template v-for="(p, i) in s.packages" :key="p.name">{{ i ? ', ' : '' }}<span class="font-mono text-xs">{{ p.name }}</span> <span class="text-xs text-slate-500 dark:text-slate-400">({{ sourceNames[p.source] ?? p.source }})</span></template>
                                 </p>
                             </div>
 
-                            <div class="mt-4 border-t border-slate-200 pt-2 font-mono text-xs text-slate-500 dark:border-slate-800">{{ s.handle }} v{{ s.version }}</div>
+                            <div class="mt-4 border-t border-slate-200 pt-2 font-mono text-xs text-slate-500 dark:text-slate-400 dark:border-slate-800">{{ s.handle }} v{{ s.version }}</div>
                         </div>
                     </div>
                 </div>

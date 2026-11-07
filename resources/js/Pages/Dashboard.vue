@@ -83,7 +83,7 @@ const date = value => new Date(value).toLocaleDateString(undefined, { month: 'sh
                     <tbody><tr v-for="item in activity" :key="item.activityKey">
                         <td class="strong max-w-96 truncate">
                             <Link :href="item.management_url" class="block truncate hover:underline">{{ item.title }}</Link>
-                            <Link :href="`/projects/${item.project.slug}`" class="mt-1 block truncate text-xs font-normal text-slate-500 hover:underline">{{ item.project.name }}</Link>
+                            <Link :href="`/projects/${item.project.slug}`" class="block truncate py-1 text-xs font-normal text-slate-500 dark:text-slate-400 hover:underline">{{ item.project.name }}</Link>
                         </td>
                         <td class="max-sm:hidden">{{ item.type }}</td>
                         <td class="max-lg:hidden">{{ date(item.updated_at) }}</td>
@@ -93,7 +93,7 @@ const date = value => new Date(value).toLocaleDateString(undefined, { month: 'sh
                         </div></td>
                     </tr></tbody>
                 </UiTable>
-                <p v-else class="py-4 text-sm text-slate-500">No recent activity. Published artifacts, collections, and reports appear here.</p>
+                <p v-else class="py-4 text-sm text-slate-500 dark:text-slate-400">No recent activity. Published artifacts, collections, and reports appear here.</p>
             </section>
             <section>
                 <div class="mb-3 flex items-center justify-between gap-3">
@@ -108,7 +108,7 @@ const date = value => new Date(value).toLocaleDateString(undefined, { month: 'sh
                         <td class="actions"><UiButton :href="`/projects/${project.slug}`" variant="ghost" size="sm">Open</UiButton></td>
                     </tr></tbody>
                 </UiTable>
-                <p v-else class="py-4 text-sm text-slate-500">No projects yet. Create a project to start.</p>
+                <p v-else class="py-4 text-sm text-slate-500 dark:text-slate-400">No projects yet. Create a project to start.</p>
             </section>
         </div>
     </AppLayout>

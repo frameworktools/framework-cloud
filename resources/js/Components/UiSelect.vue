@@ -5,6 +5,8 @@ import { selectClass } from '@/ui.js';
 
 defineProps({
     label: String,
+    // A name for screen readers when there is no visible label
+    srLabel: String,
     description: String,
     error: String,
     // [{ value, label }]
@@ -17,7 +19,7 @@ const model = defineModel({ type: [String, Number], default: '' });
 
 <template>
     <UiField :id="id" :label="label" :description="description" :error="error">
-        <select :id="id" v-model="model" :class="selectClass" :aria-invalid="error ? 'true' : undefined" :aria-describedby="description ? `${id}-description` : undefined">
+        <select :id="id" v-model="model" :aria-label="label ? undefined : srLabel" :class="selectClass" :aria-invalid="error ? 'true' : undefined" :aria-describedby="description ? `${id}-description` : undefined">
             <slot><option v-for="option in options" :key="option.value" :value="option.value">{{ option.label }}</option></slot>
         </select>
     </UiField>

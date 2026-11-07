@@ -47,6 +47,6 @@ function choose(artifact) { emit('choose', artifact.id); show.value = false; }
                 </button>
             </li>
         </ul>
-        <p v-if="!results.length" class="py-6 text-center text-sm text-slate-500">{{ artifacts.length ? 'No artifacts match your search.' : 'Publish an artifact to this project to add it here.' }}</p>
+        <p v-if="!results.length" class="py-6 text-center text-sm text-slate-500 dark:text-slate-400">{{ artifacts.length ? 'No artifacts match your search.' : 'Publish an artifact to this project to add it here.' }}</p>
     </UiModal>
 </template>

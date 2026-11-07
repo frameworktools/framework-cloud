@@ -36,12 +36,12 @@
         @foreach ($examples as $example)
             <section data-demo-slide="{{ $loop->index }}" aria-roledescription="slide" aria-label="{{ $example['title'] }}" @unless ($loop->first) hidden @endunless class="min-w-0 [grid-area:1/1]">
                 @foreach (array_keys($languages) as $language)
-                    <pre data-demo-code="{{ $language }}" @unless ($language === 'r') hidden @endunless class="h-[320px] overflow-auto px-6 py-6 font-mono text-xs leading-[1.6] sm:text-[13px] lg:text-xs xl:text-[13px]"><code>{!! $highlight($example[$language]) !!}</code></pre>
+                    <pre data-demo-code="{{ $language }}" @unless ($language === 'r') hidden @endunless tabindex="0" class="focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-sky-500 h-[320px] overflow-auto px-6 py-6 font-mono text-xs leading-[1.6] sm:text-[13px] lg:text-xs xl:text-[13px]"><code>{!! $highlight($example[$language]) !!}</code></pre>
                 @endforeach
             </section>
         @endforeach
     </div>
-    <div data-demo-view-panel="result" hidden class="h-[320px] overflow-y-auto">
+    <div data-demo-view-panel="result" hidden tabindex="0" class="focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-sky-500 h-[320px] overflow-y-auto">
         @php
             $projectKeys = ['r' => 'R', 'py' => 'Python'] + (isset($languages['stata']) ? ['stata' => 'Stata'] : []);
             $projectFiles = [];
@@ -56,14 +56,14 @@
         <x-landing-editor :panels="$projectPanels" :files="$projectFiles" :embedded="true" title="Hero project" />
     </div>
     <div class="flex items-center justify-between gap-4 border-t border-white/10 px-6 py-3.5">
-        <span class="text-xs text-slate-500">{{ isset($languages['stata']) ? 'R, Python, and Stata examples' : 'R and Python examples' }}</span>
+        <span class="text-xs text-slate-400">{{ isset($languages['stata']) ? 'R, Python, and Stata examples' : 'R and Python examples' }}</span>
         <div class="flex shrink-0 items-center gap-0.5">
-            <button type="button" data-demo-previous aria-label="Previous example" class="rounded-md p-1 text-slate-500 hover:bg-white/10 hover:text-white"><x-heroicon-m-chevron-left class="size-4" /></button>
+            <button type="button" data-demo-previous aria-label="Previous example" class="rounded-md p-1 text-slate-400 hover:bg-white/10 hover:text-white"><x-heroicon-m-chevron-left class="size-4" /></button>
             @foreach ($examples as $example)
                 <button type="button" data-demo-select="{{ $loop->index }}" aria-label="{{ $example['title'] }}" aria-pressed="{{ $loop->first ? 'true' : 'false' }}" class="group flex h-6 min-w-6 items-center justify-center"><span class="h-1.5 w-1.5 rounded-full bg-slate-600 transition-all group-hover:bg-slate-400 group-aria-pressed:w-5 group-aria-pressed:bg-sky-400"></span></button>
             @endforeach
-            <button type="button" data-demo-next aria-label="Next example" class="rounded-md p-1 text-slate-500 hover:bg-white/10 hover:text-white"><x-heroicon-m-chevron-right class="size-4" /></button>
-            <button type="button" data-demo-pause aria-label="Pause examples" aria-pressed="false" class="group ml-1 rounded-md p-1 text-slate-500 hover:bg-white/10 hover:text-white"><x-heroicon-m-pause class="size-4 group-aria-pressed:hidden" /><x-heroicon-m-play class="hidden size-4 group-aria-pressed:block" /></button>
+            <button type="button" data-demo-next aria-label="Next example" class="rounded-md p-1 text-slate-400 hover:bg-white/10 hover:text-white"><x-heroicon-m-chevron-right class="size-4" /></button>
+            <button type="button" data-demo-pause aria-label="Pause examples" aria-pressed="false" class="group ml-1 rounded-md p-1 text-slate-400 hover:bg-white/10 hover:text-white"><x-heroicon-m-pause class="size-4 group-aria-pressed:hidden" /><x-heroicon-m-play class="hidden size-4 group-aria-pressed:block" /></button>
         </div>
     </div>
     <p class="sr-only" data-demo-status aria-live="off">Scaffolding and analysis example</p>

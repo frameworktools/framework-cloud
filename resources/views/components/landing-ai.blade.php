@@ -19,5 +19,5 @@
         <p class="mt-4 leading-relaxed text-slate-600 dark:text-slate-400">Framework provides skills for R, Python, and Stata, including plotting skills for ggplot2, matplotlib, and Stata graphs. Create your own and share them across projects.</p>
     </div>
     <div class="mt-8 rounded-xl shadow-panel-deep dark:shadow-panel-deep-dark"><x-landing-editor :panels="$aiPanels" :files="$aiFiles" :expand-agents="true" :flat-files="true" max-height="max-h-[22rem]" title="Included agent skills" /></div>
-    <div class="mt-4 text-center"><a href="{{ route('skills.index') }}" class="text-sm text-slate-500 underline decoration-slate-300 underline-offset-4">Browse skills &rarr;</a></div>
+    <div class="mt-4 text-center"><a href="{{ route('skills.index') }}" class="text-sm text-slate-500 dark:text-slate-400 underline decoration-slate-300 underline-offset-4">Browse skills &rarr;</a></div>
 </section>

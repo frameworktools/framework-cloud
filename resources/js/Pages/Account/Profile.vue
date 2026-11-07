@@ -69,7 +69,7 @@ const yaml = computed(() => {
                     class="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
                 >
                     <div class="flex items-center justify-between gap-2">
-                        <span class="text-xs font-medium uppercase tracking-wide text-slate-500">{{ index === 0 ? 'Main' : `Affiliation ${index + 1}` }}</span>
+                        <span class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ index === 0 ? 'Main' : `Affiliation ${index + 1}` }}</span>
                         <div class="flex gap-1">
                             <UiButton v-if="index > 0" variant="ghost" size="sm" @click="move(index, -1)">Move up</UiButton>
                             <UiButton variant="ghost" size="sm" @click="remove(index)">Remove</UiButton>
@@ -97,7 +97,7 @@ const yaml = computed(() => {
             <UiButton save-shortcut type="submit" form="settings-form" class="w-full" :disabled="form.processing">
                 {{ form.processing ? 'Saving…' : 'Save changes' }}
             </UiButton>
-            <p v-if="saved" class="text-center text-xs text-slate-500">Saved.</p>
+            <p v-if="saved" class="text-center text-xs text-slate-500 dark:text-slate-400">Saved.</p>
         </template>
     </AccountLayout>
 </template>

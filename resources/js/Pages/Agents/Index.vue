@@ -102,9 +102,9 @@ const label = 'text-sm font-semibold text-slate-900 dark:text-white';
                 <p class="text-sm text-slate-500 dark:text-slate-400">Claude Code and Codex make it easier to work with Framework Cloud and the files on your computer. The Claude desktop app includes Claude Code, and the ChatGPT desktop app includes Codex.</p>
                 <UiTabs v-model="app" :tabs="apps" label="AI app" />
 
-                <h3 :class="heading">Desktop app</h3>
+                <h2 :class="heading">Desktop app</h2>
                 <template v-for="(part, i) in setup.app" :key="part.title">
-                    <h4 :class="[label, i && 'mt-3']">{{ part.title }}</h4>
+                    <h3 :class="[label, i && 'mt-3']">{{ part.title }}</h3>
                     <SetupSteps :steps="part.steps" />
                 </template>
                 <p class="text-sm text-slate-700 dark:text-slate-300">
@@ -112,7 +112,7 @@ const label = 'text-sm font-semibold text-slate-900 dark:text-white';
                 </p>
 
                 <div class="flex flex-col gap-5 border-t border-slate-800/10 pt-6 dark:border-white/15">
-                    <h3 :class="heading">CLI</h3>
+                    <h2 :class="heading">CLI</h2>
                     <SetupSteps :steps="setup.cli" />
                 </div>
             </section>

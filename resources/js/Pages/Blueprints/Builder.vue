@@ -131,7 +131,7 @@ const items = [
                             v-if="workflowChoices.length > 1" v-model="previewWorkflow" label="Preview workflow"
                             :options="workflowChoices.map((w) => ({ value: w, label: `${languageNames[form.language]}, ${workflowNames[w]}` }))"
                         />
-                        <p v-else-if="previewWorkflow" class="text-xs text-slate-500">{{ languageNames[form.language] }}, {{ workflowNames[previewWorkflow] }}</p>
+                        <p v-else-if="previewWorkflow" class="text-xs text-slate-500 dark:text-slate-400">{{ languageNames[form.language] }}, {{ workflowNames[previewWorkflow] }}</p>
                         <div :class="current ? '' : 'opacity-60'" class="flex flex-col gap-3">
                             <p v-if="shown?.problem" class="text-xs text-red-600 dark:text-red-400">{{ shown.problem }}</p>
                             <ProjectTreeView v-else-if="shown?.tree" :entries="shown.tree" />
@@ -143,7 +143,7 @@ const items = [
                             </div>
                             <p v-if="shown?.sensitive" class="text-xs text-amber-800 dark:text-amber-300">Sensitive data: private folders stay out of Git, and Framework warns before anything private is uploaded or published.</p>
                         </div>
-                        <p class="text-xs text-slate-500">Each person's own defaults, such as their editor and agents, are added when they make a project.</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Each person's own defaults, such as their editor and agents, are added when they make a project.</p>
                     </div>
                 </template>
                 <template #after-structure>

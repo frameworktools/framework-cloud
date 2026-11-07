@@ -38,7 +38,7 @@ const fieldClass = 'w-full rounded-md border border-slate-300 bg-white px-3 py-2
             <label class="flex flex-col gap-1.5 text-sm font-medium">
                 File
                 <input ref="fileInput" type="file" :class="fieldClass" required @change="form.file = $event.target.files[0] ?? null">
-                <span class="text-xs font-normal text-slate-500">Upload files intended for sharing. CSV and TSV files get sortable tables and column summaries. Excel, Parquet, Stata, SPSS, and RDS files are available for download. For rendered books or sites, ZIP the output folder’s contents.</span>
+                <span class="text-xs font-normal text-slate-500 dark:text-slate-400">Upload files intended for sharing. CSV and TSV files get sortable tables and column summaries. Excel, Parquet, Stata, SPSS, and RDS files are available for download. For rendered books or sites, ZIP the output folder’s contents.</span>
             </label>
             <label class="flex items-center gap-2 text-sm"><input v-model="bundle" type="checkbox">HTML ZIP bundle</label>
             <UiInput v-if="bundle" v-model="form.entrypoint" label="ZIP entry page" placeholder="index.html" required />
@@ -56,7 +56,7 @@ const fieldClass = 'w-full rounded-md border border-slate-300 bg-white px-3 py-2
                 </label>
                 <UiInput v-model="form.password" type="password" label="Password (optional)" autocomplete="new-password" description="At least 8 characters. Readers need it to open the artifact and its files." />
             </div>
-            <p class="text-xs text-slate-500">A new version keeps the current password when this field is blank.</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400">A new version keeps the current password when this field is blank.</p>
             <ul v-if="Object.keys(form.errors).length" role="alert" class="text-sm text-red-600 dark:text-red-400">
                 <li v-for="(error, key) in form.errors" :key="key">{{ error }}</li>
             </ul>

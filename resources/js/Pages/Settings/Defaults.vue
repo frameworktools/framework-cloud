@@ -189,7 +189,7 @@ const save = () => form
     .transform((data) => ({ ...data, packages: Object.fromEntries(Object.entries(data.packages).map(([lang, rows]) => [lang, rows.filter((row) => row.name?.trim())])) }))
     .patch('/settings', { preserveScroll: true });
 
-const link = 'text-sky-600 hover:underline dark:text-sky-400';
+const link = 'text-sky-700 underline decoration-sky-700/30 underline-offset-2 hover:decoration-sky-700 dark:text-sky-400 dark:decoration-sky-400/40';
 const heading = 'text-sm font-semibold text-slate-900 dark:text-white';
 const note = 'text-sm text-slate-600 dark:text-slate-400';
 </script>
@@ -200,9 +200,9 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
     <SectionLayout heading="Default settings" :items="items" narrow :dirty="form.isDirty">
         <PageHeader v-if="section === 'blueprint'" :title="current.label">
             <template #actions>
-                <Link href="/welcome" class="text-sm text-slate-500 hover:text-slate-900 hover:underline dark:hover:text-white">Run guided setup</Link>
-                <Link href="/blueprints" class="ml-3 text-sm text-slate-500 hover:text-slate-900 hover:underline dark:hover:text-white">Edit blueprints</Link>
-                <a href="/docs/projects-and-blueprints#default-precedence" class="ml-3 text-sm text-slate-500 hover:text-slate-900 hover:underline dark:hover:text-white">Documentation</a>
+                <Link href="/welcome" class="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 hover:underline dark:hover:text-white">Run guided setup</Link>
+                <Link href="/blueprints" class="ml-3 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 hover:underline dark:hover:text-white">Edit blueprints</Link>
+                <a href="/docs/projects-and-blueprints#default-precedence" class="ml-3 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 hover:underline dark:hover:text-white">Documentation</a>
             </template>
         </PageHeader>
         <PageHeader v-else :title="current.label" />
@@ -212,8 +212,8 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
 
             <section v-else-if="section === 'publishing'" class="max-w-xl space-y-5">
                 <UiSelect v-model="form.publish_destination" label="Publishing destination" :options="[{value:'',label:'Automatic'}, {value:'cloud',label:'Framework Cloud'}, {value:'github',label:'GitHub Pages'}]" :error="form.errors.publish_destination" />
-                <p class="text-sm text-slate-500">New projects use this destination. Automatic uses a configured bucket, then Framework Cloud. Named folder and object storage destinations can be set in each project's settings.</p>
-                <p class="text-sm text-slate-500">A GitHub Pages site is public, even when its repository is private. Only GitHub Enterprise Cloud can limit a site to people with access to the repository.</p>
+                <p class="text-sm text-slate-500 dark:text-slate-400">New projects use this destination. Automatic uses a configured bucket, then Framework Cloud. Named folder and object storage destinations can be set in each project's settings.</p>
+                <p class="text-sm text-slate-500 dark:text-slate-400">A GitHub Pages site is public, even when its repository is private. Only GitHub Enterprise Cloud can limit a site to people with access to the repository.</p>
             </section>
             <template v-else-if="section === 'blueprint'">
                 <DefaultBlueprintList v-model="form.project_type" :blueprints="blueprints" :defaults="previewDefaults" :language="previewLanguage">
@@ -231,12 +231,12 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                                 <option v-for="o in workflowOptionsFor(previewLanguage)" :key="o.value" :value="o.value">{{ o.label }}</option>
                             </select>
                         </label>
-                        <span class="text-slate-500">
+                        <span class="text-slate-500 dark:text-slate-400">
                             Defaults: <Link href="/settings/language" preserve-state :class="link">language</Link> ·
                             <Link href="/settings/notebooks" preserve-state :class="link">notebook workflow</Link>
                         </span>
                         <!-- Jupyter beyond the workflow comes from the Jupyter defaults, shown as it resolves -->
-                        <span v-if="previewLanguage !== 'stata'" class="text-slate-500">
+                        <span v-if="previewLanguage !== 'stata'" class="text-slate-500 dark:text-slate-400">
                             Jupyter: {{ previewWorkflow === 'jupyter' ? 'included by the workflow' : form.tools.jupyter ? 'added by your Jupyter default' : 'not added' }}
                             · <Link href="/settings/jupyter" preserve-state :class="link">Jupyter defaults</Link>
                         </span>
@@ -259,7 +259,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                         class="rounded px-3 py-1 transition"
                         :class="packageLanguage === lang ? 'bg-slate-200 font-medium text-slate-900 dark:bg-slate-700 dark:text-white' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'"
                         @click="packageLanguage = lang"
-                    >{{ languageNames[lang] }}<span class="ml-1.5 text-xs text-slate-500">{{ form.packages[lang].length }}</span></button>
+                    >{{ languageNames[lang] }}<span class="ml-1.5 text-xs text-slate-600 dark:text-slate-300">{{ form.packages[lang].length }}</span></button>
                 </div>
 
                 <section class="flex flex-col gap-4">
@@ -317,7 +317,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
                 <!-- Kept as they are with None, for when an agent is chosen again -->
                 <fieldset :disabled="!form.ai_enabled" class="flex flex-col gap-4" :class="form.ai_enabled ? '' : 'opacity-60'">
                     <h2 :class="heading">Skills</h2>
-                    <p v-if="!form.ai_enabled" class="text-xs text-slate-500">With None, projects get no skills. These are kept for when you choose an agent.</p>
+                    <p v-if="!form.ai_enabled" class="text-xs text-slate-500 dark:text-slate-400">With None, projects get no skills. These are kept for when you choose an agent.</p>
                     <div class="max-w-xl">
                         <UiSwitch v-model="form.ai_skills" :disabled="!form.ai_enabled" label="Framework skills" description="Instructions for working in a Framework project, which agents load when they need them." />
                     </div>
@@ -512,7 +512,7 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
             <UiButton save-shortcut type="submit" form="settings-form" class="w-full" :disabled="form.processing">
                 {{ form.processing ? 'Saving…' : 'Save changes' }}
             </UiButton>
-            <p v-if="saved && !form.isDirty" class="text-center text-xs text-slate-500">Saved.</p>
+            <p v-if="saved && !form.isDirty" class="text-center text-xs text-slate-500 dark:text-slate-400">Saved.</p>
         </template>
     </SectionLayout>
 </template>

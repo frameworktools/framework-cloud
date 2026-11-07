@@ -29,7 +29,7 @@ const toggle = (id) => (open.has(id) ? open.delete(id) : open.add(id));
 
 const fork = (id) => router.post(`/structures/${id}/fork`);
 
-const label = 'text-xs font-semibold uppercase tracking-wider text-slate-500';
+const label = 'text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400';
 const dir = (path) => (path === '.' ? 'the project folder' : `${path}/`);
 </script>
 
@@ -54,7 +54,7 @@ const dir = (path) => (path === '.' ? 'the project folder' : `${path}/`);
 
                 <p v-if="!section.rows.length" class="text-sm text-slate-500 dark:text-slate-400">
                     {{ copy.empty }}
-                    <Link href="/structures/create" class="font-medium text-sky-600 hover:underline dark:text-sky-400">New project structure</Link>
+                    <Link href="/structures/create" class="font-medium text-sky-700 hover:underline dark:text-sky-400">New project structure</Link>
                 </p>
 
                 <div v-else class="divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
@@ -81,7 +81,7 @@ const dir = (path) => (path === '.' ? 'the project folder' : `${path}/`);
                                 <div class="min-w-0">
                                     <div :class="label" class="mb-2">Folders and files</div>
                                     <ProjectTreeView :entries="s.preview.tree" show-when />
-                                    <p class="mt-2 text-xs text-slate-500">Editor, agent, and Git files and packages come from the blueprint and your defaults. Stata projects get the same folders, with settings.do in place of settings.yml.</p>
+                                    <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Editor, agent, and Git files and packages come from the blueprint and your defaults. Stata projects get the same folders, with settings.do in place of settings.yml.</p>
                                 </div>
 
                                 <!-- What the structure decides -->
@@ -146,7 +146,7 @@ const dir = (path) => (path === '.' ? 'the project folder' : `${path}/`);
                                             <li>To follow the sensitive-data skill before working with data.</li>
                                         </ul>
                                         <details class="group mt-3 text-xs">
-                                            <summary class="flex cursor-pointer list-none items-center gap-1 text-sky-600 hover:underline dark:text-sky-400 [&::-webkit-details-marker]:hidden">
+                                            <summary class="flex cursor-pointer list-none items-center gap-1 text-sky-700 hover:underline dark:text-sky-400 [&::-webkit-details-marker]:hidden">
                                                 <ChevronRightIcon class="-ml-1 size-4 transition-transform group-open:rotate-90" />Data protection
                                             </summary>
                                             <div class="mt-2 flex flex-col gap-2 text-slate-600 dark:text-slate-400">
@@ -158,7 +158,7 @@ const dir = (path) => (path === '.' ? 'the project folder' : `${path}/`);
                                     </section>
                                 </div>
 
-                                <div class="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-slate-200 pt-3 text-xs text-slate-500 lg:col-span-2 dark:border-slate-800">
+                                <div class="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-slate-200 pt-3 text-xs text-slate-500 dark:text-slate-400 lg:col-span-2 dark:border-slate-800">
                                     <span class="font-mono">{{ s.handle }} v{{ s.version }}</span>
                                     <span v-if="!s.is_system && !s.editable && s.owner">Shared by {{ s.owner.name ?? s.owner }}</span>
                                 </div>

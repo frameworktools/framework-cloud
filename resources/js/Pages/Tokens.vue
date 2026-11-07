@@ -57,18 +57,18 @@ const revoke = async (id) => {
                 <p>Copy this token now. It is shown only once.</p>
                 <code class="break-all font-mono text-sm">{{ plainToken }}</code>
                 <div>
-                    <div class="text-slate-500">Connect this machine. In R:</div>
+                    <div class="text-slate-500 dark:text-slate-400">Connect this machine. In R:</div>
                     <code class="break-all font-mono text-xs">framework::cloud_login("{{ plainToken }}"{{ serverArg }})</code>
                 </div>
                 <div>
-                    <div class="text-slate-500">In Python:</div>
+                    <div class="text-slate-500 dark:text-slate-400">In Python:</div>
                     <code class="break-all font-mono text-xs">framework.cloud_login("{{ plainToken }}"{{ pythonServerArg }})</code>
                 </div>
                 <div>
-                    <div class="text-slate-500">In a terminal, for fw and Stata, which share fw's login. fw asks for the token:</div>
+                    <div class="text-slate-500 dark:text-slate-400">In a terminal, for fw and Stata, which share fw's login. fw asks for the token:</div>
                     <code class="break-all font-mono text-xs">fw login --paste{{ serverFlag }}</code>
                 </div>
-                <p class="text-xs text-slate-500">
+                <p class="text-xs text-slate-500 dark:text-slate-400">
                     Stored in your system keychain (macOS Keychain, Windows Credential Manager, Linux Secret Service).
                     In a batch job, set <code class="font-mono">FW_CLOUD_TOKEN</code> instead.
                 </p>
@@ -80,7 +80,7 @@ const revoke = async (id) => {
                     <UiCard v-for="token in tokens" :key="token.id" hover>
                         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                             <div class="flex min-w-0 items-center gap-4">
-                                <div class="hidden size-10 shrink-0 items-center justify-center rounded-lg sm:flex bg-sky-50 text-sky-600 dark:bg-sky-400/10 dark:text-sky-400">
+                                <div class="hidden size-10 shrink-0 items-center justify-center rounded-lg sm:flex bg-sky-50 text-sky-700 dark:bg-sky-400/10 dark:text-sky-400">
                                     <ComputerDesktopIcon class="size-5" />
                                 </div>
                                 <div class="min-w-0">

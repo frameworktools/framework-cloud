@@ -62,7 +62,7 @@ const date = (value) => new Date(value).toLocaleDateString();
 
             <UiCallout v-if="blueprint.editable && version.version === latest && outdated.length" heading="Newer versions available">
                 {{ outdated.map((f) => `${f.name} v${f.latest_version}`).join(', ') }}.
-                <Link :href="`/blueprints/${blueprint.id}/edit`" class="text-sky-600 hover:underline dark:text-sky-400">Review them in the editor</Link>.
+                <Link :href="`/blueprints/${blueprint.id}/edit`" class="text-sky-700 hover:underline dark:text-sky-400">Review them in the editor</Link>.
             </UiCallout>
 
             <div class="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_15rem]">
@@ -81,7 +81,7 @@ const date = (value) => new Date(value).toLocaleDateString();
                                             </span>
                                             <span class="font-mono text-xs text-slate-500 dark:text-slate-400">
                                                 {{ fragment.handle }} v{{ fragment.version }}
-                                                <span v-if="fragment.version < fragment.latest_version" class="text-sky-600 dark:text-sky-400">· v{{ fragment.latest_version }} available</span>
+                                                <span v-if="fragment.version < fragment.latest_version" class="text-sky-700 dark:text-sky-400">· v{{ fragment.latest_version }} available</span>
                                             </span>
                                         </div>
                                         <div class="mt-3"><LayerSummary :sections="fragment.summary" /></div>

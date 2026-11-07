@@ -74,9 +74,9 @@ const remove = async (id) => {
                     {{ busy ? 'Waiting for your device…' : 'Add a passkey' }}
                 </UiButton>
             </div>
-            <span v-if="added" class="text-sm text-slate-500">Passkey added.</span>
+            <span v-if="added" class="text-sm text-slate-500 dark:text-slate-400">Passkey added.</span>
         </div>
-        <p v-else class="text-sm text-slate-500">This browser does not support passkeys.</p>
+        <p v-else class="text-sm text-slate-500 dark:text-slate-400">This browser does not support passkeys.</p>
         </UiPanel>
 
         <UiPanel title="Passkeys">
@@ -84,13 +84,13 @@ const remove = async (id) => {
             <div v-for="passkey in passkeys" :key="passkey.id" class="flex items-center justify-between gap-4 py-3">
                 <div>
                     <div class="text-sm font-medium">{{ passkey.name }}</div>
-                    <p class="text-xs text-slate-500">
+                    <p class="text-xs text-slate-500 dark:text-slate-400">
                         Added {{ passkey.created_at }} · {{ passkey.last_used_at ? `Last used ${passkey.last_used_at}` : 'Never used' }}
                     </p>
                 </div>
                 <UiButton variant="danger" size="sm" @click="remove(passkey.id)">Remove</UiButton>
             </div>
-            <p v-if="!passkeys.length" class="py-3 text-sm text-slate-500">No passkeys yet.</p>
+            <p v-if="!passkeys.length" class="py-3 text-sm text-slate-500 dark:text-slate-400">No passkeys yet.</p>
         </div>
         </UiPanel>
         <UiPanel
@@ -110,7 +110,7 @@ const remove = async (id) => {
                 />
                 <UiInput v-model="passwordForm.password_confirmation" label="Repeat the password" type="password" autocomplete="new-password" />
                 <div class="flex items-center justify-end gap-3 border-t border-slate-200 pt-4 dark:border-slate-700">
-                    <span v-if="passwordStatus" class="text-sm text-slate-500">{{ passwordStatus }}</span>
+                    <span v-if="passwordStatus" class="text-sm text-slate-500 dark:text-slate-400">{{ passwordStatus }}</span>
                     <UiButton v-if="hasPassword" variant="ghost" :disabled="passwordForm.processing" @click="removePassword">Remove password</UiButton>
                     <UiButton type="submit" :disabled="passwordForm.processing">{{ hasPassword ? 'Change password' : 'Add password' }}</UiButton>
                 </div>

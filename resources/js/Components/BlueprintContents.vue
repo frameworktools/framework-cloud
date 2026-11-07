@@ -11,7 +11,7 @@ const kindNames = { structure: 'project structure', tool: 'tool', package_set: '
         <div v-for="fragment in [version.base, ...version.facets]" :key="fragment.id" class="flex flex-col gap-1.5">
             <div class="text-sm font-medium">
                 {{ fragment.kind === 'structure' ? fragment.name : `+ ${fragment.name}` }}
-                <span class="font-normal text-slate-500">{{ kindNames[fragment.kind] ?? 'piece' }}</span>
+                <span class="font-normal text-slate-500 dark:text-slate-400">{{ kindNames[fragment.kind] ?? 'piece' }}</span>
             </div>
             <LayerSummary :sections="fragment.summary" />
         </div>

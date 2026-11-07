@@ -24,7 +24,7 @@
         <div class="flex flex-col gap-6">
             @foreach ($points as [$icon, $title, $body])
                 <div class="flex gap-3">
-                    <x-dynamic-component :component="$icon" class="mt-0.5 size-5 shrink-0 text-slate-500" />
+                    <x-dynamic-component :component="$icon" class="mt-0.5 size-5 shrink-0 text-slate-500 dark:text-slate-400" />
                     <div>
                         <h3 class="font-semibold">{{ $title }}</h3>
                         <p class="mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{{ $body }}</p>

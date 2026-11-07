@@ -29,7 +29,7 @@ async function copy(text) {
                         </button>
                     </span>
                     <span v-else class="my-2.5 flex items-center gap-2 rounded-lg bg-[#0c1526] py-1 ps-3 pe-1">
-                        <code class="min-w-0 flex-1 overflow-x-auto whitespace-nowrap py-1 font-mono text-xs text-slate-100">{{ part.cmd }}</code>
+                        <code tabindex="0" class="min-w-0 flex-1 overflow-x-auto whitespace-nowrap rounded py-1 font-mono text-xs text-slate-100 focus-visible:outline-2 focus-visible:outline-sky-500">{{ part.cmd }}</code>
                         <button type="button" class="flex shrink-0 items-center rounded-md p-1.5 text-slate-400 hover:bg-white/10 hover:text-white" :aria-label="`Copy ${part.cmd}`" @click="copy(part.cmd)">
                             <component :is="copied === part.cmd ? CheckIcon : ClipboardDocumentIcon" class="size-4" aria-hidden="true" />
                         </button>

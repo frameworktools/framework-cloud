@@ -77,7 +77,7 @@ const itemClass = (item) => [
 <template>
     <AppLayout bleed>
         <div class="flex min-h-screen max-lg:flex-col">
-            <aside class="shrink-0 border-slate-200 lg:border-r dark:border-slate-800 max-lg:border-b" :class="narrow ? 'lg:w-60' : 'lg:w-64'">
+            <aside :aria-label="heading ? `${heading} menu` : 'Section menu'" class="shrink-0 border-slate-200 lg:border-r dark:border-slate-800 max-lg:border-b" :class="narrow ? 'lg:w-60' : 'lg:w-64'">
                 <!-- On wide screens the column fills the window and stays put: the menu scrolls on its own, with the actions under it -->
                 <div class="flex flex-col lg:sticky lg:top-0 lg:h-screen">
                     <div class="flex min-h-0 flex-1 flex-col gap-4 p-6 lg:overflow-y-auto [&>*]:shrink-0" :class="narrow ? 'lg:px-8' : ''">
@@ -91,8 +91,8 @@ const itemClass = (item) => [
 
                         <slot name="lead" />
 
-                        <nav class="flex gap-1 max-lg:-mx-1 max-lg:overflow-x-auto lg:flex-col lg:gap-0.5">
-                            <div v-if="group" class="mb-1 mt-2 text-xs font-medium uppercase tracking-wider text-slate-500 max-lg:hidden">{{ group }}</div>
+                        <nav :aria-label="heading ?? 'Section'" class="flex gap-1 max-lg:-mx-1 max-lg:overflow-x-auto lg:flex-col lg:gap-0.5">
+                            <div v-if="group" class="mb-1 mt-2 text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400 max-lg:hidden">{{ group }}</div>
                             <template v-for="item in items" :key="item.href ?? item.anchor ?? item.heading">
                                 <div v-if="item.heading" class="mb-1 mt-4 text-xs font-semibold uppercase tracking-wider text-slate-500 first:mt-5 max-lg:hidden dark:text-slate-400">{{ item.heading }}</div>
                                 <Link

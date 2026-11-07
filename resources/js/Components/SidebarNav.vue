@@ -26,7 +26,7 @@ const linkClass = (active) => active
 </script>
 
 <template>
-    <nav class="flex flex-col gap-6">
+    <nav aria-label="Main" class="flex flex-col gap-6">
         <div class="flex flex-col gap-0.5">
             <Link href="/dashboard" class="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm" :class="linkClass(path === '/dashboard')"><HomeIcon class="size-4 shrink-0 opacity-70" aria-hidden="true" />Dashboard</Link>
             <Link href="/projects" class="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm" :class="linkClass(projectsCurrent)"><FolderIcon class="size-4 shrink-0 opacity-70" aria-hidden="true" />Projects</Link>
@@ -40,7 +40,7 @@ const linkClass = (active) => active
             v-for="group in groups" :key="group.heading ?? 'you'" class="flex flex-col gap-0.5"
             :class="{ 'border-t border-slate-200 pt-4 dark:border-slate-800': !group.heading }"
         >
-            <div v-if="group.heading" class="mb-1 px-2 text-xs font-medium uppercase tracking-wide text-slate-500">{{ group.heading }}</div>
+            <div v-if="group.heading" class="mb-1 px-2 text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ group.heading }}</div>
             <template v-for="item in group.items" :key="item.href">
                 <a v-if="item.external" :href="item.href" class="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm" :class="linkClass(false)"><component :is="icon(item)" class="size-4 shrink-0 opacity-70" aria-hidden="true" />{{ item.label }}</a>
                 <Link v-else :href="item.href" class="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm" :class="linkClass(current(item))"><component :is="icon(item)" class="size-4 shrink-0 opacity-70" aria-hidden="true" />{{ item.label }}</Link>

@@ -92,12 +92,12 @@ const tab = (on) => on
                 <!-- Nothing at all, or nothing for this language -->
                 <p v-if="!section.all.length" class="text-sm text-slate-500 dark:text-slate-400">
                     {{ copy.empty }}
-                    <Link :href="`/package-sets/create?language=${language}`" class="font-medium text-sky-600 hover:underline dark:text-sky-400">New package set</Link>
+                    <Link :href="`/package-sets/create?language=${language}`" class="font-medium text-sky-700 hover:underline dark:text-sky-400">New package set</Link>
                 </p>
                 <p v-else-if="!section.rows.length" class="text-sm text-slate-500 dark:text-slate-400">
                     <template v-if="section.key === 'framework'">Framework has no {{ languageNames[language] }} package sets yet.</template>
                     <template v-else>No {{ languageNames[language] }} package sets here.</template>
-                    <button type="button" class="ml-1 font-medium text-sky-600 hover:underline dark:text-sky-400" @click="language = other">Show {{ languageNames[other] }}</button>
+                    <button type="button" class="ml-1 font-medium text-sky-700 hover:underline dark:text-sky-400" @click="language = other">Show {{ languageNames[other] }}</button>
                 </p>
 
                 <div v-else class="divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
@@ -112,14 +112,14 @@ const tab = (on) => on
                                 <span class="min-w-0">
                                     <span class="flex flex-wrap items-baseline gap-x-2">
                                         <span class="font-semibold text-slate-900 dark:text-white">{{ s.name }}</span>
-                                        <span class="text-xs text-slate-500">{{ s.packages.length }} {{ s.packages.length === 1 ? 'package' : 'packages' }}</span>
+                                        <span class="text-xs text-slate-500 dark:text-slate-400">{{ s.packages.length }} {{ s.packages.length === 1 ? 'package' : 'packages' }}</span>
                                     </span>
                                     <span v-if="s.description" class="mt-0.5 block text-sm text-slate-600 dark:text-slate-400">{{ s.description }}</span>
                                     <span v-if="!s.language?.length" class="mt-0.5 block text-xs text-amber-700 dark:text-amber-300">No language set. Edit it to choose R or Python before using it.</span>
                                 </span>
                             </button>
                             <div class="flex shrink-0 flex-wrap items-center gap-2 pl-7 sm:pl-0">
-                                <span v-if="s.language?.length && !missing(s)" class="text-xs text-slate-500">In your defaults</span>
+                                <span v-if="s.language?.length && !missing(s)" class="text-xs text-slate-500 dark:text-slate-400">In your defaults</span>
                                 <UiButton
                                     v-else-if="s.language?.length" size="sm" variant="outline" @click="addToDefaults(s)"
                                     :title="`Adds the ${missing(s)} packages your ${languageNames[language]} defaults don't have. Nothing is removed or changed.`"
@@ -134,12 +134,12 @@ const tab = (on) => on
                         <div v-if="open.has(s.id)" :id="`set-${s.id}`" class="px-4 pb-4 sm:px-5 sm:pl-12">
                             <div class="border-t border-slate-200 pt-3 dark:border-slate-800">
                                 <table class="w-full text-left text-sm">
-                                    <thead class="text-xs text-slate-500">
+                                    <thead class="text-xs text-slate-500 dark:text-slate-400">
                                         <tr><th class="py-1 pr-4 font-medium">Package</th><th class="py-1 pr-4 font-medium">Source</th><th v-if="language === 'r'" class="py-1 font-medium">Attached by scaffold()</th></tr>
                                     </thead>
                                     <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
                                         <tr v-for="p in s.packages" :key="p.name">
-                                            <td class="py-1.5 pr-4 font-mono text-xs text-slate-900 dark:text-slate-100">{{ p.name }}<span v-if="p.version" class="text-slate-500"> {{ p.version }}</span></td>
+                                            <td class="py-1.5 pr-4 font-mono text-xs text-slate-900 dark:text-slate-100">{{ p.name }}<span v-if="p.version" class="text-slate-500 dark:text-slate-400"> {{ p.version }}</span></td>
                                             <td class="py-1.5 pr-4 text-xs text-slate-600 dark:text-slate-400">{{ sourceNames[p.source] ?? p.source }}<span v-if="p.repo" class="font-mono"> · {{ p.repo }}</span></td>
                                             <td v-if="language === 'r'" class="py-1.5 text-xs text-slate-600 dark:text-slate-400">{{ p.auto_attach ? 'Yes' : 'No' }}</td>
                                         </tr>
@@ -148,11 +148,11 @@ const tab = (on) => on
                                 <div v-if="s.requirements" class="mt-3 rounded-md border border-amber-200 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/60 dark:text-amber-200">
                                     <span class="font-medium">Also needs:</span> {{ s.requirements }}
                                 </div>
-                                <p class="mt-3 text-xs text-slate-500">
+                                <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">
                                     Adding to your defaults adds only packages your {{ languageNames[language] }} list doesn't have ({{ missing(s) }} of {{ s.packages.length }}).
                                     Packages already there keep your settings, and nothing is removed.
                                 </p>
-                                <div class="mt-3 border-t border-slate-200 pt-2 font-mono text-xs text-slate-500 dark:border-slate-800">{{ s.handle }} v{{ s.version }}</div>
+                                <div class="mt-3 border-t border-slate-200 pt-2 font-mono text-xs text-slate-500 dark:text-slate-400 dark:border-slate-800">{{ s.handle }} v{{ s.version }}</div>
                             </div>
                         </div>
                     </div>

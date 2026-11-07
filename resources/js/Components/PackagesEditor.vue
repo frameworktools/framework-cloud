@@ -60,13 +60,13 @@ const field = 'w-full rounded-md border border-slate-300 bg-white px-3 py-2 text
             <summary class="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-medium text-slate-800 dark:text-slate-200 [&::-webkit-details-marker]:hidden">
                 <ChevronRightIcon class="size-4 text-slate-400 transition-transform group-open:rotate-90" />
                 Load a package set
-                <span class="font-normal text-slate-500">· adds to your list unless you replace it</span>
+                <span class="font-normal text-slate-500 dark:text-slate-400">· adds to your list unless you replace it</span>
             </summary>
             <div class="divide-y divide-slate-200 border-t border-slate-200 dark:divide-slate-800 dark:border-slate-700">
                 <div v-for="preset in presets" :key="preset.key" class="flex items-start justify-between gap-4 px-4 py-3">
                     <div class="min-w-0">
                         <div class="text-sm font-medium text-slate-900 dark:text-white">{{ preset.name }}</div>
-                        <div class="mt-0.5 font-mono text-xs text-slate-500">{{ preset.packages.map((p) => p.name).join(', ') }}</div>
+                        <div class="mt-0.5 font-mono text-xs text-slate-500 dark:text-slate-400">{{ preset.packages.map((p) => p.name).join(', ') }}</div>
                     </div>
                     <div class="flex shrink-0 items-center gap-2">
                         <UiButton size="sm" variant="outline" :disabled="!missing(preset).length" :title="`Adds the packages your list doesn't have yet`" @click="load(preset)">
@@ -75,13 +75,13 @@ const field = 'w-full rounded-md border border-slate-300 bg-white px-3 py-2 text
                         <UiButton size="sm" variant="ghost" @click="replace(preset)">Replace list</UiButton>
                     </div>
                 </div>
-                <p class="px-4 py-3 text-sm"><Link href="/package-sets" class="text-sky-600 hover:underline dark:text-sky-400">Manage package sets</Link></p>
+                <p class="px-4 py-3 text-sm"><Link href="/package-sets" class="text-sky-700 hover:underline dark:text-sky-400">Manage package sets</Link></p>
             </div>
         </details>
 
         <div class="divide-y divide-slate-200 rounded-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-700">
             <!-- Column labels, for the rows below -->
-            <div class="hidden gap-3 px-4 py-2 text-xs font-medium text-slate-500 sm:grid" :class="r ? 'grid-cols-[1fr_9rem_7rem_2rem]' : 'grid-cols-[1fr_9rem_7rem_2rem]'">
+            <div class="hidden gap-3 px-4 py-2 text-xs font-medium text-slate-500 dark:text-slate-400 sm:grid" :class="r ? 'grid-cols-[1fr_9rem_7rem_2rem]' : 'grid-cols-[1fr_9rem_7rem_2rem]'">
                 <span>Package</span><span>Source</span>
                 <span v-if="r" class="flex items-center gap-1">
                     Auto-attach
@@ -112,8 +112,7 @@ const field = 'w-full rounded-md border border-slate-300 bg-white px-3 py-2 text
                     <option v-for="s in sources" :key="s.value" :value="s.value">{{ s.label }}</option>
                 </select>
                 <div v-if="r" class="[&>label]:w-fit" :title="'Call library() when scaffold() runs'">
-                    <UiSwitch :model-value="row.auto_attach" @update:model-value="(on) => update(i, { auto_attach: on })" />
-                    <span class="sr-only">Auto-attach {{ row.name }}</span>
+                    <UiSwitch :model-value="row.auto_attach" :sr-label="`Auto-attach ${row.name || 'this package'}`" @update:model-value="(on) => update(i, { auto_attach: on })" />
                 </div>
                 <input
                     v-else :value="row.version ?? ''" type="text" placeholder="any" spellcheck="false" aria-label="Version"
@@ -125,7 +124,7 @@ const field = 'w-full rounded-md border border-slate-300 bg-white px-3 py-2 text
                     @click="remove(i)"
                 ><XMarkIcon class="size-5" /></button>
             </div>
-            <p v-if="!rows.length" class="px-4 py-3 text-sm text-slate-500">{{ r ? 'No default R packages. Add a package to get started.' : 'No default Python packages. Add a package to get started.' }}</p>
+            <p v-if="!rows.length" class="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">{{ r ? 'No default R packages. Add a package to get started.' : 'No default Python packages. Add a package to get started.' }}</p>
         </div>
         <div><UiButton size="sm" variant="outline" @click="add">Add package</UiButton></div>
         <p v-if="r" class="text-sm text-slate-500 dark:text-slate-400">Auto-attach calls <code class="font-mono text-xs">library()</code> when <code class="font-mono text-xs">scaffold()</code> runs.</p>

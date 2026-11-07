@@ -110,7 +110,7 @@
             <div>
             <div class="grid items-start gap-6 lg:grid-cols-[0.65fr_1.35fr] lg:gap-12">
                 <div>
-                    <p class="font-mono text-sm text-slate-400">0{{ $loop->iteration }}</p>
+                    <p class="font-mono text-sm text-slate-500 dark:text-slate-400">0{{ $loop->iteration }}</p>
                     <h3 class="mt-3 text-2xl font-semibold tracking-tight">{{ $step['title'] }}</h3>
                     <p class="mt-4 text-base leading-relaxed text-slate-600 dark:text-slate-400">{{ $step['body'] }}</p>
                     <div class="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm">

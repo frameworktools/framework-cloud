@@ -51,7 +51,7 @@ const destroy = () => deleteForm.delete('/account/account', { preserveScroll: tr
             />
         </form>
             <template #actions>
-                <span v-if="saved" class="self-center text-sm text-slate-500">Saved.</span>
+                <span v-if="saved" class="self-center text-sm text-slate-500 dark:text-slate-400">Saved.</span>
                 <UiButton save-shortcut type="submit" form="account-form" :disabled="form.processing">Save changes</UiButton>
             </template>
         </UiPanel>

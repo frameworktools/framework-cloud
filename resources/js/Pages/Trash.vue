@@ -42,7 +42,7 @@ const forever = async (item) => {
                 <thead><tr><th>Name</th><th>Type</th><th class="max-sm:hidden">Deleted</th><th class="actions"><span class="sr-only">Actions</span></th></tr></thead>
                 <tbody>
                     <tr v-for="item in items" :key="`${item.type}-${item.id}`">
-                        <td class="strong">{{ item.name }}<span v-if="item.detail" class="ms-2 font-normal text-slate-500">{{ item.detail }}</span></td>
+                        <td class="strong">{{ item.name }}<span v-if="item.detail" class="ms-2 font-normal text-slate-500 dark:text-slate-400">{{ item.detail }}</span></td>
                         <td>{{ labels[item.type] }}</td>
                         <td class="max-sm:hidden"><time :datetime="item.deleted_iso">{{ item.deleted }}</time></td>
                         <td class="actions">

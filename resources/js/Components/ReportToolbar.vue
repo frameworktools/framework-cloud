@@ -101,11 +101,11 @@ const button = 'inline-flex h-8 min-w-8 items-center justify-center rounded-md p
                     <button v-for="item in more" :key="item.name" type="button" role="menuitemcheckbox" :aria-checked="pressed(item) ?? 'false'"
                         class="flex w-full items-center gap-3 rounded-md px-2.5 py-1.5 text-left text-sm text-slate-700 hover:bg-slate-100 aria-checked:text-sky-700 dark:text-slate-200 dark:hover:bg-slate-700 dark:aria-checked:text-sky-300"
                         @mousedown.prevent @click="runMore(item)">
-                        <component :is="item.icon" v-if="item.icon" class="size-4 text-slate-500" aria-hidden="true" />
-                        <svg v-else-if="item.svg === 'sup'" viewBox="0 0 20 20" class="size-4 text-slate-500" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="m3 7 7 9M10 7l-7 9"/><path d="M13 5.2a1.6 1.6 0 1 1 2.6 1.2L13 9h3.2" stroke-width="1.3"/></svg>
-                        <svg v-else-if="item.svg === 'sub'" viewBox="0 0 20 20" class="size-4 text-slate-500" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="m3 4 7 9M10 4l-7 9"/><path d="M13 13.2a1.6 1.6 0 1 1 2.6 1.2L13 17h3.2" stroke-width="1.3"/></svg>
-                        <svg v-else-if="item.svg === 'codeblock'" viewBox="0 0 20 20" class="size-4 text-slate-500" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="3.5" width="15" height="13" rx="2"/><path d="m8 8-2 2 2 2M12 8l2 2-2 2"/></svg>
-                        <svg v-else-if="item.svg === 'clear'" viewBox="0 0 20 20" class="size-4 text-slate-500" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M5 4.5h10M10 4.5l-3 11M12.5 12.5l4 4M16.5 12.5l-4 4"/></svg>
+                        <component :is="item.icon" v-if="item.icon" class="size-4 text-slate-500 dark:text-slate-400" aria-hidden="true" />
+                        <svg v-else-if="item.svg === 'sup'" viewBox="0 0 20 20" class="size-4 text-slate-500 dark:text-slate-400" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="m3 7 7 9M10 7l-7 9"/><path d="M13 5.2a1.6 1.6 0 1 1 2.6 1.2L13 9h3.2" stroke-width="1.3"/></svg>
+                        <svg v-else-if="item.svg === 'sub'" viewBox="0 0 20 20" class="size-4 text-slate-500 dark:text-slate-400" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="m3 4 7 9M10 4l-7 9"/><path d="M13 13.2a1.6 1.6 0 1 1 2.6 1.2L13 17h3.2" stroke-width="1.3"/></svg>
+                        <svg v-else-if="item.svg === 'codeblock'" viewBox="0 0 20 20" class="size-4 text-slate-500 dark:text-slate-400" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="3.5" width="15" height="13" rx="2"/><path d="m8 8-2 2 2 2M12 8l2 2-2 2"/></svg>
+                        <svg v-else-if="item.svg === 'clear'" viewBox="0 0 20 20" class="size-4 text-slate-500 dark:text-slate-400" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M5 4.5h10M10 4.5l-3 11M12.5 12.5l4 4M16.5 12.5l-4 4"/></svg>
                         <span class="flex-1">{{ item.label }}</span>
                         <kbd v-if="item.shortcut" class="font-sans text-xs text-slate-400">{{ shortcutLabel(item.shortcut) }}</kbd>
                     </button>
@@ -127,7 +127,7 @@ const button = 'inline-flex h-8 min-w-8 items-center justify-center rounded-md p
                     @keydown.esc.prevent="closeLink">
                 <p v-if="linkError" :id="`${id}-error`" class="mt-1 text-xs text-red-700 dark:text-red-400">{{ linkError }}</p>
             </div>
-            <button type="submit" class="rounded-md bg-sky-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-700">{{ editor.isActive('link') ? 'Update' : 'Add link' }}</button>
+            <button type="submit" class="rounded-md bg-sky-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-800">{{ editor.isActive('link') ? 'Update' : 'Add link' }}</button>
             <a v-if="editor.isActive('link')" :href="editor.getAttributes('link').href" target="_blank" rel="noopener noreferrer" title="Open link in a new tab" :class="button"><ArrowTopRightOnSquareIcon class="size-4" aria-hidden="true" /><span class="sr-only">Open link</span></a>
             <button v-if="editor.isActive('link')" type="button" title="Remove link" :class="button" @click="removeLink"><LinkSlashIcon class="size-4" aria-hidden="true" /><span class="sr-only">Remove link</span></button>
             <button type="button" class="rounded-md px-2 py-1.5 text-sm text-slate-600 hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-slate-800" @click="closeLink">Cancel</button>

@@ -32,7 +32,7 @@ const toggle = (value, on) => {
                 >
                 <span class="flex min-w-0 flex-col gap-0.5">
                     <span class="text-base font-medium text-slate-900 dark:text-white">{{ option.label }}</span>
-                    <span v-if="option.description" class="mt-0.5 text-sm text-slate-500 dark:text-slate-400">{{ option.description }}</span>
+                    <span v-if="option.description" class="mt-0.5 text-sm text-slate-600 dark:text-slate-400">{{ option.description }}</span>
                 </span>
             </label>
         </div>
