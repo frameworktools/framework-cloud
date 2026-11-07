@@ -92,6 +92,35 @@ class GitHubTest extends TestCase
         $this->assertNotSame('ghu_access', GitHubAccount::query()->toBase()->value('access_token'), 'tokens are encrypted at rest');
     }
 
+    public function test_a_private_github_email_comes_from_the_emails_permission_and_creates_the_account(): void
+    {
+        // Socialite's own GitHub provider, with GitHub's answers canned: /user hides the
+        // address (private), and /user/emails, which the app's "Email addresses: read"
+        // permission opens, lists it as primary and verified
+        $requests = [];
+        $mock = new \GuzzleHttp\Handler\MockHandler([
+            new \GuzzleHttp\Psr7\Response(200, [], json_encode(['access_token' => 'ghu_private', 'token_type' => 'bearer', 'scope' => ''])),
+            new \GuzzleHttp\Psr7\Response(200, [], json_encode(['id' => 77, 'node_id' => 'U_kgDOgrace', 'login' => 'grace', 'name' => 'Grace Hopper', 'email' => null, 'avatar_url' => null])),
+            new \GuzzleHttp\Psr7\Response(200, [], json_encode([
+                ['email' => 'old@example.org', 'primary' => false, 'verified' => true],
+                ['email' => 'Grace@Example.org', 'primary' => true, 'verified' => true],
+            ])),
+        ]);
+        $stack = \GuzzleHttp\HandlerStack::create($mock);
+        $stack->push(\GuzzleHttp\Middleware::history($requests));
+        config(['services.github' => ['client_id' => 'Iv1.test', 'client_secret' => 'secret', 'redirect' => 'http://localhost/auth/github/callback']]);
+        $provider = \Laravel\Socialite\Facades\Socialite::driver('github')->stateless()->setHttpClient(new \GuzzleHttp\Client(['handler' => $stack]));
+        \Laravel\Socialite\Facades\Socialite::shouldReceive('driver')->with('github')->andReturn($provider);
+
+        $this->get('/auth/github/callback?code=x&state=y')->assertRedirect('/dashboard');
+
+        $this->assertSame('https://api.github.com/user/emails', (string) $requests[2]['request']->getUri());
+        $user = User::where('email', 'grace@example.org')->sole();
+        $this->assertAuthenticatedAs($user);
+        $this->assertNotNull($user->email_verified_at);
+        $this->assertSame('grace', $user->githubAccount->login);
+    }
+
     public function test_github_sign_in_matches_an_existing_account_by_email(): void
     {
         $user = User::factory()->create(['email' => 'ada@example.org']);
