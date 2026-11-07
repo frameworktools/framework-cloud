@@ -92,13 +92,25 @@ const dir = (path) => (path === '.' ? 'the project folder' : `${path}/`);
 
                                     <section v-if="s.preview.renders.length || s.preview.render_default">
                                         <div :class="label">Rendered documents</div>
-                                        <ul class="mt-1.5 flex flex-col gap-1">
-                                            <li v-for="r in s.preview.renders" :key="r.from" class="text-xs">
-                                                <span class="font-mono">{{ r.from }}/</span> render to <span class="font-mono">{{ r.to }}/</span>
-                                            </li>
-                                            <li v-if="s.preview.render_default === '.'" class="text-xs">Documents render next to their source.</li>
-                                            <li v-else-if="s.preview.render_default" class="text-xs">Other Quarto documents render to <span class="font-mono">{{ dir(s.preview.render_default) }}</span></li>
-                                        </ul>
+                                        <table v-if="s.preview.renders.length || (s.preview.render_default && s.preview.render_default !== '.')" class="mt-1.5 w-full text-left text-xs">
+                                            <thead class="text-slate-500 dark:text-slate-400">
+                                                <tr class="border-b border-slate-200 dark:border-slate-800">
+                                                    <th scope="col" class="py-1 pr-3 font-medium">Source</th>
+                                                    <th scope="col" class="py-1 font-medium">Output</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
+                                                <tr v-for="r in s.preview.renders" :key="r.from">
+                                                    <td class="py-1 pr-3 font-mono">{{ r.from }}/</td>
+                                                    <td class="py-1 font-mono break-all">{{ r.to }}/</td>
+                                                </tr>
+                                                <tr v-if="s.preview.render_default && s.preview.render_default !== '.'">
+                                                    <td class="py-1 pr-3">Other documents</td>
+                                                    <td class="py-1 font-mono break-all">{{ dir(s.preview.render_default) }}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                        <p v-if="s.preview.render_default === '.'" class="mt-1.5 text-xs">Documents render next to their source.</p>
                                     </section>
 
                                     <section v-if="s.preview.tree.length">
