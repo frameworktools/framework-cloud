@@ -34,6 +34,14 @@ html.dark {
     scrollbar-color: var(--color-slate-700) transparent;
 }
 
+/* Code panels are dark in both themes, so their scrollbars are too: a thin,
+   soft thumb on no track */
+.docs-prose pre {
+    color-scheme: dark;
+    scrollbar-width: thin;
+    scrollbar-color: rgb(148 163 184 / 0.4) transparent;
+}
+
 /* In the components layer so utilities on an element still win */
 @layer components {
 /* Rendered Markdown: guides and reference text */
