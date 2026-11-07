@@ -37,10 +37,10 @@ const clients = [
     { value: 'fw', label: 'Terminal' },
 ];
 const signIn = computed(() => ({
-    r: { where: 'In R:', cmd: `framework::cloud_login(${named.value ? `url = "${server.value}"` : ''})` },
-    python: { where: 'In Python:', cmd: `import framework; framework.cloud_login(${named.value ? `url="${server.value}"` : ''})` },
-    stata: { where: 'In Stata:', cmd: `fw_login${named.value ? `, url(${server.value})` : ''}` },
-    fw: { where: 'In a terminal:', cmd: `fw login${named.value ? ` --url ${server.value}` : ''}` },
+    r: { cmd: `framework::cloud_login(${named.value ? `url = "${server.value}"` : ''})` },
+    python: { cmd: `import framework; framework.cloud_login(${named.value ? `url="${server.value}"` : ''})` },
+    stata: { cmd: `fw_login${named.value ? `, url(${server.value})` : ''}` },
+    fw: { cmd: `fw login${named.value ? ` --url ${server.value}` : ''}` },
 }[client.value]));
 const copied = ref(false);
 async function copySignIn() {
@@ -68,8 +68,7 @@ const date = value => new Date(value).toLocaleDateString(undefined, { month: 'sh
                 <h2 id="sign-in-heading" class="text-base font-medium text-slate-900 dark:text-white">Computer sign-in</h2>
                 <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Run this on your computer. A browser opens to approve it, and the computer stays signed in.</p>
                 <UiTabs v-model="client" :tabs="clients" label="Client" class="mt-3" />
-                <p class="mt-3 text-sm text-slate-700 dark:text-slate-300">{{ signIn.where }}</p>
-                <div class="mt-2 flex max-w-2xl items-center gap-2 rounded-lg bg-[#0c1526] py-1 ps-3 pe-1">
+                <div class="mt-4 flex max-w-2xl items-center gap-2 rounded-lg bg-[#0c1526] py-1 ps-3 pe-1">
                     <code class="min-w-0 flex-1 overflow-x-auto whitespace-nowrap py-1 font-mono text-xs text-slate-100">{{ signIn.cmd }}</code>
                     <button type="button" class="flex shrink-0 items-center rounded-md p-1.5 text-slate-400 hover:bg-white/10 hover:text-white" :aria-label="`Copy ${signIn.cmd}`" @click="copySignIn">
                         <component :is="copied ? CheckIcon : ClipboardDocumentIcon" class="size-4" aria-hidden="true" />
