@@ -57,17 +57,19 @@ const setup = computed(() => {
                 {
                     title: 'Connect the MCP server',
                     steps: [
-                        ['In the ChatGPT desktop app, open Customize, then Plugins. Select Add, then Add custom MCP server.'],
-                        ['Name it framework and select Streamable HTTP. Paste the server address as the URL:', { copy: url }, 'Leave the rest empty and select Save.'],
-                        ['Select Authenticate next to framework. ', signIn],
+                        ['In the ChatGPT desktop app, open Settings, then Plugins, and choose the MCPs tab. Select Add to add a custom MCP server.'],
+                        ['Name it framework and select Streamable HTTP. Paste the server address as the URL:', { copy: url }, 'Leave the rest empty and save it.'],
+                        // The plugin asks people to sign in when they first use it
+                        ...(props.plugin ? [] : [['Select Authenticate next to framework. ', signIn]]),
                     ],
                 },
                 {
                     title: 'Configure the Framework plugin',
                     plugin: true,
                     steps: [
-                        ['Open Customize, then Plugins. Select Add, then Add a marketplace, and enter:', { copy: marketplace }],
+                        ['On the same Plugins page, select Add to add a marketplace, and enter:', { copy: marketplace }],
                         ['Search for Framework and install Framework Cloud.'],
+                        ['The first time you use it, Framework Cloud asks you to sign in. ', signIn],
                     ],
                 },
             ],
