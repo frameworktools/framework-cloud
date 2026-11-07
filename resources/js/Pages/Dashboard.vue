@@ -1,5 +1,8 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import { CheckIcon, ClipboardDocumentIcon } from '@heroicons/vue/20/solid';
+import UiTabs from '@/Components/UiTabs.vue';
+import { DEFAULT_SERVER, clientUrl } from '@/cloud.js';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import UiButton from '@/Components/UiButton.vue';
@@ -23,6 +26,28 @@ const activity = computed(() => [
     ...props.recentCollections.map(item => ({ ...item, activityKey: `collection-${item.id}`, type: 'Collection' })),
     ...props.recentReports.map(item => ({ ...item, activityKey: `report-${item.id}`, type: 'Report' })),
 ].sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at) || b.id - a.id).slice(0, 8));
+// Sign-in commands for each client. Each opens this server's approval page in a browser.
+const server = computed(() => clientUrl(page));
+const named = computed(() => server.value !== DEFAULT_SERVER);
+const client = ref('r');
+const clients = [
+    { value: 'r', label: 'R' },
+    { value: 'python', label: 'Python' },
+    { value: 'stata', label: 'Stata' },
+    { value: 'fw', label: 'Terminal' },
+];
+const signIn = computed(() => ({
+    r: { where: 'In R:', cmd: `framework::cloud_login(${named.value ? `url = "${server.value}"` : ''})` },
+    python: { where: 'In Python:', cmd: `import framework; framework.cloud_login(${named.value ? `url="${server.value}"` : ''})` },
+    stata: { where: 'In Stata:', cmd: `fw_login${named.value ? `, url(${server.value})` : ''}` },
+    fw: { where: 'In a terminal:', cmd: `fw login${named.value ? ` --url ${server.value}` : ''}` },
+}[client.value]));
+const copied = ref(false);
+async function copySignIn() {
+    await navigator.clipboard?.writeText(signIn.value.cmd);
+    copied.value = true;
+    setTimeout(() => (copied.value = false), 1500);
+}
 const date = value => new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 </script>
 
@@ -39,6 +64,19 @@ const date = value => new Date(value).toLocaleDateString(undefined, { month: 'sh
                     {{ destination.label }}<span class="font-mono text-base font-medium text-slate-900 dark:text-white">{{ counts[destination.key] }}</span>
                 </Link>
             </nav>
+            <section aria-labelledby="sign-in-heading">
+                <h2 id="sign-in-heading" class="text-base font-medium text-slate-900 dark:text-white">Computer sign-in</h2>
+                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Run this on your computer. A browser opens to approve it, and the computer stays signed in.</p>
+                <UiTabs v-model="client" :tabs="clients" label="Client" class="mt-3" />
+                <p class="mt-3 text-sm text-slate-700 dark:text-slate-300">{{ signIn.where }}</p>
+                <div class="mt-2 flex max-w-2xl items-center gap-2 rounded-lg bg-[#0c1526] py-1 ps-3 pe-1">
+                    <code class="min-w-0 flex-1 overflow-x-auto whitespace-nowrap py-1 font-mono text-xs text-slate-100">{{ signIn.cmd }}</code>
+                    <button type="button" class="flex shrink-0 items-center rounded-md p-1.5 text-slate-400 hover:bg-white/10 hover:text-white" :aria-label="`Copy ${signIn.cmd}`" @click="copySignIn">
+                        <component :is="copied ? CheckIcon : ClipboardDocumentIcon" class="size-4" aria-hidden="true" />
+                    </button>
+                </div>
+                <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">For scripts and jobs that can't wait for a browser, <Link href="/tokens" class="underline underline-offset-2">create a token</Link>.</p>
+            </section>
             <section>
                 <h2 class="mb-3 text-base font-medium text-slate-900 dark:text-white">Recent activity</h2>
                 <UiTable v-if="activity.length" label="Recent activity" class="dashboard-results">
