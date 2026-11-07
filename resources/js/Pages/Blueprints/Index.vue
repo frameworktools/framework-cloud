@@ -79,6 +79,8 @@ const openIn = (section) => {
     return section.rows.find(isDefault)?.id ?? section.rows.find((b) => b.handle === props.default_blueprint)?.id ?? ids[0];
 };
 const choose = (section, id) => (chosen[section.key] = id);
+// A click on the card's text opens it, unless the click ends a text selection
+const pick = (section, id) => window.getSelection()?.toString() || choose(section, id);
 const source = (b) => ({ url: `/blueprints/${b.id}/preview`, body: { language: language.value, workflow: workflow.value } });
 
 const isDefault = (b) => b.handle === props.default_blueprint && props.workflows?.[language.value] === workflow.value;
@@ -174,7 +176,8 @@ const pill = (on) => on
                         :class="openIn(section) === b.id ? 'border-slate-300 shadow-sm dark:border-slate-700' : 'border-slate-200 dark:border-slate-800'"
                     >
                         <div class="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-start sm:px-5">
-                            <div class="min-w-0 flex-1">
+                            <!-- The name and description open the details too; the Details button below is the keyboard target -->
+                            <div class="min-w-0 flex-1 cursor-pointer" @click="pick(section, b.id)">
                                 <div class="flex flex-wrap items-center gap-2">
                                     <span class="font-semibold text-slate-900 dark:text-white">{{ b.name }}</span>
                                     <span v-if="isDefault(b)" class="rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700 ring-1 ring-sky-200 dark:bg-sky-950/50 dark:text-sky-300 dark:ring-sky-800">Your default</span>
