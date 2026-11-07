@@ -18,16 +18,24 @@ class Project extends Model
     use HasApiTokens, HasFactory, SoftDeletes;
 
     /**
-     * Valid project types. Mirrors the framework R package's types,
-     * plus "bare" (a near-empty project).
+     * Valid project types. Mirrors the framework R package's types, the
+     * app types (Shiny and Plumber for R, Shiny and FastAPI for Python),
+     * and "bare" (a near-empty project).
      */
     public const TYPES = [
         'project',
         'project_sensitive',
         'course',
         'presentation',
+        'shiny',
+        'plumber',
+        'shiny_python',
+        'fastapi',
         'bare',
     ];
+
+    /** App types that only one language's package can build */
+    public const LANGUAGE_TYPES = ['shiny' => 'r', 'plumber' => 'r', 'shiny_python' => 'python', 'fastapi' => 'python'];
 
     /**
      * Languages a project can use. The R package scaffolds r, the Python
@@ -45,6 +53,10 @@ class Project extends Model
     {
         if ($language === 'stata' && ! in_array($type, self::STATA_TYPES, true)) {
             return 'Stata projects can use the standard, privacy-sensitive, or bare structure. This one uses the '.str_replace('_', ' ', $type).' structure.';
+        }
+        $only = self::LANGUAGE_TYPES[$type] ?? null;
+        if ($only !== null && $only !== $language) {
+            return 'The '.str_replace('_', ' ', $type).' structure is for '.self::LANGUAGE_NAMES[$only].' projects.';
         }
 
         return null;

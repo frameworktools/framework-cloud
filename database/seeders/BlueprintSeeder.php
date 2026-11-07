@@ -32,7 +32,7 @@ class BlueprintSeeder extends Seeder
         $this->seedPieces('tool', $this->fromR('features', self::TOOL_ORDER));
         $this->seedPieces('setting', $this->json("$mastersDir/settings.json"));
         $this->seedPieces('skill_set', $this->fromR('sets/skills'));
-        $this->seedPieces('package_set', $this->fromR('sets/packages'));
+        $this->seedPieces('package_set', $this->fromR('sets/packages', self::PACKAGE_SET_ORDER));
         // Workflows key as workflow-<id>; the id stays in category, as the spec names it
         $this->seedPieces('workflow', collect($this->fromR('workflows', ['quarto', 'jupyter', 'scripts']))
             ->mapWithKeys(fn (array $w, string $id) => ["workflow-{$id}" => $w + ['category' => $id]])->all());
@@ -45,6 +45,10 @@ class BlueprintSeeder extends Seeder
         'project_sensitive' => 'Privacy sensitive',
         'presentation' => 'Presentation',
         'course' => 'Course',
+        'shiny' => 'Shiny app',
+        'plumber' => 'Plumber API',
+        'shiny_python' => 'Shiny for Python',
+        'fastapi' => 'FastAPI app',
         'bare' => 'Bare',
     ];
 
@@ -58,7 +62,25 @@ class BlueprintSeeder extends Seeder
         'project_sensitive' => ['languages' => ['r', 'python', 'stata'], 'workflows' => ['quarto', 'jupyter', 'scripts']],
         'presentation' => ['languages' => ['r', 'python'], 'workflows' => ['quarto'], 'requires_tools' => ['quarto']],
         'course' => ['languages' => ['r', 'python'], 'workflows' => ['quarto'], 'requires_tools' => ['quarto']],
+        'shiny' => ['languages' => ['r'], 'workflows' => ['quarto', 'jupyter', 'scripts']],
+        'plumber' => ['languages' => ['r'], 'workflows' => ['quarto', 'jupyter', 'scripts']],
+        'shiny_python' => ['languages' => ['python'], 'workflows' => ['quarto', 'jupyter', 'scripts']],
+        'fastapi' => ['languages' => ['python'], 'workflows' => ['quarto', 'jupyter', 'scripts']],
         'bare' => ['languages' => ['r', 'python', 'stata'], 'workflows' => ['quarto', 'jupyter', 'scripts']],
+    ];
+
+    /**
+     * How the catalogs list Framework's package sets: the general sets for
+     * each language from small to large, then sets for a field or a kind of
+     * work, then the app sets. Any others follow.
+     */
+    private const PACKAGE_SET_ORDER = [
+        'tidy-core', 'tidyverse-analysis', 'tidyverse-extended',
+        'python-data-analysis', 'polars-python',
+        'tidy-database', 'large-data-r', 'tables-r', 'regression-r', 'tidymodels', 'bayes-r',
+        'causal-inference-r', 'survival-r', 'survey-r', 'spatial-r', 'text-r', 'tidy-omop',
+        'python-database', 'python-viz', 'python-ml', 'python-bayes', 'python-spatial',
+        'shiny-r', 'plumber-r', 'shiny-python', 'fastapi-python',
     ];
 
     /** How the builder lists Framework's tools; any others follow */
@@ -226,7 +248,8 @@ class BlueprintSeeder extends Seeder
 
             // uv for Python projects (left out of R and Stata ones). The
             // workflow brings Quarto or Jupyter, so the blueprint doesn't.
-            $pieces = collect(['uv'])->concat($sets)->map($latest);
+            // App blueprints bring the package set their starter files use.
+            $pieces = collect(['uv'])->concat($sets)->concat($definition['package_sets'] ?? [])->map($latest);
 
             $blueprint = Blueprint::updateOrCreate(['user_id' => null, 'key' => $key], $attributes + ['is_system' => true]);
             $blueprint->publish(

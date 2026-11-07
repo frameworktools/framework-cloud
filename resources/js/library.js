@@ -25,6 +25,9 @@ export const languageOptions = [
 
 // fw scaffolds only these project types for Stata
 export const stataTypes = ['project', 'project_sensitive', 'bare'];
+// App structures that only one language's package can build
+export const languageTypes = { shiny: 'r', plumber: 'r', shiny_python: 'python', fastapi: 'python' };
+export const typeFits = (type, language) => (language !== 'stata' || stataTypes.includes(type)) && (!languageTypes[type] || languageTypes[type] === language);
 
 export const languageNames = { r: 'R', python: 'Python', stata: 'Stata' };
 

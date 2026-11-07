@@ -136,6 +136,144 @@
       "framework-outputs"
     ]
   },
+  "shiny": {
+    "key": "shiny",
+    "name": "Shiny App Structure (R)",
+    "description": "A Shiny app: app.R, R/ for functions, www/ for static files, and tests/.",
+    "structure": {
+      "directories": {
+        "functions": "R",
+        "www": "www",
+        "tests": "tests",
+        "data": "data",
+        "scripts": "scripts"
+      },
+      "render_dirs": {},
+      "quarto": null,
+      "files": {
+        "app.R": {
+          "content": "library(shiny)\nlibrary(bslib)\n\nui <- page_sidebar(\n  title = \"{{project_name}}\",\n  sidebar = sidebar(\n    sliderInput(\"n\", \"Points\", min = 10, max = 500, value = 100)\n  ),\n  card(\n    card_header(\"A random sample\"),\n    plotOutput(\"plot\")\n  )\n)\n\nserver <- function(input, output, session) {\n  output$plot <- renderPlot({\n    hist(rnorm(input$n), main = NULL, xlab = \"Value\")\n  })\n}\n\nshinyApp(ui, server)\n",
+          "template": true
+        },
+        "README.md": {
+          "content": "# {{project_name}}\n\nA Shiny app. The interface and server are in app.R. Shiny loads the functions in R/ on its own.\n\nRun it:\n\n```\nshiny::runApp()\n```\n",
+          "template": true
+        }
+      }
+    },
+    "package_sets": [
+      "shiny-r"
+    ],
+    "skills": [
+      "framework-workflow",
+      "framework-packages"
+    ]
+  },
+  "plumber": {
+    "key": "plumber",
+    "name": "Plumber API Structure (R)",
+    "description": "A Plumber API: plumber.R for the endpoints, R/ for the logic, and tests/.",
+    "structure": {
+      "directories": {
+        "functions": "R",
+        "tests": "tests",
+        "data": "data",
+        "scripts": "scripts"
+      },
+      "render_dirs": {},
+      "quarto": null,
+      "files": {
+        "plumber.R": {
+          "content": "#* @apiTitle {{project_name}}\n\n# The logic lives in R/, so tests can call it without the API\nfor (file in list.files(\"R\", pattern = \"[.][Rr]$\", full.names = TRUE)) source(file)\n\n#* Check that the API is running\n#* @get /health\nfunction() {\n  list(status = \"ok\")\n}\n\n#* Return the message sent\n#* @param msg The message\n#* @get /echo\nfunction(msg = \"\") {\n  list(msg = msg)\n}\n",
+          "template": true
+        },
+        "run.R": {
+          "content": "# Run the API at http://127.0.0.1:8000. The docs are at /__docs__/\nplumber::pr_run(plumber::pr(\"plumber.R\"), port = 8000)\n"
+        },
+        "README.md": {
+          "content": "# {{project_name}}\n\nAn API built with Plumber. The endpoints are in plumber.R, and the logic is in R/.\n\nRun it:\n\n```\nRscript run.R\n```\n",
+          "template": true
+        }
+      }
+    },
+    "package_sets": [
+      "plumber-r"
+    ],
+    "skills": [
+      "framework-workflow",
+      "framework-packages"
+    ]
+  },
+  "shiny_python": {
+    "key": "shiny_python",
+    "name": "Shiny App Structure (Python)",
+    "description": "A Shiny for Python app: app.py, www/ for static files, and tests/.",
+    "structure": {
+      "directories": {
+        "www": "www",
+        "tests": "tests",
+        "data": "data",
+        "scripts": "scripts"
+      },
+      "render_dirs": {},
+      "quarto": null,
+      "files": {
+        "app.py": {
+          "content": "import numpy as np\nimport pandas as pd\nfrom shiny import App, render, ui\n\napp_ui = ui.page_sidebar(\n    ui.sidebar(ui.input_slider(\"n\", \"Rows\", min=5, max=100, value=20)),\n    ui.card(ui.card_header(\"A random sample\"), ui.output_data_frame(\"table\")),\n    title=\"{{project_name}}\",\n)\n\n\ndef server(input, output, session):\n    @render.data_frame\n    def table():\n        rng = np.random.default_rng(1)\n        return pd.DataFrame({\"value\": rng.normal(size=input.n())})\n\n\napp = App(app_ui, server)\n",
+          "template": true
+        },
+        "README.md": {
+          "content": "# {{project_name}}\n\nA Shiny for Python app. The interface and server are in app.py.\n\nRun it:\n\n```\nshiny run --reload app.py\n```\n",
+          "template": true
+        }
+      }
+    },
+    "package_sets": [
+      "shiny-python"
+    ],
+    "skills": [
+      "framework-workflow",
+      "framework-packages"
+    ]
+  },
+  "fastapi": {
+    "key": "fastapi",
+    "name": "FastAPI Structure",
+    "description": "A FastAPI app: app/main.py for the endpoints and tests/ with a test client.",
+    "structure": {
+      "directories": {
+        "app": "app",
+        "tests": "tests",
+        "data": "data",
+        "scripts": "scripts"
+      },
+      "render_dirs": {},
+      "quarto": null,
+      "files": {
+        "app/__init__.py": {
+          "content": ""
+        },
+        "app/main.py": {
+          "content": "from fastapi import FastAPI\nfrom pydantic import BaseModel\n\napp = FastAPI(title=\"{{project_name}}\")\n\n\nclass Message(BaseModel):\n    message: str\n\n\n@app.get(\"/health\")\ndef health() -> dict[str, str]:\n    return {\"status\": \"ok\"}\n\n\n@app.post(\"/echo\")\ndef echo(body: Message) -> Message:\n    return body\n",
+          "template": true
+        },
+        "tests/test_main.py": {
+          "content": "from fastapi.testclient import TestClient\n\nfrom app.main import app\n\nclient = TestClient(app)\n\n\ndef test_health():\n    assert client.get(\"/health\").json() == {\"status\": \"ok\"}\n\n\ndef test_echo():\n    assert client.post(\"/echo\", json={\"message\": \"hi\"}).json() == {\"message\": \"hi\"}\n"
+        },
+        "README.md": {
+          "content": "# {{project_name}}\n\nAn API built with FastAPI. The endpoints are in app/main.py. The docs are at /docs once it runs.\n\nRun it:\n\n```\nuvicorn app.main:app --reload\n```\n",
+          "template": true
+        }
+      }
+    },
+    "package_sets": [
+      "fastapi-python"
+    ],
+    "skills": [
+      "framework-workflow",
+      "framework-packages"
+    ]
+  },
   "bare": {
     "key": "bare",
     "name": "Bare",

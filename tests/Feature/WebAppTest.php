@@ -179,12 +179,12 @@ class WebAppTest extends TestCase
             ->get('/projects/create?blueprint='.$this->systemBlueprint('project')->id)
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Projects/Create')
-                ->has('blueprints', 5)
+                ->has('blueprints', 9)
                 ->where('blueprints.0.handle', 'framework/project')
                 ->where('blueprints.0.choices.structure', 'framework/project')
                 ->where('blueprints.0.choices.tools', ['uv' => true])
-                ->where('blueprints.4.handle', 'framework/bare')
-                ->has('catalog.structures', 5)
+                ->where('blueprints.8.handle', 'framework/bare')
+                ->has('catalog.structures', 9)
                 ->where('selected', $this->systemBlueprint('project')->id));
     }
 

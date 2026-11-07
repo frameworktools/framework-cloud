@@ -20,7 +20,7 @@ class StructuresCatalogTest extends TestCase
         $this->actingAs($user)->get('/structures')->assertInertia(function (Assert $page) {
             $page->component('Pieces/Structures');
             $structures = collect($page->toArray()['props']['structures']);
-            $this->assertSame(['Standard', 'Privacy sensitive', 'Presentation', 'Course', 'Bare'], $structures->pluck('name')->all());
+            $this->assertSame(['Standard', 'Privacy sensitive', 'Presentation', 'Course', 'Shiny app', 'Plumber API', 'Shiny for Python', 'FastAPI app', 'Bare'], $structures->pluck('name')->all());
 
             foreach ($structures as $structure) {
                 $this->assertStringContainsString('**/private/**', $structure['gitignore_content']);

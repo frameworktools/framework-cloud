@@ -14,6 +14,8 @@ class GitignoreTemplate
             'course' => "\n# Private course material\n/grades/\n/submissions/\n/student-data/\n",
             'presentation' => "\n# Presentation build cache\n.quarto/\n*_cache/\n",
             'project' => "\n# Analysis scratch work\n/scratch/\n/cache/\n",
+            'shiny', 'plumber' => "\n# Deployment records\nrsconnect/\n.Rproj.user/\n",
+            'shiny_python', 'fastapi' => "\n# Python environments and caches\n.venv/\n__pycache__/\n.pytest_cache/\nrsconnect-python/\n",
             default => '',
         };
     }

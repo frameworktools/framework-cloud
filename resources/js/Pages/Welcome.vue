@@ -109,6 +109,10 @@ const structureNotes = {
     project_sensitive: 'The standard folders, with inputs and outputs split into private and public. Private files stay out of Git.',
     presentation: 'One slide deck, with the data and code behind it.',
     course: 'Slides, modules, assignments, and readings for teaching.',
+    shiny: 'A Shiny app with app.R, functions in R/, and static files in www/.',
+    plumber: 'A Plumber API with endpoints in plumber.R and the logic in R/.',
+    shiny_python: 'A Shiny for Python app with app.py and static files in www/.',
+    fastapi: 'A FastAPI app with endpoints in app/main.py and a test client in tests/.',
     bare: 'Start with the essential Framework settings and organize your own folders.',
 };
 const projectOptions = computed(() => props.blueprints.map((b) => ({

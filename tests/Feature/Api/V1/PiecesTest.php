@@ -28,10 +28,10 @@ class PiecesTest extends TestCase
         $token = $this->token();
 
         $this->withToken($token)->getJson('/api/v1/structures')->assertOk()
-            ->assertJsonCount(5, 'structures')
+            ->assertJsonCount(9, 'structures')
             ->assertJsonPath('structures.0.key', 'framework/project')
-            ->assertJsonPath('structures.4.key', 'framework/bare')
-            ->assertJsonPath('structures.4.type', 'bare');
+            ->assertJsonPath('structures.8.key', 'framework/bare')
+            ->assertJsonPath('structures.8.type', 'bare');
 
         $tools = collect($this->withToken($token)->getJson('/api/v1/tools')->assertOk()->json('tools'));
         $this->assertSame(['framework/quarto', 'framework/quarto_manuscript', 'framework/quarto_slides', 'framework/jupyter', 'framework/targets', 'framework/renv', 'framework/uv'], $tools->pluck('key')->all());
@@ -46,7 +46,7 @@ class PiecesTest extends TestCase
             ->assertJsonPath('skill_sets.1.key', 'framework/ggplot2')
             ->assertJsonPath('skill_sets.1.skills', ['ggplot2-exploring', 'ggplot2-publishing'])
             ->assertJsonPath('skill_sets.1.packages', ['ggplot2']);
-        $this->withToken($token)->getJson('/api/v1/package-sets')->assertOk()->assertJsonPath('package_sets.0.key', 'framework/python-data-analysis')->assertJsonPath('package_sets.1.key', 'framework/tidyverse-analysis');
+        $this->withToken($token)->getJson('/api/v1/package-sets')->assertOk()->assertJsonPath('package_sets.0.key', 'framework/tidy-core')->assertJsonPath('package_sets.1.key', 'framework/tidyverse-analysis')->assertJsonPath('package_sets.3.key', 'framework/python-data-analysis');
         $this->withToken($token)->getJson('/api/v1/skills')->assertOk()->assertJsonCount(11, 'skills');
 
         $this->withToken($token)->getJson('/api/v1/blueprints')->assertOk()
@@ -68,6 +68,33 @@ class PiecesTest extends TestCase
         // Structure, pieces, the workflow and its tool, the blueprint, your defaults, and the project
         $this->assertSame(['framework/project', 'framework/framework', 'framework/ggplot2', 'framework/workflow-quarto', 'framework/quarto', 'framework/project', 'your defaults', 'survey'], array_column($envelope['layers'], 'key'));
         $this->assertSame(['key' => 'framework/project', 'version' => 1], $envelope['source']['blueprint']);
+    }
+
+    public function test_app_blueprints_bring_their_starter_files_and_package_set(): void
+    {
+        $token = $this->token();
+        $apps = [
+            'framework/shiny' => ['r', 'framework/shiny-r', 'app.R', 'shiny'],
+            'framework/plumber' => ['r', 'framework/plumber-r', 'plumber.R', 'plumber'],
+            'framework/shiny_python' => ['python', 'framework/shiny-python', 'app.py', 'shiny'],
+            'framework/fastapi' => ['python', 'framework/fastapi-python', 'app/main.py', 'fastapi'],
+        ];
+
+        foreach ($apps as $blueprint => [$language, $set, $file, $package]) {
+            $envelope = $this->withToken($token)->postJson('/api/v1/resolve', ['name' => 'Demo', 'blueprint' => $blueprint, 'language' => $language, 'workflow' => 'scripts'])
+                ->assertOk()->json();
+
+            $this->assertSame([], Layer::envelopeProblems($envelope), $blueprint);
+            $this->assertContains($set, array_column($envelope['layers'], 'key'), $blueprint);
+            $structure = $envelope['layers'][0]['layer'];
+            $this->assertArrayHasKey($file, $structure['files'], $blueprint);
+            $set = collect($envelope['layers'])->firstWhere('key', $set)['layer'];
+            $this->assertArrayHasKey($package, $set['packages']['default_packages'], $blueprint);
+        }
+
+        // An R app can't be made as a Python project
+        $this->withToken($token)->postJson('/api/v1/resolve', ['name' => 'Demo', 'blueprint' => 'framework/shiny', 'language' => 'python'])
+            ->assertStatus(422);
     }
 
     public function test_choices_change_the_blueprint(): void

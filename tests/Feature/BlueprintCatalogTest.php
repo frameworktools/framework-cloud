@@ -36,7 +36,7 @@ class BlueprintCatalogTest extends TestCase
             ->where('default_blueprint', 'framework/project')
             // Short names, Bare last
             ->where('blueprints.0.name', 'Standard')
-            ->where('blueprints.4.name', 'Bare')
+            ->where('blueprints.8.name', 'Bare')
             // Course is Quarto only and has no Stata; Standard has Scripts only for Stata
             ->where('blueprints.3.combinations', ['r' => ['quarto'], 'python' => ['quarto']])
             ->where('blueprints.0.combinations.stata', ['scripts'])

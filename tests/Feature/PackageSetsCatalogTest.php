@@ -37,15 +37,16 @@ class PackageSetsCatalogTest extends TestCase
         $this->actingAs($user)->get('/package-sets')->assertInertia(fn (Assert $page) => $page
             ->component('Pieces/PackageSets')
             ->where('language', 'python')
-            // Framework's Python set, then its R set, then yours
-            ->where('sets.0.language', ['python'])
-            ->where('sets.0.packages.0.name', 'pandas')
+            // Framework's sets, small general ones first, then yours
+            ->where('sets.0.key', 'tidy-core')
             ->where('sets.1.language', ['r'])
             // Framework's R defaults already hold most of the tidyverse
             ->where('sets.1.in_defaults', 7)
-            ->where('sets.2.language', ['python'])
-            ->where('sets.2.requirements', 'Nothing outside Python.')
-            ->where('sets.2.packages.0.source', 'pypi'));
+            ->where('sets.3.language', ['python'])
+            ->where('sets.3.packages.0.name', 'pandas')
+            ->where('sets.26.language', ['python'])
+            ->where('sets.26.requirements', 'Nothing outside Python.')
+            ->where('sets.26.packages.0.source', 'pypi'));
 
         // Stata prefers neither, so the catalog starts at R
         $stata = User::factory()->create(['email_verified_at' => now(), 'project_defaults' => ['language' => 'stata']]);

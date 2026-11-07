@@ -132,7 +132,7 @@ class DefaultsController extends Controller
     }
 
     /** The order the Blueprint page lists them in: the standard project first, Bare last. */
-    private const ORDER = ['project', 'project_sensitive', 'presentation', 'course', 'bare'];
+    private const ORDER = ['project', 'project_sensitive', 'presentation', 'course', 'shiny', 'plumber', 'shiny_python', 'fastapi', 'bare'];
 
     /**
      * A blueprint as the Blueprint page lists it. What it creates comes

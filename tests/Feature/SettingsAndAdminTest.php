@@ -37,7 +37,7 @@ class SettingsAndAdminTest extends TestCase
                 // Standard first and the default for an account that never chose; Bare last
                 ->where('values.project_type', 'project')
                 ->where('blueprints.0.key', 'project')
-                ->where('blueprints.4.key', 'bare')
+                ->where('blueprints.8.key', 'bare')
                 ->where('blueprints.2.languages', ['r', 'python']));
 
         $this->actingAs($user)
@@ -180,7 +180,7 @@ class SettingsAndAdminTest extends TestCase
         $this->assertTrue($user->is_admin);
         $this->assertNotNull($user->email_verified_at);
         $this->assertNull($user->password);
-        $this->assertSame(5, Blueprint::count());
+        $this->assertSame(9, Blueprint::count());
     }
 
     public function test_reseeding_on_every_start_leaves_the_admin_as_edited(): void

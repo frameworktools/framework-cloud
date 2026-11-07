@@ -43,7 +43,9 @@ class Catalog
         return [
             'structures' => $pieces->where('kind', 'structure')->values()->map($piece),
             'tools' => $pieces->where('kind', 'tool')->values()->map(fn (Facet $f) => ['key' => $f->key] + $piece($f)),
-            'package_sets' => $pieces->where('kind', 'package_set')->values()->map($piece),
+            // Package names too, so the builder can count what stacked sets install
+            'package_sets' => $pieces->where('kind', 'package_set')->values()
+                ->map(fn (Facet $f) => $piece($f) + ['packages' => array_keys($f->latestVersion?->layer['packages']['default_packages'] ?? [])]),
             'skill_sets' => $pieces->where('kind', 'skill_set')->values()->map($piece),
             'skills' => Skill::visibleTo($user)->with('owner')->orderByRaw('user_id is not null')->orderBy('position')->orderBy('name')->get()
                 ->map(fn (Skill $s) => ['key' => $s->handle, 'skill' => $s->key, 'name' => $s->name, 'description' => $s->description, 'system' => $s->isSystem()]),

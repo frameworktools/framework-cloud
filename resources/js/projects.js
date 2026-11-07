@@ -5,5 +5,5 @@ export const statusVariant = { pending: 'amber', running: 'amber', done: 'green'
 export const statusLabel = { pending: 'Creating repository', running: 'Scaffolding on GitHub', done: 'Ready to clone', failed: 'Scaffold failed' };
 
 // The structure names people pick in setup, so a list never shows "Project Sensitive"
-const typeNames = { project: 'Standard', project_sensitive: 'Privacy sensitive', presentation: 'Presentation', course: 'Course', bare: 'Bare' };
+const typeNames = { project: 'Standard', project_sensitive: 'Privacy sensitive', presentation: 'Presentation', course: 'Course', shiny: 'Shiny app', plumber: 'Plumber API', shiny_python: 'Shiny for Python', fastapi: 'FastAPI app', bare: 'Bare' };
 export const typeName = (key) => typeNames[key] ?? key.split('_').map((w) => w[0].toUpperCase() + w.slice(1)).join(' ');

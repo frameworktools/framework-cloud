@@ -1,5 +1,5 @@
 {
-    "commit": "6755b53da142a6deedada08f449c9ad5b7e6aa9a",
+    "commit": "5b4855b15ff5c1da2166724580fd1c6b6ed7f5ea",
     "files": {
         "conformance/create/python/bare-jupyter.json": {
             "source": "inst/conformance/create/python/bare-jupyter.json",
@@ -173,13 +173,109 @@
             "source": "inst/features/uv.json",
             "sha256": "4db22e5a58c66d974f7ab994e82dce19b4735cbe7588da2896a436ec580ca51b"
         },
+        "sets/packages/bayes-r.json": {
+            "source": "inst/sets/packages/bayes-r.json",
+            "sha256": "0283f7222120dca289859c54e9c60402ac1e364f4abb31a29bda12111cdacb35"
+        },
+        "sets/packages/causal-inference-r.json": {
+            "source": "inst/sets/packages/causal-inference-r.json",
+            "sha256": "85caa461ac4eddedce26f294d0021cd4e752c5934f6b31eeeb9630fccb5e77f9"
+        },
+        "sets/packages/fastapi-python.json": {
+            "source": "inst/sets/packages/fastapi-python.json",
+            "sha256": "e1a1d48f61f4f48c54374ba6bc8212ed3181d72e4e22cfcef47fa841fe95e5e9"
+        },
+        "sets/packages/large-data-r.json": {
+            "source": "inst/sets/packages/large-data-r.json",
+            "sha256": "9985c1730301e2899e651954e89866a1377a3d0562ffe9d386a14ab8764d2bca"
+        },
+        "sets/packages/plumber-r.json": {
+            "source": "inst/sets/packages/plumber-r.json",
+            "sha256": "4e2a88d0046e4d6ddb61af12873c917832bfc0751570146400dc36ac87d1d0bb"
+        },
+        "sets/packages/polars-python.json": {
+            "source": "inst/sets/packages/polars-python.json",
+            "sha256": "1e02390ea752f9e5b53ed8c85fcbc7a64e2881c64e00305d618b386f6c05e3c3"
+        },
+        "sets/packages/python-bayes.json": {
+            "source": "inst/sets/packages/python-bayes.json",
+            "sha256": "4516c035c64ca4b402e50c30c97ba3505557223ad710ccf681fd366fd1264f56"
+        },
         "sets/packages/python-data-analysis.json": {
             "source": "inst/sets/packages/python-data-analysis.json",
             "sha256": "d11b6029bd828c9c3d0928235630fe7971f181922ed133d15d8980345da7392b"
         },
+        "sets/packages/python-database.json": {
+            "source": "inst/sets/packages/python-database.json",
+            "sha256": "5f6bdbd88457d0221f71cd70d1f70347d88c9d861a7abc494a80536f5e10ce54"
+        },
+        "sets/packages/python-ml.json": {
+            "source": "inst/sets/packages/python-ml.json",
+            "sha256": "00e6d6f0eee6efcf3680c191bfba6703ea2a13b63cc8cb1932d6877cc1e0ff53"
+        },
+        "sets/packages/python-spatial.json": {
+            "source": "inst/sets/packages/python-spatial.json",
+            "sha256": "1703ecb7024368c07e8334daabf64cac376fecfd880d408c0fdf9ad8ef4343e0"
+        },
+        "sets/packages/python-viz.json": {
+            "source": "inst/sets/packages/python-viz.json",
+            "sha256": "78b7f0261a423c85f2a9cb0a63f7ff9089cad248984596ab2798510cc3a4a955"
+        },
+        "sets/packages/regression-r.json": {
+            "source": "inst/sets/packages/regression-r.json",
+            "sha256": "85920611884d081888420677e5419e2a5b4a39c3161005da1ae6dfd2b819a276"
+        },
+        "sets/packages/shiny-python.json": {
+            "source": "inst/sets/packages/shiny-python.json",
+            "sha256": "820f0b63995f84d35a57f9eee54dc6fd769d836554543c6e827bd5456c8be8fb"
+        },
+        "sets/packages/shiny-r.json": {
+            "source": "inst/sets/packages/shiny-r.json",
+            "sha256": "a9913174c986d6a2e2dbf7a580285d835e18e13520a77c7f17c3c47b1dba81bb"
+        },
+        "sets/packages/spatial-r.json": {
+            "source": "inst/sets/packages/spatial-r.json",
+            "sha256": "0751ba7e4fae1d57a61da3d54435ef99a77c397809939168c678e37c239631a2"
+        },
+        "sets/packages/survey-r.json": {
+            "source": "inst/sets/packages/survey-r.json",
+            "sha256": "9f8ef8507516297b8acff5dcb24b32cd582981afe5f4bb8c9ab2438fae1bf799"
+        },
+        "sets/packages/survival-r.json": {
+            "source": "inst/sets/packages/survival-r.json",
+            "sha256": "fdd97ff10d2539b22b46b7ab69b7be7186da1fea4a32a6f12029600d49dba6bf"
+        },
+        "sets/packages/tables-r.json": {
+            "source": "inst/sets/packages/tables-r.json",
+            "sha256": "bda1cf4289bfeda025d9bbe9d4ad19a9dce66acb25d2028f8650a09bf5a22a4c"
+        },
+        "sets/packages/text-r.json": {
+            "source": "inst/sets/packages/text-r.json",
+            "sha256": "0f6a9fd4b7885f14c9d14e3a7310addac84cca71b9d82390759089f31b03f11a"
+        },
+        "sets/packages/tidy-core.json": {
+            "source": "inst/sets/packages/tidy-core.json",
+            "sha256": "7e8742add524c00d21b229c0db446f4d348d290af883a05979e55f18ddf2ff12"
+        },
+        "sets/packages/tidy-database.json": {
+            "source": "inst/sets/packages/tidy-database.json",
+            "sha256": "d09649632ef0f251b632eea2b7e890f556c35467fb4921b9146a8e859fac338a"
+        },
+        "sets/packages/tidy-omop.json": {
+            "source": "inst/sets/packages/tidy-omop.json",
+            "sha256": "f4706cc85428a37cfa2dc4c366b9e60f150ed31aab4c629f1b5b60f84f144f3c"
+        },
+        "sets/packages/tidymodels.json": {
+            "source": "inst/sets/packages/tidymodels.json",
+            "sha256": "045d2fdac9eff8989d881937d721a7550f71493b1cca00e2860692b97b135afd"
+        },
         "sets/packages/tidyverse-analysis.json": {
             "source": "inst/sets/packages/tidyverse-analysis.json",
             "sha256": "f5b157a35097ab007d2a5b7837faf78fdce2bd523c5d6fa6e5f0c433f4fdd738"
+        },
+        "sets/packages/tidyverse-extended.json": {
+            "source": "inst/sets/packages/tidyverse-extended.json",
+            "sha256": "8e4ac48ffac2423659ef0d6e1489386c270fb1246c7ddb0fa246055a3c6f88b4"
         },
         "sets/skills/framework.json": {
             "source": "inst/sets/skills/framework.json",
