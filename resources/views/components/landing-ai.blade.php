@@ -13,9 +13,9 @@
     $aiPanels['stata'] = ['label' => 'Stata', 'path' => '.agents/skills/stata-graphs/SKILL.md', 'code' => $stataProject['.agents/skills/stata-graphs/SKILL.md']];
     $aiFiles['stata'] = array_intersect_key($stataProject, array_flip(['AGENTS.md', '.agents/skills/framework-stata/SKILL.md', '.agents/skills/framework-sensitive-data/SKILL.md']));
 @endphp
-<section id="ai" class="border-t border-slate-800/10 py-14 sm:py-20 dark:border-white/10">
+<section id="ai" class="pb-14 sm:pb-20">
     <div class="mx-auto max-w-2xl text-center">
-        <h2 class="text-3xl font-semibold tracking-tight">AI agent skills</h2>
+        <h3 class="text-2xl font-semibold tracking-tight">Agent skills</h3>
         <p class="mt-4 leading-relaxed text-slate-600 dark:text-slate-400">Framework provides skills for R, Python, and Stata, including plotting skills for ggplot2, matplotlib, and Stata graphs. Create your own and share them across projects.</p>
     </div>
     <div class="mt-8 rounded-xl shadow-panel-deep dark:shadow-panel-deep-dark"><x-landing-editor :panels="$aiPanels" :files="$aiFiles" :expand-agents="true" :flat-files="true" max-height="max-h-[22rem]" title="Included agent skills" /></div>

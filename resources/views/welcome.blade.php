@@ -56,6 +56,7 @@
         <x-landing-platform />
         <span id="copy"></span><span id="environments"></span>
         <x-landing-safeguards />
+        <x-landing-agents />
         <x-landing-ai />
         <x-landing-tools />
         <x-landing-start />
