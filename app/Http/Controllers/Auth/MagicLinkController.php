@@ -45,6 +45,11 @@ class MagicLinkController extends Controller
         // the account exists
         $browser = Str::random(40);
         Cookie::queue(LoginToken::BROWSER_COOKIE, $browser, LoginToken::LIFETIME_MINUTES);
+        // "Keep me signed in" holds for a link opened in this same browser.
+        // Another device asks again on the confirmation page.
+        $request->boolean('remember')
+            ? Cookie::queue(LoginToken::REMEMBER_COOKIE, '1', LoginToken::LIFETIME_MINUTES)
+            : Cookie::queue(Cookie::forget(LoginToken::REMEMBER_COOKIE));
 
         $user = User::where('email', $validated['email'])->first();
         $isNew = false;
@@ -118,9 +123,12 @@ class MagicLinkController extends Controller
             event(new Registered($user));
         }
 
-        Auth::login($user, remember: true);
+        $remember = $request->boolean('remember')
+            || ($request->isMethod('GET') && $request->cookie(LoginToken::REMEMBER_COOKIE) === '1');
+        Auth::login($user, remember: $remember);
         $request->session()->regenerate();
         Cookie::expire(LoginToken::BROWSER_COOKIE);
+        Cookie::expire(LoginToken::REMEMBER_COOKIE);
 
         return PasskeyPromptController::afterSignIn($request, $user);
     }

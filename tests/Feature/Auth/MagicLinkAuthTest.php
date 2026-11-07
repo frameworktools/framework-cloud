@@ -14,6 +14,35 @@ class MagicLinkAuthTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_the_choice_made_when_asking_holds_for_a_link_opened_in_the_same_browser(): void
+    {
+        $user = User::factory()->create(['password' => null]);
+        $remember = fn ($response) => collect($response->headers->getCookies())->first(fn ($c) => str_starts_with($c->getName(), 'remember_web_'));
+
+        $response = $this->withCookies([LoginToken::BROWSER_COOKIE => 'this-browser', LoginToken::REMEMBER_COOKIE => '1'])
+            ->get('/auth/magic/'.LoginToken::issue($user, 'this-browser'));
+        $this->assertAuthenticatedAs($user);
+        $this->assertNotNull($remember($response));
+        $this->post('/logout');
+
+        $response = $this->withCookies([LoginToken::BROWSER_COOKIE => 'this-browser', LoginToken::REMEMBER_COOKIE => ''])
+            ->get('/auth/magic/'.LoginToken::issue($user, 'this-browser'));
+        $this->assertAuthenticatedAs($user);
+        $this->assertNull($remember($response));
+    }
+
+    public function test_a_link_keeps_you_signed_in_only_when_asked(): void
+    {
+        $user = User::factory()->create(['password' => null]);
+        $remember = fn ($response) => collect($response->headers->getCookies())->first(fn ($c) => str_starts_with($c->getName(), 'remember_web_'));
+
+        $this->assertNull($remember($this->post('/auth/magic/'.LoginToken::issue($user))));
+        $this->post('/logout');
+
+        $this->assertNotNull($remember($this->post('/auth/magic/'.LoginToken::issue($user), ['remember' => 1])));
+        $this->assertAuthenticatedAs($user);
+    }
+
     public function test_login_screen_renders(): void
     {
         $response = $this->get('/login');

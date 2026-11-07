@@ -3,6 +3,7 @@
 import '@/passkeys.js';
 import { ref, computed } from 'vue';
 import { router, useForm, usePage } from '@inertiajs/vue3';
+import KeepSignedIn from '@/Components/KeepSignedIn.vue';
 import AuthLayout from '@/Layouts/AuthLayout.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiInput from '@/Components/UiInput.vue';
@@ -14,7 +15,7 @@ const sent = computed(() => page.props.flash.status === 'magic-link-sent');
 const passwordReset = computed(() => page.props.flash.status === 'password-reset');
 const passwords = computed(() => page.props.passwords);
 
-const form = useForm({ email: '', password: '' });
+const form = useForm({ email: '', password: '', remember: false });
 
 // A sign-in link is the default. People who use a password can switch, and
 // this browser remembers the choice.
@@ -30,8 +31,8 @@ const setUsePassword = (value) => {
 const description = computed(() => (usePassword.value
     ? 'Sign in with your email address and password.'
     : "We'll email you a link to sign in."));
-const send = () => form.transform((data) => ({ email: data.email })).post('/auth/magic-link');
-const signIn = () => form.transform((data) => data).post('/login/password', { onFinish: () => form.reset('password') });
+const send = () => form.transform((data) => ({ email: data.email, remember: data.remember ? 1 : 0 })).post('/auth/magic-link');
+const signIn = () => form.transform((data) => ({ ...data, remember: data.remember ? 1 : 0 })).post('/login/password', { onFinish: () => form.reset('password') });
 
 // Passkey sign-in: fetch assertion options, hand to the authenticator,
 // post the result as a plain form (the passkeys package expects a
@@ -96,6 +97,8 @@ async function signInWithPasskey() {
                     Forgot your password?
                 </Link>
             </div>
+            <!-- An emailed link opened on another device asks again there -->
+            <KeepSignedIn v-model="form.remember" />
             <UiButton type="submit" class="w-full" :disabled="form.processing">
                 {{ usePassword ? 'Sign in' : 'Email me a sign-in link' }}
             </UiButton>
@@ -117,13 +120,13 @@ async function signInWithPasskey() {
             </div>
 
             <div class="flex flex-col gap-3">
-                <GitHubButton v-if="page.props.githubSignIn" label="Sign in with GitHub" />
+                <GitHubButton v-if="page.props.githubSignIn" label="Sign in with GitHub" :remember="form.remember" />
 
                 <template v-if="passkeySupported">
                     <form ref="assertionForm" method="post" action="/passkeys/authenticate" class="hidden">
                         <input type="hidden" name="_token" :value="page.props.csrf">
                         <input ref="assertionInput" type="hidden" name="start_authentication_response">
-                        <input type="hidden" name="remember" value="1">
+                        <input type="hidden" name="remember" :value="form.remember ? 1 : 0">
                     </form>
 
                     <p v-if="passkeyError" class="text-sm text-red-600 dark:text-red-400">{{ passkeyError }}</p>

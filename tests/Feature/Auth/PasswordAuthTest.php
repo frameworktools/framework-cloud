@@ -44,6 +44,18 @@ class PasswordAuthTest extends TestCase
         $this->assertAuthenticatedAs($user);
     }
 
+    public function test_keep_me_signed_in_sets_the_long_lived_cookie_only_when_checked(): void
+    {
+        $user = User::factory()->create(['password' => 'correct horse battery']);
+        $remember = fn ($response) => collect($response->headers->getCookies())->first(fn ($c) => str_starts_with($c->getName(), 'remember_web_'));
+
+        $this->assertNull($remember($this->post('/login/password', ['email' => $user->email, 'password' => 'correct horse battery'])));
+        $this->post('/logout');
+
+        $this->assertNotNull($remember($this->post('/login/password', ['email' => $user->email, 'password' => 'correct horse battery', 'remember' => 1])));
+        $this->assertAuthenticatedAs($user);
+    }
+
     public function test_rejects_a_wrong_password(): void
     {
         $user = User::factory()->create(['password' => 'correct horse battery']);

@@ -21,9 +21,11 @@ use Symfony\Component\HttpFoundation\RedirectResponse as SymfonyRedirect;
  */
 class GitHubController extends Controller
 {
-    public function redirect(): SymfonyRedirect
+    public function redirect(Request $request): SymfonyRedirect
     {
         abort_unless(filled(config('services.github.client_id')), 404);
+        // "Keep me signed in" from the sign-in page, for the callback
+        $request->session()->put('auth.remember', $request->boolean('remember'));
 
         return Socialite::driver('github')->redirect();
     }
@@ -86,7 +88,7 @@ class GitHubController extends Controller
 
         $this->store($user, $github, $account);
 
-        Auth::login($user, remember: true);
+        Auth::login($user, remember: (bool) $request->session()->pull('auth.remember', false));
         $request->session()->regenerate();
 
         return redirect()->intended(route('dashboard'));

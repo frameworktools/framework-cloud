@@ -33,6 +33,9 @@ class LoginToken extends Model
 
     public const BROWSER_COOKIE = 'fw_magic_browser';
 
+    /** Set with BROWSER_COOKIE when "Keep me signed in" was checked */
+    public const REMEMBER_COOKIE = 'fw_login_remember';
+
     /**
      * Issue a token for a user, returning the PLAIN token for the email URL.
      * A browser value ties the link to the browser that asked for it.

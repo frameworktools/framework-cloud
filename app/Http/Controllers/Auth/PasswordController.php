@@ -31,7 +31,7 @@ class PasswordController extends Controller
 
         // Accounts without a password never match: the hasher rejects an
         // empty hash
-        if (! Auth::attempt($credentials, remember: true)) {
+        if (! Auth::attempt($credentials, remember: $request->boolean('remember'))) {
             throw ValidationException::withMessages([
                 'password' => 'That email and password don\'t match an account.',
             ]);

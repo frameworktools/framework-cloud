@@ -1,11 +1,11 @@
 <script setup>
 // A plain link: the OAuth redirect must be a full page visit, not an Inertia one
-defineProps({ label: { type: String, default: 'Continue with GitHub' } });
+defineProps({ label: { type: String, default: 'Continue with GitHub' }, remember: Boolean });
 </script>
 
 <template>
     <a
-        href="/auth/github/redirect"
+        :href="remember ? '/auth/github/redirect?remember=1' : '/auth/github/redirect'"
         class="inline-flex w-full items-center justify-center gap-2 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-800 transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 dark:border-slate-600 dark:text-slate-100 dark:hover:bg-slate-800"
     >
         <svg viewBox="0 0 16 16" class="size-4" fill="currentColor" aria-hidden="true">
