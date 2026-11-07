@@ -36,8 +36,9 @@
             ],
         ],
     ];
-    // Stata appears once the Stata package is released (FW_STATA_PACKAGE)
-    if (! config('framework.stata_package')) {
+    // Stata shows once the package is public or its docs site is live, as in the hero
+    $showStata = isset(\App\Support\Docs\Products::listed()['stata']);
+    if (! $showStata) {
         foreach ($steps as &$unreleased) {
             unset($unreleased['panels']['stata']);
         }
@@ -115,7 +116,7 @@
                     <div class="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm">
                         <a class="text-slate-700 underline decoration-slate-300 underline-offset-4 hover:decoration-slate-600 dark:text-slate-300" href="{{ \App\Support\Docs\Products::publicUrl('r', '/guides/'.$step['guide']) }}">R &rarr;</a>
                         <a class="text-slate-700 underline decoration-slate-300 underline-offset-4 hover:decoration-slate-600 dark:text-slate-300" href="{{ \App\Support\Docs\Products::publicUrl('py', '/guides/'.$step['guide']) }}">Python &rarr;</a>
-                        @if (config('framework.stata_package'))<a class="text-slate-700 underline decoration-slate-300 underline-offset-4 hover:decoration-slate-600 dark:text-slate-300" href="{{ \App\Support\Docs\Products::publicUrl('stata', '/guides/'.['setup' => 'projects', 'analysis' => 'data', 'publish' => 'publishing'][$step['id']]) }}">Stata &rarr;</a>@endif
+                        @if ($showStata)<a class="text-slate-700 underline decoration-slate-300 underline-offset-4 hover:decoration-slate-600 dark:text-slate-300" href="{{ \App\Support\Docs\Products::publicUrl('stata', '/guides/'.['setup' => 'projects', 'analysis' => 'data', 'publish' => 'publishing'][$step['id']]) }}">Stata &rarr;</a>@endif
                     </div>
                 </div>
                 <div class="min-w-0 rounded-xl shadow-panel-deep dark:shadow-panel-deep-dark">
