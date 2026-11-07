@@ -10,8 +10,8 @@ class Sites
 {
     /**
      * A guide's name in the menus and lists. The guide that shares its
-     * section's title (Project types under Project types) is that section's
-     * Overview.
+     * section's title (Project types under Project types) introduces the whole
+     * section, so it reads "All project types" there.
      *
      * @param  array<string, mixed>  $site
      * @param  array<string, mixed>  $section
@@ -20,7 +20,9 @@ class Sites
     {
         $title = (string) ($site['guides'][$id]['title'] ?? $id);
 
-        return strcasecmp(trim($title), trim((string) ($section['title'] ?? ''))) === 0 ? 'Overview' : $title;
+        $sectionTitle = trim((string) ($section['title'] ?? ''));
+
+        return strcasecmp(trim($title), $sectionTitle) === 0 ? 'All '.mb_strtolower($sectionTitle) : $title;
     }
 
     /** @return array<string, mixed>|null */
