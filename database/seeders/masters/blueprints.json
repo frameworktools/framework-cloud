@@ -263,6 +263,9 @@
         "README.md": {
           "content": "# {{project_name}}\n\nAn API built with FastAPI. The endpoints are in app/main.py. The docs are at /docs once it runs.\n\nRun it:\n\n```\nuvicorn app.main:app --reload\n```\n",
           "template": true
+        },
+        "conftest.py": {
+          "content": "# Here so pytest puts the project folder on the import path, and tests can import app.main\n"
         }
       }
     },
