@@ -60,7 +60,7 @@
 <header @class(['relative z-30 text-slate-900 dark:text-slate-50', 'bg-white dark:bg-slate-950' => ! $overlay, 'border-b border-sky-700/40 bg-white/90 dark:border-sky-400/30 dark:bg-slate-950/90' => $overlay])>
     <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-6 py-4">
         <a href="{{ route('home') }}" class="shrink-0 text-lg font-semibold tracking-tight"><span class="inline-flex items-center gap-2"><img src="/images/logo-80.webp" alt="" width="73" height="80" class="h-10 w-auto"><span>Framework</span></span></a>
-        <nav aria-label="Products and documentation" class="order-3 flex w-full items-center gap-0 lg:order-none lg:w-auto lg:gap-1">
+        <nav aria-label="Products and documentation" class="hidden items-center gap-1 lg:flex">
             @foreach ($menus as $label => $links)
                 <details data-site-menu class="group relative">
                     <summary class="flex cursor-pointer list-none items-center gap-1 rounded-md px-1.5 py-2 text-xs font-medium text-slate-600 hover:bg-slate-800/5 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-sky-500 sm:px-2.5 sm:text-sm dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-white [&::-webkit-details-marker]:hidden">{{ $label }}<x-heroicon-o-chevron-down class="size-3 opacity-50 transition group-open:rotate-180" /></summary>
@@ -74,6 +74,28 @@
         </nav>
         <div class="flex items-center gap-3 text-sm">
             <x-theme-toggle class="mr-3 max-xl:hidden" />
+            {{-- Below desktop width, one menu holds every section --}}
+            <details data-site-menu class="group lg:hidden">
+                <summary aria-label="Menu" class="flex size-10 cursor-pointer list-none items-center justify-center rounded-md text-slate-700 ring-1 ring-slate-800/15 hover:bg-slate-800/5 focus-visible:outline-2 focus-visible:outline-sky-500 dark:text-slate-200 dark:ring-white/20 dark:hover:bg-white/5 [&::-webkit-details-marker]:hidden">
+                    <x-heroicon-o-bars-3 class="size-5 group-open:hidden" /><x-heroicon-o-x-mark class="hidden size-5 group-open:block" />
+                </summary>
+                <div class="absolute inset-x-0 top-full z-50 max-h-[calc(100dvh-5rem)] overflow-y-auto border-b border-slate-800/10 bg-white px-6 pt-4 pb-6 shadow-xl shadow-slate-900/10 dark:border-white/15 dark:bg-slate-950 dark:shadow-black/30">
+                    <nav aria-label="Products and documentation" class="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3">
+                        @foreach ($menus as $label => $links)
+                            <div>
+                                <p class="mb-1 text-xs font-semibold tracking-wide text-slate-900 uppercase dark:text-white">{{ $label }}</p>
+                                @foreach ($links as [$title, $href])
+                                    <a href="{{ $href }}" class="block py-1.5 text-sm text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">{{ $title }}</a>
+                                @endforeach
+                            </div>
+                        @endforeach
+                    </nav>
+                    <div class="mt-6 flex items-center justify-between gap-4 border-t border-slate-800/10 pt-4 dark:border-white/15">
+                        @guest<a href="{{ route('login') }}" class="text-sm font-medium text-slate-700 hover:text-slate-950 dark:text-slate-200 dark:hover:text-white">Sign in</a>@else<span></span>@endguest
+                        <x-theme-toggle />
+                    </div>
+                </div>
+            </details>
             @auth
                 <a href="{{ route('dashboard') }}" class="rounded-md bg-sky-700 px-4 py-2 font-semibold text-white shadow-sm ring-1 ring-sky-700/40 hover:bg-sky-800">Dashboard</a>
             @else
