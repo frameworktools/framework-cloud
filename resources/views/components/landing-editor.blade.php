@@ -16,7 +16,7 @@
                     @php $fileList = $files[$language] ?? []; ksort($fileList); @endphp
                     <div data-project-files="{{ $language }}" @unless ($loop->first) hidden @endunless class="font-mono text-[11px] leading-[18px]">
                         @unless ($inTree)
-                        <button type="button" data-project-open="main" aria-pressed="true" class="mb-1 flex w-full items-center gap-1.5 truncate rounded px-1.5 py-0.5 text-left text-slate-400 hover:bg-white/5 hover:text-white aria-pressed:bg-white/5 aria-pressed:text-emerald-300">@if (str_contains(strtolower($panel['path']), 'console') || $panel['path'] === 'Terminal')<x-heroicon-o-command-line class="size-3 shrink-0" aria-hidden="true" />@endif {{ str_ends_with($panel['path'], '/SKILL.md') ? basename(dirname($panel['path'])) : basename($panel['path']) }}</button>
+                        <button type="button" data-project-open="main" aria-pressed="true" class="mb-1 flex min-h-6 w-full items-center gap-1.5 truncate rounded px-1.5 py-0.5 text-left text-slate-400 hover:bg-white/5 hover:text-white aria-pressed:bg-white/5 aria-pressed:text-emerald-300">@if (str_contains(strtolower($panel['path']), 'console') || $panel['path'] === 'Terminal')<x-heroicon-o-command-line class="size-3 shrink-0" aria-hidden="true" />@endif {{ str_ends_with($panel['path'], '/SKILL.md') ? basename(dirname($panel['path'])) : basename($panel['path']) }}</button>
                         @endunless
                         @php
                             $tree = [];

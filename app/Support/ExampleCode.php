@@ -33,7 +33,7 @@ REGEX;
             if (str_starts_with(ltrim($line), '✗')) {
                 $html = '<span class="text-rose-300">'.htmlspecialchars($line, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8').'</span>';
             }
-            $number = $numbers ? '<span aria-hidden="true" class="select-none text-right text-slate-600">'.str_pad($index + 1, 2, '0', STR_PAD_LEFT).'</span>' : '';
+            $number = $numbers ? '<span aria-hidden="true" class="select-none text-right text-slate-400">'.str_pad($index + 1, 2, '0', STR_PAD_LEFT).'</span>' : '';
             $class = $numbers ? 'grid grid-cols-[1.25rem_1fr] gap-3' : 'block';
             $lines[] = '<span class="'.$class.'">'.$number.'<span>'.($html ?: ' ').'</span></span>';
         }

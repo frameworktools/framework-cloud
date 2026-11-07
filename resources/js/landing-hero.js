@@ -1,3 +1,11 @@
+// Hidden panels arrive as <template data-defer> (App\Support\DeferHidden). A panel's
+// contents join the page the first time it is shown, so click handling is delegated.
+const reveal = el => { const template = el.querySelector(':scope > template[data-defer]'); if (template) template.replaceWith(template.content); };
+const setHidden = (el, hidden) => { if (!hidden) reveal(el); el.hidden = hidden; };
+const onClick = (root, selector, handler) => root.addEventListener('click', event => {
+    const target = event.target.closest(selector);
+    if (target && root.contains(target)) handler(target, event);
+});
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 for (const root of document.querySelectorAll('[data-landing-demo]')) {
     const slides = [...root.querySelectorAll('[data-demo-slide]')];
@@ -8,20 +16,20 @@ for (const root of document.querySelectorAll('[data-landing-demo]')) {
     const show = index => {
         current = (index + slides.length) % slides.length;
         slides.forEach((slide, i) => {
-            slide.hidden = i !== current;
-            slide.querySelectorAll('[data-demo-code]').forEach(code => { code.hidden = code.dataset.demoCode !== language; });
+            setHidden(slide, i !== current);
+            slide.querySelectorAll('[data-demo-code]').forEach(code => { setHidden(code, code.dataset.demoCode !== language); });
         });
         root.querySelectorAll('[data-demo-select]').forEach(button => button.setAttribute('aria-pressed', String(Number(button.dataset.demoSelect) === current)));
         root.querySelector('[data-demo-title]').textContent = root.querySelector('[data-demo-view="result"]').getAttribute('aria-pressed') === 'true' ? 'A consistent structure for every project' : slides[current].getAttribute('aria-label');
         status.textContent = `${slides[current].getAttribute('aria-label')} example`;
     };
-    root.querySelectorAll('[data-demo-view]').forEach(button => button.addEventListener('click', () => {
+    onClick(root, '[data-demo-view]', button => {
         stop();
         if (button.dataset.demoView === 'result') root.querySelector('[data-demo-title]').textContent = 'A consistent structure for every project';
         else root.querySelector('[data-demo-title]').textContent = slides[current].getAttribute('aria-label');
         root.querySelectorAll('[data-demo-view]').forEach(other => other.setAttribute('aria-pressed', String(other === button)));
-        root.querySelectorAll('[data-demo-view-panel]').forEach(panel => { panel.hidden = panel.dataset.demoViewPanel !== button.dataset.demoView; });
-    }));
+        root.querySelectorAll('[data-demo-view-panel]').forEach(panel => { setHidden(panel, panel.dataset.demoViewPanel !== button.dataset.demoView); });
+    });
     const updatePause = () => { pause.setAttribute('aria-label', stopped ? 'Play examples' : 'Pause examples'); pause.setAttribute('aria-pressed', String(stopped)); };
     const stop = () => { stopped = true; status.setAttribute('aria-live', 'polite'); updatePause(); };
     const setLanguage = value => {
@@ -40,7 +48,7 @@ for (const root of document.querySelectorAll('[data-landing-demo]')) {
             setLanguage(languageTabs[next].dataset.demoLanguage); languageTabs[next].focus();
         });
     });
-    root.querySelectorAll('[data-demo-select]').forEach(button => button.addEventListener('click', () => { stop(); show(Number(button.dataset.demoSelect)); }));
+    onClick(root, '[data-demo-select]', button => { stop(); show(Number(button.dataset.demoSelect)); });
     root.querySelector('[data-demo-previous]').addEventListener('click', () => { stop(); show(current - 1); });
     root.querySelector('[data-demo-next]').addEventListener('click', () => { stop(); show(current + 1); });
     pause.addEventListener('click', () => { stopped = !stopped; updatePause(); });
@@ -54,8 +62,8 @@ for (const root of document.querySelectorAll('[data-setup-tabs]')) {
     const select = tab => {
         const key = tab.dataset.setupTab;
         tabs.forEach(other => { const active = other === tab; other.setAttribute('aria-selected', String(active)); other.tabIndex = active ? 0 : -1; });
-        root.querySelectorAll('[data-setup-panel]').forEach(panel => { panel.hidden = panel.dataset.setupPanel !== key; });
-        root.querySelectorAll('[data-setup-path]').forEach(path => { path.hidden = path.dataset.setupPath !== key; });
+        root.querySelectorAll('[data-setup-panel]').forEach(panel => { setHidden(panel, panel.dataset.setupPanel !== key); });
+        root.querySelectorAll('[data-setup-path]').forEach(path => { setHidden(path, path.dataset.setupPath !== key); });
     };
     tabs.forEach((tab, index) => {
         tab.addEventListener('click', () => select(tab));
@@ -86,22 +94,22 @@ for (const root of document.querySelectorAll('[data-project-editor]')) {
         if (!available.some(panel => panel.dataset.projectSource === file)) file = 'main';
         root.querySelectorAll('[data-project-source]').forEach(panel => {
             const active = panel.dataset.projectSourceLanguage === language && panel.dataset.projectSource === file && matchesVariant(panel);
-            panel.hidden = !active;
+            setHidden(panel, !active);
             if (active) {
                 root.querySelector('[data-project-path]').textContent = panel.dataset.projectSourcePath;
                 const terminal = root.querySelector('[data-project-terminal]');
-                if (terminal) terminal.hidden = !/console|^Terminal$/i.test(panel.dataset.projectSourcePath);
+                if (terminal) setHidden(terminal, !/console|^Terminal$/i.test(panel.dataset.projectSourcePath));
                 const code = panel.querySelector('code');
                 if (panel.dataset.projectContent && !code.childElementCount) code.innerHTML = projectSources[panel.dataset.projectContent] || '';
             }
         });
         root.querySelectorAll('[data-project-language]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.projectLanguage === language)));
-        root.querySelectorAll('[data-project-files]').forEach(panel => { panel.hidden = panel.dataset.projectFiles !== language || !matchesVariant(panel); });
-        root.querySelectorAll('[data-project-helper]').forEach(panel => { panel.hidden = panel.dataset.projectHelper !== language || file !== (panel.dataset.projectHelperFor || 'main'); });
+        root.querySelectorAll('[data-project-files]').forEach(panel => { setHidden(panel, panel.dataset.projectFiles !== language || !matchesVariant(panel)); });
+        root.querySelectorAll('[data-project-helper]').forEach(panel => { setHidden(panel, panel.dataset.projectHelper !== language || file !== (panel.dataset.projectHelperFor || 'main')); });
         root.querySelectorAll('[data-project-open]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.projectOpen === file)));
     };
-    root.querySelectorAll('[data-project-language]').forEach(button => button.addEventListener('click', () => { language = button.dataset.projectLanguage; render(); }));
-    root.querySelectorAll('[data-project-open]').forEach(button => button.addEventListener('click', () => { file = button.dataset.projectOpen; render(); }));
+    onClick(root, '[data-project-language]', button => { language = button.dataset.projectLanguage; render(); });
+    onClick(root, '[data-project-open]', button => { file = button.dataset.projectOpen; render(); });
     root.addEventListener('project-variant', event => { root.dataset.projectVariant = event.detail; file = 'main'; render(); });
     render();
 }
@@ -111,7 +119,7 @@ for (const root of document.querySelectorAll('[data-structure-examples]')) {
     const select = button => {
         const type = button.dataset.structureSelect;
         buttons.forEach(other => other.setAttribute('aria-pressed', String(other === button)));
-        root.querySelectorAll('[data-structure-description]').forEach(panel => { panel.hidden = panel.dataset.structureDescription !== type; });
+        root.querySelectorAll('[data-structure-description]').forEach(panel => { setHidden(panel, panel.dataset.structureDescription !== type); });
         root.querySelectorAll('[data-project-editor]').forEach(editor => editor.dispatchEvent(new CustomEvent('project-variant', {detail: type})));
     };
     buttons.forEach((button, index) => {
@@ -133,7 +141,7 @@ for (const root of document.querySelectorAll('[data-publish-demo]')) {
         tabs.forEach(tab => { const active = tab.dataset.pdTab === language; tab.setAttribute('aria-selected', String(active)); tab.tabIndex = active ? 0 : -1; });
         root.querySelectorAll('[data-pd-view]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.pdView === view)));
         root.querySelectorAll('[data-pd-lang]').forEach(part => {
-            part.hidden = part.dataset.pdLang !== language || (part.dataset.pdPane !== undefined && part.dataset.pdPane !== view);
+            setHidden(part, part.dataset.pdLang !== language || (part.dataset.pdPane !== undefined && part.dataset.pdPane !== view));
         });
     };
     tabs.forEach((tab, index) => {
@@ -145,7 +153,7 @@ for (const root of document.querySelectorAll('[data-publish-demo]')) {
             language = next.dataset.pdTab; render(); next.focus();
         });
     });
-    root.querySelectorAll('[data-pd-view]').forEach(button => button.addEventListener('click', () => { view = button.dataset.pdView; render(); }));
+    onClick(root, '[data-pd-view]', button => { view = button.dataset.pdView; render(); });
 }
 
 for (const root of document.querySelectorAll('[data-cloud-screens]')) {
@@ -164,8 +172,8 @@ for (const root of document.querySelectorAll('[data-cloud-screens]')) {
     const show = index => {
         const slides = [...pane.querySelectorAll('[data-cloud-slide]')];
         slide = (index + slides.length) % slides.length;
-        slides.forEach((el, i) => { el.hidden = i !== slide; });
-        pane.querySelectorAll('[data-cloud-caption]').forEach((el, i) => { el.hidden = i !== slide; });
+        slides.forEach((el, i) => { setHidden(el, i !== slide); });
+        pane.querySelectorAll('[data-cloud-caption]').forEach((el, i) => { setHidden(el, i !== slide); });
         pane.querySelectorAll('[data-cloud-dot]').forEach((dot, i) => dot.setAttribute('aria-pressed', String(i === slide)));
     };
     const play = () => {
@@ -177,23 +185,23 @@ for (const root of document.querySelectorAll('[data-cloud-screens]')) {
     const stage = pane.parentElement;
     stage.addEventListener('pointerenter', () => { paused = true; play(); });
     stage.addEventListener('pointerleave', () => { paused = false; play(); });
-    root.querySelectorAll('[data-cloud-dot]').forEach(dot => dot.addEventListener('click', () => { show(Number(dot.dataset.cloudDot)); play(); }));
+    onClick(root, '[data-cloud-dot]', dot => { show(Number(dot.dataset.cloudDot)); play(); });
     // Pause stops the slides until the reader presses Play; it applies to every pane.
-    const pauses = [...root.querySelectorAll('[data-cloud-pause]')];
-    const label = () => pauses.forEach(button => { button.setAttribute('aria-label', stopped ? 'Play screenshots' : 'Pause screenshots'); button.setAttribute('aria-pressed', String(stopped)); });
-    pauses.forEach(button => button.addEventListener('click', () => { stopped = !stopped; label(); play(); }));
+    const label = () => root.querySelectorAll('[data-cloud-pause]').forEach(button => { button.setAttribute('aria-label', stopped ? 'Play screenshots' : 'Pause screenshots'); button.setAttribute('aria-pressed', String(stopped)); });
+    onClick(root, '[data-cloud-pause]', () => { stopped = !stopped; label(); play(); });
     label();
-    root.querySelectorAll('[data-cloud-step]').forEach(step => step.addEventListener('click', () => { show(slide + Number(step.dataset.cloudStep)); play(); }));
+    onClick(root, '[data-cloud-step]', step => { show(slide + Number(step.dataset.cloudStep)); play(); });
     const select = tab => {
         tabs.forEach(other => {
             const active = other === tab;
             other.setAttribute('aria-selected', String(active));
             other.tabIndex = active ? 0 : -1;
             const screen = root.querySelector(`[data-cloud-screen="${other.dataset.cloudTab}"]`);
-            screen.hidden = !active;
+            setHidden(screen, !active);
             if (active) pane = screen;
         });
         show(0);
+        label();
         play();
     };
     tabs.forEach((tab, index) => {

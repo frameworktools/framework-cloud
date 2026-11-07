@@ -2,7 +2,7 @@
 
 @section('full')
     <div class="mx-auto max-w-2xl px-6 py-24 text-center">
-        <img src="/images/logo.png" alt="" class="mx-auto h-14 w-auto">
+        <img src="/images/logo-80.webp" alt="" width="73" height="80" class="mx-auto h-14 w-auto">
         <h1 class="mt-8 text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">Documentation unavailable</h1>
         <p class="mt-4 text-lg text-slate-600 dark:text-slate-400">
             The documentation for {{ \App\Support\Docs\Products::NAMES[$product] }} will appear here after it is published.

@@ -14,13 +14,13 @@
     <header class="border-b border-slate-200 dark:border-slate-800">
         <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
             <a href="/" class="font-semibold tracking-tight">
-                <span class="inline-flex items-center gap-2"><img src="/images/logo.png" alt="" class="h-8 w-auto"><span>Framework <span class="text-sky-600 dark:text-sky-500">Cloud</span></span></span>
+                <span class="inline-flex items-center gap-2"><img src="/images/logo-80.webp" alt="" width="73" height="80" class="h-8 w-auto"><span>Framework <span class="text-sky-600 dark:text-sky-500">Cloud</span></span></span>
                 <span class="ml-1 text-sm font-normal text-slate-500">docs</span>
             </a>
             <nav class="flex items-center gap-4 text-sm">
                 <x-theme-toggle class="max-sm:hidden" />
                 @auth
-                    <a href="{{ route('projects') }}" class="rounded-md bg-sky-600 px-4 py-2 font-medium text-white hover:bg-sky-700">Your projects</a>
+                    <a href="{{ route('projects') }}" class="rounded-md bg-sky-700 px-4 py-2 font-medium text-white hover:bg-sky-800">Your projects</a>
                 @else
                     <a href="{{ route('login') }}" class="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">Sign in</a>
                 @endauth

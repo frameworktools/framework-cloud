@@ -33,7 +33,7 @@
     @endif
     <header class="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
         <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-6 py-4 lg:px-10">
-            <a href="{{ config('app.url') }}" class="inline-flex items-center gap-2 text-sm font-semibold tracking-tight"><img src="{{ asset('images/logo.png') }}" alt="" class="h-6 w-auto">Framework <span class="font-normal text-slate-400">/ Research report</span></a>
+            <a href="{{ config('app.url') }}" class="inline-flex items-center gap-2 text-sm font-semibold tracking-tight"><img src="{{ asset('images/logo-80.webp') }}" alt="" width="73" height="80" class="h-6 w-auto">Framework <span class="font-normal text-slate-400">/ Research report</span></a>
             <div class="flex items-center gap-4 print:hidden">
                 @if (!$preview && count($versions ?? []) > 1)
                     <label for="report-version" class="sr-only">Report version</label>

@@ -22,7 +22,7 @@ watch(() => page.url, () => { menuOpen.value = false; });
     <div class="flex min-h-screen">
         <aside class="hidden w-60 shrink-0 flex-col overflow-y-auto border-r border-slate-200 bg-slate-50 p-4 md:sticky md:top-0 md:flex md:h-screen dark:border-slate-800 dark:bg-slate-900">
             <Link href="/dashboard" class="px-2 py-1 font-semibold tracking-tight">
-                <span class="inline-flex items-center gap-2"><img :src="'/images/logo.png'" alt="" class="h-8 w-auto" /><span>Framework <span class="text-sky-600 dark:text-sky-500">Cloud</span></span></span>
+                <span class="inline-flex items-center gap-2"><img :src="'/images/logo-80.webp'" alt="" width="73" height="80" class="h-8 w-auto" /><span>Framework <span class="text-sky-600 dark:text-sky-500">Cloud</span></span></span>
             </Link>
 
             <SidebarNav class="mt-6 flex-1" />
@@ -47,7 +47,7 @@ watch(() => page.url, () => { menuOpen.value = false; });
 
         <div class="flex min-w-0 flex-1 flex-col">
             <header class="flex items-center justify-between border-b border-slate-200 px-4 py-3 md:hidden dark:border-slate-800">
-                <Link href="/dashboard" class="font-semibold"><span class="inline-flex items-center gap-2"><img :src="'/images/logo.png'" alt="" class="h-8 w-auto" /><span>Framework <span class="text-sky-600 dark:text-sky-500">Cloud</span></span></span></Link>
+                <Link href="/dashboard" class="font-semibold"><span class="inline-flex items-center gap-2"><img :src="'/images/logo-80.webp'" alt="" width="73" height="80" class="h-8 w-auto" /><span>Framework <span class="text-sky-600 dark:text-sky-500">Cloud</span></span></span></Link>
                 <div class="flex items-center gap-3">
                     <ThemeToggle />
                     <button

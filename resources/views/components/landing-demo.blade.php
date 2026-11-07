@@ -57,10 +57,10 @@
     </div>
     <div class="flex items-center justify-between gap-4 border-t border-white/10 px-6 py-3.5">
         <span class="text-xs text-slate-500">{{ isset($languages['stata']) ? 'R, Python, and Stata examples' : 'R and Python examples' }}</span>
-        <div class="flex shrink-0 items-center gap-2">
+        <div class="flex shrink-0 items-center gap-0.5">
             <button type="button" data-demo-previous aria-label="Previous example" class="rounded-md p-1 text-slate-500 hover:bg-white/10 hover:text-white"><x-heroicon-m-chevron-left class="size-4" /></button>
             @foreach ($examples as $example)
-                <button type="button" data-demo-select="{{ $loop->index }}" aria-label="{{ $example['title'] }}" aria-pressed="{{ $loop->first ? 'true' : 'false' }}" class="h-1.5 w-1.5 rounded-full bg-slate-600 transition-all hover:bg-slate-400 aria-pressed:w-5 aria-pressed:bg-sky-400"></button>
+                <button type="button" data-demo-select="{{ $loop->index }}" aria-label="{{ $example['title'] }}" aria-pressed="{{ $loop->first ? 'true' : 'false' }}" class="group flex h-6 min-w-6 items-center justify-center"><span class="h-1.5 w-1.5 rounded-full bg-slate-600 transition-all group-hover:bg-slate-400 group-aria-pressed:w-5 group-aria-pressed:bg-sky-400"></span></button>
             @endforeach
             <button type="button" data-demo-next aria-label="Next example" class="rounded-md p-1 text-slate-500 hover:bg-white/10 hover:text-white"><x-heroicon-m-chevron-right class="size-4" /></button>
             <button type="button" data-demo-pause aria-label="Pause examples" aria-pressed="false" class="group ml-1 rounded-md p-1 text-slate-500 hover:bg-white/10 hover:text-white"><x-heroicon-m-pause class="size-4 group-aria-pressed:hidden" /><x-heroicon-m-play class="hidden size-4 group-aria-pressed:block" /></button>

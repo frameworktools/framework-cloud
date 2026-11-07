@@ -56,8 +56,8 @@
                             <div class="overflow-hidden rounded-lg shadow-lg ring-1 shadow-slate-900/10 ring-slate-800/10 dark:shadow-black/30 dark:ring-white/15">
                                 @foreach ($slides as [$image, $caption, $alt])
                                     <div data-cloud-slide @unless ($loop->first) hidden @endunless>
-                                        <img src="/images/landing/cloud/{{ $image }}-light.webp" alt="{{ $alt }}" width="2560" height="1660" @unless ($loop->parent->first && $loop->first) loading="lazy" @endunless class="block w-full dark:hidden">
-                                        <img src="/images/landing/cloud/{{ $image }}-dark.webp" alt="{{ $alt }}" width="2560" height="1660" @unless ($loop->parent->first && $loop->first) loading="lazy" @endunless class="hidden w-full dark:block">
+                                        <img src="/images/landing/cloud/{{ $image }}-light.webp" srcset="/images/landing/cloud/{{ $image }}-light-1280.webp 1280w, /images/landing/cloud/{{ $image }}-light.webp 2560w" sizes="(min-width: 1152px) 1152px, 100vw" alt="{{ $alt }}" width="2560" height="1660" loading="lazy" decoding="async" class="block w-full dark:hidden">
+                                        <img src="/images/landing/cloud/{{ $image }}-dark.webp" srcset="/images/landing/cloud/{{ $image }}-dark-1280.webp 1280w, /images/landing/cloud/{{ $image }}-dark.webp 2560w" sizes="(min-width: 1152px) 1152px, 100vw" alt="{{ $alt }}" width="2560" height="1660" loading="lazy" decoding="async" class="hidden w-full dark:block">
                                     </div>
                                 @endforeach
                             </div>
@@ -67,10 +67,10 @@
                                     @foreach ($slides as [$image, $caption])<span data-cloud-caption @unless ($loop->first) hidden @endunless>{{ $caption }}</span>@endforeach
                                 </p>
                                 @if (count($slides) > 1)
-                                <div class="flex shrink-0 items-center gap-2" role="group" aria-label="{{ $title }} screenshots">
+                                <div class="flex shrink-0 items-center gap-0.5" role="group" aria-label="{{ $title }} screenshots">
                                     <button type="button" data-cloud-step="-1" aria-label="Previous screenshot" class="rounded-md p-1 text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 dark:text-slate-500 dark:hover:bg-white/10 dark:hover:text-slate-200"><x-heroicon-m-chevron-left class="size-4" /></button>
                                     @foreach ($slides as $dot)
-                                        <button type="button" data-cloud-dot="{{ $loop->index }}" aria-label="Screenshot {{ $loop->iteration }} of {{ count($slides) }}" aria-pressed="{{ $loop->first ? 'true' : 'false' }}" class="h-1.5 w-1.5 rounded-full bg-slate-300 transition-all aria-pressed:w-5 aria-pressed:bg-sky-600 dark:bg-slate-600 dark:aria-pressed:bg-sky-400"></button>
+                                        <button type="button" data-cloud-dot="{{ $loop->index }}" aria-label="Screenshot {{ $loop->iteration }} of {{ count($slides) }}" aria-pressed="{{ $loop->first ? 'true' : 'false' }}" class="group flex h-6 min-w-6 items-center justify-center"><span class="h-1.5 w-1.5 rounded-full bg-slate-300 transition-all group-aria-pressed:w-5 group-aria-pressed:bg-sky-700 dark:bg-slate-600 dark:group-aria-pressed:bg-sky-400"></span></button>
                                     @endforeach
                                     <button type="button" data-cloud-step="1" aria-label="Next screenshot" class="rounded-md p-1 text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 dark:text-slate-500 dark:hover:bg-white/10 dark:hover:text-slate-200"><x-heroicon-m-chevron-right class="size-4" /></button>
                                     <button type="button" data-cloud-pause aria-label="Pause screenshots" aria-pressed="false" class="group ml-1 rounded-md p-1 text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 dark:text-slate-500 dark:hover:bg-white/10 dark:hover:text-slate-200"><x-heroicon-m-pause class="size-4 group-aria-pressed:hidden" /><x-heroicon-m-play class="hidden size-4 group-aria-pressed:block" /></button>
@@ -85,7 +85,7 @@
     </div>
 
     <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
-        <a href="{{ auth()->check() ? route('dashboard') : route('register') }}" class="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700">Create an account</a>
+        <a href="{{ auth()->check() ? route('dashboard') : route('register') }}" class="rounded-md bg-sky-700 px-4 py-2 text-sm font-medium text-white hover:bg-sky-800">Create an account</a>
         <a href="{{ route('self-hosting') }}" class="px-3 py-2 text-sm text-slate-700 underline decoration-slate-300 underline-offset-4 dark:text-slate-300 dark:decoration-slate-600">Self-hosting &rarr;</a>
     </div>
 </section>

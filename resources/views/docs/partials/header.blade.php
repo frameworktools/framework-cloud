@@ -12,7 +12,7 @@
     <div class="mx-auto flex max-w-8xl items-center justify-between gap-3 px-6 sm:gap-6 sm:px-8 lg:px-12">
         <div class="flex min-w-0 items-center gap-8">
             <a href="/" aria-label="{{ $siteTitle }} home" class="flex min-w-0 items-center gap-3">
-                <img src="/images/logo.png" alt="" class="h-8 w-auto shrink-0">
+                <img src="/images/logo-80.webp" alt="" width="73" height="80" class="h-8 w-auto shrink-0">
                 {{-- The command-line tool's name is set in monospace, as in running text --}}
                 <span @class(["truncate text-lg font-bold whitespace-nowrap text-slate-900 dark:text-white", "font-mono" => $siteTitle === 'fw'])>{{ $siteTitle }}</span>
             </a>

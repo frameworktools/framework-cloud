@@ -59,7 +59,7 @@
 @endphp
 <header @class(['relative z-30 text-slate-900 dark:text-slate-50', 'bg-white dark:bg-slate-950' => ! $overlay, 'border-b border-sky-700/40 bg-white/90 dark:border-sky-400/30 dark:bg-slate-950/90' => $overlay])>
     <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-6 py-4">
-        <a href="{{ route('home') }}" class="shrink-0 text-lg font-semibold tracking-tight"><span class="inline-flex items-center gap-2"><img src="/images/logo.png" alt="" class="h-10 w-auto"><span>Framework</span></span></a>
+        <a href="{{ route('home') }}" class="shrink-0 text-lg font-semibold tracking-tight"><span class="inline-flex items-center gap-2"><img src="/images/logo-80.webp" alt="" width="73" height="80" class="h-10 w-auto"><span>Framework</span></span></a>
         <nav aria-label="Products and documentation" class="order-3 flex w-full items-center gap-0 lg:order-none lg:w-auto lg:gap-1">
             @foreach ($menus as $label => $links)
                 <details data-site-menu class="group relative">
@@ -75,10 +75,10 @@
         <div class="flex items-center gap-3 text-sm">
             <x-theme-toggle class="mr-3 max-xl:hidden" />
             @auth
-                <a href="{{ route('dashboard') }}" class="rounded-md bg-sky-600 px-4 py-2 font-semibold text-white shadow-sm ring-1 ring-sky-700/40 hover:bg-sky-700">Dashboard</a>
+                <a href="{{ route('dashboard') }}" class="rounded-md bg-sky-700 px-4 py-2 font-semibold text-white shadow-sm ring-1 ring-sky-700/40 hover:bg-sky-800">Dashboard</a>
             @else
                 <a href="{{ route('login') }}" class="rounded-md bg-white px-4 py-2 font-medium text-slate-800 shadow-sm ring-1 ring-slate-800/15 hover:bg-slate-50 hover:text-slate-950 max-sm:hidden dark:bg-white/5 dark:text-slate-100 dark:ring-white/20 dark:hover:bg-white/10">Sign in</a>
-                <a href="{{ route('register') }}" class="rounded-md bg-sky-600 px-4 py-2 font-semibold text-white shadow-sm ring-1 ring-sky-700/40 hover:bg-sky-700">Sign up</a>
+                <a href="{{ route('register') }}" class="rounded-md bg-sky-700 px-4 py-2 font-semibold text-white shadow-sm ring-1 ring-sky-700/40 hover:bg-sky-800">Sign up</a>
             @endauth
         </div>
     </div>

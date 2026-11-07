@@ -32,7 +32,7 @@
                 </div>
             @endforeach
             <div class="flex flex-wrap items-center gap-x-5 gap-y-2 pt-1 text-sm">
-                <a href="{{ auth()->check() ? route('agents') : route('register') }}" class="rounded-md bg-sky-600 px-4 py-2 font-medium text-white hover:bg-sky-700">Connect an agent</a>
+                <a href="{{ auth()->check() ? route('agents') : route('register') }}" class="rounded-md bg-sky-700 px-4 py-2 font-medium text-white hover:bg-sky-800">Connect an agent</a>
                 <a href="{{ route('guide', 'ai-apps') }}" class="text-slate-700 underline decoration-slate-300 underline-offset-4 hover:decoration-slate-600 dark:text-slate-300">Claude and ChatGPT setup &rarr;</a>
             </div>
         </div>
@@ -44,7 +44,7 @@
                 <span class="hidden font-mono sm:inline">framework.pub/mcp</span>
             </div>
             <div class="flex flex-col gap-5 px-5 py-6">
-                <div class="ml-auto max-w-[85%] rounded-2xl rounded-br-md bg-sky-600/90 px-4 py-2.5 text-white">
+                <div class="ml-auto max-w-[85%] rounded-2xl rounded-br-md bg-sky-700 px-4 py-2.5 text-white">
                     Write a short report on the penguin body mass model from my published results.
                 </div>
                 <ol class="flex flex-col gap-1.5 font-mono text-xs" aria-label="Agent actions">

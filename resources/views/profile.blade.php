@@ -10,13 +10,13 @@
 </head>
 <body class="bg-white text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100">
     <header class="mx-auto flex max-w-3xl items-center justify-between px-6 py-6">
-        <a href="/" class="font-semibold tracking-tight"><span class="inline-flex items-center gap-2"><img src="/images/logo.png" alt="" class="h-8 w-auto"><span>Framework <span class="text-sky-600 dark:text-sky-500">Cloud</span></span></span></a>
+        <a href="/" class="font-semibold tracking-tight"><span class="inline-flex items-center gap-2"><img src="/images/logo-80.webp" alt="" width="73" height="80" class="h-8 w-auto"><span>Framework <span class="text-sky-600 dark:text-sky-500">Cloud</span></span></span></a>
         <x-theme-toggle />
     </header>
 
     <main class="mx-auto max-w-3xl px-6 py-16">
         <div class="flex items-center gap-5">
-            <div class="flex size-16 items-center justify-center rounded-full bg-sky-600 text-2xl font-semibold text-white">
+            <div class="flex size-16 items-center justify-center rounded-full bg-sky-700 text-2xl font-semibold text-white">
                 {{ $user->initials() }}
             </div>
             <div>

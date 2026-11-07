@@ -62,7 +62,7 @@
                     You manage updates, data, and published artifacts.
                 </p>
                 <div class="mt-10 flex flex-wrap items-center gap-3">
-                    <a href="{{ route('guide', 'install-docker') }}" class="rounded-md bg-sky-600 px-5 py-2.5 font-medium text-white hover:bg-sky-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500">Read the installation guide</a>
+                    <a href="{{ route('guide', 'install-docker') }}" class="rounded-md bg-sky-700 px-5 py-2.5 font-medium text-white hover:bg-sky-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500">Read the installation guide</a>
                     <a href="https://github.com/frameworktools/framework-cloud" class="rounded-md border border-slate-300 bg-white/60 px-5 py-2.5 font-medium text-slate-800 hover:border-slate-400 hover:bg-white dark:border-slate-500 dark:bg-transparent dark:text-slate-50 dark:hover:border-slate-300 dark:hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500">Source code on GitHub</a>
                 </div>
             </div>
@@ -172,7 +172,7 @@ docker compose up -d</x-code-panel>
                     The installation guide covers requirements, configuration, and the first
                     sign-in. Start with Docker unless you already run PHP applications.
                 </p>
-                <a href="{{ route('guide', 'install-docker') }}" class="mt-6 inline-block rounded-md bg-sky-600 px-5 py-2.5 font-medium text-white hover:bg-sky-700">Install with Docker</a>
+                <a href="{{ route('guide', 'install-docker') }}" class="mt-6 inline-block rounded-md bg-sky-700 px-5 py-2.5 font-medium text-white hover:bg-sky-800">Install with Docker</a>
 
                 <ul class="mt-10 grid gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
                     @foreach ($docs as [$slug, $title, $body])
