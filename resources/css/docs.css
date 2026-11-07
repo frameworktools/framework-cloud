@@ -16,6 +16,22 @@
 
 html {
     scroll-padding-top: 6rem;
+    color-scheme: light;
+}
+
+/* Dark scrollbars and form controls in dark mode */
+html.dark {
+    color-scheme: dark;
+}
+
+/* The sidebars scroll on their own: a thin thumb on no track */
+.docs-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-slate-300) transparent;
+}
+
+.dark .docs-scroll {
+    scrollbar-color: var(--color-slate-700) transparent;
 }
 
 /* In the components layer so utilities on an element still win */

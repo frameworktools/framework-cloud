@@ -26,7 +26,7 @@
         <div class="mx-auto flex w-full max-w-8xl flex-1 justify-center px-6 sm:px-8 lg:px-12">
             @if ($site)
                 <aside class="hidden w-64 shrink-0 lg:block">
-                    <nav class="sticky top-[4.5rem] -ml-2 max-h-[calc(100vh-4.5rem)] overflow-y-auto py-10 pr-6 pl-2 text-sm" aria-label="Sidebar">
+                    <nav class="sticky top-[4.5rem] -ml-2 max-h-[calc(100vh-4.5rem)] docs-scroll overflow-y-auto py-10 pr-6 pl-2 text-sm" aria-label="Sidebar">
                         @include('docs.partials.sidebar')
                     </nav>
                 </aside>
@@ -38,7 +38,7 @@
 
             <aside class="hidden w-56 shrink-0 xl:block">
                 @hasSection('toc')
-                    <nav class="sticky top-[4.5rem] max-h-[calc(100vh-4.5rem)] overflow-y-auto py-10 text-sm" aria-label="On this page">
+                    <nav class="sticky top-[4.5rem] max-h-[calc(100vh-4.5rem)] docs-scroll overflow-y-auto py-10 text-sm" aria-label="On this page">
                         @yield('toc')
                     </nav>
                 @endif
