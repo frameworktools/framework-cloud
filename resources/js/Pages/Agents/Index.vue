@@ -10,7 +10,7 @@ const props = defineProps({ mcpUrl: String, plugin: Boolean, active: Boolean });
 const app = ref('claude');
 const apps = [
     { value: 'claude', label: 'Claude' },
-    { value: 'chatgpt', label: 'ChatGPT' },
+    { value: 'chatgpt', label: 'Codex/ChatGPT' },
 ];
 
 // The Framework Cloud plugin connects to framework.pub only; other servers skip its section
