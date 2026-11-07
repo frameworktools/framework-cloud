@@ -78,6 +78,7 @@ class ProjectLayersController extends Controller
             'description' => $project->description,
             'language' => $project->language ?? 'r',
             'type' => $project->project_type,
+            'adopted' => $project->adopted_at !== null,
             'blueprint' => $version ? ['key' => $version->blueprint->handle, 'version' => $version->version] : null,
             'github' => $project->github_repo ? [
                 'repository' => $project->github_repo,

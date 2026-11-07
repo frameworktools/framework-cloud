@@ -191,8 +191,11 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                         <dd class="text-sm text-slate-700 dark:text-slate-300">{{ languageNames[project.language] }}</dd>
                     </div>
                     <div :class="rowClass">
-                        <dt :class="termClass">Created</dt>
-                        <dd class="text-sm text-slate-700 dark:text-slate-300">{{ date(project.created_at) }}</dd>
+                        <dt :class="termClass">{{ project.adopted_at ? 'Added' : 'Created' }}</dt>
+                        <dd class="text-sm text-slate-700 dark:text-slate-300">
+                            {{ date(project.adopted_at ?? project.created_at) }}
+                            <span v-if="project.adopted_at" class="text-slate-500 dark:text-slate-400">from an existing project on a computer</span>
+                        </dd>
                     </div>
                 </dl>
             </UiPanel>

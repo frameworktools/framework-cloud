@@ -101,6 +101,20 @@ class PiecesController extends Controller
     public function store(Request $request): JsonResponse
     {
         $user = $this->user($request);
+        $extra = $request->validate([
+            // fw project link --create: the folder's own slug, and that it already existed
+            'slug' => ['nullable', 'string', 'max:100', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/'],
+            'adopted' => ['boolean'],
+        ], ['slug.regex' => 'Use lowercase letters, numbers, and single hyphens.']);
+        $attributes = array_filter([
+            'slug' => $extra['slug'] ?? null,
+            'adopted_at' => ($extra['adopted'] ?? false) ? now() : null,
+        ]);
+
+        if ($request->has('spec')) {
+            return $this->storeFromSpec($request, $user, $attributes);
+        }
+
         $choices = $this->choices($request, nameRequired: true);
         $github = $request->validate([
             'github' => ['nullable', 'array'],
@@ -123,7 +137,7 @@ class PiecesController extends Controller
 
         $project = $resolver->createProject($choices['name'], $resolved, $choices['description'] ?? null, [
             'scaffold_status' => $target ? 'pending' : null,
-        ]);
+        ] + $attributes);
 
         if ($target) {
             ScaffoldOnGitHub::dispatch($project, $target['org'], $target['name'], $target['private']);
@@ -134,11 +148,78 @@ class PiecesController extends Controller
             'name' => $project->name,
             'language' => $project->language,
             'url' => route('projects.show', $project->slug),
+            'adopted' => $project->adopted_at !== null,
             'token' => $project->issuePullToken('fw'),
             'github' => $target ? [
                 'repository' => ($target['org'] ?? $github['owner']).'/'.$target['name'],
                 'scaffold_status' => 'pending',
             ] : null,
+        ], 201);
+    }
+
+    /**
+     * POST /api/v1/projects with {"spec": {...}}: register a project that
+     * already exists on someone's computer (fw project link --create). The
+     * project's one layer is its own resolved spec, so the cloud matches the
+     * folder exactly; the person's defaults are not merged in.
+     */
+    private function storeFromSpec(Request $request, User $user, array $attributes): JsonResponse
+    {
+        abort_if(strlen($request->getContent()) > 2 * 1024 * 1024, 413, 'The spec is larger than 2 MB.');
+        // Decoded as objects, so empty maps in the spec stay maps
+        $spec = json_decode($request->getContent(), false)->spec ?? null;
+        if (! is_object($spec)) {
+            throw ValidationException::withMessages(['spec' => 'The spec must be a JSON object.']);
+        }
+        if ($problems = Layer::specProblems($spec)) {
+            throw ValidationException::withMessages(['spec' => $problems]);
+        }
+
+        $data = $request->validate([
+            'name' => ['nullable', 'string', 'max:100'],
+            'description' => ['nullable', 'string', 'max:500'],
+        ]);
+        $name = $data['name'] ?? (is_string($spec->name ?? null) ? $spec->name : null);
+        if (! is_string($name) || trim($name) === '') {
+            throw ValidationException::withMessages(['name' => 'Give the project a name, or put one in the spec.']);
+        }
+
+        $language = is_string($spec->language ?? null) ? $spec->language : 'r';
+        if (! in_array($language, Project::LANGUAGES, true)) {
+            throw ValidationException::withMessages(['spec' => "The spec's language must be one of: ".implode(', ', Project::LANGUAGES).'.']);
+        }
+        // The spec's type is a label; one Framework doesn't know shows as bare
+        $type = is_string($spec->type ?? null) && in_array($spec->type, Project::TYPES, true) ? $spec->type : 'bare';
+
+        $resolver = new Resolver($user);
+        $slug = $resolver->availableSlug($name, $attributes['slug'] ?? null);
+        unset($attributes['slug']);
+
+        $layer = json_decode(json_encode($spec), true);
+        unset($layer['spec_version'], $layer['name']);
+        $envelope = ['name' => $name, 'spec_version' => 1, 'layers' => [['kind' => 'project', 'key' => $slug, 'layer' => $layer]], 'source' => ['origin' => 'cli']];
+
+        $project = $user->projects()->create([
+            'name' => $name,
+            'slug' => $slug,
+            'description' => $data['description'] ?? null,
+            'language' => $language,
+            'project_type' => $type,
+            // Pulls and the project page read the layers; the spec is what fw last sent
+            'resolved' => Layer::envelopeProblems($envelope) === [] ? json_encode($envelope, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : null,
+            'spec' => json_encode($spec, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+            'spec_received_at' => now(),
+        ] + $attributes);
+
+        return response()->json([
+            'slug' => $project->slug,
+            'name' => $project->name,
+            'language' => $project->language,
+            'type' => $project->project_type,
+            'adopted' => $project->adopted_at !== null,
+            'url' => route('projects.show', $project->slug),
+            'token' => $project->issuePullToken('fw'),
+            'github' => null,
         ], 201);
     }
 

@@ -97,6 +97,72 @@ class PiecesTest extends TestCase
             ->assertStatus(422);
     }
 
+    public function test_a_project_can_be_created_at_a_chosen_slug_and_marked_adopted(): void
+    {
+        $user = User::factory()->create();
+
+        $this->withToken($this->token($user))->postJson('/api/v1/projects', ['name' => 'Survey Work', 'slug' => 'survey-2026', 'adopted' => true])
+            ->assertCreated()->assertJsonPath('slug', 'survey-2026')->assertJsonPath('adopted', true);
+        $this->assertNotNull($user->projects()->where('slug', 'survey-2026')->value('adopted_at'));
+
+        // Taken, and badly formed, slugs are refused
+        $this->withToken($this->token($user))->postJson('/api/v1/projects', ['name' => 'Other', 'slug' => 'survey-2026'])->assertJsonValidationErrors('slug');
+        $this->withToken($this->token($user))->postJson('/api/v1/projects', ['name' => 'Other', 'slug' => 'Not A Slug'])->assertJsonValidationErrors('slug');
+    }
+
+    public function test_a_project_created_from_a_spec_has_exactly_that_spec_as_its_layers(): void
+    {
+        $user = User::factory()->create();
+        // Sent as fw sends it: JSON whose empty maps stay {}
+        $spec = json_decode(file_get_contents(database_path('seeders/masters/r/conformance/create/r/bare-scripts.json')), false)->spec;
+        $spec->name = 'Old Analysis';
+        $body = json_encode(['spec' => $spec, 'slug' => 'old-analysis', 'adopted' => true], JSON_UNESCAPED_SLASHES);
+        $token = $this->token($user);
+        $send = fn (string $json) => $this->call('POST', '/api/v1/projects', [], [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_ACCEPT' => 'application/json', 'HTTP_AUTHORIZATION' => "Bearer {$token}"], $json);
+
+        $created = $send($body)
+            ->assertCreated()
+            ->assertJsonPath('slug', 'old-analysis')
+            ->assertJsonPath('name', 'Old Analysis')
+            ->assertJsonPath('type', 'bare')
+            ->assertJsonPath('adopted', true);
+        $this->assertNotEmpty($created->json('token'));
+
+        $project = $user->projects()->where('slug', 'old-analysis')->sole();
+        $envelope = json_decode($project->resolved, true);
+        // One layer, the project's own, with nothing from the person's defaults
+        $this->assertSame(['project'], array_column($envelope['layers'], 'kind'));
+        $this->assertEquals(json_decode(json_encode($spec->directories), true), $envelope['layers'][0]['layer']['directories']);
+        $this->assertSame([], Layer::envelopeProblems($envelope));
+        $this->assertSame('Old Analysis', json_decode($project->spec, true)['name']);
+        $this->assertNotNull($project->adopted_at);
+
+        $this->withToken($this->token($user))->getJson('/api/v1/projects/old-analysis')->assertJsonPath('adopted', true)->assertJsonPath('type', 'bare');
+
+        // A spec the schema refuses is reported
+        $this->withToken($this->token($user))->postJson('/api/v1/projects', ['spec' => ['spec_version' => 99]])->assertJsonValidationErrors('spec');
+    }
+
+    public function test_an_unknown_tool_switched_off_is_ignored_and_one_switched_on_names_the_tools(): void
+    {
+        $token = $this->token();
+
+        $this->withToken($token)->postJson('/api/v1/projects', ['name' => 'Tools Off', 'tools' => ['not_a_tool' => false]])->assertCreated();
+        $this->withToken($token)->postJson('/api/v1/projects', ['name' => 'Tools On', 'tools' => ['not_a_tool' => true]])
+            ->assertJsonValidationErrors('tools')
+            ->assertJsonFragment(['tools' => ['There is no tool framework/not_a_tool. Tools: quarto, quarto_manuscript, quarto_slides, jupyter, targets, renv, uv.']]);
+    }
+
+    public function test_an_imported_structure_keeps_the_projects_type(): void
+    {
+        $user = User::factory()->create();
+
+        $this->withToken($this->token($user))->postJson('/api/v1/structures', ['name' => 'My bare layout', 'directories' => [], 'type' => 'bare'])->assertCreated();
+        $this->assertSame('bare', \App\Models\Facet::where('user_id', $user->id)->sole()->latestVersion->layer['type']);
+
+        $this->withToken($this->token($user))->postJson('/api/v1/structures', ['name' => 'Odd', 'directories' => [], 'type' => 'spaceship'])->assertJsonValidationErrors('type');
+    }
+
     public function test_choices_change_the_blueprint(): void
     {
         $envelope = $this->withToken($this->token())->postJson('/api/v1/resolve', [

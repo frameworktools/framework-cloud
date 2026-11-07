@@ -90,6 +90,7 @@ class Project extends Model
             'is_home' => 'boolean',
             // spec stays raw JSON text so empty maps stay {}
             'spec_received_at' => 'datetime',
+            'adopted_at' => 'datetime',
         ];
     }
 

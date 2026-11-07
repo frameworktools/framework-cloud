@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Facet;
+use App\Models\Project;
 use App\Models\User;
 use App\Support\Layer;
 use App\Support\Library;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -28,6 +30,8 @@ class StructuresController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'description' => ['nullable', 'string', 'max:1000'],
+            // The project's type, so an imported bare or sensitive project keeps it
+            'type' => ['nullable', Rule::in(Project::TYPES)],
             'directories' => ['present', 'array'],
             'directories.*' => ['string', 'max:255'],
             'extra_directories' => ['nullable', 'array'],
@@ -36,7 +40,7 @@ class StructuresController extends Controller
         ]);
 
         $layer = array_filter([
-            'type' => 'project',
+            'type' => $data['type'] ?? 'project',
             'directories' => $data['directories'] ?: null,
             'extra_directories' => $data['extra_directories'] ?? null,
         ]);

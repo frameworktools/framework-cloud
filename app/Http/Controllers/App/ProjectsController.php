@@ -110,6 +110,7 @@ class ProjectsController extends Controller
             'project' => self::summary($project) + [
                 'tokens' => $project->tokens->sortByDesc('id')->values()
                     ->map(fn ($t) => $t->only(['id', 'name', 'created_at', 'last_used_at'])),
+                'adopted_at' => $project->adopted_at,
                 'spec' => $project->spec ? [
                     'received_at' => $project->spec_received_at,
                     'json' => json_encode(json_decode($project->spec), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),

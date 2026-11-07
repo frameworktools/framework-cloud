@@ -176,7 +176,12 @@ class Resolver
 
         // Choices for this project
         foreach ($choices['tools'] ?? [] as $key => $on) {
-            $tool = $this->findPiece(str_contains($key, '/') ? $key : "framework/{$key}", ['tool'], 'tools');
+            $handle = str_contains($key, '/') ? $key : "framework/{$key}";
+            // A tool this server doesn't have changes nothing when it's off
+            if (! $on && ! $this->hasPiece($handle, ['tool'])) {
+                continue;
+            }
+            $tool = $this->findPiece($handle, ['tool'], 'tools');
             if ($on) {
                 $this->pieces->put($tool->id, $tool->latestVersion);
             } elseif (in_array($tool->key, $required, true)) {
@@ -465,19 +470,8 @@ class Resolver
      */
     public function createProject(string $name, array $resolved, ?string $description = null, array $attributes = []): Project
     {
-        $slug = str($name)->slug()->value();
-
-        if ($slug === '' || $slug === 'create') {
-            throw ValidationException::withMessages(['name' => 'Choose a different name.']);
-        }
-        if ($this->user->projects()->where('slug', $slug)->exists()) {
-            throw ValidationException::withMessages(['name' => 'You already have a project with this name.']);
-        }
-
-        // A deleted project keeps its name, so its old published links never point at a new project
-        if ($this->user->projects()->onlyTrashed()->where('slug', $slug)->exists()) {
-            throw ValidationException::withMessages(['name' => 'You used this name for a project you deleted. Choose a different name.']);
-        }
+        $slug = $this->availableSlug($name, $attributes['slug'] ?? null);
+        unset($attributes['slug']);
 
         return $this->user->projects()->create([
             'name' => $name,
@@ -494,6 +488,29 @@ class Resolver
                 'layer' => $resolved['layer'],
             ],
         ] + $attributes);
+    }
+
+    /**
+     * The project's slug: the one asked for, or one made from the name. It
+     * must be free, including among projects in the Trash, which keep theirs
+     * so old published links never point at a new project.
+     */
+    public function availableSlug(string $name, ?string $slug = null): string
+    {
+        $field = $slug === null ? 'name' : 'slug';
+        $slug ??= str($name)->slug()->value();
+
+        if ($slug === '' || $slug === 'create') {
+            throw ValidationException::withMessages([$field => 'Choose a different name.']);
+        }
+        if ($this->user->projects()->where('slug', $slug)->exists()) {
+            throw ValidationException::withMessages([$field => $field === 'slug' ? "You already have a project at {$slug}." : 'You already have a project with this name.']);
+        }
+        if ($this->user->projects()->onlyTrashed()->where('slug', $slug)->exists()) {
+            throw ValidationException::withMessages([$field => $field === 'slug' ? "You used {$slug} for a project you deleted. Choose a different slug." : 'You used this name for a project you deleted. Choose a different name.']);
+        }
+
+        return $slug;
     }
 
     /**
@@ -547,10 +564,27 @@ class Resolver
     /** @param list<string> $kinds */
     private function findPiece(string $handle, array $kinds, string $field): Facet
     {
-        $piece = Facet::visibleTo($this->user)->whereIn('kind', $kinds)->with('owner', 'latestVersion')->get()
-            ->first(fn (Facet $f) => $f->handle === $handle || ($f->isSystem() && $f->key === $handle));
+        $piece = $this->lookUpPiece($handle, $kinds);
+        if ($piece) {
+            return $piece;
+        }
+        // For tools, say which ones exist (GET /api/v1/tools lists them too)
+        $known = $kinds === ['tool']
+            ? ' Tools: '.Facet::visibleTo($this->user)->where('kind', 'tool')->orderBy('position')->pluck('key')->implode(', ').'.'
+            : '';
 
-        return $piece ?? throw ValidationException::withMessages([$field => "There is no {$this->noun($kinds[0])} {$handle}."]);
+        throw ValidationException::withMessages([$field => "There is no {$this->noun($kinds[0])} {$handle}.{$known}"]);
+    }
+
+    private function hasPiece(string $handle, array $kinds): bool
+    {
+        return $this->lookUpPiece($handle, $kinds) !== null;
+    }
+
+    private function lookUpPiece(string $handle, array $kinds): ?Facet
+    {
+        return Facet::visibleTo($this->user)->whereIn('kind', $kinds)->with('owner', 'latestVersion')->get()
+            ->first(fn (Facet $f) => $f->handle === $handle || ($f->isSystem() && $f->key === $handle));
     }
 
     private function noun(string $kind): string
