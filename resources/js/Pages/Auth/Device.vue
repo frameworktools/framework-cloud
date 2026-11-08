@@ -39,7 +39,7 @@ const pending = computed(() => props.code && !props.error);
         <div class="flex flex-col gap-3">
             <UiButton href="/login" class="w-full justify-center">Sign in</UiButton>
             <UiButton v-if="registrationOpen" href="/register" variant="ghost" class="w-full justify-center">Create account</UiButton>
-            <GitHubButton v-if="page.props.githubSignIn" label="Continue with GitHub" />
+            <GitHubButton v-if="page.props.githubLogin" label="Continue with GitHub" />
         </div>
 
         <p class="text-sm text-slate-500 dark:text-slate-400">

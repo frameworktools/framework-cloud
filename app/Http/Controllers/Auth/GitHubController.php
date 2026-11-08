@@ -63,6 +63,11 @@ class GitHubController extends Controller
             return to_route('account.github')->with('status', 'github-connected');
         }
 
+        // Signing in with GitHub is off until it uses an email-only app (FW_GITHUB_LOGIN)
+        if (! config('framework.github_login')) {
+            return $failed('Sign in with your email address.');
+        }
+
         $user = $account?->user ?? $this->userForEmail($github->getEmail());
 
         if (! $user) {

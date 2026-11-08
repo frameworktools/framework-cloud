@@ -18,10 +18,10 @@ const send = () => form.post('/auth/magic-link');
 
     <AuthLayout
         title="Account registration"
-        :description="page.props.githubSignIn ? 'Sign up with GitHub or your email address. There is no password to set.' : 'Sign up with your email address. There is no password to set.'"
+        :description="page.props.githubLogin ? 'Sign up with GitHub or your email address. There is no password to set.' : 'Sign up with your email address. There is no password to set.'"
     >
 
-        <template v-if="page.props.githubSignIn">
+        <template v-if="page.props.githubLogin">
             <GitHubButton label="Sign up with GitHub" />
             <div class="flex items-center gap-3 text-xs text-slate-400">
                 <div class="h-px flex-1 bg-slate-200 dark:bg-slate-700" />

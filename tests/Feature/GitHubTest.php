@@ -80,6 +80,7 @@ class GitHubTest extends TestCase
 
     public function test_signing_in_with_github_creates_a_verified_account(): void
     {
+        config(['framework.github_login' => true]);
         $this->fakeSocialite(42, 'ada', 'Ada@Example.org');
 
         $this->get('/auth/github/callback?code=x&state=y')->assertRedirect('/dashboard');
@@ -94,6 +95,7 @@ class GitHubTest extends TestCase
 
     public function test_a_private_github_email_comes_from_the_emails_permission_and_creates_the_account(): void
     {
+        config(['framework.github_login' => true]);
         // Socialite's own GitHub provider, with GitHub's answers canned: /user hides the
         // address (private), and /user/emails, which the app's "Email addresses: read"
         // permission opens, lists it as primary and verified
@@ -121,8 +123,19 @@ class GitHubTest extends TestCase
         $this->assertSame('grace', $user->githubAccount->login);
     }
 
+    public function test_github_sign_in_is_off_until_turned_on(): void
+    {
+        $this->fakeSocialite(42, 'ada', 'ada@example.org');
+
+        $this->get('/login')->assertInertia(fn ($page) => $page->where('githubLogin', false));
+        $this->get('/auth/github/callback?code=x&state=y')->assertRedirect('/login')->assertSessionHasErrors('email');
+        $this->assertGuest();
+        $this->assertSame(0, User::count());
+    }
+
     public function test_github_sign_in_matches_an_existing_account_by_email(): void
     {
+        config(['framework.github_login' => true]);
         $user = User::factory()->create(['email' => 'ada@example.org']);
         $this->fakeSocialite(42, 'ada', 'ada@example.org');
 
@@ -135,6 +148,7 @@ class GitHubTest extends TestCase
 
     public function test_github_sign_in_without_a_verified_email_is_refused(): void
     {
+        config(['framework.github_login' => true]);
         $this->fakeSocialite(42, 'ada', null);
 
         $this->get('/auth/github/callback?code=x&state=y')->assertRedirect('/login')->assertSessionHasErrors('email');
