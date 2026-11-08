@@ -11,7 +11,8 @@ import { ClockIcon, LockClosedIcon, RectangleStackIcon } from '@heroicons/vue/20
 
 const props = defineProps({ projects: { type: Array, default: () => [] }, project: Object, collections: Array });
 const form = useForm({ title: '' });
-const selectedProject = ref(props.project?.id ?? props.projects[0]?.id ?? '');
+// '' is no project
+const selectedProject = ref(props.project?.id ?? '');
 const sharing = { private: 'Private', unlisted: 'Anyone with the link', public: 'Public' };
 const day = value => new Date(value).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 </script>
@@ -22,14 +23,13 @@ const day = value => new Date(value).toLocaleDateString(undefined, { year: 'nume
         <div class="space-y-8">
             <PageHeader title="Collections" description="Related artifacts for readers, collaborators, or reviewers. Entries can use the latest version or a fixed version." />
 
-            <form v-if="project || projects.length" class="flex flex-wrap items-start gap-2" @submit.prevent="form.post(`/projects/${selectedProject}/collections`)">
-                <label v-if="!project" class="w-full sm:w-56"><span class="sr-only">Project for new collection</span><select v-model="selectedProject" :class="selectClass" required><option v-for="choice in projects" :key="choice.id" :value="choice.id">{{ choice.name }}</option></select></label>
+            <form class="flex flex-wrap items-start gap-2" @submit.prevent="form.post(selectedProject ? `/projects/${selectedProject}/collections` : '/collections')">
+                <label v-if="!project" class="w-full sm:w-56"><span class="sr-only">Project for new collection</span><select v-model="selectedProject" :class="selectClass"><option value="">No project</option><option v-for="choice in projects" :key="choice.id" :value="choice.id">{{ choice.name }}</option></select></label>
                 <label class="sr-only" for="new-collection">Collection title</label>
                 <input id="new-collection" v-model="form.title" required placeholder="Collection title" :class="[inputClass, 'max-w-sm flex-1 basis-64']">
                 <UiButton type="submit" :disabled="form.processing">Create collection</UiButton>
                 <p v-if="form.errors.title" class="w-full text-sm text-red-600 dark:text-red-400">{{ form.errors.title }}</p>
             </form>
-            <UiButton v-else href="/projects/create">Create a project</UiButton>
 
             <p v-if="!collections.length" class="text-sm text-slate-500 dark:text-slate-400">New collections are private until you share them.</p>
             <UiTable v-else label="Collections" class="research-results">
@@ -41,7 +41,8 @@ const day = value => new Date(value).toLocaleDateString(undefined, { year: 'nume
                                 <RectangleStackIcon class="size-4 shrink-0 text-slate-400" aria-hidden="true" />
                                 <Link :href="`/collections/${collection.id}/edit`" class="truncate hover:underline hover:underline-offset-4">{{ collection.title }}</Link>
                             </span>
-                            <Link v-if="!project" :href="`/projects/${collection.project.slug}`" class="mt-1 block truncate text-xs font-normal text-slate-500 dark:text-slate-400 hover:underline">{{ collection.project.name }}</Link>
+                            <Link v-if="!project && !collection.project.is_home" :href="`/projects/${collection.project.slug}`" class="mt-1 block truncate text-xs font-normal text-slate-500 dark:text-slate-400 hover:underline">{{ collection.project.name }}</Link>
+                            <span v-else-if="!project" class="mt-1 block truncate text-xs font-normal text-slate-500 dark:text-slate-400">No project</span>
                         </td>
                         <td class="numeric max-sm:hidden">{{ collection.items_count }}</td>
                         <td class="max-md:hidden"><span class="inline-flex items-center gap-1.5">{{ sharing[collection.visibility] }}<LockClosedIcon v-if="collection.protected" class="size-3.5" aria-label="Password protected" /></span></td>

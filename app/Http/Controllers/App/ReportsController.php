@@ -28,13 +28,14 @@ class ReportsController extends Controller
             'project' => $project?->only('id', 'name', 'slug'),
             'projects' => $request->user()->projects()->listed()->orderBy('name')->get(['id', 'name', 'slug']),
             'canPublish' => $request->user()->canPublish(),
-            'reports' => Report::whereIn('project_id', $request->user()->projects()->select('id'))->when($project, fn ($query) => $query->where('project_id', $project->id))->with(['versions', 'project:id,name,slug'])->latest('updated_at')->get()->map(fn ($report) => $this->data($report) + ['project' => $report->project->only('id', 'name', 'slug')]),
+            'reports' => Report::whereIn('project_id', $request->user()->projects()->select('id'))->when($project, fn ($query) => $query->where('project_id', $project->id))->with(['versions', 'project:id,name,slug,is_home'])->latest('updated_at')->get()->map(fn ($report) => $this->data($report) + ['project' => $report->project->only('id', 'name', 'slug', 'is_home')]),
         ]);
     }
 
-    public function store(Request $request, int $project)
+    /** POST /projects/{project}/reports, or POST /reports for a report with no project */
+    public function store(Request $request, ?int $project = null)
     {
-        $project = $request->user()->projects()->findOrFail($project);
+        $project = $project === null ? $request->user()->artifactHome() : $request->user()->projects()->findOrFail($project);
         $report = app(ReportPublisher::class)->create($project, $request->validate(ReportPublisher::rules(true)));
 
         return redirect()->route('reports.edit', ['report' => $report->id]);
@@ -46,7 +47,7 @@ class ReportsController extends Controller
         $artifacts = ArtifactChoices::for($report->project_id);
 
         return Inertia::render('Reports/Edit', [
-            'project' => $report->project->only('id', 'name', 'slug'),
+            'project' => $report->project->only('id', 'name', 'slug', 'is_home'),
             'report' => $this->data($report), 'artifacts' => $artifacts,
             'canPublish' => $request->user()->canPublish(),
         ]);

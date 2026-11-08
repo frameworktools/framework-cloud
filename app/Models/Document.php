@@ -122,6 +122,23 @@ class Document extends Model
     }
 
     /** Artifacts a project may use: its own, and those linked to it. */
+    /**
+     * Artifacts a report or collection in this project may show: the project's
+     * own and linked ones, or, for one with no project (the account's home),
+     * any artifact in the account.
+     */
+    public function scopeUsableIn(Builder $query, int $projectId): void
+    {
+        $owner = Project::whereKey($projectId)->where('is_home', true)->value('user_id');
+
+        if ($owner === null) {
+            $this->scopeAvailableTo($query, $projectId);
+
+            return;
+        }
+        $query->whereIn('project_id', Project::where('user_id', $owner)->select('id'));
+    }
+
     public function scopeAvailableTo(Builder $query, int $projectId): void
     {
         $query->where(fn (Builder $q) => $q->where('project_id', $projectId)

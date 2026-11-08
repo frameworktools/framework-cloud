@@ -49,7 +49,7 @@ class CollectionsController extends Controller
             'document_id' => ['required', 'integer'], 'version_number' => ['nullable', 'integer', 'min:1'],
             'caption' => ['nullable', 'string', 'max:2000'], 'share_unlisted' => ['sometimes', 'boolean'],
         ]);
-        $document = Document::availableTo($project->id)->where('driver', 'cloud')->findOrFail($data['document_id']);
+        $document = Document::usableIn($project->id)->where('driver', 'cloud')->findOrFail($data['document_id']);
         if (! empty($data['version_number']) && ! $document->findVersion($data['version_number'])) {
             throw ValidationException::withMessages(['version_number' => 'This artifact version does not exist.']);
         }

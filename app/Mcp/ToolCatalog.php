@@ -123,9 +123,10 @@ class ToolCatalog
                 'description' => 'Stop listing a linked artifact in a project. The artifact itself is unchanged.',
             ],
             'reports_list' => [
-                'level' => self::READ, 'method' => 'GET', 'path' => '/projects/{slug}/reports', 'path_params' => $project,
+                'level' => self::READ, 'method' => 'GET', 'path' => '/reports',
+                'query' => ['project' => ['type' => 'string', 'description' => 'A project slug, from projects_list, to list only that project\'s reports.']],
                 'title' => 'List reports',
-                'description' => 'A project\'s reports, with slug, visibility, link, and latest published version.',
+                'description' => 'The account\'s reports, with slug, visibility, link, latest published version, and project: the slug to pass to the other report tools.',
             ],
             'reports_show' => [
                 'level' => self::READ, 'method' => 'GET', 'path' => '/projects/{slug}/reports/{report}', 'path_params' => $project + $report,
@@ -199,10 +200,10 @@ class ToolCatalog
                 'description' => 'The project blueprints the account can start from.',
             ],
             'reports_create' => [
-                'level' => self::FULL, 'method' => 'POST', 'path' => '/projects/{slug}/reports', 'path_params' => $project,
+                'level' => self::FULL, 'method' => 'POST', 'path' => '/reports',
                 'body' => self::reportBody(creating: true),
                 'title' => 'Create a report',
-                'description' => 'Create a report: an ordered page of Markdown text and published artifacts. It starts private and unpublished unless publish is true.',
+                'description' => 'Create a report: an ordered page of Markdown text and published artifacts. Give a project slug to put it in that project, or leave project out: a report with no project can use any artifact in the account. It starts private and unpublished unless publish is true. The response\'s project is the slug for the other report tools.',
             ],
             'reports_update' => [
                 'level' => self::FULL, 'method' => 'PATCH', 'path' => '/projects/{slug}/reports/{report}', 'path_params' => $project + $report,
@@ -327,7 +328,7 @@ class ToolCatalog
                 'id' => ['type' => 'string', 'description' => 'A stable id for the block. Optional; give one to update the block later.'],
                 'text' => ['type' => 'string', 'description' => 'For text blocks: Markdown. Raw HTML in Markdown is removed.'],
                 'format' => ['type' => 'string', 'enum' => ['html'], 'description' => 'For text written as HTML. Only basic tags are kept.'],
-                'artifact' => ['type' => 'string', 'description' => 'For artifact blocks: the published artifact\'s slug in this project.'],
+                'artifact' => ['type' => 'string', 'description' => 'For artifact blocks: the published artifact\'s slug in the report\'s project, or anywhere in the account for a report with no project.'],
                 'version_number' => ['type' => 'integer', 'minimum' => 1, 'description' => 'Pin an artifact version. Defaults to the latest when published.'],
                 'caption' => ['type' => 'string'],
                 'share_unlisted' => ['type' => 'boolean', 'description' => 'Show an unlisted artifact in an unlisted report.'],
@@ -336,7 +337,7 @@ class ToolCatalog
         ];
 
         return [
-            'properties' => [
+            'properties' => ($creating ? ['project' => ['type' => 'string', 'description' => 'A project slug, from projects_list. Leave it out for a report with no project.']] : []) + [
                 'title' => ['type' => 'string', 'maxLength' => 200],
                 'description' => ['type' => 'string'],
                 'slug' => ['type' => 'string', 'description' => 'The link\'s slug. Generated from the title if left out.'],

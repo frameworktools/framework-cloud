@@ -29,9 +29,9 @@ class CollectionsController extends Controller
         return Inertia::render('Collections/Index', [
             'project' => $project?->only('id', 'name', 'slug'),
             'projects' => $request->user()->projects()->listed()->orderBy('name')->get(['id', 'name', 'slug']),
-            'collections' => Collection::whereIn('project_id', $request->user()->projects()->select('id'))->when($project, fn ($query) => $query->where('project_id', $project->id))->with('project:id,name,slug')->withCount('items')->latest()->get()->map(fn ($collection) => [
+            'collections' => Collection::whereIn('project_id', $request->user()->projects()->select('id'))->when($project, fn ($query) => $query->where('project_id', $project->id))->with('project:id,name,slug,is_home')->withCount('items')->latest()->get()->map(fn ($collection) => [
                 ...$collection->only('id', 'title', 'description', 'visibility', 'items_count'),
-                'project' => $collection->project->only('id', 'name', 'slug'),
+                'project' => $collection->project->only('id', 'name', 'slug', 'is_home'),
                 'url' => $collection->shareUrl(), 'protected' => (bool) $collection->password_hash,
                 'expires_at' => $collection->expires_at?->toIso8601String(), 'expired' => $collection->isExpired(),
                 'updated_at' => $collection->updated_at?->toIso8601String(),
@@ -39,9 +39,10 @@ class CollectionsController extends Controller
         ]);
     }
 
-    public function store(Request $request, int $project)
+    /** POST /projects/{project}/collections, or POST /collections for a collection with no project */
+    public function store(Request $request, ?int $project = null)
     {
-        $project = $request->user()->projects()->findOrFail($project);
+        $project = $project === null ? $request->user()->artifactHome() : $request->user()->projects()->findOrFail($project);
         $data = $request->validate(['title' => ['required', 'string', 'max:255']]);
         $collection = Collection::create([
             ...$data, 'project_id' => $project->id, 'key' => Str::lower(Str::random(24)),
@@ -57,7 +58,7 @@ class CollectionsController extends Controller
         $collection->load(['project', 'items.document']);
 
         return Inertia::render('Collections/Edit', [
-            'project' => $collection->project->only('id', 'name', 'slug'),
+            'project' => $collection->project->only('id', 'name', 'slug', 'is_home'),
             'collection' => [...$collection->only('id', 'title', 'description', 'visibility'),
                 'expires_at' => $collection->expires_at?->toIso8601String(), 'expired' => $collection->isExpired(),
                 'url' => $collection->shareUrl(), 'protected' => (bool) $collection->password_hash],
@@ -115,7 +116,7 @@ class CollectionsController extends Controller
     {
         $collection = $this->owned($request, $collection);
         $data = $request->validate(['document_id' => ['required', 'integer'], 'share_unlisted' => ['sometimes', 'boolean']]);
-        $document = Document::availableTo($collection->project_id)->where('driver', 'cloud')->findOrFail($data['document_id']);
+        $document = Document::usableIn($collection->project_id)->where('driver', 'cloud')->findOrFail($data['document_id']);
         $this->validateSharing($collection, $document, $data['share_unlisted'] ?? false);
         $collection->items()->firstOrCreate(['document_id' => $document->id], [
             'share_unlisted' => $data['share_unlisted'] ?? false,

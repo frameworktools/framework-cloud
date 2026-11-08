@@ -192,7 +192,7 @@ onBeforeUnmount(() => { clearInterval(clock); clearTimeout(timer); window.remove
     <Head :title="details.title || collection.title" />
     <AppLayout bleed>
         <div class="min-h-full">
-            <UiBreadcrumbs sticky :items="[{ label: project.name, href: `/projects/${project.slug}` }, { label: 'Collections', href: `/projects/${project.slug}/collections` }, { label: details.title || 'Untitled collection' }]">
+            <UiBreadcrumbs sticky :items="project.is_home ? [{ label: 'Collections', href: '/collections' }, { label: details.title || 'Untitled collection' }] : [{ label: project.name, href: `/projects/${project.slug}` }, { label: 'Collections', href: `/projects/${project.slug}/collections` }, { label: details.title || 'Untitled collection' }]">
                 <template #actions>
                     <p class="flex items-center gap-1.5 whitespace-nowrap text-xs" :class="status.tone" role="status" aria-live="polite" :title="status.text">
                         <component :is="status.icon" v-if="status.icon" class="size-4" :class="{ 'animate-spin': status.spin }" aria-hidden="true" /><span class="max-sm:sr-only">{{ status.text }}</span>

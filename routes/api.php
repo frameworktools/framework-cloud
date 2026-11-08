@@ -106,6 +106,8 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::post('/projects/{slug}/artifacts/external', [ExternalArtifactsController::class, 'store'])->middleware('throttle:60,1');
 
     // Reports: Markdown or HTML text with published artifacts, built from a script or an agent
+    Route::get('/reports', [ReportsController::class, 'indexAll']);
+    Route::post('/reports', [ReportsController::class, 'storeAnywhere'])->middleware('throttle:30,1');
     Route::get('/projects/{slug}/reports', [ReportsController::class, 'index']);
     Route::post('/projects/{slug}/reports', [ReportsController::class, 'store'])->middleware('throttle:30,1');
     Route::get('/projects/{slug}/reports/{report}', [ReportsController::class, 'show']);

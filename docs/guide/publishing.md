@@ -184,9 +184,10 @@ The contents of two reports or statistical models are not combined.
 
 ## Collections
 
-Open **Collections** within a project to create a collection. The title and
-introduction save as you type. **Add artifact** searches the project's
-published artifacts. Each entry's edit button sets its caption and version.
+Open **Collections** to create a collection, in a project or with no project. The title and
+introduction save as you type. **Add artifact** searches the artifacts the
+collection can use: its project's, or, with no project, all of yours. Each
+entry's edit button sets its caption and version.
 Drag an entry by its handle to reorder it, or focus the handle and use the up
 and down arrow keys. An artifact can appear in several collections without
 duplicating its files.
@@ -224,8 +225,10 @@ registration, or an archival guarantee.
 
 ## Report builder
 
-Open **Reports** within a project and create a report. The editor shows the
-report as readers will see it: a title, an introduction, and sections of text
+Open **Reports** and create a report, in a project or with no project. A
+report in a project uses that project's artifacts and the ones linked to it.
+A report with no project can use any artifact in your account. The editor
+shows the report as readers will see it: a title, an introduction, and sections of text
 and artifacts in order.
 
 - **Text.** The toolbar at the top of the report formats whichever text

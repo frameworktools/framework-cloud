@@ -182,7 +182,7 @@ const controlClass = 'inline-flex size-7 items-center justify-center rounded-md 
     <Head :title="report.title" />
     <AppLayout bleed>
         <div class="min-h-full bg-slate-50 dark:bg-slate-950">
-            <UiBreadcrumbs sticky :items="[{ label: project.name, href: `/projects/${project.slug}` }, { label: 'Reports', href: `/projects/${project.slug}/reports` }, { label: form.title || 'Untitled report' }]">
+            <UiBreadcrumbs sticky :items="project.is_home ? [{ label: 'Reports', href: '/reports' }, { label: form.title || 'Untitled report' }] : [{ label: project.name, href: `/projects/${project.slug}` }, { label: 'Reports', href: `/projects/${project.slug}/reports` }, { label: form.title || 'Untitled report' }]">
                 <template #actions>
                         <p class="flex items-center gap-1.5 whitespace-nowrap text-xs" :class="status.tone" role="status" aria-live="polite" :title="status.text">
                             <component :is="status.icon" v-if="status.icon" class="size-4" :class="{ 'animate-spin': status.spin }" aria-hidden="true" /><span class="max-sm:sr-only">{{ status.text }}</span>

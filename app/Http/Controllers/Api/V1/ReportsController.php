@@ -33,9 +33,36 @@ class ReportsController extends Controller
         return response()->json($this->detail($this->report($this->project($request, $slug), $report)));
     }
 
+    /** GET /reports: every report in the account, or one project's with ?project= */
+    public function indexAll(Request $request): JsonResponse
+    {
+        if (filled($slug = $request->query('project'))) {
+            return $this->index($request, (string) $slug);
+        }
+        $actor = $request->user();
+        abort_unless($actor instanceof User, 403, 'This endpoint requires a user token.');
+
+        return response()->json(['reports' => Report::whereIn('project_id', $actor->projects()->select('id'))->with('project:id,slug,is_home')
+            ->orderByDesc('updated_at')->get()->map(fn (Report $r) => $this->summary($r))]);
+    }
+
+    /** POST /reports: create a report in the project named by "project", or with no project */
+    public function storeAnywhere(Request $request): JsonResponse
+    {
+        $actor = $request->user();
+        abort_unless($actor instanceof User, 403, 'This endpoint requires a user token.');
+        $slug = $request->input('project');
+
+        return $this->createIn($request, filled($slug) ? $this->project($request, (string) $slug) : $actor->artifactHome());
+    }
+
     public function store(Request $request, string $slug): JsonResponse
     {
-        $project = $this->project($request, $slug);
+        return $this->createIn($request, $this->project($request, $slug));
+    }
+
+    private function createIn(Request $request, Project $project): JsonResponse
+    {
         $data = $this->input($request, $project, creating: true);
         $publisher = app(ReportPublisher::class);
         $report = $publisher->create($project, Arr::except($data, ['publish']));
@@ -150,7 +177,7 @@ class ReportsController extends Controller
             }
             if (($block['type'] ?? null) === 'artifact' && ! isset($block['document_id']) && is_string($block['artifact'] ?? null)) {
                 // The project's own artifact first, then one linked to it
-                $document = Document::availableTo($project->id)->where('slug', $block['artifact'])
+                $document = Document::usableIn($project->id)->where('slug', $block['artifact'])
                     ->orderByRaw('case when project_id = ? then 0 else 1 end', [$project->id])->first();
                 if (! $document) {
                     throw ValidationException::withMessages(["blocks.$index.artifact" => 'No published artifact in this project has the slug “'.$block['artifact'].'”.']);
@@ -168,6 +195,8 @@ class ReportsController extends Controller
 
         return [
             'id' => $report->id, 'slug' => $report->slug, 'title' => $report->title, 'description' => $report->description,
+            // The slug to use in /projects/{slug}/reports/...; a report with no project uses the account's home
+            'project' => $report->project?->slug, 'has_project' => ! ($report->project?->is_home ?? false),
             'visibility' => $report->visibility, 'password' => $report->password_hash !== null,
             'url' => $report->shareUrl(), 'latest_version' => $latest ? (int) $latest : null,
             'version_url' => $latest ? route('reports.version', ['key' => $report->key, 'number' => $latest]) : null,

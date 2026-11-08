@@ -218,13 +218,21 @@ class HostedMcpTest extends TestCase
         $this->assertFalse($artifact['error'], json_encode($artifact));
         $this->assertSame('{"estimate": 4207.1}', $artifact['body']['content']);
 
-        $draft = $this->tool($token, 'reports_create', ['slug' => 'penguin-study', 'title' => 'Body mass',
+        $draft = $this->tool($token, 'reports_create', ['project' => 'penguin-study', 'title' => 'Body mass',
             'blocks' => [['type' => 'text', 'text' => '## Results'], ['type' => 'artifact', 'artifact' => 'mass-model']]]);
         $this->assertFalse($draft['error'], json_encode($draft));
         $this->assertSame('private', $draft['body']['visibility']);
         $this->assertNull($draft['body']['latest_version']);
+        $this->assertSame('penguin-study', $draft['body']['project']);
 
-        $this->assertSame(1, Report::count());
+        // With no project, a report can use an artifact from any project in the account
+        $loose = $this->tool($token, 'reports_create', ['title' => 'Notes', 'blocks' => [['type' => 'artifact', 'artifact' => 'mass-model']]]);
+        $this->assertFalse($loose['error'], json_encode($loose));
+        $this->assertFalse($loose['body']['has_project']);
+        $listed = $this->tool($token, 'reports_list', []);
+        $this->assertContains('Notes', array_column($listed['body']['reports'], 'title'));
+
+        $this->assertSame(2, Report::count());
     }
 
     public function test_a_read_only_connection_sees_only_reads(): void
@@ -248,7 +256,7 @@ class HostedMcpTest extends TestCase
 
         app('auth')->forgetGuards();
         $this->withToken($token)->postJson('/mcp', ['jsonrpc' => '2.0', 'id' => 1, 'method' => 'tools/call',
-            'params' => ['name' => 'reports_create', 'arguments' => ['slug' => 'penguin-study', 'title' => 'X']]])
+            'params' => ['name' => 'reports_create', 'arguments' => ['project' => 'penguin-study', 'title' => 'X']]])
             ->assertJsonPath('error.message', 'Tool [reports_create] not found.');
         $this->assertSame(0, Report::count());
     }
@@ -259,7 +267,7 @@ class HostedMcpTest extends TestCase
         $this->figure($user);
         $token = $this->connect($user, McpConnection::ACCESS_FULL);
 
-        $report = $this->tool($token, 'reports_create', ['slug' => 'penguin-study', 'title' => 'Body mass', 'markdown' => '## Results']);
+        $report = $this->tool($token, 'reports_create', ['project' => 'penguin-study', 'title' => 'Body mass', 'markdown' => '## Results']);
         $published = $this->tool($token, 'reports_publish', ['slug' => 'penguin-study', 'report' => $report['body']['slug']]);
 
         $this->assertFalse($published['error'], json_encode($published));
@@ -271,10 +279,10 @@ class HostedMcpTest extends TestCase
         $user = $this->owner();
         $token = $this->connect($user, McpConnection::ACCESS_FULL);
 
-        $preview = $this->tool($token, 'reports_create', ['slug' => 'penguin-study', 'title' => 'Body mass', 'dry_run' => true]);
+        $preview = $this->tool($token, 'reports_create', ['project' => 'penguin-study', 'title' => 'Body mass', 'dry_run' => true]);
 
         $this->assertSame('POST', $preview['body']['method']);
-        $this->assertSame('/api/v1/projects/penguin-study/reports', $preview['body']['path']);
+        $this->assertSame('/api/v1/reports', $preview['body']['path']);
         $this->assertSame(0, Report::count());
     }
 
@@ -283,7 +291,7 @@ class HostedMcpTest extends TestCase
         $this->owner();
         $token = $this->connect(User::factory()->create(['email_verified_at' => now()]), McpConnection::ACCESS_FULL);
 
-        $result = $this->tool($token, 'reports_list', ['slug' => 'penguin-study']);
+        $result = $this->tool($token, 'reports_list', ['project' => 'penguin-study']);
 
         $this->assertTrue($result['error']);
         $this->assertSame(404, $result['body']['error']['status']);
@@ -383,9 +391,9 @@ class HostedMcpTest extends TestCase
         $user = $this->owner();
         $token = $this->connect($user, McpConnection::ACCESS_FULL);
 
-        $this->tool($token, 'reports_list', ['slug' => 'penguin-study']);
-        $this->tool($token, 'reports_create', ['slug' => 'penguin-study', 'title' => 'Secret title', 'dry_run' => true]);
-        $this->tool($token, 'reports_list', ['slug' => 'missing']);
+        $this->tool($token, 'reports_list', ['project' => 'penguin-study']);
+        $this->tool($token, 'reports_create', ['project' => 'penguin-study', 'title' => 'Secret title', 'dry_run' => true]);
+        $this->tool($token, 'reports_list', ['project' => 'missing']);
 
         $this->assertSame(['ok', 'dry_run', 'error'], McpToolCall::orderBy('id')->pluck('outcome')->all());
         $this->assertSame('penguin-study', McpToolCall::first()->target);
@@ -547,7 +555,7 @@ class HostedMcpTest extends TestCase
         $this->assertSame(['penguin-study', 'thesis'], $this->tool($token, 'artifacts_show', ['artifact' => 'mass'])['body']['linked_projects']);
         $this->assertSame(['mass'], array_column($this->tool($token, 'artifacts_list', ['project' => 'penguin-study'])['body']['artifacts'], 'slug'));
 
-        $report = $this->tool($token, 'reports_create', ['slug' => 'penguin-study', 'title' => 'Mass', 'publish' => true,
+        $report = $this->tool($token, 'reports_create', ['project' => 'penguin-study', 'title' => 'Mass', 'publish' => true,
             'blocks' => [['type' => 'artifact', 'artifact' => 'mass']]]);
         $this->assertFalse($report['error'], json_encode($report));
         $this->assertSame(1, $report['body']['latest_version']);
@@ -761,7 +769,7 @@ class HostedMcpTest extends TestCase
         $user = $this->owner();
         $document = $this->figure($user);
         $token = $this->connect($user, McpConnection::ACCESS_FULL);
-        $report = $this->tool($token, 'reports_create', ['slug' => 'penguin-study', 'title' => 'Body mass', 'markdown' => 'Text']);
+        $report = $this->tool($token, 'reports_create', ['project' => 'penguin-study', 'title' => 'Body mass', 'markdown' => 'Text']);
         $this->tool($token, 'skills_create', ['content' => "---\nname: penguin-checks\ndescription: Check.\n---\nOne."]);
 
         $this->assertFalse($this->tool($token, 'reports_delete', ['slug' => 'penguin-study', 'report' => $report['body']['slug']])['error']);

@@ -68,7 +68,7 @@ class ReportViewController extends Controller
             if ($block['type'] === 'text') {
                 return $block;
             }
-            $document = Document::availableTo($report->project_id)->with('project.user')->find($block['document_id']);
+            $document = Document::usableIn($report->project_id)->with('project.user')->find($block['document_id']);
             $number = $block['version_number'];
             // Draft previews can follow current content; published versions never can.
             $artifactVersion = $document ? ($number === null && $preview ? $document->latestVersion() : ($number === null ? null : $document->findVersion($number))) : null;

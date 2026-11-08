@@ -143,6 +143,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('projects/{slug}/collections', [CollectionsController::class, 'indexForSlug'])->where('slug', '[A-Za-z0-9_-]*[A-Za-z_-][A-Za-z0-9_-]*');
     Route::get('projects/{slug}/reports', [ReportsController::class, 'indexForSlug'])->where('slug', '[A-Za-z0-9_-]*[A-Za-z_-][A-Za-z0-9_-]*');
     Route::post('projects/{project}/collections', [CollectionsController::class, 'store'])->whereNumber('project')->name('collections.store');
+    Route::post('collections', [CollectionsController::class, 'store'])->name('collections.store.unfiled');
     Route::get('collections/{collection}/edit', [CollectionsController::class, 'edit'])->name('collections.edit');
     Route::patch('collections/{collection}', [CollectionsController::class, 'update'])->name('collections.update');
     Route::delete('collections/{collection}', [CollectionsController::class, 'destroy'])->name('collections.destroy');
@@ -152,6 +153,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('collections/{collection}/order', [CollectionsController::class, 'reorder'])->name('collections.order');
     Route::get('projects/{project}/reports', [ReportsController::class, 'index'])->whereNumber('project')->name('reports.index');
     Route::post('projects/{project}/reports', [ReportsController::class, 'store'])->whereNumber('project')->name('reports.store');
+    Route::post('reports', [ReportsController::class, 'store'])->name('reports.store.unfiled');
     Route::get('reports/{report}/edit', [ReportsController::class, 'edit'])->name('reports.edit');
     Route::get('reports/{report}/preview', [ReportViewController::class, 'preview'])->name('reports.preview');
     Route::patch('reports/{report}', [ReportsController::class, 'update'])->name('reports.update');

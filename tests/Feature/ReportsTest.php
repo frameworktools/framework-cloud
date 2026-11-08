@@ -34,6 +34,27 @@ class ReportsTest extends TestCase
         return ['id' => 'figure', 'type' => 'artifact', 'document_id' => $document->id, 'version_number' => $version, 'caption' => 'Figure caption', 'share_unlisted' => $share];
     }
 
+    public function test_a_report_and_a_collection_need_no_project_and_can_use_any_of_the_accounts_artifacts(): void
+    {
+        Storage::fake('local');
+        $project = $this->project();
+        $document = $this->artifact($project);
+        $user = $project->user;
+
+        $this->actingAs($user)->post('/reports', ['title' => 'Loose notes'])->assertRedirect();
+        $report = Report::where('title', 'Loose notes')->sole();
+        $this->assertTrue($report->project->is_home);
+
+        // The editor offers every artifact in the account, and the draft can use one from another project
+        $this->get('/reports/'.$report->id.'/edit')->assertInertia(fn (Assert $page) => $page->where('project.is_home', true)->where('artifacts.0.id', $document->id));
+        $this->patch('/reports/'.$report->id, ['title' => 'Loose notes', 'blocks' => [$this->block($document)]])->assertSessionHasNoErrors();
+
+        $this->get('/reports')->assertInertia(fn (Assert $page) => $page->where('reports.0.project.is_home', true));
+
+        $this->post('/collections', ['title' => 'Loose set'])->assertRedirect();
+        $this->assertTrue(\App\Models\Collection::where('title', 'Loose set')->sole()->project->is_home);
+    }
+
     public function test_owner_creates_edits_and_previews_a_draft_without_quarto(): void
     {
         Storage::fake('local');
