@@ -48,12 +48,24 @@ const form = useForm({
     agents: ['other'],
 });
 
+// The languages a blueprint supports, from its own metadata
+const blueprintLanguages = (b) => b?.choices?.languages ?? ['r', 'python', 'stata'];
+const fitsLanguage = (b) => blueprintLanguages(b).includes(form.language);
+// Only blueprints for the chosen language
 const sections = computed(() =>
     groups
-        .map((g) => ({ ...g, rows: props.blueprints.filter((b) => group(b) === g.key) }))
+        .map((g) => ({ ...g, rows: props.blueprints.filter((b) => group(b) === g.key && fitsLanguage(b)) }))
         .filter((g) => g.rows.length),
 );
 const blueprint = computed(() => props.blueprints.find((b) => b.id === form.blueprint_id));
+// Groups you've hidden, remembered in this browser. A hidden group still shows the chosen blueprint.
+const hiddenKey = 'fw.newProject.hiddenGroups';
+const hidden = ref(JSON.parse(localStorage.getItem(hiddenKey) ?? '[]'));
+const toggleGroup = (key) => {
+    hidden.value = hidden.value.includes(key) ? hidden.value.filter((k) => k !== key) : [...hidden.value, key];
+    localStorage.setItem(hiddenKey, JSON.stringify(hidden.value));
+};
+const shownRows = (section) => (hidden.value.includes(section.key) ? section.rows.filter((b) => b.id === form.blueprint_id) : section.rows);
 
 // What the form would create, resolved by the server exactly as creating it
 // would: the blueprint combined with your defaults, or the pieces chosen here
@@ -153,17 +165,23 @@ const repoName = computed(() => (form.github.nameEdited ? form.github.name : slu
 const editRepoName = (value) => { form.github.name = value; form.github.nameEdited = true; };
 const ownerOptions = computed(() => (props.github.owners ?? []).map((o) => ({ value: o.login, label: o.login })));
 watch(sensitive, (value) => { if (value) form.github.private = true; });
-// A blueprint's language is the default for projects made from it, unless the page was opened with one.
+// The page starts in the language it was opened with, or the starting blueprint's.
 // Framework's own blueprints take every language, so they start from the account's language.
 const accountLanguage = (value) => (value?.handle?.startsWith('framework/') && value?.choices?.languages?.includes(props.defaults?.language) ? props.defaults.language : null);
 watch(blueprint, (value, old) => {
-    form.language = (old === undefined && props.start?.language) || accountLanguage(value) || value?.language || 'r';
+    if (old === undefined) form.language = props.start?.language || accountLanguage(value) || value?.language || 'r';
+    else if (value && !fitsLanguage(value)) form.language = accountLanguage(value) || value.language || blueprintLanguages(value)[0];
 }, { immediate: true });
+// A language the chosen blueprint can't take moves to your default blueprint, the standard one, or the first that fits
+watch(() => form.language, () => {
+    if (!blueprint.value || fitsLanguage(blueprint.value)) return;
+    const next = [defaultBlueprint, props.blueprints.find((b) => b.handle === 'framework/project'), ...sections.value.flatMap((g) => g.rows)]
+        .find((b) => b && fitsLanguage(b));
+    if (next) useBlueprint(next.id);
+});
 const stata = computed(() => form.language === 'stata');
-// What the blueprint supports, from its own metadata
-const supported = computed(() => blueprint.value?.choices?.languages ?? ['r', 'python', 'stata']);
-const stataAllowed = computed(() => supported.value.includes('stata'));
-const languages = computed(() => languageOptions.filter((o) => supported.value.includes(o.value)));
+// Every language some blueprint here supports
+const languages = computed(() => languageOptions.filter((o) => props.blueprints.some((b) => blueprintLanguages(b).includes(o.value))));
 const workflowNames = { quarto: 'Quarto', jupyter: 'Jupyter', scripts: 'Scripts only' };
 const workflows = computed(() => (blueprint.value?.choices?.workflows ?? Object.keys(workflowNames))
     .filter((w) => form.language !== 'stata' || w === 'scripts'));
@@ -208,10 +226,10 @@ const destinations = computed(() => [
         key: 'local',
         title: 'Local setup',
         text: form.language === 'stata'
-            ? 'In a terminal, run fw login, then fw new with the project\'s name. Git is set up for you.'
+            ? 'In a terminal, run fw login, then fw new with the project name. Framework sets up Git.'
             : form.language === 'python'
-                ? 'You get a project token, and framework.new(key=...) in Python builds the project with Git. fw new works too.'
-                : 'You get a project token, and framework::setup() in R builds the project with Git. fw new works too.',
+                ? 'Framework issues a project token. Pass it to framework.new(key=...) in Python, or to fw new in a terminal. Framework sets up Git.'
+                : 'Framework issues a project token. Pass it to framework::setup() in R, or to fw new in a terminal. Framework sets up Git.',
     },
 ]);
 const submitLabel = computed(() => ({ download: 'Create and download', github: 'Create on GitHub' })[form.destination] ?? 'Create project');
@@ -224,7 +242,7 @@ const items = computed(() => [
     { label: 'Name', anchor: 'name' },
     { label: 'Blueprint', anchor: 'blueprint' },
     ...(form.customized ? [{ label: 'Pieces', anchor: 'structure' }] : []),
-    { label: 'Delivery method', anchor: 'where' },
+    { label: 'Destination', anchor: 'where' },
 ]);
 </script>
 
@@ -243,10 +261,7 @@ const items = computed(() => [
                 <UiTextarea v-model="form.description" label="Description (optional)" :rows="3" :error="form.errors.description" />
                 <div>
                     <UiSelect v-model="form.language" label="Language" :options="languages" :error="form.errors.language" />
-                    <p v-if="!stataAllowed" class="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
-                        This blueprint doesn't support Stata.
-                    </p>
-                    <p v-else-if="stata" class="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+                    <p v-if="stata" class="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
                         Stata projects use do-files and the framework Stata package for paths, data, and publishing.
                     </p>
                 </div>
@@ -263,11 +278,17 @@ const items = computed(() => [
                 </template>
                 <p v-if="form.errors.blueprint_id" class="text-sm text-red-600 dark:text-red-400">{{ form.errors.blueprint_id }}</p>
 
-                <div v-for="section in sections" :key="section.key" class="flex flex-col gap-2">
-                    <h3 v-if="sections.length > 1" class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ section.label }}</h3>
-                    <div class="-mx-4 flex flex-col divide-y divide-slate-800/10 border-y border-slate-800/10 dark:divide-white/10 dark:border-white/10">
+                <div v-for="section in sections" :key="section.key" class="flex flex-col gap-1">
+                    <div v-if="sections.length > 1" class="flex items-center justify-between gap-3">
+                        <h3 class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ section.label }}</h3>
+                        <button
+                            type="button" class="text-xs text-sky-700 hover:underline dark:text-sky-400"
+                            :aria-expanded="!hidden.includes(section.key)" @click="toggleGroup(section.key)"
+                        >{{ hidden.includes(section.key) ? `Show ${section.rows.length}` : 'Hide' }}</button>
+                    </div>
+                    <div class="-mx-4 flex flex-col divide-y divide-slate-800/10 dark:divide-white/10">
                         <div
-                            v-for="b in section.rows" :key="b.id"
+                            v-for="b in shownRows(section)" :key="b.id"
                             :class="b.id === form.blueprint_id ? 'bg-sky-50/60 dark:bg-sky-950/30' : ''"
                         >
                             <button
@@ -344,7 +365,7 @@ const items = computed(() => [
 
             <UiSeparator />
 
-            <UiPanel id="where" title="Delivery method" flush class="scroll-mt-6">
+            <UiPanel id="where" title="Destination" flush class="scroll-mt-6">
                 <div class="grid gap-3" :class="destinations.length === 3 ? 'lg:grid-cols-3' : 'sm:grid-cols-2'">
                     <button
                         v-for="d in destinations" :key="d.key"
@@ -394,6 +415,24 @@ const items = computed(() => [
                 </div>
             </UiPanel>
 
+            <UiSeparator />
+
+            <!-- What the project gets, just before creating it -->
+            <UiPanel v-if="blueprint" id="summary" title="Summary" flush class="scroll-mt-6">
+                <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-6 gap-y-2 text-sm">
+                    <dt class="text-slate-500 dark:text-slate-400">Name</dt><dd class="break-words font-medium text-slate-900 dark:text-white">{{ form.name || 'Not named yet' }}</dd>
+                    <dt class="text-slate-500 dark:text-slate-400">Blueprint</dt>
+                    <dd>
+                        {{ blueprint.name }}
+                        <Link :href="`/blueprints/${blueprint.id}`" class="ml-1 font-mono text-xs text-slate-500 hover:underline dark:text-slate-400">{{ blueprint.handle }} v{{ blueprint.version }}</Link>
+                    </dd>
+                    <dt class="text-slate-500 dark:text-slate-400">Language</dt><dd>{{ languages.find((l) => l.value === form.language)?.label ?? form.language }}</dd>
+                    <template v-if="current?.workflow"><dt class="text-slate-500 dark:text-slate-400">Workflow</dt><dd>{{ current.workflow.name }}</dd></template>
+                    <dt class="text-slate-500 dark:text-slate-400">Pieces</dt><dd>{{ form.customized ? 'Changed for this project' : 'As the blueprint has them' }}</dd>
+                    <dt class="text-slate-500 dark:text-slate-400">Destination</dt><dd>{{ destinationName }}</dd>
+                </dl>
+            </UiPanel>
+
             <UiCallout v-if="githubError" variant="danger" heading="GitHub">{{ githubError }}</UiCallout>
             <div class="flex items-center justify-end gap-3 border-t border-slate-200 pt-6 dark:border-slate-800">
                 <Link href="/projects"><UiButton variant="ghost">Cancel</UiButton></Link>
@@ -403,26 +442,6 @@ const items = computed(() => [
                 >{{ submitLabel }}</UiButton>
             </div>
         </form>
-
-        <!-- What you'll get -->
-        <template #aside>
-            <div v-if="blueprint" class="flex flex-col gap-3 rounded-lg bg-slate-50 p-4 text-sm dark:bg-slate-800/50">
-                <div>
-                    <div class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Summary</div>
-                    <div class="mt-1 break-words font-semibold text-slate-900 dark:text-white">{{ form.name || 'Your project' }}</div>
-                    <Link :href="`/blueprints/${blueprint.id}`" class="break-all font-mono text-xs text-slate-500 dark:text-slate-400 hover:underline">
-                        {{ blueprint.handle }} v{{ blueprint.version }}
-                    </Link>
-                </div>
-
-                <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 border-t border-slate-200 pt-3 text-xs text-slate-600 dark:border-slate-700 dark:text-slate-400">
-                    <dt class="text-slate-500 dark:text-slate-400">Language</dt><dd>{{ languages.find((l) => l.value === form.language)?.label ?? form.language }}</dd>
-                    <template v-if="current?.workflow"><dt class="text-slate-500 dark:text-slate-400">Workflow</dt><dd>{{ current.workflow.name }}</dd></template>
-                    <dt class="text-slate-500 dark:text-slate-400">Pieces</dt><dd>{{ form.customized ? 'Changed for this project' : 'As the blueprint has them' }}</dd>
-                    <dt class="text-slate-500 dark:text-slate-400">Set up</dt><dd>{{ destinationName }}</dd>
-                </dl>
-            </div>
-        </template>
 
         <UiModal v-model="confirming" title="Blueprint change">
             <p class="text-sm text-slate-600 dark:text-slate-400">You changed this project's pieces. Switching to {{ blueprints.find((b) => b.id === pendingBlueprint)?.name }} starts from that blueprint and discards those changes. The name, description, and where it's set up stay.</p>

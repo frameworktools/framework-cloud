@@ -82,7 +82,7 @@ const itemClass = (item) => [
                 <div class="flex flex-col lg:sticky lg:top-0 lg:h-screen">
                     <div class="flex min-h-0 flex-1 flex-col gap-4 p-6 lg:overflow-y-auto [&>*]:shrink-0" :class="narrow ? 'lg:px-8' : ''">
                         <slot name="top" />
-                        <Link v-if="back" :href="back.href" class="-mb-2 text-sm text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white">← {{ back.label }}</Link>
+                        <Link v-if="back" :href="back.href" class="mb-2 text-sm text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white">← {{ back.label }}</Link>
                         <h2 v-if="heading" class="-mb-2 flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
                             <span class="truncate">{{ heading }}</span>
                             <span v-if="dirty" class="size-2 shrink-0 rounded-full bg-amber-500" title="Unsaved changes" />

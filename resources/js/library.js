@@ -10,8 +10,8 @@ export const visibilityOptions = [
 export const group = (row) => (row.is_system ? 'framework' : row.editable ? 'mine' : 'community');
 
 export const groups = [
-    { key: 'framework', label: 'From Framework' },
     { key: 'mine', label: 'Yours' },
+    { key: 'framework', label: 'From Framework' },
     { key: 'community', label: 'Shared by others' },
 ];
 
