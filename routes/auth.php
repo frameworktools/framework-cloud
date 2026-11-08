@@ -91,5 +91,7 @@ Route::post('logout', function (Request $request) {
     $request->session()->invalidate();
     $request->session()->regenerateToken();
 
-    return redirect('/');
+    // The home page isn't an Inertia page, so the browser loads it in full
+    // rather than showing it in Inertia's error modal
+    return Inertia::location(url('/'));
 })->name('logout');

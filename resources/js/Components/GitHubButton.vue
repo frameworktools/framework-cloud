@@ -1,7 +1,7 @@
 <script setup>
 // A plain link: the OAuth redirect must be a full page visit, not an Inertia one
 // Signing in by default; connecting GitHub passes /auth/github/redirect
-defineProps({ label: { type: String, default: 'Continue with GitHub' }, href: { type: String, default: '/auth/github/login' }, remember: Boolean });
+defineProps({ label: { type: String, default: 'Sign in with GitHub' }, href: { type: String, default: '/auth/github/login' }, remember: Boolean });
 </script>
 
 <template>

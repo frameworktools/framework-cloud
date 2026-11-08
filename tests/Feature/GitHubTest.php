@@ -151,6 +151,7 @@ class GitHubTest extends TestCase
 
     public function test_github_sign_in_is_off_without_the_login_app(): void
     {
+        config(['framework.github_login' => false]);
         $this->get('/login')->assertInertia(fn ($page) => $page->where('githubLogin', false));
         $this->get('/auth/github/login')->assertNotFound();
         $this->get('/auth/github/login/callback?code=x&state=y')->assertNotFound();

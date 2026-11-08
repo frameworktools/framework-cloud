@@ -131,7 +131,7 @@ const dividerText = 'text-xs font-medium tracking-wide text-slate-500 uppercase 
                             <p v-if="passkeyError" class="text-sm text-red-600 dark:text-red-400">{{ passkeyError }}</p>
                         </template>
 
-                        <GitHubButton v-if="page.props.githubLogin" label="Continue with GitHub" :remember="true" />
+                        <GitHubButton v-if="page.props.githubLogin" label="Sign in with GitHub" :remember="true" />
                     </div>
                 </template>
             </div>

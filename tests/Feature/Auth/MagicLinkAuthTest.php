@@ -278,4 +278,15 @@ class MagicLinkAuthTest extends TestCase
 
         $this->actingAs($user)->get('/account/security')->assertOk();
     }
+
+    public function test_signing_out_loads_the_home_page_in_full(): void
+    {
+        $user = User::factory()->create();
+
+        // From an Inertia page, a 409 with the location makes the browser load it,
+        // instead of showing the non-Inertia home page in a modal
+        $this->actingAs($user)->post('/logout', [], ['X-Inertia' => 'true'])
+            ->assertStatus(409)->assertHeader('X-Inertia-Location', url('/'));
+        $this->assertGuest();
+    }
 }
