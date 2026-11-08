@@ -15,6 +15,7 @@ class MagicLinkMail extends Mailable
     public function __construct(
         public string $url,
         public bool $isNewAccount = false,
+        public ?string $code = null,
     ) {}
 
     public function envelope(): Envelope

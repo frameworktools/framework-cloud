@@ -15,6 +15,10 @@ Route::middleware('guest')->group(function () {
     Route::get('register', fn () => Inertia::render('Auth/Register'))->name('register');
 
     // Passwordless: emailed single-use sign-in links
+    Route::get('auth/magic-link/sent', [MagicLinkController::class, 'sent'])->name('magic-link.sent');
+    Route::post('auth/magic-code', [MagicLinkController::class, 'code'])
+        ->middleware('throttle:10,1')
+        ->name('magic-link.code');
     Route::post('auth/magic-link', [MagicLinkController::class, 'send'])
         ->middleware('throttle:6,1')
         ->name('magic-link.send');

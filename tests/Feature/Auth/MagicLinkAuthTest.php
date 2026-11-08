@@ -71,10 +71,69 @@ class MagicLinkAuthTest extends TestCase
 
         $this->post('/auth/magic-link', ['email' => $user->email])
             ->assertRedirect()
-            ->assertSessionHas('status', 'magic-link-sent');
+            ->assertRedirect(route('magic-link.sent'));
 
         Mail::assertSent(MagicLinkMail::class, fn ($mail) => $mail->hasTo($user->email));
         $this->assertSame(1, LoginToken::where('user_id', $user->id)->count());
+    }
+
+    public function test_the_sent_page_leads_with_the_link_and_folds_the_code_away(): void
+    {
+        $this->get(route('magic-link.sent'))->assertOk()->assertInertia(fn ($page) => $page->component('Auth/MagicLinkSent'));
+
+        $source = file_get_contents(resource_path('js/Pages/Auth/MagicLinkSent.vue'));
+        $this->assertStringContainsString('If there is an account for that address, a sign-in link and a six-digit code have been sent. The link works once and expires in 15 minutes.', $source);
+        $this->assertStringContainsString('Have the code? Enter it instead', $source);
+        $this->assertStringContainsString('Didn’t receive an email?', $source);
+        $this->assertStringContainsString('Try again', $source);
+        $this->assertStringNotContainsString('The code works only in the browser that asked for it.', $source);
+        $this->assertStringNotContainsString('Nothing arrived', $source);
+    }
+
+    public function test_the_emailed_code_signs_in_once_in_the_browser_that_asked(): void
+    {
+        Mail::fake();
+        $user = User::factory()->create(['password' => null]);
+        $code = null;
+
+        $this->post('/auth/magic-link', ['email' => $user->email]);
+        Mail::assertSent(MagicLinkMail::class, function ($mail) use (&$code) {
+            $code = $mail->code;
+
+            return true;
+        });
+        $this->assertMatchesRegularExpression('/^\d{6}$/', $code);
+
+        // A wrong code comes back to the page with its error, and the form open
+        $this->followingRedirects()->post('/auth/magic-code', ['code' => $code === '000000' ? '111111' : '000000'])
+            ->assertInertia(fn ($page) => $page->component('Auth/MagicLinkSent')->where('errors.code', 'That code is not valid, or it has expired. Ask for a new sign-in link.'));
+        $this->assertGuest();
+
+        $this->post('/auth/magic-code', ['code' => $code])->assertRedirect();
+        $this->assertAuthenticatedAs($user);
+
+        // Used once: the link is spent too
+        $this->post('/logout');
+        $this->post('/auth/magic-code', ['code' => $code])->assertSessionHasErrors('code');
+        $this->assertGuest();
+    }
+
+    public function test_a_code_does_not_work_in_another_browser_or_after_five_wrong_guesses(): void
+    {
+        $user = User::factory()->create(['password' => null]);
+        $issued = LoginToken::issueWithCode($user);
+
+        // Another browser has no session pointing at the token
+        $this->post('/auth/magic-code', ['code' => $issued['code']])->assertSessionHasErrors('code');
+        $this->assertGuest();
+
+        $this->withSession([LoginToken::CODE_SESSION_KEY => $issued['id']]);
+        $wrong = $issued['code'] === '999999' ? '888888' : '999999';
+        foreach (range(1, LoginToken::MAX_CODE_ATTEMPTS) as $i) {
+            $this->post('/auth/magic-code', ['code' => $wrong]);
+        }
+        $this->post('/auth/magic-code', ['code' => $issued['code']])->assertSessionHasErrors('code');
+        $this->assertGuest();
     }
 
     public function test_unknown_email_without_name_sends_nothing_but_looks_identical(): void
@@ -83,7 +142,7 @@ class MagicLinkAuthTest extends TestCase
 
         $this->post('/auth/magic-link', ['email' => 'nobody@example.com'])
             ->assertRedirect()
-            ->assertSessionHas('status', 'magic-link-sent');
+            ->assertRedirect(route('magic-link.sent'));
 
         Mail::assertNothingSent();
         $this->assertSame(0, User::where('email', 'nobody@example.com')->count());
@@ -95,7 +154,7 @@ class MagicLinkAuthTest extends TestCase
 
         $this->post('/auth/magic-link', ['name' => 'New Person', 'email' => 'new@example.com'])
             ->assertRedirect()
-            ->assertSessionHas('status', 'magic-link-sent');
+            ->assertRedirect(route('magic-link.sent'));
 
         $user = User::where('email', 'new@example.com')->first();
         $this->assertNotNull($user);

@@ -19,7 +19,6 @@ import { inputClass } from '@/ui.js';
  * the page never says whether an account exists.
  */
 const page = usePage();
-const sent = computed(() => page.props.flash.status === 'magic-link-sent');
 const passwordReset = computed(() => page.props.flash.status === 'password-reset');
 const passwords = computed(() => page.props.passwords);
 
@@ -91,11 +90,6 @@ const dividerText = 'text-xs font-medium tracking-wide text-slate-500 uppercase 
     <AuthLayout title="Welcome back." description="Sign in to your Framework Cloud account.">
         <UiCallout v-if="passwordReset" variant="success" heading="Password changed">
             Sign in with your new password.
-        </UiCallout>
-
-        <UiCallout v-if="sent" variant="success" heading="Sign-in email">
-            If an account exists for that address, a sign-in link is on its way.
-            It works once and expires in 15 minutes.
         </UiCallout>
 
         <div class="flex flex-col gap-5 rounded-xl border border-slate-200 p-5 sm:p-6 dark:border-slate-800">
@@ -196,7 +190,7 @@ const dividerText = 'text-xs font-medium tracking-wide text-slate-500 uppercase 
                 <form class="flex flex-col gap-2" @submit.prevent="sendLink">
                     <input type="hidden" name="email" :value="email">
                     <UiButton type="submit" :variant="passwords ? 'outline' : 'primary'" class="w-full" :disabled="linkForm.processing">Email me a sign-in link</UiButton>
-                    <p class="text-center text-sm text-slate-500 dark:text-slate-400">No password needed. We send a link to this address.</p>
+                    <p class="text-center text-sm text-slate-500 dark:text-slate-400">No password needed. We send a link and a code to this address.</p>
                 </form>
             </div>
         </div>

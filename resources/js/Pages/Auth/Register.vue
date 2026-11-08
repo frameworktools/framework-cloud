@@ -8,7 +8,6 @@ import UiCallout from '@/Components/UiCallout.vue';
 import GitHubButton from '@/Components/GitHubButton.vue';
 
 const page = usePage();
-const sent = computed(() => page.props.flash.status === 'magic-link-sent');
 
 const form = useForm({ name: '', email: '' });
 const send = () => form.post('/auth/magic-link');
@@ -21,10 +20,6 @@ const send = () => form.post('/auth/magic-link');
         title="Account registration"
         :description="page.props.githubSignIn ? 'Sign up with GitHub or your email address. There is no password to set.' : 'Sign up with your email address. There is no password to set.'"
     >
-        <UiCallout v-if="sent" variant="success" heading="Sign-in link sent">
-            Check your email for the sign-in link. It works once and expires in 15
-            minutes. Once you're in, add a passkey under Account › Sign-in &amp; security.
-        </UiCallout>
 
         <template v-if="page.props.githubSignIn">
             <GitHubButton label="Sign up with GitHub" />

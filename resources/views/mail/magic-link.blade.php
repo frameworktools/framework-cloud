@@ -51,6 +51,13 @@
                                 </tr>
                             </table>
 
+                            @if ($code)
+                                <p style="margin: 28px 0 0; font-size: 15px; line-height: 24px; color: #404040;">
+                                    Or enter this code in the browser where you asked for the link:
+                                </p>
+                                <p style="margin: 8px 0 0; font-family: Menlo, Consolas, monospace; font-size: 28px; font-weight: 600; letter-spacing: 6px; color: #171717;">{{ $code }}</p>
+                            @endif
+
                             <p style="margin: 28px 0 0; font-size: 13px; line-height: 20px; color: #737373;">
                                 If the button doesn't work, paste this link into your browser:
                             </p>

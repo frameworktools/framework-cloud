@@ -16,6 +16,12 @@ class LoginToken extends Model
 
     public const LIFETIME_MINUTES = 15;
 
+    /** Wrong codes allowed before the code stops working */
+    public const MAX_CODE_ATTEMPTS = 5;
+
+    /** Session key holding the id of the token whose code this browser may enter */
+    public const CODE_SESSION_KEY = 'login.code_token';
+
     protected $guarded = [];
 
     protected function casts(): array
@@ -53,6 +59,56 @@ class LoginToken extends Model
         ]);
 
         return $plain;
+    }
+
+    /**
+     * Issue a token and a six-digit code together, for an emailed link. Using
+     * either one uses up both.
+     *
+     * @return array{token: string, code: string, id: int}
+     */
+    public static function issueWithCode(User $user, ?string $browser = null): array
+    {
+        $plain = Str::random(64);
+        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+        $record = static::create([
+            'user_id' => $user->id,
+            'token_hash' => hash('sha256', $plain),
+            'code_hash' => self::hashCode($code),
+            'expires_at' => now()->addMinutes(self::LIFETIME_MINUTES),
+            'browser_hash' => $browser !== null ? hash('sha256', $browser) : null,
+            'created_at' => now(),
+        ]);
+
+        return ['token' => $plain, 'code' => $code, 'id' => $record->id];
+    }
+
+    /**
+     * Sign in with the code of token $id: the user exactly once, or null. A
+     * wrong code counts against the token, which stops taking codes after
+     * MAX_CODE_ATTEMPTS.
+     */
+    public static function consumeCode(int $id, string $code): ?User
+    {
+        $token = static::query()->whereKey($id)->whereNotNull('code_hash')->whereNull('used_at')->where('expires_at', '>', now())->first();
+
+        if (! $token || $token->attempts >= self::MAX_CODE_ATTEMPTS) {
+            return null;
+        }
+        if (! hash_equals($token->code_hash, self::hashCode(preg_replace('/\D/', '', $code)))) {
+            $token->increment('attempts');
+
+            return null;
+        }
+        $token->forceFill(['used_at' => now()])->save();
+
+        return $token->user;
+    }
+
+    private static function hashCode(string $code): string
+    {
+        return hash_hmac('sha256', $code, (string) config('app.key'));
     }
 
     /**

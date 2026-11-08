@@ -58,7 +58,9 @@ class MagicLinkController extends Controller
             // Self-host seam: FW_REGISTRATION=closed turns off new accounts
             // (single-user homelabs; fw:login-link --create still works)
             if (config('framework.registration') === 'closed') {
-                return back()->with('status', 'magic-link-sent');
+                $request->session()->forget(LoginToken::CODE_SESSION_KEY);
+
+                return to_route('magic-link.sent');
             }
 
             $user = User::create([
@@ -70,15 +72,52 @@ class MagicLinkController extends Controller
         }
 
         if ($user) {
+            $issued = LoginToken::issueWithCode($user, $browser);
             $url = route('magic-link.consume', array_filter([
-                'token' => LoginToken::issue($user, $browser),
+                'token' => $issued['token'],
                 // A pending computer sign-in survives an email opened in another browser.
                 'next' => self::devicePath((string) $request->session()->get('url.intended', '')),
             ]));
-            Mail::to($user->email)->send(new MagicLinkMail($url, $isNew));
+            Mail::to($user->email)->send(new MagicLinkMail($url, $isNew, $issued['code']));
+            // The code works only in this browser, through this session
+            $request->session()->put(LoginToken::CODE_SESSION_KEY, $issued['id']);
+        } else {
+            // No account: the same page, with a code form that accepts nothing
+            $request->session()->forget(LoginToken::CODE_SESSION_KEY);
         }
 
-        return back()->with('status', 'magic-link-sent');
+        return to_route('magic-link.sent');
+    }
+
+    /** "Check your email": the same for every address. */
+    public function sent(): Response
+    {
+        return Inertia::render('Auth/MagicLinkSent');
+    }
+
+    /** Sign in with the six-digit code from the email, in the browser that asked for it. */
+    public function code(Request $request): RedirectResponse
+    {
+        $validated = $request->validate(['code' => ['required', 'string', 'max:20']]);
+        $id = $request->session()->get(LoginToken::CODE_SESSION_KEY);
+        $user = is_int($id) ? LoginToken::consumeCode($id, $validated['code']) : null;
+
+        if (! $user) {
+            return to_route('magic-link.sent')->withErrors(['code' => 'That code is not valid, or it has expired. Ask for a new sign-in link.']);
+        }
+
+        if (! $user->hasVerifiedEmail()) {
+            $user->markEmailAsVerified();
+            event(new Registered($user));
+        }
+
+        Auth::login($user, remember: $request->boolean('remember'));
+        $request->session()->forget(LoginToken::CODE_SESSION_KEY);
+        $request->session()->regenerate();
+        Cookie::expire(LoginToken::BROWSER_COOKIE);
+        Cookie::expire(LoginToken::REMEMBER_COOKIE);
+
+        return PasskeyPromptController::afterSignIn($request, $user);
     }
 
     /**

@@ -23,7 +23,7 @@ class SelfHostSeamsTest extends TestCase
 
         $this->post('/auth/magic-link', ['name' => 'Stranger', 'email' => 'stranger@example.com'])
             ->assertRedirect()
-            ->assertSessionHas('status', 'magic-link-sent');
+            ->assertRedirect(route('magic-link.sent'));
 
         Mail::assertNothingSent();
         $this->assertSame(0, User::where('email', 'stranger@example.com')->count());
