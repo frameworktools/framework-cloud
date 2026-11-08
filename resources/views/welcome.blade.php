@@ -36,7 +36,7 @@
                 @endphp
                 <div class="mt-12 flex flex-wrap items-center gap-3">
                     <a href="{{ auth()->check() ? route('dashboard') : route('register') }}" class="rounded-md bg-sky-700 px-5 py-2.5 font-medium text-white hover:bg-sky-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500">{{ auth()->check() ? 'Open dashboard' : 'Create a Framework Cloud account' }}</a>
-                    <a href="{{ route('guide') }}" class="rounded-md py-2.5 font-medium text-slate-700 hover:bg-white/50 max-sm:hover:bg-transparent max-sm:hover:underline sm:px-4 dark:text-slate-200 dark:hover:bg-white/5">Read the docs <span aria-hidden="true">&rarr;</span></a>
+                    <a href="{{ route('guide') }}" class="rounded-md py-2.5 font-medium text-slate-700 hover:bg-white/50 max-sm:pl-1 max-sm:hover:bg-transparent max-sm:hover:underline sm:px-4 dark:text-slate-200 dark:hover:bg-white/5">Read the docs <span aria-hidden="true">&rarr;</span></a>
                 </div>
                 <nav aria-label="Framework tools" class="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm">
                     @foreach ($tools as $product => [$name, $icon])
