@@ -4,6 +4,7 @@ import { useForm, usePage } from '@inertiajs/vue3';
 import SectionLayout from '@/Layouts/SectionLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import UiPanel from '@/Components/UiPanel.vue';
+import UiSeparator from '@/Components/UiSeparator.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiInput from '@/Components/UiInput.vue';
 import UiSelect from '@/Components/UiSelect.vue';
@@ -14,7 +15,7 @@ import ChoicesEditor from '@/Components/ChoicesEditor.vue';
 import ProjectTreeView from '@/Components/ProjectTreeView.vue';
 import UiModal from '@/Components/UiModal.vue';
 import { agentSummary, fromChoices, NAMED, toChoices } from '@/agents.js';
-import { group, groups, languageNames, languageOptions } from '@/library.js';
+import { group, groups, languageOptions } from '@/library.js';
 
 const props = defineProps({ blueprints: Array, catalog: Object, defaults: Object, selected: Number, start: Object, github: Object, downloads: Boolean, githubUnavailable: Object });
 
@@ -166,10 +167,12 @@ const languages = computed(() => languageOptions.filter((o) => supported.value.i
 const workflowNames = { quarto: 'Quarto', jupyter: 'Jupyter', scripts: 'Scripts only' };
 const workflows = computed(() => (blueprint.value?.choices?.workflows ?? Object.keys(workflowNames))
     .filter((w) => form.language !== 'stata' || w === 'scripts'));
-const workflowOptions = computed(() => [
-    { value: '', label: 'Your default' },
-    ...workflows.value.map((w) => ({ value: w, label: workflowNames[w] })),
-]);
+const workflowOptions = computed(() => workflows.value.map((w) => ({ value: w, label: workflowNames[w] })));
+// Until you pick one, the select shows the workflow your defaults give this language and blueprint
+const shownWorkflow = computed({
+    get: () => form.workflow || (current.value ?? resolved.value)?.workflow?.key || '',
+    set: (value) => { form.workflow = value; },
+});
 // A workflow the blueprint or language can't take goes back to your default
 watch(workflows, (list) => { if (form.workflow && !list.includes(form.workflow)) form.workflow = ''; }, { immediate: true });
 
@@ -218,9 +221,9 @@ const githubError = computed(() => page.props.errors.github ?? form.errors['gith
 
 
 const items = computed(() => [
+    { label: 'Name', anchor: 'name' },
     { label: 'Blueprint', anchor: 'blueprint' },
     ...(form.customized ? [{ label: 'Pieces', anchor: 'structure' }] : []),
-    { label: 'Name', anchor: 'name' },
     { label: 'Delivery method', anchor: 'where' },
 ]);
 </script>
@@ -229,10 +232,32 @@ const items = computed(() => [
     <Head title="New project" />
 
     <SectionLayout heading="New project" :back="{ label: 'Back to all projects', href: '/projects' }" :items="items">
-        <PageHeader title="New project" description="Choose a blueprint and project name. Download a ZIP, create a GitHub repository, or set up locally." />
+        <PageHeader title="New project" description="Name the project and choose a blueprint. Download a ZIP, create a GitHub repository, or set up locally." />
 
         <form id="create-form" class="mt-8 flex flex-col gap-8" @submit.prevent="create">
-            <UiPanel id="blueprint" title="Blueprint" class="scroll-mt-6">
+            <UiPanel id="name" title="Name" flush class="scroll-mt-6">
+                <div>
+                    <UiInput v-model="form.name" label="Project name" placeholder="e.g. NHANES Study" :error="form.errors.name" />
+                    <p v-if="slug" class="mt-1.5 text-xs text-slate-500 dark:text-slate-400">Folder name: <span class="font-mono">{{ slug }}</span></p>
+                </div>
+                <UiTextarea v-model="form.description" label="Description (optional)" :rows="3" :error="form.errors.description" />
+                <div>
+                    <UiSelect v-model="form.language" label="Language" :options="languages" :error="form.errors.language" />
+                    <p v-if="!stataAllowed" class="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+                        This blueprint doesn't support Stata.
+                    </p>
+                    <p v-else-if="stata" class="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+                        Stata projects use do-files and the framework Stata package for paths, data, and publishing.
+                    </p>
+                </div>
+                <div v-if="!stata">
+                    <UiSelect v-model="shownWorkflow" label="Notebook workflow" :options="workflowOptions" :error="form.errors.workflow" />
+                </div>
+            </UiPanel>
+
+            <UiSeparator />
+
+            <UiPanel id="blueprint" title="Blueprint" flush class="scroll-mt-6">
                 <template #header>
                     <Link href="/blueprints/create" class="text-sm text-sky-700 hover:underline dark:text-sky-400">Build your own</Link>
                 </template>
@@ -240,7 +265,7 @@ const items = computed(() => [
 
                 <div v-for="section in sections" :key="section.key" class="flex flex-col gap-2">
                     <h3 v-if="sections.length > 1" class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ section.label }}</h3>
-                    <div class="flex flex-col divide-y divide-slate-200 overflow-hidden rounded-lg border border-slate-200 bg-white dark:divide-slate-700 dark:border-slate-700 dark:bg-slate-900">
+                    <div class="-mx-4 flex flex-col divide-y divide-slate-800/10 border-y border-slate-800/10 dark:divide-white/10 dark:border-white/10">
                         <div
                             v-for="b in section.rows" :key="b.id"
                             :class="b.id === form.blueprint_id ? 'bg-sky-50/60 dark:bg-sky-950/30' : ''"
@@ -300,7 +325,8 @@ const items = computed(() => [
                 </div>
             </UiPanel>
 
-            <ChoicesEditor v-if="form.customized" :form="form" :catalog="catalog" :languages="[form.language]" :required="requiredTools" agent-picker>
+            <UiSeparator v-if="form.customized" />
+            <ChoicesEditor v-if="form.customized" :form="form" :catalog="catalog" :languages="[form.language]" :required="requiredTools" agent-picker flush>
                 <!-- The files and folders this project gets, as the pieces stand -->
                 <template #structure-preview>
                     <div class="flex flex-col gap-3 rounded-md bg-white p-3 dark:bg-slate-900" :class="current ? '' : 'opacity-60'">
@@ -316,28 +342,9 @@ const items = computed(() => [
                 </template>
             </ChoicesEditor>
 
-            <UiPanel id="name" title="Name" class="scroll-mt-6">
-                <div>
-                    <UiInput v-model="form.name" label="Project name" placeholder="e.g. NHANES Study" :error="form.errors.name" />
-                    <p v-if="slug" class="mt-1.5 text-xs text-slate-500 dark:text-slate-400">Folder name: <span class="font-mono">{{ slug }}</span></p>
-                </div>
-                <UiTextarea v-model="form.description" label="Description (optional)" :rows="3" :error="form.errors.description" />
-                <div>
-                    <UiSelect v-model="form.language" label="Language" :options="languages" :error="form.errors.language" />
-                    <p v-if="!stataAllowed" class="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
-                        This blueprint doesn't support Stata.
-                    </p>
-                    <p v-else-if="stata" class="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
-                        Stata projects use do-files and the framework Stata package for paths, data, and publishing.
-                    </p>
-                </div>
-                <div v-if="!stata">
-                    <UiSelect v-model="form.workflow" label="Notebook workflow" :options="workflowOptions" :error="form.errors.workflow" />
-                    <p v-if="!form.workflow && current?.workflow" class="mt-1.5 text-xs text-slate-500 dark:text-slate-400">Your default for {{ languageNames[form.language] }} here is {{ current.workflow.name }}.</p>
-                </div>
-            </UiPanel>
+            <UiSeparator />
 
-            <UiPanel id="where" title="Delivery method" class="scroll-mt-6">
+            <UiPanel id="where" title="Delivery method" flush class="scroll-mt-6">
                 <div class="grid gap-3" :class="destinations.length === 3 ? 'lg:grid-cols-3' : 'sm:grid-cols-2'">
                     <button
                         v-for="d in destinations" :key="d.key"

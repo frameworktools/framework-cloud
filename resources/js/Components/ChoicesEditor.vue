@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import UiCheckboxCards from '@/Components/UiCheckboxCards.vue';
 import { agentOptions, pick } from '@/agents.js';
 import UiPanel from '@/Components/UiPanel.vue';
+import UiSeparator from '@/Components/UiSeparator.vue';
 import UiSwitch from '@/Components/UiSwitch.vue';
 import UiSelect from '@/Components/UiSelect.vue';
 import LayerSummary from '@/Components/LayerSummary.vue';
@@ -17,6 +18,8 @@ const props = defineProps({
     required: { type: Object, default: () => ({}) }, // tool key → why it can't be turned off
     // A project's agents, with the shared selector (form.agents); a blueprint only turns setup on or off
     agentPicker: Boolean,
+    // Sections on the page, split by separators, rather than cards
+    flush: Boolean,
 });
 
 const f = props.form;
@@ -68,7 +71,7 @@ const choiceClass = (on) => on
 </script>
 
 <template>
-    <UiPanel id="structure" title="Project structure" description="The folders and core files the project starts with." class="scroll-mt-6">
+    <UiPanel :flush="flush" id="structure" title="Project structure" description="The folders and core files the project starts with." class="scroll-mt-6">
         <UiSelect v-if="languages.length > 1" v-model="form.language" label="Language" :options="languageOptions" :error="form.errors.language" />
         <div class="grid gap-2 sm:grid-cols-2">
             <button
@@ -89,7 +92,8 @@ const choiceClass = (on) => on
 
     <slot name="after-structure" />
 
-    <UiPanel id="tools" title="Tools" class="scroll-mt-6" :description="form.language === 'stata' ? 'Stata projects have no tools.' : 'Optional tools. Each adds its own files, folders, and packages.'">
+    <UiSeparator v-if="flush" />
+    <UiPanel :flush="flush" id="tools" title="Tools" class="scroll-mt-6" :description="form.language === 'stata' ? 'Stata projects have no tools.' : 'Optional tools. Each adds its own files, folders, and packages.'">
         <div v-if="tools.length" class="flex flex-col divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white dark:divide-slate-700 dark:border-slate-700 dark:bg-slate-900">
             <div v-for="tool in tools" :key="tool.key" class="p-3">
                 <UiSwitch
@@ -103,7 +107,8 @@ const choiceClass = (on) => on
         <p v-if="form.errors.tools" class="text-xs text-red-600 dark:text-red-400">{{ form.errors.tools }}</p>
     </UiPanel>
 
-    <UiPanel id="packages" title="Packages" class="scroll-mt-6" description="Package sets the project installs. Sets stack, so turn on as many as you need. A package in more than one set installs once.">
+    <UiSeparator v-if="flush" />
+    <UiPanel :flush="flush" id="packages" title="Packages" class="scroll-mt-6" description="Package sets the project installs. Sets stack, so turn on as many as you need. A package in more than one set installs once.">
         <div v-if="packageSets.length" class="flex flex-col divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white dark:divide-slate-700 dark:border-slate-700 dark:bg-slate-900">
             <div v-for="set in packageSets" :key="set.key" class="p-3">
                 <UiSwitch :model-value="form.package_sets.includes(set.key)" :label="set.name" :description="set.description" @update:model-value="(on) => toggle('package_sets', set.key, on)" />
@@ -118,7 +123,8 @@ const choiceClass = (on) => on
         <p v-if="form.errors.package_sets" class="text-xs text-red-600 dark:text-red-400">{{ form.errors.package_sets }}</p>
     </UiPanel>
 
-    <UiPanel id="ai" title="Agents" class="scroll-mt-6" :description="agentPicker ? null : 'Skills provide project instructions for coding agents. Agent selection is a personal setting.'">
+    <UiSeparator v-if="flush" />
+    <UiPanel :flush="flush" id="ai" title="Agents" class="scroll-mt-6" :description="agentPicker ? null : 'Skills provide project instructions for coding agents. Agent selection is a personal setting.'">
         <UiCheckboxCards v-if="agentPicker" v-model="agentModel" legend="Agents" hide-legend :options="agentOptions" />
         <UiSwitch v-else v-model="form.settings.ai" label="Agent files" description="Adds AGENTS.md and the selected skills." />
         <template v-if="agentsOn || agentPicker">
@@ -141,7 +147,8 @@ const choiceClass = (on) => on
         <p v-if="form.errors.skills || form.errors.skill_sets" class="text-xs text-red-600 dark:text-red-400">{{ form.errors.skills || form.errors.skill_sets }}</p>
     </UiPanel>
 
-    <UiPanel id="settings" title="Settings" class="scroll-mt-6">
+    <UiSeparator v-if="flush" />
+    <UiPanel :flush="flush" id="settings" title="Settings" class="scroll-mt-6">
         <UiSwitch
             v-model="form.settings.sensitive" label="Sensitive data"
             :description="structure?.sensitive ? 'This structure already keeps private and public folders apart.' : 'Splits data and outputs into private and public folders, keeps private files out of git, and warns before anything private is published.'"
