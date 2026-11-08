@@ -62,8 +62,8 @@ class HandleInertiaRequests extends Middleware
             ])),
 
             'githubSignIn' => filled(config('services.github.client_id')),
-            // Signing in and up with GitHub, separately from connecting it (FW_GITHUB_LOGIN)
-            'githubLogin' => filled(config('services.github.client_id')) && config('framework.github_login'),
+            // Signing in and up with GitHub, through the login-only OAuth app
+            'githubLogin' => (bool) config('framework.github_login'),
             'passwords' => (bool) config('framework.passwords'),
             'quickLogin' => app()->environment('local') && config('framework.quick_login'),
             // Signing out would sign straight back in, so the app hides it

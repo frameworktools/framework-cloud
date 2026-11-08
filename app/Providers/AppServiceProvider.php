@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 use Inertia\Inertia;
 use Laravel\Passport\Passport;
+use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\GithubProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -32,6 +34,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Signing in with GitHub uses its own OAuth app, which reads only email addresses
+        Socialite::extend('github-login', fn () => Socialite::buildProvider(GithubProvider::class, config('services.github_login')));
+
         // An empty public/hot (left by a dev server that didn't finish
         // starting) would send every page to a dev server that isn't there.
         // Use the built assets instead.

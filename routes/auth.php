@@ -55,9 +55,12 @@ Route::middleware(['auth', 'passwords'])->group(function () {
         ->name('password.destroy');
 });
 
-// GitHub sign-in (guests) and connect (signed in) share one OAuth callback
-Route::get('auth/github/redirect', [GitHubController::class, 'redirect'])->middleware('throttle:12,1')->name('github.redirect');
-Route::get('auth/github/callback', [GitHubController::class, 'callback'])->middleware('throttle:12,1')->name('github.callback');
+// Connecting GitHub (signed in) goes through the GitHub App
+Route::get('auth/github/redirect', [GitHubController::class, 'redirect'])->middleware(['auth', 'throttle:12,1'])->name('github.redirect');
+Route::get('auth/github/callback', [GitHubController::class, 'callback'])->middleware(['auth', 'throttle:12,1'])->name('github.callback');
+// Signing in and up with GitHub goes through the login-only OAuth app
+Route::get('auth/github/login', [GitHubController::class, 'loginRedirect'])->middleware(['guest', 'throttle:12,1'])->name('github.login');
+Route::get('auth/github/login/callback', [GitHubController::class, 'loginCallback'])->middleware(['guest', 'throttle:12,1'])->name('github.login.callback');
 
 // Usable while logged in or out (clicking a second time shouldn't 403).
 // GET only shows a confirm page, so mail scanners can't use the link up.

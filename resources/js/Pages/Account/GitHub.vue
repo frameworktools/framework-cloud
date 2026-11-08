@@ -39,7 +39,7 @@ const disconnect = async () => {
             v-else-if="!account" title="GitHub connection"
             description="Framework uses a GitHub App. You choose its accounts, organizations, and repositories."
         >
-            <div class="w-60"><GitHubButton label="Connect GitHub" /></div>
+            <div class="w-60"><GitHubButton label="Connect GitHub" href="/auth/github/redirect" /></div>
         </UiPanel>
 
         <template v-else>

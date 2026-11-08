@@ -37,6 +37,14 @@ return [
 
     // The Framework GitHub App. Its OAuth client signs users in and acts on
     // their behalf (user tokens), limited to the accounts where it is installed.
+    // Sign in and sign up with GitHub: an OAuth app that only reads your
+    // email address, separate from the GitHub App that creates repositories
+    'github_login' => [
+        'client_id' => env('GITHUB_LOGIN_CLIENT_ID'),
+        'client_secret' => env('GITHUB_LOGIN_CLIENT_SECRET'),
+        'redirect' => env('GITHUB_LOGIN_REDIRECT_URI', '/auth/github/login/callback'),
+    ],
+
     'github' => [
         'client_id' => env('GITHUB_CLIENT_ID'),
         'client_secret' => env('GITHUB_CLIENT_SECRET'),

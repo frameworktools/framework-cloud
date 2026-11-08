@@ -78,30 +78,58 @@ class GitHubTest extends TestCase
         ]);
     }
 
-    public function test_signing_in_with_github_creates_a_verified_account(): void
+    private function loginApp(): void
     {
-        config(['framework.github_login' => true]);
-        $this->fakeSocialite(42, 'ada', 'Ada@Example.org');
+        config([
+            'services.github_login' => ['client_id' => 'Ov23.login', 'client_secret' => 'login-secret', 'redirect' => 'http://localhost/auth/github/login/callback'],
+            'framework.github_login' => true,
+        ]);
+    }
 
-        $this->get('/auth/github/callback?code=x&state=y')->assertRedirect('/dashboard');
+    private function fakeLogin(int $id, string $login, ?string $email): void
+    {
+        $github = (new SocialiteUser)->map(['id' => $id, 'nickname' => $login, 'name' => 'Ada Lovelace', 'email' => $email]);
+        $github->setToken('gho_login');
+
+        $provider = Mockery::mock(GithubProvider::class);
+        $provider->shouldReceive('user')->andReturn($github);
+        Socialite::shouldReceive('driver')->with('github-login')->andReturn($provider);
+    }
+
+    public function test_signing_in_with_github_creates_a_verified_account_without_connecting_github(): void
+    {
+        $this->loginApp();
+        $this->fakeLogin(42, 'ada', 'Ada@Example.org');
+
+        $this->get('/auth/github/login/callback?code=x&state=y')->assertRedirect('/dashboard');
 
         $user = User::where('email', 'ada@example.org')->firstOrFail();
         $this->assertAuthenticatedAs($user);
         $this->assertNotNull($user->email_verified_at);
-        $this->assertSame('ada', $user->githubAccount->login);
-        $this->assertSame('ghu_access', $user->githubAccount->access_token);
-        $this->assertNotSame('ghu_access', GitHubAccount::query()->toBase()->value('access_token'), 'tokens are encrypted at rest');
+        // The login app reads only email; repositories need the GitHub App, connected separately
+        $this->assertNull($user->githubAccount);
     }
 
-    public function test_a_private_github_email_comes_from_the_emails_permission_and_creates_the_account(): void
+    public function test_github_sign_in_asks_the_login_app_for_email_only(): void
     {
-        config(['framework.github_login' => true]);
+        $this->loginApp();
+
+        $location = $this->get('/auth/github/login?remember=1')->assertRedirect()->headers->get('Location');
+
+        $this->assertStringContainsString('client_id=Ov23.login', $location);
+        $this->assertStringContainsString('scope=user%3Aemail', $location);
+        $this->assertStringContainsString(urlencode('http://localhost/auth/github/login/callback'), $location);
+    }
+
+    public function test_a_private_github_email_comes_from_the_emails_endpoint_and_creates_the_account(): void
+    {
+        $this->loginApp();
         // Socialite's own GitHub provider, with GitHub's answers canned: /user hides the
-        // address (private), and /user/emails, which the app's "Email addresses: read"
-        // permission opens, lists it as primary and verified
+        // address (private), and /user/emails, which the user:email scope opens, lists
+        // it as primary and verified
         $requests = [];
         $mock = new \GuzzleHttp\Handler\MockHandler([
-            new \GuzzleHttp\Psr7\Response(200, [], json_encode(['access_token' => 'ghu_private', 'token_type' => 'bearer', 'scope' => ''])),
+            new \GuzzleHttp\Psr7\Response(200, [], json_encode(['access_token' => 'gho_private', 'token_type' => 'bearer', 'scope' => 'user:email'])),
             new \GuzzleHttp\Psr7\Response(200, [], json_encode(['id' => 77, 'node_id' => 'U_kgDOgrace', 'login' => 'grace', 'name' => 'Grace Hopper', 'email' => null, 'avatar_url' => null])),
             new \GuzzleHttp\Psr7\Response(200, [], json_encode([
                 ['email' => 'old@example.org', 'primary' => false, 'verified' => true],
@@ -110,50 +138,75 @@ class GitHubTest extends TestCase
         ]);
         $stack = \GuzzleHttp\HandlerStack::create($mock);
         $stack->push(\GuzzleHttp\Middleware::history($requests));
-        config(['services.github' => ['client_id' => 'Iv1.test', 'client_secret' => 'secret', 'redirect' => 'http://localhost/auth/github/callback']]);
-        $provider = \Laravel\Socialite\Facades\Socialite::driver('github')->stateless()->setHttpClient(new \GuzzleHttp\Client(['handler' => $stack]));
-        \Laravel\Socialite\Facades\Socialite::shouldReceive('driver')->with('github')->andReturn($provider);
+        $provider = Socialite::driver('github-login')->stateless()->setHttpClient(new \GuzzleHttp\Client(['handler' => $stack]));
+        Socialite::shouldReceive('driver')->with('github-login')->andReturn($provider);
 
-        $this->get('/auth/github/callback?code=x&state=y')->assertRedirect('/dashboard');
+        $this->get('/auth/github/login/callback?code=x&state=y')->assertRedirect('/dashboard');
 
         $this->assertSame('https://api.github.com/user/emails', (string) $requests[2]['request']->getUri());
         $user = User::where('email', 'grace@example.org')->sole();
         $this->assertAuthenticatedAs($user);
         $this->assertNotNull($user->email_verified_at);
-        $this->assertSame('grace', $user->githubAccount->login);
     }
 
-    public function test_github_sign_in_is_off_until_turned_on(): void
+    public function test_github_sign_in_is_off_without_the_login_app(): void
     {
-        $this->fakeSocialite(42, 'ada', 'ada@example.org');
-
         $this->get('/login')->assertInertia(fn ($page) => $page->where('githubLogin', false));
-        $this->get('/auth/github/callback?code=x&state=y')->assertRedirect('/login')->assertSessionHasErrors('email');
+        $this->get('/auth/github/login')->assertNotFound();
+        $this->get('/auth/github/login/callback?code=x&state=y')->assertNotFound();
+        // The GitHub App is only for connecting, never for signing in
+        $this->get('/auth/github/redirect')->assertRedirect('/login');
+        $this->get('/auth/github/callback?code=x&state=y')->assertRedirect('/login');
         $this->assertGuest();
         $this->assertSame(0, User::count());
     }
 
     public function test_github_sign_in_matches_an_existing_account_by_email(): void
     {
-        config(['framework.github_login' => true]);
+        $this->loginApp();
         $user = User::factory()->create(['email' => 'ada@example.org']);
-        $this->fakeSocialite(42, 'ada', 'ada@example.org');
+        $this->fakeLogin(42, 'ada', 'ada@example.org');
 
-        $this->get('/auth/github/callback?code=x&state=y')->assertRedirect('/dashboard');
+        $this->get('/auth/github/login/callback?code=x&state=y')->assertRedirect('/dashboard');
 
         $this->assertAuthenticatedAs($user);
         $this->assertSame(1, User::count());
-        $this->assertSame(42, (int) $user->githubAccount->github_id);
+    }
+
+    public function test_github_sign_in_matches_a_connected_github_account_first(): void
+    {
+        $this->loginApp();
+        $user = $this->connected(['email' => 'work@example.org']);
+        $this->fakeLogin(42, 'ada', 'personal@example.org');
+
+        $this->get('/auth/github/login/callback?code=x&state=y')->assertRedirect('/dashboard');
+
+        $this->assertAuthenticatedAs($user);
+        $this->assertSame(1, User::count());
+        // The GitHub App's tokens stay as they were
+        $this->assertSame('ghu_access', $user->fresh()->githubAccount->access_token);
     }
 
     public function test_github_sign_in_without_a_verified_email_is_refused(): void
     {
-        config(['framework.github_login' => true]);
-        $this->fakeSocialite(42, 'ada', null);
+        $this->loginApp();
+        $this->fakeLogin(42, 'ada', null);
 
-        $this->get('/auth/github/callback?code=x&state=y')->assertRedirect('/login')->assertSessionHasErrors('email');
+        $this->get('/auth/github/login/callback?code=x&state=y')->assertRedirect('/login')->assertSessionHasErrors('email');
         $this->assertSame(0, User::count());
         $this->assertGuest();
+    }
+
+    public function test_connecting_github_stores_the_github_app_tokens(): void
+    {
+        $user = User::factory()->create();
+        $this->fakeSocialite(42, 'ada', 'ada@example.org');
+
+        $this->actingAs($user)->get('/auth/github/callback?code=x&state=y')->assertRedirect('/account/github');
+
+        $this->assertSame('ada', $user->fresh()->githubAccount->login);
+        $this->assertSame('ghu_access', $user->fresh()->githubAccount->access_token);
+        $this->assertNotSame('ghu_access', GitHubAccount::query()->toBase()->value('access_token'), 'tokens are encrypted at rest');
     }
 
     public function test_a_github_account_connects_to_only_one_framework_account(): void

@@ -74,9 +74,9 @@ return [
     'agents' => env('FW_AGENTS', true),
     // Setup steps for the Framework Cloud plugin, which connects to framework.pub only. Unset: shown on framework.pub
     // Sign in and sign up with GitHub on the login, registration, and device
-    // pages. Off until GitHub sign-in uses an app that asks only for email;
-    // connecting GitHub from account settings works either way.
-    'github_login' => (bool) env('FW_GITHUB_LOGIN', false),
+    // pages. On when the login-only OAuth app is set (GITHUB_LOGIN_CLIENT_ID
+    // and GITHUB_LOGIN_CLIENT_SECRET); connecting GitHub works either way.
+    'github_login' => filled(env('GITHUB_LOGIN_CLIENT_ID')) && filled(env('GITHUB_LOGIN_CLIENT_SECRET')),
 
     'agent_plugin' => env('FW_AGENT_PLUGIN'),
 

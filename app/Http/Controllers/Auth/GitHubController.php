@@ -15,17 +15,17 @@ use Laravel\Socialite\Two\User as GitHubUser;
 use Symfony\Component\HttpFoundation\RedirectResponse as SymfonyRedirect;
 
 /**
- * Sign in with GitHub, or connect GitHub to a signed-in account, through
- * the Framework GitHub App. Accounts match by verified email, the same
- * identity magic links use, so one person has one account either way.
+ * GitHub, two ways. Connecting GitHub to a signed-in account goes through
+ * the Framework GitHub App, which creates repositories. Signing in and up
+ * goes through a separate OAuth app that only reads email addresses, so
+ * signing in never asks for repository access. Accounts match by verified
+ * email, the same identity magic links use, so one person has one account.
  */
 class GitHubController extends Controller
 {
-    public function redirect(Request $request): SymfonyRedirect
+    public function redirect(): SymfonyRedirect
     {
         abort_unless(filled(config('services.github.client_id')), 404);
-        // "Keep me signed in" from the sign-in page, for the callback
-        $request->session()->put('auth.remember', $request->boolean('remember'));
 
         return Socialite::driver('github')->redirect();
     }
@@ -34,9 +34,45 @@ class GitHubController extends Controller
     {
         abort_unless(filled(config('services.github.client_id')), 404);
 
-        $failed = fn (string $message) => $request->user()
-            ? to_route('account.github')->withErrors(['github' => $message])
-            : to_route('login')->withErrors(['email' => $message]);
+        $failed = fn (string $message) => to_route('account.github')->withErrors(['github' => $message]);
+
+        if ($request->has('error')) {
+            return $failed('Connecting GitHub was cancelled.');
+        }
+
+        try {
+            /** @var GitHubUser $github */
+            $github = Socialite::driver('github')->user();
+        } catch (InvalidStateException) {
+            return $failed('That GitHub request expired. Try again.');
+        }
+
+        $account = GitHubAccount::where('github_id', $github->getId())->first();
+        $current = $request->user();
+
+        if ($account && $account->user_id !== $current->id) {
+            return $failed("@{$github->getNickname()} is connected to another Framework Cloud account.");
+        }
+
+        $this->store($current, $github, $account);
+
+        return to_route('account.github')->with('status', 'github-connected');
+    }
+
+    public function loginRedirect(Request $request): SymfonyRedirect
+    {
+        abort_unless(config('framework.github_login'), 404);
+        // "Keep me signed in" from the sign-in page, for the callback
+        $request->session()->put('auth.remember', $request->boolean('remember'));
+
+        return Socialite::driver('github-login')->redirect();
+    }
+
+    public function loginCallback(Request $request): RedirectResponse
+    {
+        abort_unless(config('framework.github_login'), 404);
+
+        $failed = fn (string $message) => to_route('login')->withErrors(['email' => $message]);
 
         if ($request->has('error')) {
             return $failed('GitHub sign-in was cancelled.');
@@ -44,35 +80,18 @@ class GitHubController extends Controller
 
         try {
             /** @var GitHubUser $github */
-            $github = Socialite::driver('github')->user();
+            $github = Socialite::driver('github-login')->user();
         } catch (InvalidStateException) {
             return $failed('That GitHub sign-in expired. Try again.');
         }
 
-        $account = GitHubAccount::where('github_id', $github->getId())->first();
-        $current = $request->user();
-
-        // Connecting from settings
-        if ($current) {
-            if ($account && $account->user_id !== $current->id) {
-                return $failed("@{$github->getNickname()} is connected to another Framework Cloud account.");
-            }
-
-            $this->store($current, $github, $account);
-
-            return to_route('account.github')->with('status', 'github-connected');
-        }
-
-        // Signing in with GitHub is off until it uses an email-only app (FW_GITHUB_LOGIN)
-        if (! config('framework.github_login')) {
-            return $failed('Sign in with your email address.');
-        }
-
-        $user = $account?->user ?? $this->userForEmail($github->getEmail());
+        // A connected GitHub account first, then the verified email
+        $user = GitHubAccount::where('github_id', $github->getId())->first()?->user
+            ?? $this->userForEmail($github->getEmail());
 
         if (! $user) {
             if (blank($github->getEmail())) {
-                return $failed('GitHub did not share a verified email address. Sign up with email, then connect GitHub.');
+                return $failed('GitHub did not share a verified email address. Sign up with email instead.');
             }
             if (config('framework.registration') === 'closed') {
                 return $failed('This server is not accepting new accounts.');
@@ -91,8 +110,8 @@ class GitHubController extends Controller
             event(new Registered($user));
         }
 
-        $this->store($user, $github, $account);
-
+        // The login app's token reads only email, so nothing is stored; connecting
+        // GitHub for repositories is a separate step in account settings
         Auth::login($user, remember: (bool) $request->session()->pull('auth.remember', false));
         $request->session()->regenerate();
 
