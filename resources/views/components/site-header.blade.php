@@ -80,6 +80,15 @@
                     <x-heroicon-o-bars-3 class="size-5 group-open:hidden" /><x-heroicon-o-x-mark class="hidden size-5 group-open:block" />
                 </summary>
                 <div class="absolute inset-x-0 top-full z-50 max-h-[calc(100dvh-5rem)] overflow-y-auto border-b border-slate-800/10 bg-white px-6 pt-4 pb-6 shadow-xl shadow-slate-900/10 dark:border-white/15 dark:bg-slate-950 dark:shadow-black/30">
+                    {{-- Account first, so signing in is one tap from the menu --}}
+                    <div class="mb-5 flex gap-3 border-b border-slate-800/10 pb-5 dark:border-white/15">
+                        @auth
+                            <a href="{{ route('dashboard') }}" class="flex-1 rounded-md bg-sky-700 px-4 py-2.5 text-center font-semibold text-white hover:bg-sky-800">Dashboard</a>
+                        @else
+                            <a href="{{ route('login') }}" class="flex-1 rounded-md bg-white px-4 py-2.5 text-center font-medium text-slate-800 ring-1 ring-slate-800/15 hover:bg-slate-50 dark:bg-white/5 dark:text-slate-100 dark:ring-white/20 dark:hover:bg-white/10">Sign in</a>
+                            <a href="{{ route('register') }}" class="flex-1 rounded-md bg-sky-700 px-4 py-2.5 text-center font-semibold text-white hover:bg-sky-800">Sign up</a>
+                        @endauth
+                    </div>
                     <nav aria-label="Products and documentation" class="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3">
                         @foreach ($menus as $label => $links)
                             <div>
@@ -91,16 +100,16 @@
                         @endforeach
                     </nav>
                     <div class="mt-6 flex items-center justify-between gap-4 border-t border-slate-800/10 pt-4 dark:border-white/15">
-                        @guest<a href="{{ route('login') }}" class="text-sm font-medium text-slate-700 hover:text-slate-950 dark:text-slate-200 dark:hover:text-white">Sign in</a>@else<span></span>@endguest
+                        <span class="text-sm text-slate-500 dark:text-slate-400">Theme</span>
                         <x-theme-toggle />
                     </div>
                 </div>
             </details>
             @auth
-                <a href="{{ route('dashboard') }}" class="rounded-md bg-sky-700 px-4 py-2 font-semibold text-white shadow-sm ring-1 ring-sky-700/40 hover:bg-sky-800">Dashboard</a>
+                <a href="{{ route('dashboard') }}" class="rounded-md bg-sky-700 px-4 py-2 font-semibold text-white shadow-sm ring-1 ring-sky-700/40 hover:bg-sky-800 max-lg:hidden">Dashboard</a>
             @else
-                <a href="{{ route('login') }}" class="rounded-md bg-white px-4 py-2 font-medium text-slate-800 shadow-sm ring-1 ring-slate-800/15 hover:bg-slate-50 hover:text-slate-950 max-sm:hidden dark:bg-white/5 dark:text-slate-100 dark:ring-white/20 dark:hover:bg-white/10">Sign in</a>
-                <a href="{{ route('register') }}" class="rounded-md bg-sky-700 px-4 py-2 font-semibold text-white shadow-sm ring-1 ring-sky-700/40 hover:bg-sky-800">Sign up</a>
+                <a href="{{ route('login') }}" class="rounded-md bg-white px-4 py-2 font-medium text-slate-800 shadow-sm ring-1 ring-slate-800/15 hover:bg-slate-50 hover:text-slate-950 max-lg:hidden dark:bg-white/5 dark:text-slate-100 dark:ring-white/20 dark:hover:bg-white/10">Sign in</a>
+                <a href="{{ route('register') }}" class="rounded-md bg-sky-700 px-4 py-2 font-semibold text-white shadow-sm ring-1 ring-sky-700/40 hover:bg-sky-800 max-lg:hidden">Sign up</a>
             @endauth
         </div>
     </div>
