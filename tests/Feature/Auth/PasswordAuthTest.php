@@ -56,6 +56,26 @@ class PasswordAuthTest extends TestCase
         $this->assertAuthenticatedAs($user);
     }
 
+    public function test_the_sign_in_page_asks_for_the_address_first_and_keeps_the_link_in_its_own_form(): void
+    {
+        $this->get('/login')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page->component('Auth/Login'));
+
+        $source = file_get_contents(resource_path('js/Pages/Auth/Login.vue'));
+        $this->assertStringContainsString('Email me a sign-in link', $source);
+        $this->assertStringContainsString("post('/auth/magic-link'", $source);
+        $this->assertStringNotContainsString('formaction', $source);
+    }
+
+    public function test_remember_me_lasts_thirty_days(): void
+    {
+        $user = User::factory()->create(['password' => 'correct horse battery']);
+
+        $response = $this->post('/login/password', ['login_step' => 'password', 'email' => $user->email, 'password' => 'correct horse battery', 'remember' => 1]);
+        $cookie = collect($response->headers->getCookies())->first(fn ($c) => str_starts_with($c->getName(), 'remember_web_'));
+
+        $this->assertEqualsWithDelta(now()->addDays(30)->getTimestamp(), $cookie->getExpiresTime(), 120);
+    }
+
     public function test_rejects_a_wrong_password(): void
     {
         $user = User::factory()->create(['password' => 'correct horse battery']);

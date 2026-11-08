@@ -1,42 +1,63 @@
 <script setup>
 // Sets window.passkeys; only the passkey pages load it
 import '@/passkeys.js';
-import { ref, computed } from 'vue';
+import { ref, computed, nextTick } from 'vue';
 import { router, useForm, usePage } from '@inertiajs/vue3';
-import KeepSignedIn from '@/Components/KeepSignedIn.vue';
 import AuthLayout from '@/Layouts/AuthLayout.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiInput from '@/Components/UiInput.vue';
 import UiCallout from '@/Components/UiCallout.vue';
 import GitHubButton from '@/Components/GitHubButton.vue';
+import { inputClass } from '@/ui.js';
 
+/*
+ * Two steps on one page, as on academic.page. Step one asks for the email
+ * address, or offers a passkey or GitHub instead. Step two asks how to
+ * finish: a password, or a link by email, each in its own form, so a
+ * filled-in password is never posted with the link request. Step two looks
+ * the same for every address: nothing is looked up between the steps, so
+ * the page never says whether an account exists.
+ */
 const page = usePage();
 const sent = computed(() => page.props.flash.status === 'magic-link-sent');
 const passwordReset = computed(() => page.props.flash.status === 'password-reset');
 const passwords = computed(() => page.props.passwords);
 
-const form = useForm({ email: '', password: '', remember: false });
+const step = ref('email');
+const email = ref('');
+// The server keeps addresses in lowercase
+const address = () => email.value.trim().toLowerCase();
+const emailInput = ref(null);
+const passwordInput = ref(null);
+const focus = (input) => nextTick(() => (input.value?.$el?.querySelector?.('input') ?? input.value)?.focus());
 
-// A sign-in link is the default. People who use a password can switch, and
-// this browser remembers the choice.
-const MODE_KEY = 'sign-in-with-password';
-const remembered = () => { try { return localStorage.getItem(MODE_KEY) === '1'; } catch { return false; } };
-const usePassword = ref(passwords.value && remembered());
-const setUsePassword = (value) => {
-    usePassword.value = value;
-    form.clearErrors();
-    try { value ? localStorage.setItem(MODE_KEY, '1') : localStorage.removeItem(MODE_KEY); } catch { /* storage unavailable */ }
+const next = () => {
+    step.value = 'password';
+    focus(passwordInput);
+};
+const back = () => {
+    step.value = 'email';
+    focus(emailInput);
 };
 
-const description = computed(() => (usePassword.value
-    ? 'Sign in with your email address and password.'
-    : "We'll email you a link to sign in."));
-const send = () => form.transform((data) => ({ email: data.email, remember: data.remember ? 1 : 0 })).post('/auth/magic-link');
-const signIn = () => form.transform((data) => ({ ...data, remember: data.remember ? 1 : 0 })).post('/login/password', { onFinish: () => form.reset('password') });
+// A wrong password comes back with its error and stays on step two
+const passwordForm = useForm({ login_step: 'password', email: '', password: '', remember: false });
+const signIn = () => passwordForm
+    .transform((data) => ({ ...data, email: address(), remember: data.remember ? 1 : 0 }))
+    .post('/login/password', { onFinish: () => passwordForm.reset('password') });
 
-// Passkey sign-in: fetch assertion options, hand to the authenticator,
-// post the result as a plain form (the passkeys package expects a
-// classic POST, not an Inertia visit).
+// The link form posts only the address. A rejected address goes back to step one.
+const linkForm = useForm({ email: '' });
+const sendLink = () => linkForm
+    .transform(() => ({ email: address() }))
+    .post('/auth/magic-link', { onError: () => back() });
+
+const emailError = computed(() => (step.value === 'email' ? linkForm.errors.email : null));
+const passwordError = computed(() => passwordForm.errors.password ?? passwordForm.errors.email);
+
+// Passkey sign-in: fetch assertion options, hand to the authenticator, and
+// post the result as a plain form (the passkeys package expects a classic
+// POST, not an Inertia visit).
 const passkeySupported = ref(window.passkeys?.supported() ?? false);
 const passkeyBusy = ref(false);
 const passkeyError = ref('');
@@ -58,12 +79,16 @@ async function signInWithPasskey() {
         }
     }
 }
+
+const divider = 'flex items-center gap-3';
+const dividerLine = 'h-px flex-1 bg-slate-200 dark:bg-slate-800';
+const dividerText = 'text-xs font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400';
 </script>
 
 <template>
     <Head title="Sign in" />
 
-    <AuthLayout title="Sign in" :description="description">
+    <AuthLayout title="Welcome back." description="Sign in to your Framework Cloud account.">
         <UiCallout v-if="passwordReset" variant="success" heading="Password changed">
             Sign in with your new password.
         </UiCallout>
@@ -73,70 +98,110 @@ async function signInWithPasskey() {
             It works once and expires in 15 minutes.
         </UiCallout>
 
-        <form class="flex flex-col gap-4" @submit.prevent="usePassword ? signIn() : send()">
-            <UiInput
-                v-model="form.email"
-                label="Email address"
-                type="email"
-                placeholder="email@example.com"
-                autocomplete="email"
-                required
-                autofocus
-                :error="form.errors.email"
-            />
-            <div v-if="usePassword" class="flex flex-col gap-1.5">
-                <UiInput
-                    v-model="form.password"
-                    label="Password"
-                    type="password"
-                    autocomplete="current-password"
-                    required
-                    :error="form.errors.password"
-                />
-                <Link href="/forgot-password" class="self-end text-xs text-sky-700 hover:underline dark:text-sky-400">
-                    Forgot your password?
-                </Link>
-            </div>
-            <!-- An emailed link opened on another device asks again there -->
-            <KeepSignedIn v-model="form.remember" />
-            <UiButton type="submit" class="w-full" :disabled="form.processing">
-                {{ usePassword ? 'Sign in' : 'Email me a sign-in link' }}
-            </UiButton>
-            <button
-                v-if="passwords"
-                type="button"
-                class="self-center text-sm text-sky-700 hover:underline dark:text-sky-400"
-                @click="setUsePassword(!usePassword)"
-            >
-                {{ usePassword ? 'Email me a sign-in link instead' : 'Use a password instead' }}
-            </button>
-        </form>
+        <div class="flex flex-col gap-5 rounded-xl border border-slate-200 p-5 sm:p-6 dark:border-slate-800">
+            <!-- Step one: who is signing in -->
+            <div v-show="step === 'email'" class="flex flex-col gap-5">
+                <form class="flex flex-col gap-4" @submit.prevent="next">
+                    <UiInput
+                        ref="emailInput"
+                        v-model="email"
+                        label="Email"
+                        type="email"
+                        name="email"
+                        placeholder="jane.smith@example.com"
+                        autocomplete="username"
+                        required
+                        autofocus
+                        :error="emailError"
+                    />
+                    <UiButton type="submit" class="w-full">Continue</UiButton>
+                </form>
 
-        <template v-if="passkeySupported || page.props.githubSignIn">
-            <div class="flex items-center gap-3 text-xs text-slate-400">
-                <div class="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
-                or
-                <div class="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
-            </div>
+                <template v-if="passkeySupported || page.props.githubSignIn">
+                    <div :class="divider" aria-hidden="true">
+                        <span :class="dividerLine" /><span :class="dividerText">or</span><span :class="dividerLine" />
+                    </div>
 
-            <div class="flex flex-col gap-3">
-                <GitHubButton v-if="page.props.githubSignIn" label="Sign in with GitHub" :remember="form.remember" />
+                    <div class="flex flex-col gap-3">
+                        <template v-if="passkeySupported">
+                            <form ref="assertionForm" method="post" action="/passkeys/authenticate" class="hidden">
+                                <input type="hidden" name="_token" :value="page.props.csrf">
+                                <input ref="assertionInput" type="hidden" name="start_authentication_response">
+                                <input type="hidden" name="remember" value="1">
+                            </form>
 
-                <template v-if="passkeySupported">
-                    <form ref="assertionForm" method="post" action="/passkeys/authenticate" class="hidden">
-                        <input type="hidden" name="_token" :value="page.props.csrf">
-                        <input ref="assertionInput" type="hidden" name="start_authentication_response">
-                        <input type="hidden" name="remember" :value="form.remember ? 1 : 0">
-                    </form>
+                            <UiButton class="w-full" variant="outline" :disabled="passkeyBusy" @click="signInWithPasskey">
+                                {{ passkeyBusy ? 'Waiting for your device…' : 'Sign in with a passkey' }}
+                            </UiButton>
 
-                    <p v-if="passkeyError" class="text-sm text-red-600 dark:text-red-400">{{ passkeyError }}</p>
+                            <p v-if="passkeyError" class="text-sm text-red-600 dark:text-red-400">{{ passkeyError }}</p>
+                        </template>
 
-                    <UiButton class="w-full" variant="outline" :disabled="passkeyBusy" @click="signInWithPasskey">
-                        {{ passkeyBusy ? 'Waiting for your device…' : 'Sign in with a passkey' }}
-                    </UiButton>
+                        <GitHubButton v-if="page.props.githubSignIn" label="Continue with GitHub" :remember="true" />
+                    </div>
                 </template>
             </div>
-        </template>
+
+            <!-- Step two: how to finish signing in -->
+            <div v-show="step === 'password'" class="flex flex-col gap-5">
+                <div class="flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2 text-sm dark:bg-slate-800/60">
+                    <span class="min-w-0 truncate">
+                        <span class="text-slate-500 dark:text-slate-400">Signing in as </span>
+                        <span class="font-medium text-slate-900 dark:text-white">{{ email }}</span>
+                    </span>
+                    <button type="button" class="shrink-0 text-sky-700 hover:text-sky-800 dark:text-sky-400 dark:hover:text-sky-300" @click="back">Change</button>
+                </div>
+
+                <template v-if="passwords">
+                    <form class="flex flex-col gap-4" @submit.prevent="signIn">
+                        <input type="hidden" name="login_step" value="password">
+                        <!-- Password managers save and fill a password against the username in the same form -->
+                        <input type="email" name="email" :value="email" autocomplete="username" readonly tabindex="-1" aria-hidden="true" class="sr-only">
+
+                        <div class="flex flex-col gap-1.5">
+                            <div class="flex items-center justify-between">
+                                <label for="login-password" class="text-sm font-medium text-slate-900 dark:text-white">Password</label>
+                                <Link href="/forgot-password" class="text-sm text-sky-700 hover:text-sky-800 dark:text-sky-400 dark:hover:text-sky-300">Forgot?</Link>
+                            </div>
+                            <input
+                                id="login-password"
+                                ref="passwordInput"
+                                v-model="passwordForm.password"
+                                type="password"
+                                name="password"
+                                placeholder="••••••••"
+                                autocomplete="current-password"
+                                :required="step === 'password'"
+                                :aria-invalid="passwordError ? 'true' : undefined"
+                                :aria-describedby="passwordError ? 'login-password-error' : undefined"
+                                :class="inputClass"
+                            >
+                            <p v-if="passwordError" id="login-password-error" class="text-sm text-red-600 dark:text-red-400">{{ passwordError }}</p>
+                        </div>
+
+                        <label class="flex cursor-pointer items-center gap-2.5 text-sm text-slate-700 dark:text-slate-300">
+                            <input v-model="passwordForm.remember" type="checkbox" name="remember" class="size-4 shrink-0 rounded border-slate-300 accent-sky-700 dark:border-slate-600">
+                            Remember me for 30 days
+                        </label>
+
+                        <UiButton type="submit" class="w-full" :disabled="passwordForm.processing">Sign in</UiButton>
+                    </form>
+
+                    <div :class="divider" aria-hidden="true">
+                        <span :class="dividerLine" /><span :class="dividerText">or</span><span :class="dividerLine" />
+                    </div>
+                </template>
+
+                <!-- Its own form, so no password is posted with it -->
+                <form class="flex flex-col gap-2" @submit.prevent="sendLink">
+                    <input type="hidden" name="email" :value="email">
+                    <UiButton type="submit" :variant="passwords ? 'outline' : 'primary'" class="w-full" :disabled="linkForm.processing">Email me a sign-in link</UiButton>
+                    <p class="text-center text-sm text-slate-500 dark:text-slate-400">No password needed. We send a link to this address.</p>
+                </form>
+            </div>
+        </div>
+
+        <UiButton href="/register" variant="ghost" class="w-full">First time here? Create your account</UiButton>
 
         <div v-if="page.props.quickLogin" class="flex flex-col gap-2 rounded-lg border border-dashed border-amber-400 p-3">
             <p class="text-xs text-amber-700 dark:text-amber-400">Development only</p>
@@ -145,10 +210,5 @@ async function signInWithPasskey() {
                 <UiButton class="flex-1" variant="outline" @click="router.post('/login/quick/admin')">Sign in as admin</UiButton>
             </div>
         </div>
-
-        <p class="text-center text-sm text-slate-500 dark:text-slate-400">
-            Don't have an account?
-            <Link href="/register" class="text-sky-700 hover:underline dark:text-sky-400">Sign up</Link>
-        </p>
     </AuthLayout>
 </template>
