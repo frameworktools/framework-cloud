@@ -59,7 +59,7 @@ const githubAction = computed(() => {
     return `${base}?state=${encodeURIComponent(props.github.manifest.state)}`;
 });
 const manifestJson = computed(() => JSON.stringify(props.github.manifest.json));
-const installUrl = computed(() => field('github.app_slug').value ? `https://github.com/apps/${field('github.app_slug').value}/installations/new` : null);
+const installUrl = computed(() => field('github.app_slug').value ? `https://github.com/apps/${field('github.app_slug').value}/installations/select_target` : null);
 
 // Storage
 const testStorage = () => forms.storage.post('/admin/setup/storage/test', { preserveScroll: true });

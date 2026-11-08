@@ -35,6 +35,6 @@ class Installations
     {
         $slug = config('services.github.app_slug');
 
-        return $slug ? "https://github.com/apps/{$slug}/installations/new" : null;
+        return $slug ? "https://github.com/apps/{$slug}/installations/select_target" : null;
     }
 }
