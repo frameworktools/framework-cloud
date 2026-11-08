@@ -45,7 +45,8 @@ class Layer
     // The R package's spec_check() matches PASSWORD, SECRET, TOKEN, API_KEY, PRIVATE_KEY, and CREDENTIAL
     private const CREDENTIAL_KEY = '/(password|secret|token|access_key|api_key|private_key|credential)/i';
 
-    private const ENV_REFERENCE = '/^env\(\s*["\'][A-Za-z_][A-Za-z0-9_]*["\']\s*\)$/';
+    /** env("NAME") or env("NAME", "default"); the default is captured to check it */
+    private const ENV_REFERENCE = '/^env\(\s*["\'][A-Za-z_][A-Za-z0-9_]*["\']\s*(?:,\s*(?:"([^"]*)"|\'([^\']*)\')\s*)?\)$/';
 
     /**
      * Parse YAML into a layer. Empty text is an empty layer.
@@ -273,9 +274,13 @@ class Layer
 
             if (is_array($child)) {
                 $problems = [...$problems, ...self::credentialProblems($child, $here)];
-            } elseif (preg_match(self::CREDENTIAL_KEY, (string) $key) && filled($child)
-                && ! preg_match(self::ENV_REFERENCE, (string) $child)) {
-                $problems[] = "{$here} looks like a credential. Use env(\"VARIABLE\") and keep the value in the project's .env.";
+            } elseif (preg_match(self::CREDENTIAL_KEY, (string) $key) && filled($child)) {
+                // env("NAME") and env("NAME", "") point at the .env; a filled default is the secret itself
+                if (! preg_match(self::ENV_REFERENCE, (string) $child, $match)) {
+                    $problems[] = "{$here} looks like a credential. Use env(\"VARIABLE\") and keep the value in the project's .env.";
+                } elseif (($match[1] ?? '') !== '' || ($match[2] ?? '') !== '') {
+                    $problems[] = "{$here} gives env() a default that looks like a credential. Leave the default empty and keep the value in the project's .env.";
+                }
             }
         }
 
