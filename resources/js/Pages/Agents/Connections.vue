@@ -48,7 +48,7 @@ const disconnect = async (connection) => {
                         </tr>
                     </tbody>
                 </UiTable>
-                <p class="text-sm text-slate-500 dark:text-slate-400">To change an agent's access, disconnect it and connect it again.</p>
+                <p class="text-sm text-slate-500 dark:text-slate-400">To change an approved app's access, use <Link href="/agents/permissions" class="underline underline-offset-2">Permissions</Link>. For Claude Code and Codex, disconnect and connect again.</p>
             </template>
             <p v-else class="mt-3 text-xs text-slate-500 dark:text-slate-400">No connections yet. Approved agents will appear here.</p>
             </section>

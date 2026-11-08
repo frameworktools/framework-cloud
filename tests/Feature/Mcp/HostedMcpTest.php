@@ -680,9 +680,11 @@ class HostedMcpTest extends TestCase
         $this->assertSame(1, McpConnection::active()->count());
         $this->assertSame('read', McpConnection::active()->sole()->access);
 
-        // A changed access applies next time; forgetting brings the consent screen back
+        // A changed access applies at once to the open connection, and next time too;
+        // forgetting brings the consent screen back
         $app = McpApprovedApp::sole();
         $this->patch("/agents/apps/{$app->id}", ['access' => 'full'])->assertRedirect();
+        $this->assertSame('full', McpConnection::active()->sole()->access);
         $this->authorizeAgain($user, 'https://claude.ai/api/mcp/auth_callback')->assertRedirect();
         $this->assertSame('full', McpConnection::active()->sole()->access);
 

@@ -47,7 +47,7 @@ const forget = async (app) => {
             <section v-if="approvedApps.length" class="flex flex-col gap-3">
                 <div>
                     <h2 class="text-base font-medium text-slate-900 dark:text-white">Approved apps</h2>
-                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">You approved these apps once. They connect again with the access shown, without asking. Claude Code and Codex ask every time.</p>
+                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">You approved these apps once. They connect again with the access shown, without asking. A change applies right away, including to connections open now. Claude Code and Codex ask every time.</p>
                 </div>
                 <UiTable label="Approved apps">
                     <thead><tr><th>App</th><th>Access</th><th>Approved</th><th class="actions"><span class="sr-only">Actions</span></th></tr></thead>

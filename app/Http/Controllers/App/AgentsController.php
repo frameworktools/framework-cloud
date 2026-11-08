@@ -78,7 +78,13 @@ class AgentsController extends Controller
     public function updateApp(Request $request, int $app): RedirectResponse
     {
         $validated = $request->validate(['access' => ['required', Rule::in(McpConnection::ACCESS_LEVELS)]]);
-        McpApprovedApp::where('user_id', $request->user()->id)->findOrFail($app)->update($validated);
+        $approved = McpApprovedApp::where('user_id', $request->user()->id)->findOrFail($app);
+        $approved->update($validated);
+
+        // Connections open now from the same app take the new access on their next call
+        McpConnection::active()->where('user_id', $approved->user_id)
+            ->where('client_name', $approved->client_name)->where('redirect_host', $approved->redirect_host)
+            ->update(['access' => $validated['access']]);
 
         return back();
     }

@@ -6,8 +6,7 @@ also write reports from your published results.
 
 ## Server address
 
-Add Framework Cloud as a connector, or custom MCP server, in the app. Use your
-server's address followed by `/mcp`:
+Every app connects to the same address, your server followed by `/mcp`:
 
 ```
 https://framework.pub/mcp
@@ -15,62 +14,69 @@ https://framework.pub/mcp
 
 On a self-hosted server, use that server's address instead.
 
-Claude Code and Codex are the easiest to set up. They run on your computer,
-so they can use Framework Cloud's tools and run the commands that go with
-them, such as uploading a large file. Claude and ChatGPT also work, with a few
-more steps.
+Claude Code and Codex work best. They run on your computer, so they can work
+with your project's files and run the commands that go with Framework Cloud's
+tools, such as uploading a large file. The Claude desktop app includes Claude
+Code, and the ChatGPT desktop app includes Codex.
 
-## MCP server
+The Framework Cloud plugin, from the marketplace `frameworktools/plugins`, adds
+skills for publishing, reports, and blueprints. It connects to framework.pub
+only. On a self-hosted server, connect the MCP server alone.
 
-- **Claude** (desktop app or claude.ai): Customize, then Connectors, then Add
-  and Custom connector.
-  Choose Sign in now and Register automatically. Claude detects both. The
-  connector also works in Claude Code when you sign in to it with the same
-  Claude account.
-- **Claude allowed websites:** with the plugin or the connector, open Settings,
-  then Capabilities, and add `framework.pub` exactly as shown to the websites
-  Claude may reach.
-  Claude runs commands in a cloud sandbox, and without this entry the sandbox
-  cannot upload files. Start a new chat after the change.
-- **ChatGPT:** in the desktop app, open Settings, then Plugins, and choose the
-  MCPs tab. Select Add to add a custom MCP server. Name it framework, select
-  Streamable HTTP, paste the address as the URL, leave the rest empty, and save
-  it. Then select Authenticate next to framework. With the Framework Cloud
-  plugin, skip Authenticate: the plugin asks you to sign in when you first use
-  it. On chatgpt.com, use Settings, then Apps and connectors,
-  then Create; custom connectors need developer mode on some plans.
-- **Claude Code CLI:**
-  `claude mcp add --transport http framework https://framework.pub/mcp`, then
-  `/mcp` in Claude Code to sign in.
-- **Codex CLI:** `codex mcp add framework --url https://framework.pub/mcp`,
-  then `codex mcp login framework`.
+When an app connects, Framework Cloud opens in a browser. Sign in, choose the
+app's access, and select Connect. AI Agents, Setup in Framework Cloud has these
+steps for each app, with your server's address filled in.
 
-## Plugin
+## Claude
 
-The Framework Cloud plugin adds the server to Claude, Claude Code, ChatGPT,
-and Codex. Its marketplace is `frameworktools/plugins`. The plugin connects to
-framework.pub only. On a self-hosted server, use the MCP server steps above. Connect the MCP server first; the plugin then finds it.
+In the Claude desktop app:
 
-- **Claude** (desktop app or claude.ai): Customize, then Plugins, then Add,
-  Add marketplace, and Add from a repository. Enter `frameworktools/plugins`.
-  Under Discover, choose Framework Cloud and select Add. Then select Manage,
-  open Connectors, select Connect next to framework, and select Continue. It then works in chats and in Claude Code
-  inside the desktop app. Add `framework.pub` to Claude's allowed websites, as
-  described under MCP server.
-- **ChatGPT** (desktop app): Settings, then Plugins. Select Add to add a
-  marketplace and enter `frameworktools/plugins`. Search for Framework and
-  install Framework Cloud. It asks you to sign in the first time you use it.
-- **Claude Code CLI:** run
-  `claude plugin marketplace add frameworktools/plugins` and
-  `claude plugin install framework-cloud@framework`, then `/mcp` in Claude
-  Code to sign in.
-- **Codex CLI:** run `codex plugin marketplace add frameworktools/plugins`,
-  `codex plugin add framework-cloud@framework`, and
-  `codex mcp login framework`.
+1. **Connect the MCP server.** Open Customize, then Connectors. Select Add,
+   then Custom connector, and paste the server address. Choose Sign in now and
+   Register automatically, and leave Request headers empty.
+2. **Add the plugin.** Open Customize, then Plugins. Select Add, then Add
+   marketplace, then Add from a repository, and enter
+   `frameworktools/plugins`. Under Discover, add Framework Cloud. Then select
+   Manage next to it, open Connectors, and if framework is not connected,
+   select Connect, then Continue.
+3. **Use it in Claude Code.** Select `</>` at the top of the Claude desktop app
+   to switch to Claude Code.
 
-Setup steps for each app are under AI Agents, Connect your agent. The app opens
-Framework Cloud in a browser. Sign in, choose the app's access,
-and select Connect.
+From the command line:
+
+```
+claude plugin marketplace add frameworktools/plugins
+claude plugin install framework-cloud@framework
+```
+
+Or add the server alone with
+`claude mcp add --transport http framework https://framework.pub/mcp`. Then run
+`claude`, type `/mcp`, choose framework, and authenticate.
+
+## ChatGPT
+
+In the ChatGPT desktop app:
+
+1. **Connect the MCP server.** Open Settings, then Plugins, and choose the
+   MCPs tab. Select Add to add a custom MCP server. Name it framework, select
+   Streamable HTTP, paste the server address as the URL, leave the rest empty,
+   and save it. Without the plugin, select Authenticate next to framework.
+2. **Add the plugin.** On the same Plugins page, select Add to add a
+   marketplace, and enter `frameworktools/plugins`. Search for Framework and
+   install Framework Cloud. It asks you to sign in the first time you use it.
+3. **Use it in Codex.** Open the ChatGPT menu at the top left and choose
+   Codex.
+
+From the command line:
+
+```
+codex plugin marketplace add frameworktools/plugins
+codex plugin add framework-cloud@framework
+```
+
+Or add the server alone with
+`codex mcp add framework --url https://framework.pub/mcp`. Then run
+`codex mcp login framework` to sign in.
 
 ## Access
 
@@ -101,7 +107,8 @@ can run commands, such as Claude Code or Codex, runs the command itself. Others
 give you the command to run. Each link works once and expires after 30 minutes.
 
 A project is optional. Artifacts published without one are listed under
-Artifacts with no project.
+Artifacts with no project. Reports and collections can also have no project,
+and then they can use any artifact in your account.
 
 The R, Python, and Stata packages and `fw publish` check the project's private
 folders before publishing. An agent publishing a file directly cannot. Use the
@@ -126,21 +133,21 @@ that runs it.
 
 ## Connected agents
 
-Under AI Agents, Connect your agent has setup steps for each app: Claude,
-ChatGPT, Claude Code CLI, and Codex CLI. After an agent connects, the page is
-named Connected agents.
+AI Agents in Framework Cloud has four pages.
+
+Setup has the steps above for Claude and ChatGPT.
 
 Permissions sets the access the approval screen selects for a new agent. It
 also lists approved apps. A web app such as Claude or ChatGPT asks for
 approval once, then reconnects with the same access. Change its access or
-forget it there. Apps on your computer, such as Claude Code and Codex, always
-ask.
+forget it there. A change applies right away, including to the app's open
+connections. Apps on your computer, such as Claude Code and Codex, always ask.
 
 Connections lists each approval and its access. Select Disconnect to end an
 agent's access. Its tokens stop working at once. Removing a connector in Claude
 or ChatGPT does not end the connection here. A connection unused for 30 days
-ends on its own. To change an agent's access, disconnect it and connect it
-again.
+ends on its own. To change the access of Claude Code or Codex, disconnect it
+and connect it again.
 
 History lists each action an agent took, with the project and item it named
 and the result. Request contents are not stored. History is kept for 90 days.
