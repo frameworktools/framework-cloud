@@ -42,6 +42,18 @@ class LoginToken extends Model
     /** Set with BROWSER_COOKIE when "Keep me signed in" was checked */
     public const REMEMBER_COOKIE = 'fw_login_remember';
 
+    /** "password" when this browser last signed in with a password */
+    public const METHOD_COOKIE = 'fw_login_method';
+
+    /** A year, in minutes */
+    public const METHOD_COOKIE_MINUTES = 525600;
+
+    /** No second link is emailed to an account within this many seconds of the last */
+    public const RESEND_SECONDS = 60;
+
+    /** Session key holding the address typed at sign-in, for "Use your password instead" */
+    public const EMAIL_SESSION_KEY = 'login.email';
+
     /**
      * Issue a token for a user, returning the PLAIN token for the email URL.
      * A browser value ties the link to the browser that asked for it.

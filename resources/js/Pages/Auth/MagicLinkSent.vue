@@ -6,8 +6,9 @@ import UiButton from '@/Components/UiButton.vue';
 import { inputClass } from '@/ui.js';
 
 /*
- * After "Email me a sign-in link", as on academic.page. The same for every
- * address: it never says whether an account exists. The link is the main way
+ * After the address is entered at sign-in, as on academic.page. The same for
+ * every address: it never says whether an account exists, or whether its
+ * owner turned emailed links off in favor of a password. The link is the main way
  * in, so the code form stays folded away until someone asks for it, and opens
  * on its own when a code was just refused.
  */
@@ -30,7 +31,7 @@ const reveal = () => {
 <template>
     <Head title="Check your email" />
 
-    <AuthLayout title="Check your email" description="If there is an account for that address, a sign-in link and a six-digit code have been sent. The link works once and expires in 15 minutes.">
+    <AuthLayout title="Check your email" description="If this address has an account, we sent a sign-in link and a six-digit code. The link works once and expires in 15 minutes.">
         <p v-if="!open" class="text-center text-sm">
             <button type="button" class="font-medium text-sky-700 hover:text-sky-800 dark:text-sky-400 dark:hover:text-sky-300" @click="reveal">
                 Have the code? Enter it instead
@@ -70,6 +71,8 @@ const reveal = () => {
                 <UiButton type="submit" class="w-full" :disabled="form.processing">Sign in</UiButton>
             </form>
         </div>
+
+        <UiButton v-if="page.props.passwords" href="/login?use=password" variant="outline" class="w-full">Use your password instead</UiButton>
 
         <p class="text-center text-sm text-slate-500 dark:text-slate-400">
             Didn’t receive an email?

@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\LoginToken;
 use App\Models\User;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password as PasswordRule;
@@ -38,8 +40,39 @@ class PasswordController extends Controller
         }
 
         $request->session()->regenerate();
+        // This browser opens to the password field next time
+        Cookie::queue(LoginToken::METHOD_COOKIE, 'password', LoginToken::METHOD_COOKIE_MINUTES);
 
         return PasskeyPromptController::afterSignIn($request, $request->user());
+    }
+
+    /**
+     * The sign-in page. It opens to the password field when this browser
+     * last signed in with a password, or after "Use your password instead".
+     * Both come from this browser alone, never from an account.
+     */
+    public static function loginPage(Request $request): Response
+    {
+        $passwords = (bool) config('framework.passwords');
+
+        return Inertia::render('Auth/Login', [
+            'email' => $passwords ? (string) $request->session()->get(LoginToken::EMAIL_SESSION_KEY, '') : '',
+            'usePassword' => $passwords && $request->query('use') === 'password',
+            'prefersPassword' => $passwords && $request->cookie(LoginToken::METHOD_COOKIE) === 'password',
+        ]);
+    }
+
+    /**
+     * "Email me a sign-in link when I sign in". Off, signing in emails
+     * nothing, and the sign-in page looks the same.
+     */
+    public function links(Request $request): RedirectResponse
+    {
+        $validated = $request->validate(['email_sign_in_links' => ['required', 'boolean']]);
+
+        $request->user()->forceFill(['email_sign_in_links' => $validated['email_sign_in_links']])->save();
+
+        return back()->with('status', 'sign-in-links-updated');
     }
 
     public function forgot(): Response

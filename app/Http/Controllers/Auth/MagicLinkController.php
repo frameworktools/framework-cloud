@@ -31,8 +31,10 @@ class MagicLinkController extends Controller
 {
     /**
      * Email a sign-in link. With a `name`, unknown emails register a new
-     * account first. Without one, unknown emails get the same response as
-     * known ones (no account enumeration).
+     * account first. Every address gets the same response, and nothing on
+     * screen says whether an account exists or how it signs in. Only the
+     * inbox shows it: no email for an unknown address, an account whose
+     * owner turned links off, or a second request within RESEND_SECONDS.
      */
     public function send(Request $request): RedirectResponse
     {
@@ -42,14 +44,20 @@ class MagicLinkController extends Controller
         ]);
 
         // Set for every request, so the response says nothing about whether
-        // the account exists
-        $browser = Str::random(40);
+        // the account exists. A browser keeps its value, so an earlier link
+        // still opens directly here.
+        $browser = (string) $request->cookie(LoginToken::BROWSER_COOKIE);
+        if (strlen($browser) !== 40) {
+            $browser = Str::random(40);
+        }
         Cookie::queue(LoginToken::BROWSER_COOKIE, $browser, LoginToken::LIFETIME_MINUTES);
         // "Keep me signed in" holds for a link opened in this same browser.
         // Another device asks again on the confirmation page.
         $request->boolean('remember')
             ? Cookie::queue(LoginToken::REMEMBER_COOKIE, '1', LoginToken::LIFETIME_MINUTES)
             : Cookie::queue(Cookie::forget(LoginToken::REMEMBER_COOKIE));
+        // For "Use your password instead" on the next page
+        $request->session()->put(LoginToken::EMAIL_SESSION_KEY, $validated['email']);
 
         $user = User::where('email', $validated['email'])->first();
         $isNew = false;
@@ -71,20 +79,38 @@ class MagicLinkController extends Controller
             $isNew = true;
         }
 
-        if ($user) {
-            $issued = LoginToken::issueWithCode($user, $browser);
-            $url = route('magic-link.consume', array_filter([
-                'token' => $issued['token'],
-                // A pending computer sign-in survives an email opened in another browser.
-                'next' => self::devicePath((string) $request->session()->get('url.intended', '')),
-            ]));
-            Mail::to($user->email)->send(new MagicLinkMail($url, $isNew, $issued['code']));
-            // The code works only in this browser, through this session
-            $request->session()->put(LoginToken::CODE_SESSION_KEY, $issued['id']);
-        } else {
-            // No account: the same page, with a code form that accepts nothing
+        if (! $user || ! ($isNew || $user->wantsSignInLinks())) {
+            // The same page, with a code form that accepts nothing
             $request->session()->forget(LoginToken::CODE_SESSION_KEY);
+
+            return to_route('magic-link.sent');
         }
+
+        $recent = LoginToken::query()
+            ->where('user_id', $user->id)
+            ->where('created_at', '>', now()->subSeconds(LoginToken::RESEND_SECONDS))
+            ->latest('id')
+            ->first();
+
+        if ($recent) {
+            // The last email still stands. Its code works here only if this
+            // browser asked for it.
+            if ($request->session()->get(LoginToken::CODE_SESSION_KEY) !== $recent->id) {
+                $request->session()->forget(LoginToken::CODE_SESSION_KEY);
+            }
+
+            return to_route('magic-link.sent');
+        }
+
+        $issued = LoginToken::issueWithCode($user, $browser);
+        $url = route('magic-link.consume', array_filter([
+            'token' => $issued['token'],
+            // A pending computer sign-in survives an email opened in another browser.
+            'next' => self::devicePath((string) $request->session()->get('url.intended', '')),
+        ]));
+        Mail::to($user->email)->send(new MagicLinkMail($url, $isNew, $issued['code']));
+        // The code works only in this browser, through this session
+        $request->session()->put(LoginToken::CODE_SESSION_KEY, $issued['id']);
 
         return to_route('magic-link.sent');
     }
@@ -116,6 +142,7 @@ class MagicLinkController extends Controller
         $request->session()->regenerate();
         Cookie::expire(LoginToken::BROWSER_COOKIE);
         Cookie::expire(LoginToken::REMEMBER_COOKIE);
+        Cookie::expire(LoginToken::METHOD_COOKIE);
 
         return PasskeyPromptController::afterSignIn($request, $user);
     }
@@ -168,6 +195,7 @@ class MagicLinkController extends Controller
         $request->session()->regenerate();
         Cookie::expire(LoginToken::BROWSER_COOKIE);
         Cookie::expire(LoginToken::REMEMBER_COOKIE);
+        Cookie::expire(LoginToken::METHOD_COOKIE);
 
         return PasskeyPromptController::afterSignIn($request, $user);
     }

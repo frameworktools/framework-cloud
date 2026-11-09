@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::middleware('guest')->group(function () {
-    Route::get('login', fn () => Inertia::render('Auth/Login'))->name('login');
+    Route::get('login', [PasswordController::class, 'loginPage'])->name('login');
     Route::get('register', fn () => Inertia::render('Auth/Register'))->name('register');
 
     // Passwordless: emailed single-use sign-in links
@@ -53,6 +53,9 @@ Route::middleware(['auth', 'passwords'])->group(function () {
     Route::delete('account/password', [PasswordController::class, 'destroy'])
         ->middleware('throttle:6,1')
         ->name('password.destroy');
+    Route::put('account/sign-in-links', [PasswordController::class, 'links'])
+        ->middleware('throttle:12,1')
+        ->name('sign-in-links.update');
 });
 
 // Connecting GitHub (signed in) goes through the GitHub App

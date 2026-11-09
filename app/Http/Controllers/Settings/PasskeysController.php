@@ -20,6 +20,7 @@ class PasskeysController extends Controller
     {
         return Inertia::render('Account/Passkeys', [
             'hasPassword' => filled($request->user()->password),
+            'signInLinks' => $request->user()->email_sign_in_links !== false,
             'passkeys' => $request->user()->passkeys()->latest()->get()->map(fn ($passkey) => [
                 'id' => $passkey->id,
                 'name' => $passkey->name,

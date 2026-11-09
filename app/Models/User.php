@@ -52,6 +52,7 @@ class User extends Authenticatable implements HasPasskeys, MustVerifyEmail
             'setup_completed_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
+            'email_sign_in_links' => 'boolean',
             'profile_public' => 'boolean',
             'can_publish' => 'boolean',
             'project_defaults' => 'array',
@@ -113,5 +114,17 @@ class User extends Authenticatable implements HasPasskeys, MustVerifyEmail
             ->explode(' ')
             ->map(fn (string $name) => Str::of($name)->substr(0, 1))
             ->implode('');
+    }
+
+    /**
+     * Whether signing in emails this account a link. An account without a
+     * password, or with passwords off, always gets one: it has no other way
+     * in by email.
+     */
+    public function wantsSignInLinks(): bool
+    {
+        return $this->email_sign_in_links !== false
+            || blank($this->password)
+            || ! config('framework.passwords');
     }
 }

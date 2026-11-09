@@ -82,7 +82,7 @@ class MagicLinkAuthTest extends TestCase
         $this->get(route('magic-link.sent'))->assertOk()->assertInertia(fn ($page) => $page->component('Auth/MagicLinkSent'));
 
         $source = file_get_contents(resource_path('js/Pages/Auth/MagicLinkSent.vue'));
-        $this->assertStringContainsString('If there is an account for that address, a sign-in link and a six-digit code have been sent. The link works once and expires in 15 minutes.', $source);
+        $this->assertStringContainsString('If this address has an account, we sent a sign-in link and a six-digit code. The link works once and expires in 15 minutes.', $source);
         $this->assertStringContainsString('Have the code? Enter it instead', $source);
         $this->assertStringContainsString('Didn’t receive an email?', $source);
         $this->assertStringContainsString('Try again', $source);
@@ -288,5 +288,91 @@ class MagicLinkAuthTest extends TestCase
         $this->actingAs($user)->post('/logout', [], ['X-Inertia' => 'true'])
             ->assertStatus(409)->assertHeader('X-Inertia-Location', url('/'));
         $this->assertGuest();
+    }
+
+    public function test_a_second_link_is_not_sent_within_a_minute(): void
+    {
+        Mail::fake();
+        $user = User::factory()->create();
+
+        $this->post('/auth/magic-link', ['email' => $user->email])->assertRedirect(route('magic-link.sent'));
+        $this->post('/auth/magic-link', ['email' => $user->email])->assertRedirect(route('magic-link.sent'));
+        Mail::assertSentCount(1);
+
+        $this->travel(61)->seconds();
+        $this->post('/auth/magic-link', ['email' => $user->email]);
+        Mail::assertSentCount(2);
+    }
+
+    public function test_an_account_that_turned_links_off_gets_no_email_and_the_same_page(): void
+    {
+        config(['framework.passwords' => true]);
+        Mail::fake();
+        $user = User::factory()->create(['password' => 'correct horse battery']);
+        $user->forceFill(['email_sign_in_links' => false])->save();
+
+        $this->post('/auth/magic-link', ['email' => $user->email])
+            ->assertRedirect(route('magic-link.sent'))
+            ->assertSessionMissing(LoginToken::CODE_SESSION_KEY);
+
+        Mail::assertNothingSent();
+        $this->assertSame(0, LoginToken::count());
+    }
+
+    public function test_an_account_without_a_password_always_gets_a_link(): void
+    {
+        config(['framework.passwords' => true]);
+        Mail::fake();
+        $user = User::factory()->create(['password' => null]);
+        $user->forceFill(['email_sign_in_links' => false])->save();
+
+        $this->post('/auth/magic-link', ['email' => $user->email]);
+
+        Mail::assertSent(MagicLinkMail::class);
+    }
+
+    public function test_the_sent_page_offers_the_password_and_the_login_page_opens_to_it(): void
+    {
+        config(['framework.passwords' => true]);
+        Mail::fake();
+
+        $this->post('/auth/magic-link', ['email' => 'someone@example.com']);
+        $this->get('/login?use=password')->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('email', 'someone@example.com')
+            ->where('usePassword', true)
+            ->where('prefersPassword', false));
+
+        $source = file_get_contents(resource_path('js/Pages/Auth/MagicLinkSent.vue'));
+        $this->assertStringContainsString('Use your password instead', $source);
+    }
+
+    public function test_a_password_sign_in_makes_this_browser_open_to_the_password_next_time(): void
+    {
+        config(['framework.passwords' => true]);
+        $user = User::factory()->create(['password' => 'correct horse battery']);
+
+        $response = $this->post('/login/password', ['email' => $user->email, 'password' => 'correct horse battery']);
+        $cookie = collect($response->headers->getCookies())->first(fn ($c) => $c->getName() === LoginToken::METHOD_COOKIE);
+        $this->assertNotNull($cookie);
+        $this->post('/logout');
+
+        $this->withCookie(LoginToken::METHOD_COOKIE, 'password')->get('/login')
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('prefersPassword', true));
+
+        config(['framework.passwords' => false]);
+        $this->withCookie(LoginToken::METHOD_COOKIE, 'password')->get('/login')
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('prefersPassword', false));
+    }
+
+    public function test_the_sign_in_link_setting_saves(): void
+    {
+        config(['framework.passwords' => true]);
+        $user = User::factory()->create(['password' => 'correct horse battery']);
+
+        $this->actingAs($user)->put('/account/sign-in-links', ['email_sign_in_links' => false])->assertRedirect();
+        $this->assertFalse($user->fresh()->email_sign_in_links);
+
+        $this->actingAs($user)->get('/account/security')
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('signInLinks', false));
     }
 }

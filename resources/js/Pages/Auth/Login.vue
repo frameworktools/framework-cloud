@@ -1,7 +1,7 @@
 <script setup>
 // Sets window.passkeys; only the passkey pages load it
 import '@/passkeys.js';
-import { ref, computed, nextTick } from 'vue';
+import { ref, computed, nextTick, onMounted } from 'vue';
 import { router, useForm, usePage } from '@inertiajs/vue3';
 import AuthLayout from '@/Layouts/AuthLayout.vue';
 import UiButton from '@/Components/UiButton.vue';
@@ -12,25 +12,34 @@ import { inputClass } from '@/ui.js';
 
 /*
  * Two steps on one page, as on academic.page. Step one asks for the email
- * address, or offers a passkey or GitHub instead. Step two asks how to
- * finish: a password, or a link by email, each in its own form, so a
- * filled-in password is never posted with the link request. Step two looks
- * the same for every address: nothing is looked up between the steps, so
- * the page never says whether an account exists.
+ * address, or offers a passkey or GitHub instead. Continue emails a sign-in
+ * link, and the next page says the same thing for every address, so nothing
+ * on screen shows whether an account exists or how it signs in.
+ *
+ * A browser that last signed in with a password opens to the password field
+ * instead, as does "Use your password instead". That comes from a cookie in
+ * this browser, never from the account. The password and the link each have
+ * their own form, so a filled-in password is never posted with a link request.
  */
+const props = defineProps({
+    email: { type: String, default: '' },
+    usePassword: Boolean,
+    prefersPassword: Boolean,
+});
+
 const page = usePage();
 const passwordReset = computed(() => page.props.flash.status === 'password-reset');
 const passwords = computed(() => page.props.passwords);
 
-const step = ref('email');
-const email = ref('');
+const email = ref(props.email);
+const step = ref(passwords.value && props.usePassword && props.email ? 'password' : 'email');
 // The server keeps addresses in lowercase
 const address = () => email.value.trim().toLowerCase();
 const emailInput = ref(null);
 const passwordInput = ref(null);
 const focus = (input) => nextTick(() => (input.value?.$el?.querySelector?.('input') ?? input.value)?.focus());
 
-const next = () => {
+const showPassword = () => {
     step.value = 'password';
     focus(passwordInput);
 };
@@ -50,6 +59,12 @@ const linkForm = useForm({ email: '' });
 const sendLink = () => linkForm
     .transform(() => ({ email: address() }))
     .post('/auth/magic-link', { onError: () => back() });
+
+const next = () => (passwords.value && props.prefersPassword ? showPassword() : sendLink());
+
+onMounted(() => {
+    if (step.value === 'password') focus(passwordInput);
+});
 
 const emailError = computed(() => (step.value === 'email' ? linkForm.errors.email : null));
 const passwordError = computed(() => passwordForm.errors.password ?? passwordForm.errors.email);
@@ -108,7 +123,7 @@ const dividerText = 'text-xs font-medium tracking-wide text-slate-500 uppercase 
                         autofocus
                         :error="emailError"
                     />
-                    <UiButton type="submit" class="w-full">Continue</UiButton>
+                    <UiButton type="submit" class="w-full" :disabled="linkForm.processing">Continue</UiButton>
                 </form>
 
                 <template v-if="passkeySupported || page.props.githubLogin">
@@ -180,17 +195,14 @@ const dividerText = 'text-xs font-medium tracking-wide text-slate-500 uppercase 
 
                         <UiButton type="submit" class="w-full" :disabled="passwordForm.processing">Sign in</UiButton>
                     </form>
-
-                    <div :class="divider" aria-hidden="true">
-                        <span :class="dividerLine" /><span :class="dividerText">or</span><span :class="dividerLine" />
-                    </div>
                 </template>
 
                 <!-- Its own form, so no password is posted with it -->
-                <form class="flex flex-col gap-2" @submit.prevent="sendLink">
+                <form class="flex justify-center" @submit.prevent="sendLink">
                     <input type="hidden" name="email" :value="email">
-                    <UiButton type="submit" :variant="passwords ? 'outline' : 'primary'" class="w-full" :disabled="linkForm.processing">Email me a sign-in link</UiButton>
-                    <p class="text-center text-sm text-slate-500 dark:text-slate-400">No password needed. We send a link and a code to this address.</p>
+                    <button type="submit" class="text-sm font-medium text-sky-700 hover:text-sky-800 disabled:opacity-50 dark:text-sky-400 dark:hover:text-sky-300" :disabled="linkForm.processing">
+                        Email me a sign-in link instead
+                    </button>
                 </form>
             </div>
         </div>

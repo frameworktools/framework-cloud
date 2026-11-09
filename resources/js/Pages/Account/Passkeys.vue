@@ -8,17 +8,29 @@ import AccountLayout from '@/Layouts/AccountLayout.vue';
 import UiPanel from '@/Components/UiPanel.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiInput from '@/Components/UiInput.vue';
+import UiSwitch from '@/Components/UiSwitch.vue';
+import UiSeparator from '@/Components/UiSeparator.vue';
 
-defineProps({ passkeys: Array, hasPassword: Boolean });
+const props = defineProps({ passkeys: Array, hasPassword: Boolean, signInLinks: Boolean });
 
 const page = usePage();
 const passwordStatus = computed(() => ({
     'password-updated': 'Password saved.',
     'password-removed': 'Password removed.',
+    'sign-in-links-updated': 'Saved.',
 })[page.props.flash.status]);
 const passwordForm = useForm({ current_password: '', password: '', password_confirmation: '' });
 const savePassword = () => passwordForm.put('/account/password', { preserveScroll: true, onFinish: () => passwordForm.reset() });
 const removePassword = () => passwordForm.delete('/account/password', { preserveScroll: true, onFinish: () => passwordForm.reset() });
+// Saves on change. Off, signing in emails nothing; the sign-in page looks the same.
+const links = ref(props.signInLinks);
+const saveLinks = (on) => {
+    links.value = on;
+    router.put('/account/sign-in-links', { email_sign_in_links: on }, {
+        preserveScroll: true,
+        onError: () => { links.value = !on; },
+    });
+};
 const added = computed(() => page.props.flash.status === 'passkey-added');
 
 const supported = ref(window.passkeys?.supported() ?? false);
@@ -117,6 +129,16 @@ const remove = async (id) => {
                     <UiButton type="submit" :disabled="passwordForm.processing">{{ hasPassword ? 'Change password' : 'Add password' }}</UiButton>
                 </div>
             </form>
+
+            <template v-if="hasPassword">
+                <UiSeparator />
+                <UiSwitch
+                    :model-value="links"
+                    label="Email me a sign-in link when I sign in"
+                    description="Off, no email is sent. After entering your address, choose Use your password instead. This browser then opens to the password next time."
+                    @update:model-value="saveLinks"
+                />
+            </template>
         </UiPanel>
 
     </AccountLayout>
