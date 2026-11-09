@@ -49,8 +49,7 @@ foreach (array_unique(array_filter(config('framework.docs_hosts', []))) as $docs
     });
 }
 
-// Hidden demo panels go out as templates, so the browser parses them when shown
-Route::get('/', fn () => response(\App\Support\DeferHidden::apply(view('welcome')->render())))->name('home');
+Route::get('/', \App\Http\Controllers\HomeController::class)->name('home');
 
 Route::view('self-hosting', 'self-hosting')->name('self-hosting');
 
