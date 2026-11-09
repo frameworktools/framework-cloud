@@ -1,129 +1,129 @@
 {
-    "commit": "5b4855b15ff5c1da2166724580fd1c6b6ed7f5ea",
+    "commit": "d8b418228a35be1e8d1f40ee35bb5bcf348cb7c9",
     "files": {
         "conformance/create/python/bare-jupyter.json": {
             "source": "inst/conformance/create/python/bare-jupyter.json",
-            "sha256": "871d54581afecc1faa0e405b193ae91435c280707fc0c36f6afca6ac30a7e5c4"
+            "sha256": "ad5a72fdb1f51791435344d2807d59cc1a0d10fdd8d24cc504631bf9b0746e8e"
         },
         "conformance/create/python/bare-quarto.json": {
             "source": "inst/conformance/create/python/bare-quarto.json",
-            "sha256": "a16a8272552a45add7dcba06f37d1c2bbed3a3b840630581d5e1b27c9c965439"
+            "sha256": "06333045461a5830235eeeeb7765986e6880427fa55627f9cb4269c417b0c4b5"
         },
         "conformance/create/python/bare-scripts.json": {
             "source": "inst/conformance/create/python/bare-scripts.json",
-            "sha256": "0056a338346320670c61005f9d8a526f539e8486b1594f3aab195c5d6c6d8f73"
+            "sha256": "5d50cde4078ace889085e46a864e342850d5a78a0bdefbb0efe3fb9a83adb8c8"
         },
         "conformance/create/python/course-quarto.json": {
             "source": "inst/conformance/create/python/course-quarto.json",
-            "sha256": "74fd8b3879ea4b3a1202299c933d8aca79db8ee190f098dd613f162d61d1b047"
+            "sha256": "0ddf9985000fe9a922aed632e36c5b8f567897ca40daf3308a78d9f08c5944bd"
         },
         "conformance/create/python/presentation-quarto.json": {
             "source": "inst/conformance/create/python/presentation-quarto.json",
-            "sha256": "4d469b75ad82182af4d814bd564f444a689e041f794171afdf870649fb3b325f"
+            "sha256": "91ccb151a1a56ae5dedde6a1ebaca5146fdc431a8df736111d57e100584cd1cb"
         },
         "conformance/create/python/project-jupyter-both.json": {
             "source": "inst/conformance/create/python/project-jupyter-both.json",
-            "sha256": "fc1d316c7c15b2f6835a164eb58b101abcae8b3f07f8ecaacf25c40beab65b9c"
+            "sha256": "bb6b4fea64a5b479c72c98523e5331707794d393af21657adb8021797f578919"
         },
         "conformance/create/python/project-jupyter-no-agents.json": {
             "source": "inst/conformance/create/python/project-jupyter-no-agents.json",
-            "sha256": "8a9dea00a45084fae5dffbba0abaabcb4b32887a6ad667f9e629bdcaffbc6214"
+            "sha256": "0d3e56538b9ac04f4925c1f54966d78d2d476a51aeec482179a0dd5d7db95fce"
         },
         "conformance/create/python/project-jupyter-none.json": {
             "source": "inst/conformance/create/python/project-jupyter-none.json",
-            "sha256": "4c05ff2e8dfabe00d1d7e5768404497ed8f573559e396bd94b5a296204b3bf34"
+            "sha256": "b9762f3b5b31579bb919a338192ec08103d17d0d9d7d0a7eb7a8cb8649156340"
         },
         "conformance/create/python/project-jupyter-rstudio.json": {
             "source": "inst/conformance/create/python/project-jupyter-rstudio.json",
-            "sha256": "8d37416880d7f8e7706b4ef4fa8eae5f1122252af9b967a49dd14489949d1b0b"
+            "sha256": "6d84c32c5f69d4142814df89507502c9424837dcb8fb61c7b80d13656b5b6b20"
         },
         "conformance/create/python/project-jupyter.json": {
             "source": "inst/conformance/create/python/project-jupyter.json",
-            "sha256": "80a01c182a869f1ac0a644fbd692ae0b561fca637986bab9228c1a2f9fa8c068"
+            "sha256": "ac3358e044a81383408fba151cbe3bf59cb7af979c2bc5ba2301f09185bbf797"
         },
         "conformance/create/python/project-quarto.json": {
             "source": "inst/conformance/create/python/project-quarto.json",
-            "sha256": "9797c0054cb49d89878426517fdbeda20ac49bb618a1966c0052083aaac1693d"
+            "sha256": "8d45760faad309156e86cb88672d31171a89f559be2b56b2ca7a914371710f33"
         },
         "conformance/create/python/project-scripts.json": {
             "source": "inst/conformance/create/python/project-scripts.json",
-            "sha256": "b5a03679de10a4dd5e2eec697533b27e341503bb7d97fdf833dbc06c061e2e09"
+            "sha256": "6bf5161bbf06059eb186d328c8738152d737f129e8877af40fc0a3ed422d96ef"
         },
         "conformance/create/python/project_sensitive-jupyter.json": {
             "source": "inst/conformance/create/python/project_sensitive-jupyter.json",
-            "sha256": "e4c45b58b7de944393030c19870158c314c0ccfb07d68bb3dc0947a9e1e3e374"
+            "sha256": "6d6a06c416382dcfef2d522b549d8bf826fa3a07e2d975815fa92bd7d7e8f7f6"
         },
         "conformance/create/python/project_sensitive-quarto.json": {
             "source": "inst/conformance/create/python/project_sensitive-quarto.json",
-            "sha256": "56f2a2c77c9bf8ac9e6fa7a8ffb50ba4b64bda623f877c9d5a7485a6e50e514e"
+            "sha256": "aba7576506387712092a4aa6168dc746878558ac88ec808af5dee91b37055f9d"
         },
         "conformance/create/python/project_sensitive-scripts.json": {
             "source": "inst/conformance/create/python/project_sensitive-scripts.json",
-            "sha256": "65e6325b7ebb1963f492c4c9e3c86d02c4d096d9134dd0c859a42d5a890126ea"
+            "sha256": "55222b8a748613a81d40872e65218a488fc2ada26015472789c9cf63acae6f82"
         },
         "conformance/create/r/bare-jupyter.json": {
             "source": "inst/conformance/create/r/bare-jupyter.json",
-            "sha256": "ee796b37e20b35f6585d261621a6d3a1e100436b124ea7b71b6c37f249203084"
+            "sha256": "16e90604dc5be91c129721e4f33cbbbaaf6db085159c49be760698a29a8f4c1f"
         },
         "conformance/create/r/bare-quarto.json": {
             "source": "inst/conformance/create/r/bare-quarto.json",
-            "sha256": "771516cb0f69fce592cb810a56cc2753a1cdcaa787fbb547cc17295af6d6ad56"
+            "sha256": "84ecccf980afe26e2b18de19bdb4ea941c3107e3f913b2c2cba07bd2f20b13d9"
         },
         "conformance/create/r/bare-scripts.json": {
             "source": "inst/conformance/create/r/bare-scripts.json",
-            "sha256": "580a749d4d013d2c1681fa32bc4f31c9392bd47ab44c8926d83926178b4fff41"
+            "sha256": "d96380a400bdd69684462efe85503142ea8a0a6e98e00b5886dffb49d981f7a6"
         },
         "conformance/create/r/course-quarto.json": {
             "source": "inst/conformance/create/r/course-quarto.json",
-            "sha256": "428cc7cb2cf17242ae22604e994569981b47f39edd5d31dc5117c12ce1399ea1"
+            "sha256": "22b611d0339a7b257c6d59f71427aded85d04920c801dcae9573474a342ae43c"
         },
         "conformance/create/r/presentation-quarto.json": {
             "source": "inst/conformance/create/r/presentation-quarto.json",
-            "sha256": "8265e7e80799584b3c061620dcabda2c453c0370a6c504dd71e88592305565c0"
+            "sha256": "0b912614a4d5297b201ead77cf8d49c2978f95978287cb0a2fb83eddb30b161b"
         },
         "conformance/create/r/project-jupyter.json": {
             "source": "inst/conformance/create/r/project-jupyter.json",
-            "sha256": "59c28cc6f8dbe7344c059aef7b2fa61b123b003dfa76ea4c916e5df37049fb56"
+            "sha256": "11fa51c4b11b7e0031748f2badbbcb23cfd60a587dc8d372a1f988f5d0c25069"
         },
         "conformance/create/r/project-quarto-both.json": {
             "source": "inst/conformance/create/r/project-quarto-both.json",
-            "sha256": "3cf9f73f9735b94dc5ed33d83a8c831c509452fd79f5db68c4e7aa217a16a174"
+            "sha256": "37df5f8ca9d4129509eabf6b0c51c5ed53fcdb7638a31a0a9b78aa331f87a60e"
         },
         "conformance/create/r/project-quarto-no-agents.json": {
             "source": "inst/conformance/create/r/project-quarto-no-agents.json",
-            "sha256": "1e4d6b92f21c0734bc757dda407c45a00c70b817e8a1b3bae4b063c7be53c7dd"
+            "sha256": "819c6f9fceac1f36e7a3a57681baf14dfbcc4098f1fd917a4c6902cc973a657e"
         },
         "conformance/create/r/project-quarto-none.json": {
             "source": "inst/conformance/create/r/project-quarto-none.json",
-            "sha256": "a1e9b9ac4f42ef27aa82e3e5e38751bc832762abb418559aec687b21b204485d"
+            "sha256": "307fd331fa981981f9fe22fe5aec1673d599b291eb5b8060f5383f219c3f98f9"
         },
         "conformance/create/r/project-quarto-rmarkdown.json": {
             "source": "inst/conformance/create/r/project-quarto-rmarkdown.json",
-            "sha256": "8f8d055e4703508593793b2bcbd1d4fc2dac46296fcb852ec01a6a1f3dd11a90"
+            "sha256": "94a87da6e5fed7aa852d2b50b4602d9200a0f633a94e99fa10f5f0a1169fd04d"
         },
         "conformance/create/r/project-quarto-rstudio.json": {
             "source": "inst/conformance/create/r/project-quarto-rstudio.json",
-            "sha256": "aaf8ccd087d4aa4c737f806752fca2b4be22dbfab694b401b99cbee72fa74059"
+            "sha256": "c4e7ee22db4732fcf6df5e3a38efe56f70471466882790432e1159c292944fa8"
         },
         "conformance/create/r/project-quarto.json": {
             "source": "inst/conformance/create/r/project-quarto.json",
-            "sha256": "6a03f36aae2c7ac58a9da248facde692048b568ab6dc3211a9908f3729ce6b2d"
+            "sha256": "9fbfedc3cfe3ef42ff0fec3a13ac1bcb7b035b4703ccd550455928f1f77fa651"
         },
         "conformance/create/r/project-scripts.json": {
             "source": "inst/conformance/create/r/project-scripts.json",
-            "sha256": "562a2fe22cf27c739e64e0166b360e856f78002bd2b8175913106f1e806f1456"
+            "sha256": "ce81e7053351464c287af9678efcb81ae245e65ba15970c09dc2e96f74772daa"
         },
         "conformance/create/r/project_sensitive-jupyter.json": {
             "source": "inst/conformance/create/r/project_sensitive-jupyter.json",
-            "sha256": "901814a79da3bbea8c57f66e6f514cbc19828d672ddd1faa259f8b09b75ea844"
+            "sha256": "4cc3d481565032760674d9e74b2466bec4a190770fc292201b833dd36d42e372"
         },
         "conformance/create/r/project_sensitive-quarto.json": {
             "source": "inst/conformance/create/r/project_sensitive-quarto.json",
-            "sha256": "1656368579f8ac07fdee4288531a5647089d3bde6e1b1295d8e3ac0ea1165ffa"
+            "sha256": "804245de026fd638bbb5f58d9fd8a7b6eea6d63b016b0be75a0c1d3910975447"
         },
         "conformance/create/r/project_sensitive-scripts.json": {
             "source": "inst/conformance/create/r/project_sensitive-scripts.json",
-            "sha256": "047e7e2c04e8fe7763d372faa9536f5ba26dccd4aeb833799d3d6bc5a6e50a59"
+            "sha256": "eee83f296882c5d90105f5e6a936fcfcc7f5e8e3d84ab07b015b2050c255a145"
         },
         "conformance/create/stata/bare-scripts.json": {
             "source": "inst/conformance/create/stata/bare-scripts.json",

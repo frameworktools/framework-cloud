@@ -27,6 +27,9 @@ class Layer
         'publish', 'ai', 'scaffold', 'quarto', 'connections', 'env', 'data_hooks', 'security', 'files', 'skills',
     ];
 
+    /** Which of Framework's own files a project gets: core_files false leaves out scaffold.R and .env; flat settings keep everything in settings.yml. */
+    public const FILE_SET_KEYS = ['core_files', 'settings_layout'];
+
     public const MAX_FILE_BYTES = 64 * 1024;
 
     public const MAX_LAYER_BYTES = 512 * 1024;
@@ -84,7 +87,12 @@ class Layer
     public static function problems(array $layer, string $kind): array
     {
         $problems = [];
-        $allowed = $kind === 'structure' ? ['type', ...self::KEYS] : self::KEYS;
+        $allowed = match ($kind) {
+            'structure' => ['type', ...self::KEYS, ...self::FILE_SET_KEYS],
+            // A blueprint may turn off Framework's core files or flatten settings, as a structure can
+            'blueprint' => [...self::KEYS, ...self::FILE_SET_KEYS],
+            default => self::KEYS,
+        };
 
         foreach (array_diff(array_keys($layer), $allowed) as $key) {
             $problems[] = $key === 'type'

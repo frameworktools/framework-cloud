@@ -45,10 +45,10 @@ class ProjectTree
         $git = (bool) ($spec['git']['use_git'] ?? true);
         $agents = (bool) ($spec['ai']['enabled'] ?? true);
         $skills = array_keys((array) ($spec['skills'] ?? []));
-        // Editor files follow scaffold.ide: .Rproj for RStudio, .code-workspace for VS Code and Positron
-        // (the cloud always sends it; without it, R writes just the .Rproj, as it always did)
+        // Editor files follow scaffold.ide: every choice but none gets the .Rproj (also the root
+        // marker here::here() needs without .git), and VS Code and Positron add a .code-workspace
         $ide = (string) ($spec['scaffold']['ide'] ?? 'rstudio');
-        $rstudio = in_array($ide, ['rstudio', 'both'], true);
+        $rstudio = $ide !== 'none';
         $vscode = in_array($ide, ['vscode', 'positron', 'both'], true);
 
         if ($language === 'stata') {

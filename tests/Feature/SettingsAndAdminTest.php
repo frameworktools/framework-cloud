@@ -263,7 +263,8 @@ class SettingsAndAdminTest extends TestCase
         $this->assertTrue($paths('rstudio')->contains('project.Rproj'));
         $this->assertFalse($paths('rstudio')->contains('project.code-workspace'));
         $this->assertTrue($paths('vscode')->contains('project.code-workspace'));
-        $this->assertFalse($paths('vscode')->contains('project.Rproj'));
+        // VS Code projects keep the .Rproj too: it is how here::here() finds the root without .git
+        $this->assertTrue($paths('vscode')->contains('project.Rproj'));
         $this->assertTrue($paths('both')->contains('project.Rproj') && $paths('both')->contains('project.code-workspace'));
         $this->assertFalse($paths('none')->contains('project.Rproj') || $paths('none')->contains('project.code-workspace'));
 

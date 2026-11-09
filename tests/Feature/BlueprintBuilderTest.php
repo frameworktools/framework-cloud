@@ -78,4 +78,17 @@ class BlueprintBuilderTest extends TestCase
         $this->actingAs($user)->post('/blueprints', $this->choices(['languages' => ['python']]))->assertSessionHasErrors('languages');
         $this->actingAs($user)->post('/blueprints', $this->choices(['languages' => ['r', 'stata'], 'workflows' => ['quarto']]))->assertSessionHasErrors('workflows');
     }
+
+    public function test_a_blueprint_can_leave_out_the_core_files_and_split_settings(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $paths = collect($this->actingAs($user)->postJson('/blueprints/preview', $this->choices([
+            'workflow' => 'quarto', 'extra_yaml' => "core_files: false\nsettings_layout: flat\n",
+        ]))->assertOk()->json('tree'))->pluck('path');
+
+        $this->assertContains('settings.yml', $paths);
+        $this->assertNotContains('scaffold.R', $paths);
+        $this->assertNotContains('.env', $paths);
+        $this->assertEmpty($paths->filter(fn ($p) => str_starts_with($p, 'settings/')));
+    }
 }
