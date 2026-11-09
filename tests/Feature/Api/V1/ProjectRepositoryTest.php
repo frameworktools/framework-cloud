@@ -223,4 +223,19 @@ class ProjectRepositoryTest extends TestCase
         $this->withToken($user->createToken('t')->plainTextToken)->patchJson("/api/v1/projects/{$project->slug}", ['public_download' => true])
             ->assertStatus(422)->assertJsonValidationErrors('public_download');
     }
+
+    public function test_the_project_page_marks_a_project_inactive_and_makes_a_download_link(): void
+    {
+        $user = User::factory()->create(['setup_completed_at' => now(), 'email_verified_at' => now()]);
+        $project = Project::factory()->for($user)->create();
+
+        $this->actingAs($user)->put("/projects/{$project->id}/active", ['active' => false])->assertRedirect();
+        $this->assertFalse($project->fresh()->active);
+        $this->actingAs($user)->get('/projects')->assertInertia(fn ($page) => $page->where('projects.0.active', false));
+
+        $this->actingAs($user)->put("/projects/{$project->id}/public-download", ['on' => true])->assertRedirect();
+        $this->assertNotNull($project->fresh()->public_download_key);
+        $this->actingAs($user)->put("/projects/{$project->id}/public-download", ['on' => false]);
+        $this->assertNull($project->fresh()->public_download_key);
+    }
 }

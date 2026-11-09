@@ -438,6 +438,28 @@ class Resolver
                 $project['skills']['framework-sensitive-data'] = null;
             }
         }
+
+        // The language packages add Framework's default skills to every project
+        // unless a layer removes them. The chosen skill sets replace those
+        // defaults (as in framework::new_project()), so a Framework skill that
+        // no chosen piece or choice brings is removed explicitly. Bare and
+        // custom-labelled structures get no default skills, so need nothing.
+        $defaultsSkills = in_array($this->structure->layer['type'] ?? 'bare', ['project', 'project_sensitive', 'course', 'presentation'], true);
+        if ($defaultsSkills && $value('ai.enabled', true) !== false) {
+            $skillsOf = fn (?FacetVersion $v) => $v ? array_keys([...($v->layer['skills'] ?? []), ...($v->language_layers[$this->language]['skills'] ?? [])]) : [];
+            $present = [
+                ...$this->pieces->flatMap(fn (FacetVersion $v) => $skillsOf($v))->all(),
+                ...array_keys($this->settings['skills'] ?? []),
+                ...array_keys($personal['skills'] ?? []),
+                ...array_keys($project['skills'] ?? []),
+                ...array_keys($requires['skills'] ?? []),
+            ];
+            $framework = Facet::whereNull('user_id')->where('kind', 'skill_set')->with('latestVersion')->get()
+                ->flatMap(fn (Facet $f) => $skillsOf($f->latestVersion))->unique();
+            foreach ($framework->diff($present) as $key) {
+                $project['skills'][$key] = null;
+            }
+        }
     }
 
     /**

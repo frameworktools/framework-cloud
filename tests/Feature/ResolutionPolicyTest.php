@@ -178,8 +178,18 @@ class ResolutionPolicyTest extends TestCase
         ])->assertCreated();
         $handle = Blueprint::where('user_id', $user->id)->firstOrFail()->handle;
 
-        $keys = collect((new Resolver($user->fresh()))->resolve(['name' => 'S', 'blueprint' => $handle, 'language' => 'r'])['pieces'])->pluck('facet.key')->all();
+        $resolved = (new Resolver($user->fresh()))->resolve(['name' => 'S', 'blueprint' => $handle, 'language' => 'r']);
+        $keys = collect($resolved['pieces'])->pluck('facet.key')->all();
         $this->assertNotContains('ggplot2', $keys);
         $this->assertNotContains('tidyverse-analysis', $keys);
+
+        // The packages' default Framework skills are removed too, since no chosen set brings them
+        $skills = [];
+        foreach ($resolved['envelope']['layers'] as $entry) {
+            $skills = array_replace($skills, $entry['layer']['skills'] ?? []);
+        }
+        $this->assertArrayHasKey('framework-workflow', $skills);
+        $this->assertNull($skills['framework-workflow']);
+        $this->assertNull($skills['ggplot2-exploring']);
     }
 }

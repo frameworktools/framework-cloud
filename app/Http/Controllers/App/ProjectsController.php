@@ -176,6 +176,8 @@ class ProjectsController extends Controller
     private static function summary(Project $p): array
     {
         return $p->only(['id', 'name', 'slug', 'project_type', 'language', 'description', 'created_at']) + [
+            'active' => (bool) ($p->active ?? true),
+            'public_download_url' => $p->publicDownloadUrl(),
             'github' => $p->github_repo ? [
                 'repo' => $p->github_repo,
                 'url' => $p->githubUrl(),
@@ -381,6 +383,24 @@ class ProjectsController extends Controller
         }
 
         return response()->download($path, "{$project->slug}.zip", ['Content-Type' => 'application/zip'])->deleteFileAfterSend();
+    }
+
+    /** Mark a project active or inactive; inactive projects leave the main Projects list. */
+    public function setActive(Request $request, int $project): RedirectResponse
+    {
+        $project = $request->user()->projects()->listed()->findOrFail($project);
+        $project->update(['active' => $request->validate(['active' => ['required', 'boolean']])['active']]);
+
+        return back();
+    }
+
+    /** Turn the public download link on or off. */
+    public function setPublicDownload(Request $request, int $project): RedirectResponse
+    {
+        $project = $request->user()->projects()->listed()->findOrFail($project);
+        $project->setPublicDownload((bool) $request->validate(['on' => ['required', 'boolean']])['on']);
+
+        return back();
     }
 
     /** Ask GitHub how the scaffold run went, in case a webhook was missed. */

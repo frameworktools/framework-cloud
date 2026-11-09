@@ -7,6 +7,7 @@ import UiButton from '@/Components/UiButton.vue';
 import UiCallout from '@/Components/UiCallout.vue';
 import UiBadge from '@/Components/UiBadge.vue';
 import UiPanel from '@/Components/UiPanel.vue';
+import UiLink from '@/Components/UiLink.vue';
 import UiSection from '@/Components/UiSection.vue';
 import UiTable from '@/Components/UiTable.vue';
 import EmptyState from '@/Components/EmptyState.vue';
@@ -104,6 +105,8 @@ const revokeToken = async (tokenId) => {
         router.delete(`/projects/${props.project.id}/tokens/${tokenId}`, { preserveScroll: true });
     }
 };
+const setActive = (active) => router.put(`/projects/${props.project.id}/active`, { active }, { preserveScroll: true });
+const setPublicDownload = (on) => router.put(`/projects/${props.project.id}/public-download`, { on }, { preserveScroll: true });
 const destroy = async () => {
     if (await ask(`Delete ${props.project.name}? Its tokens stop working, and its artifacts, collections, and reports go offline. Copies on computers and on GitHub stay.`)) {
         router.delete(`/projects/${props.project.id}`);
@@ -392,6 +395,18 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                         <button type="button" class="text-red-600 hover:underline dark:text-red-400" @click="revokeToken(token.id)">Revoke</button>
                     </li>
                 </ul>
+            </UiPanel>
+
+            <UiPanel v-if="section === 'setup'" title="Project status" :description="project.active ? 'Active. The project is on your Projects list.' : 'Inactive. The project is only under All on your Projects list. Nothing else changes.'">
+                <div><UiButton variant="ghost" @click="setActive(!project.active)">{{ project.active ? 'Mark inactive' : 'Mark active' }}</UiButton></div>
+            </UiPanel>
+
+            <UiPanel v-if="section === 'setup'" title="Public download" description="A link anyone can use to download the project as a zip, without an account. With a GitHub repository, the zip holds the repository as it is now.">
+                <div class="flex flex-col gap-3">
+                    <p v-if="project.public_download_url" class="break-all text-sm"><UiLink :href="project.public_download_url">{{ project.public_download_url }}</UiLink></p>
+                    <p v-if="$page.props.errors.public_download" class="text-sm text-red-600 dark:text-red-400">{{ $page.props.errors.public_download }}</p>
+                    <div><UiButton variant="ghost" @click="setPublicDownload(!project.public_download_url)">{{ project.public_download_url ? 'Turn off link' : 'Create link' }}</UiButton></div>
+                </div>
             </UiPanel>
 
             <UiPanel v-if="section === 'setup'" title="Project deletion" description="Its tokens stop working, and its artifacts, collections, and reports go offline. Copies on computers and on GitHub stay.">

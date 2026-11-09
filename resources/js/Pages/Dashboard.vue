@@ -102,7 +102,7 @@ const date = value => new Date(value).toLocaleDateString(undefined, { month: 'sh
                 </div>
                 <UiTable v-if="projects.length" label="Recent projects" class="dashboard-projects">
                     <thead><tr><th>Name</th><th class="max-sm:hidden">Language</th><th class="actions"><span class="sr-only">Actions</span></th></tr></thead>
-                    <tbody><tr v-for="project in projects.slice(0, 4)" :key="project.id">
+                    <tbody><tr v-for="project in projects.filter((p) => p.active).slice(0, 4)" :key="project.id">
                         <td class="strong max-w-96 truncate"><Link :href="`/projects/${project.slug}`" class="block truncate py-0.5 hover:underline">{{ project.name }}</Link></td>
                         <td class="max-sm:hidden">{{ languageNames[project.language] }}</td>
                         <td class="actions"><UiButton :href="`/projects/${project.slug}`" variant="ghost" size="sm">Open</UiButton></td>

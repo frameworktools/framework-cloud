@@ -1,6 +1,6 @@
 <script setup>
 import { pageClass } from '@/ui.js';
-import { computed, watch, onBeforeUnmount } from 'vue';
+import { computed, ref, watch, onBeforeUnmount } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
 import { PlusIcon } from '@heroicons/vue/20/solid';
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -9,12 +9,21 @@ import UiBadge from '@/Components/UiBadge.vue';
 import GitHubMark from '@/Components/GitHubMark.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import UiCallout from '@/Components/UiCallout.vue';
+import UiTabs from '@/Components/UiTabs.vue';
 import EmptyState from '@/Components/EmptyState.vue';
 import { FolderIcon } from '@heroicons/vue/24/outline';
 import { languageNames } from '@/library.js';
 import { statusLabel, statusVariant, typeName } from '@/projects.js';
 
 const props = defineProps({ projects: Array, recentArtifacts: { type: Array, default: () => [] }, recentReports: { type: Array, default: () => [] }, recentCollections: { type: Array, default: () => [] }, canPublish: Boolean });
+// Active projects by default; inactive ones stay a tab away
+const show = ref('active');
+const inactiveCount = computed(() => props.projects.filter((p) => !p.active).length);
+const tabs = computed(() => [
+    { label: 'Active', value: 'active', count: props.projects.length - inactiveCount.value },
+    { label: 'All', value: 'all', count: props.projects.length },
+]);
+const shown = computed(() => (show.value === 'all' ? props.projects : props.projects.filter((p) => p.active)));
 const inProgress = computed(() => props.projects.some((p) => ['pending', 'running'].includes(p.github?.status)));
 let timer = null;
 watch(inProgress, (value) => {
@@ -45,9 +54,11 @@ const titleClass = 'font-medium text-slate-900 hover:underline hover:underline-o
 
             <template v-if="projects.length">
                 <section class="mt-7" aria-labelledby="workspace-projects-title">
-                    <div class="flex items-center justify-between gap-4 border-b border-slate-200 pb-3 dark:border-slate-700"><h2 id="workspace-projects-title" class="text-base font-semibold">Projects</h2><span class="text-xs text-slate-500 dark:text-slate-400">{{ projects.length }} {{ projects.length === 1 ? 'project' : 'projects' }}</span></div>
+                    <h2 id="workspace-projects-title" class="sr-only">Projects</h2>
+                    <UiTabs v-model="show" :tabs="tabs" label="Projects shown" />
+                    <p v-if="!shown.length" class="py-6 text-sm text-slate-500 dark:text-slate-400">No active projects. Inactive projects are under All.</p>
                     <ul class="divide-y divide-slate-100 dark:divide-slate-800">
-                        <li v-for="project in projects" :key="project.id" :class="rowClass">
+                        <li v-for="project in shown" :key="project.id" :class="rowClass">
                             <div class="min-w-0 flex-1 basis-full sm:basis-48">
                                 <Link :href="`/projects/${project.slug}`" :class="titleClass">{{ project.name }}</Link>
                                 <p class="mt-1 break-words text-xs text-slate-500 dark:text-slate-400"><span v-if="project.github?.repo" class="inline-flex items-center gap-1"><GitHubMark class="size-3" />{{ project.github.repo }}</span><span v-else-if="project.slug !== project.name">{{ project.slug }}</span><span v-if="project.description"><template v-if="project.github?.repo || project.slug !== project.name"> · </template>{{ project.description }}</span></p>
@@ -56,6 +67,7 @@ const titleClass = 'font-medium text-slate-900 hover:underline hover:underline-o
                             <span class="text-xs text-slate-500 dark:text-slate-400">{{ typeName(project.project_type) }} · {{ languageNames[project.language] }}</span>
                             <UiBadge v-if="project.github?.status && project.github.status !== 'done'" :variant="statusVariant[project.github.status]">{{ statusLabel[project.github.status] }}</UiBadge>
                             <UiBadge v-if="project.github?.pages_url" variant="green">Pages</UiBadge>
+                            <UiBadge v-if="!project.active">Inactive</UiBadge>
                             <UiButton :href="`/projects/${project.slug}/setup`" :aria-label="`Set up ${project.name}`" variant="ghost" size="sm">Setup</UiButton>
                         </li>
                     </ul>

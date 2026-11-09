@@ -173,6 +173,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('projects/{project}/token', [ProjectsController::class, 'issueToken']);
     Route::delete('projects/{project}/tokens/{token}', [ProjectsController::class, 'revokeToken']);
     Route::delete('projects/{project}', [ProjectsController::class, 'destroy']);
+    Route::put('projects/{project}/active', [ProjectsController::class, 'setActive'])->whereNumber('project');
+    Route::put('projects/{project}/public-download', [ProjectsController::class, 'setPublicDownload'])->whereNumber('project');
     Route::post('projects/{project}/scaffold/refresh', [ProjectsController::class, 'refreshScaffold']);
     Route::post('projects/{project}/scaffold/retry', [ProjectsController::class, 'retryScaffold']);
     Route::post('projects/{project}/pages', [ProjectsController::class, 'enablePages'])->middleware('throttle:10,1');
