@@ -118,7 +118,8 @@ class ProjectZip
             for ($i = 0; $i < $source->numFiles; $i++) {
                 $name = $source->getNameIndex($i);
                 $relative = str_contains($name, '/') ? substr($name, strpos($name, '/') + 1) : '';
-                if ($relative === '') {
+                // Never a private/ folder, whatever the repository holds
+                if ($relative === '' || preg_match('#(^|/)private(/|$)#', $relative)) {
                     continue;
                 }
                 $path = "{$project->slug}/{$relative}";

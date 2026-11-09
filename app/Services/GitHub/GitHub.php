@@ -122,7 +122,7 @@ class GitHub
      *
      * @param  array<string, string>  $files  path => bytes
      * @param  list<string>  $delete  paths to remove
-     * @return array{sha: string, url: string, branch: string}
+     * @return array{sha: string, url: string, branch: string, unchanged: bool}
      */
     public function commitFiles(string $repo, array $files, array $delete, string $message, ?string $branch = null): array
     {
@@ -140,10 +140,15 @@ class GitHub
         }
 
         $treeSha = $this->send('post', "/repos/{$repo}/git/trees", ['base_tree' => $baseTree, 'tree' => $tree])->json('sha');
+
+        // The same files as now: no empty commit
+        if ($treeSha === $baseTree) {
+            return ['sha' => $head, 'url' => "https://github.com/{$repo}/commit/{$head}", 'branch' => $branch, 'unchanged' => true];
+        }
         $commit = $this->send('post', "/repos/{$repo}/git/commits", ['message' => $message, 'tree' => $treeSha, 'parents' => [$head]])->json();
         $this->send('patch', "/repos/{$repo}/git/refs/heads/".rawurlencode($branch), ['sha' => $commit['sha']]);
 
-        return ['sha' => $commit['sha'], 'url' => "https://github.com/{$repo}/commit/{$commit['sha']}", 'branch' => $branch];
+        return ['sha' => $commit['sha'], 'url' => "https://github.com/{$repo}/commit/{$commit['sha']}", 'branch' => $branch, 'unchanged' => false];
     }
 
     /**

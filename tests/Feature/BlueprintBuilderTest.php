@@ -90,5 +90,8 @@ class BlueprintBuilderTest extends TestCase
         $this->assertNotContains('scaffold.R', $paths);
         $this->assertNotContains('.env', $paths);
         $this->assertEmpty($paths->filter(fn ($p) => str_starts_with($p, 'settings/')));
+        // Only Framework's runtime files go: agent files and Quarto stay
+        $this->assertContains('AGENTS.md', $paths);
+        $this->assertContains('_quarto.yml', $paths);
     }
 }

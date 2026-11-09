@@ -122,8 +122,8 @@ class Project extends Model
 
     /** Projects people made, leaving out the account's automatic home for artifacts. */
     /**
-     * Turn the public download link on or off. A sensitive project never
-     * gets one, and neither does one whose repository is private.
+     * Turn the public download link on or off. A project whose repository
+     * is private never gets one, and a sensitive one only with a public repository.
      */
     public function setPublicDownload(bool $on): void
     {
@@ -132,8 +132,10 @@ class Project extends Model
 
             return;
         }
-        if (ProjectLayers::isSensitive(ProjectLayers::for($this)['layers'] ?? [])) {
-            throw ValidationException::withMessages(['public_download' => 'This project handles restricted data, so it cannot have a public download link.']);
+        // A sensitive project may share only a public repository, which is
+        // public already; its private/ folders never reach the zip
+        if (! ($this->github_repo && ! $this->github_private) && ProjectLayers::isSensitive(ProjectLayers::for($this)['layers'] ?? [])) {
+            throw ValidationException::withMessages(['public_download' => 'This project handles restricted data. It can have a public download link only through a public GitHub repository.']);
         }
         if ($this->github_repo && $this->github_private) {
             throw ValidationException::withMessages(['public_download' => 'The project\'s repository is private. Make it public first.']);

@@ -197,6 +197,7 @@ class ProjectRepositoryTest extends TestCase
         $zip->open($zipPath, ZipArchive::OVERWRITE);
         $zip->addFromString('course-abc123/README.md', '# Course');
         $zip->addFromString('course-abc123/course.Rproj', 'Version: 1.0');
+        $zip->addFromString('course-abc123/inputs/private/raw/ids.csv', 'id');
         $zip->close();
         Http::fake(['github.com/lab/course/archive/HEAD.zip' => Http::response(file_get_contents($zipPath), 200, ['Content-Type' => 'application/zip'])]);
         unlink($zipPath);
@@ -208,6 +209,7 @@ class ProjectRepositoryTest extends TestCase
         $zip->open($downloaded);
         $this->assertSame('# Course', $zip->getFromName("{$project->slug}/README.md"));
         $this->assertNotFalse($zip->getFromName("{$project->slug}/course.Rproj"));
+        $this->assertFalse($zip->getFromName("{$project->slug}/inputs/private/raw/ids.csv"));
         $zip->close();
         unlink($downloaded);
 
@@ -237,5 +239,24 @@ class ProjectRepositoryTest extends TestCase
         $this->assertNotNull($project->fresh()->public_download_key);
         $this->actingAs($user)->put("/projects/{$project->id}/public-download", ['on' => false]);
         $this->assertNull($project->fresh()->public_download_key);
+    }
+
+    public function test_writing_the_same_files_again_makes_no_commit(): void
+    {
+        Http::fake([
+            'api.github.com/repos/lab/course' => Http::response(['default_branch' => 'main']),
+            'api.github.com/repos/lab/course/git/ref/heads/main' => Http::response(['object' => ['sha' => 'head1']]),
+            'api.github.com/repos/lab/course/git/commits/head1' => Http::response(['tree' => ['sha' => 'tree1']]),
+            'api.github.com/repos/lab/course/git/blobs' => Http::response(['sha' => 'blob1'], 201),
+            // GitHub gives back the same tree: nothing changed
+            'api.github.com/repos/lab/course/git/trees' => Http::response(['sha' => 'tree1'], 201),
+        ]);
+        $user = $this->connected();
+        $project = Project::factory()->for($user)->create(['github_repo' => 'lab/course', 'scaffold_status' => 'done']);
+
+        $this->withToken($user->createToken('t')->plainTextToken)->postJson("/api/v1/projects/{$project->slug}/files", ['files' => [['path' => 'README.md', 'content' => '# Course']]])
+            ->assertCreated()->assertJsonPath('unchanged', true)->assertJsonPath('commit', 'head1');
+
+        Http::assertNotSent(fn (ClientRequest $r) => str_ends_with($r->url(), '/git/commits') && $r->method() === 'POST');
     }
 }

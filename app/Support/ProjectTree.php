@@ -40,6 +40,10 @@ class ProjectTree
         // Files named after the project, as the packages name them
         $slug = Str::slug((string) ($spec['name'] ?? 'project')) ?: 'project';
         $core = ($spec['core_files'] ?? $type !== 'bare') !== false;
+        // R leaves out only .env and scaffold.R without core files; the bare
+        // structure alone skips agent files, the workspace, and Quarto.
+        // Python and fw still treat no core files as bare.
+        $extras = $language === 'r' ? $type !== 'bare' : $core;
         $directories = array_filter((array) ($spec['directories'] ?? []), 'is_string');
         $renderDirs = array_filter((array) ($spec['render_dirs'] ?? []), 'is_string');
         $git = (bool) ($spec['git']['use_git'] ?? true);
@@ -111,9 +115,9 @@ class ProjectTree
                 if ($language === 'python') {
                     $add('framework.db', 'file');
                 }
-                if ($vscode) {
-                    $add("{$slug}.code-workspace", 'file', null, 'named after the project');
-                }
+            }
+            if ($extras && $vscode) {
+                $add("{$slug}.code-workspace", 'file', null, 'named after the project');
             }
 
             // Quarto follows R's own default for the type until the cloud names tools to clients
@@ -123,7 +127,7 @@ class ProjectTree
             // write it: a folder rendering to <output-dir>/<folder> needs no
             // file, a folder with its own format (slides) gets a _metadata.yml,
             // and a folder rendering elsewhere keeps its own _quarto.yml.
-            if ($quarto && $core) {
+            if ($quarto && $extras) {
                 $add('_quarto.yml', 'file', 'the shared Quarto settings');
                 // Each rendered folder exists, with a file only where it needs one
                 foreach ($renderDirs as $key => $target) {
@@ -141,7 +145,7 @@ class ProjectTree
                 $add('renv', 'dir', 'set up by renv::init()');
             }
 
-            if ($core && $agents) {
+            if ($extras && $agents) {
                 self::agentFiles($add, $spec, $skills, $sensitive);
             }
         }

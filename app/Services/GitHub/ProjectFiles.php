@@ -68,6 +68,8 @@ class ProjectFiles
             'commit' => $commit['sha'],
             'url' => $commit['url'],
             'branch' => $commit['branch'],
+            // True when the files already matched: nothing was committed, and commit is the current head
+            'unchanged' => $commit['unchanged'],
             'written' => array_keys($files),
             'deleted' => $delete,
         ];
