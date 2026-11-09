@@ -40,7 +40,8 @@ class LoginToken extends Model
     public const BROWSER_COOKIE = 'fw_magic_browser';
 
     /** Set with BROWSER_COOKIE when "Keep me signed in" was checked */
-    public const REMEMBER_COOKIE = 'fw_login_remember';
+    /** Set when the link was asked for on a shared computer: opened there, it doesn't keep the person signed in. */
+    public const SHARED_COOKIE = 'fw_login_shared';
 
     /** "password" when this browser last signed in with a password */
     public const METHOD_COOKIE = 'fw_login_method';

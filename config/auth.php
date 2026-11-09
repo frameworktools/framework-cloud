@@ -42,8 +42,8 @@ return [
         'web' => [
             'driver' => 'session',
             'provider' => 'users',
-            // "Remember me for 30 days" on the sign-in page: the remember cookie's life, in minutes
-            'remember' => 60 * 24 * 30,
+            // Sign-ins last a year unless the person says it's a shared computer (App\Support\StaySignedIn), in minutes
+            'remember' => 60 * 24 * 365,
         ],
 
         // Connected AI apps (the hosted MCP server). Passport tokens, on the

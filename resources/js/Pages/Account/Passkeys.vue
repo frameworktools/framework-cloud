@@ -19,6 +19,13 @@ const passwordStatus = computed(() => ({
     'password-removed': 'Password removed.',
     'sign-in-links-updated': 'Saved.',
 })[page.props.flash.status]);
+// Ends every other remembered sign-in; this browser stays signed in
+const otherDevicesDone = computed(() => page.props.flash.status === 'other-devices-signed-out');
+const signOutOthers = async () => {
+    if (await ask('Sign out other devices? Every other browser where you stay signed in will need to sign in again.')) {
+        router.post('/account/sign-out-other-devices', {}, { preserveScroll: true });
+    }
+};
 const passwordForm = useForm({ current_password: '', password: '', password_confirmation: '' });
 const savePassword = () => passwordForm.put('/account/password', { preserveScroll: true, onFinish: () => passwordForm.reset() });
 const removePassword = () => passwordForm.delete('/account/password', { preserveScroll: true, onFinish: () => passwordForm.reset() });
@@ -141,5 +148,11 @@ const remove = async (id) => {
             </template>
         </UiPanel>
 
+        <UiPanel title="Other devices" description="Sign-ins last a year unless someone says the computer is shared. Sign out everywhere else if you lost a device or signed in on someone else's.">
+            <div class="flex flex-wrap items-center gap-3">
+                <UiButton variant="ghost" @click="signOutOthers">Sign out other devices</UiButton>
+                <p v-if="otherDevicesDone" class="text-sm text-emerald-700 dark:text-emerald-400">Other devices are signed out.</p>
+            </div>
+        </UiPanel>
     </AccountLayout>
 </template>

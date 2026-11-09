@@ -34,8 +34,11 @@ use App\Http\Controllers\Settings\PasskeysController;
 use App\Http\Middleware\EnsureAgentsEnabled;
 use App\Models\Document;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 // r., py., cli., and stata.framework.pub: the docs sites, domain-routed on the same app.
@@ -257,6 +260,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('account/security', [PasskeysController::class, 'index'])->name('account.security');
     Route::redirect('account/passkeys', '/account/security');
+    Route::post('account/sign-out-other-devices', function (Request $request) {
+        // A new remember token ends every other remembered sign-in; signing in
+        // again here gives this browser a cookie that matches it
+        $user = $request->user();
+        $user->forceFill(['remember_token' => Str::random(60)])->save();
+        Auth::guard('web')->login($user, remember: true);
+        $request->session()->regenerate();
+
+        return back()->with('status', 'other-devices-signed-out');
+    })->middleware('throttle:6,1');
     Route::post('account/passkeys/options', [PasskeysController::class, 'options']);
     Route::post('account/passkeys', [PasskeysController::class, 'store']);
     Route::delete('account/passkeys/{passkeyId}', [PasskeysController::class, 'destroy']);

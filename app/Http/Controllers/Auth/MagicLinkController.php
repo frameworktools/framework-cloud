@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Mail\MagicLinkMail;
 use App\Models\LoginToken;
 use App\Models\User;
+use App\Support\StaySignedIn;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -51,11 +52,11 @@ class MagicLinkController extends Controller
             $browser = Str::random(40);
         }
         Cookie::queue(LoginToken::BROWSER_COOKIE, $browser, LoginToken::LIFETIME_MINUTES);
-        // "Keep me signed in" holds for a link opened in this same browser.
-        // Another device asks again on the confirmation page.
-        $request->boolean('remember')
-            ? Cookie::queue(LoginToken::REMEMBER_COOKIE, '1', LoginToken::LIFETIME_MINUTES)
-            : Cookie::queue(Cookie::forget(LoginToken::REMEMBER_COOKIE));
+        // "This is a shared computer" holds for a link opened in this same
+        // browser. Another device asks again on the confirmation page.
+        StaySignedIn::wanted($request)
+            ? Cookie::queue(Cookie::forget(LoginToken::SHARED_COOKIE))
+            : Cookie::queue(LoginToken::SHARED_COOKIE, '1', LoginToken::LIFETIME_MINUTES);
         // For "Use your password instead" on the next page
         $request->session()->put(LoginToken::EMAIL_SESSION_KEY, $validated['email']);
 
@@ -137,11 +138,11 @@ class MagicLinkController extends Controller
             event(new Registered($user));
         }
 
-        Auth::login($user, remember: $request->boolean('remember'));
+        Auth::login($user, remember: StaySignedIn::wanted($request));
         $request->session()->forget(LoginToken::CODE_SESSION_KEY);
         $request->session()->regenerate();
         Cookie::expire(LoginToken::BROWSER_COOKIE);
-        Cookie::expire(LoginToken::REMEMBER_COOKIE);
+        Cookie::expire(LoginToken::SHARED_COOKIE);
         Cookie::expire(LoginToken::METHOD_COOKIE);
 
         return PasskeyPromptController::afterSignIn($request, $user);
@@ -189,12 +190,14 @@ class MagicLinkController extends Controller
             event(new Registered($user));
         }
 
-        $remember = $request->boolean('remember')
-            || ($request->isMethod('GET') && $request->cookie(LoginToken::REMEMBER_COOKIE) === '1');
+        // Kept signed in unless this is a shared computer: said on the
+        // confirmation page, or when the link was asked for in this browser
+        $remember = StaySignedIn::wanted($request)
+            && ! ($request->isMethod('GET') && $request->cookie(LoginToken::SHARED_COOKIE) === '1');
         Auth::login($user, remember: $remember);
         $request->session()->regenerate();
         Cookie::expire(LoginToken::BROWSER_COOKIE);
-        Cookie::expire(LoginToken::REMEMBER_COOKIE);
+        Cookie::expire(LoginToken::SHARED_COOKIE);
         Cookie::expire(LoginToken::METHOD_COOKIE);
 
         return PasskeyPromptController::afterSignIn($request, $user);

@@ -1,12 +1,13 @@
 <script setup>
 // A plain link: the OAuth redirect must be a full page visit, not an Inertia one
 // Signing in by default; connecting GitHub passes /auth/github/redirect
-defineProps({ label: { type: String, default: 'Sign in with GitHub' }, href: { type: String, default: '/auth/github/login' }, remember: Boolean });
+// Sign-in remembers you unless shared (a shared computer) is set
+defineProps({ label: { type: String, default: 'Sign in with GitHub' }, href: { type: String, default: '/auth/github/login' }, shared: Boolean });
 </script>
 
 <template>
     <a
-        :href="remember ? `${href}?remember=1` : href"
+        :href="shared ? `${href}?shared_device=1` : href"
         class="inline-flex w-full items-center justify-center gap-2 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-800 transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 dark:border-slate-600 dark:text-slate-100 dark:hover:bg-slate-800"
     >
         <svg viewBox="0 0 16 16" class="size-4" fill="currentColor" aria-hidden="true">

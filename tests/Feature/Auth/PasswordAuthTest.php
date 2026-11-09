@@ -44,15 +44,15 @@ class PasswordAuthTest extends TestCase
         $this->assertAuthenticatedAs($user);
     }
 
-    public function test_keep_me_signed_in_sets_the_long_lived_cookie_only_when_checked(): void
+    public function test_signing_in_keeps_you_signed_in_unless_it_is_a_shared_computer(): void
     {
         $user = User::factory()->create(['password' => 'correct horse battery']);
         $remember = fn ($response) => collect($response->headers->getCookies())->first(fn ($c) => str_starts_with($c->getName(), 'remember_web_'));
 
-        $this->assertNull($remember($this->post('/login/password', ['email' => $user->email, 'password' => 'correct horse battery'])));
+        $this->assertNotNull($remember($this->post('/login/password', ['email' => $user->email, 'password' => 'correct horse battery'])));
         $this->post('/logout');
 
-        $this->assertNotNull($remember($this->post('/login/password', ['email' => $user->email, 'password' => 'correct horse battery', 'remember' => 1])));
+        $this->assertNull($remember($this->post('/login/password', ['email' => $user->email, 'password' => 'correct horse battery', 'shared_device' => 1])));
         $this->assertAuthenticatedAs($user);
     }
 
@@ -66,14 +66,14 @@ class PasswordAuthTest extends TestCase
         $this->assertStringNotContainsString('formaction', $source);
     }
 
-    public function test_remember_me_lasts_thirty_days(): void
+    public function test_staying_signed_in_lasts_a_year(): void
     {
         $user = User::factory()->create(['password' => 'correct horse battery']);
 
-        $response = $this->post('/login/password', ['login_step' => 'password', 'email' => $user->email, 'password' => 'correct horse battery', 'remember' => 1]);
+        $response = $this->post('/login/password', ['login_step' => 'password', 'email' => $user->email, 'password' => 'correct horse battery']);
         $cookie = collect($response->headers->getCookies())->first(fn ($c) => str_starts_with($c->getName(), 'remember_web_'));
 
-        $this->assertEqualsWithDelta(now()->addDays(30)->getTimestamp(), $cookie->getExpiresTime(), 120);
+        $this->assertEqualsWithDelta(now()->addDays(365)->getTimestamp(), $cookie->getExpiresTime(), 120);
     }
 
     public function test_rejects_a_wrong_password(): void

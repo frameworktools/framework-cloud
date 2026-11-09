@@ -90,7 +90,8 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::post('logout', function (Request $request) {
-    Auth::guard('web')->logout();
+    // This browser only: logout() would change the remember token and sign out every other device
+    Auth::guard('web')->logoutCurrentDevice();
     $request->session()->invalidate();
     $request->session()->regenerateToken();
 

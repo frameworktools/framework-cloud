@@ -1,4 +1,5 @@
 <script setup>
+import SharedComputer from '@/Components/SharedComputer.vue';
 import { computed, nextTick, ref } from 'vue';
 import { useForm, usePage } from '@inertiajs/vue3';
 import AuthLayout from '@/Layouts/AuthLayout.vue';
@@ -17,9 +18,9 @@ const codeError = computed(() => page.props.errors?.code ?? null);
 const open = ref(Boolean(codeError.value));
 const codeInput = ref(null);
 
-const form = useForm({ code: '', remember: false });
+const form = useForm({ code: '', shared_device: false });
 const submit = () => form
-    .transform((data) => ({ ...data, remember: data.remember ? 1 : 0 }))
+    .transform((data) => ({ ...data, shared_device: data.shared_device ? 1 : 0 }))
     .post('/auth/magic-code', { onError: () => { open.value = true; }, onFinish: () => form.reset('code') });
 
 const reveal = () => {
@@ -63,10 +64,7 @@ const reveal = () => {
                     <p v-if="codeError" class="text-sm text-red-600 dark:text-red-400">{{ codeError }}</p>
                 </div>
 
-                <label class="flex cursor-pointer items-center gap-2.5 text-sm text-slate-700 dark:text-slate-300">
-                    <input v-model="form.remember" type="checkbox" name="remember" class="size-4 shrink-0 rounded border-slate-300 accent-sky-700 dark:border-slate-600">
-                    Remember me for 30 days
-                </label>
+                <SharedComputer v-model="form.shared_device" />
 
                 <UiButton type="submit" class="w-full" :disabled="form.processing">Sign in</UiButton>
             </form>

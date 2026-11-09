@@ -1,4 +1,5 @@
 <script setup>
+import SharedComputer from '@/Components/SharedComputer.vue';
 // Sets window.passkeys; only the passkey pages load it
 import '@/passkeys.js';
 import { ref, computed, nextTick, onMounted } from 'vue';
@@ -49,15 +50,17 @@ const back = () => {
 };
 
 // A wrong password comes back with its error and stays on step two
-const passwordForm = useForm({ login_step: 'password', email: '', password: '', remember: false });
+// Every sign-in keeps you signed in unless this is a shared computer, said once on step one
+const shared = ref(false);
+const passwordForm = useForm({ login_step: 'password', email: '', password: '' });
 const signIn = () => passwordForm
-    .transform((data) => ({ ...data, email: address(), remember: data.remember ? 1 : 0 }))
+    .transform((data) => ({ ...data, email: address(), shared_device: shared.value ? 1 : 0 }))
     .post('/login/password', { onFinish: () => passwordForm.reset('password') });
 
-// The link form posts only the address. A rejected address goes back to step one.
+// The link form posts the address and the shared-computer choice. A rejected address goes back to step one.
 const linkForm = useForm({ email: '' });
 const sendLink = () => linkForm
-    .transform(() => ({ email: address() }))
+    .transform(() => ({ email: address(), shared_device: shared.value ? 1 : 0 }))
     .post('/auth/magic-link', { onError: () => back() });
 
 const next = () => (passwords.value && props.prefersPassword ? showPassword() : sendLink());
@@ -123,6 +126,7 @@ const dividerText = 'text-xs font-medium tracking-wide text-slate-500 uppercase 
                         autofocus
                         :error="emailError"
                     />
+                    <SharedComputer v-model="shared" />
                     <UiButton type="submit" class="w-full" :disabled="linkForm.processing">Continue</UiButton>
                 </form>
 
@@ -136,7 +140,7 @@ const dividerText = 'text-xs font-medium tracking-wide text-slate-500 uppercase 
                             <form ref="assertionForm" method="post" action="/passkeys/authenticate" class="hidden">
                                 <input type="hidden" name="_token" :value="page.props.csrf">
                                 <input ref="assertionInput" type="hidden" name="start_authentication_response">
-                                <input type="hidden" name="remember" value="1">
+                                <input type="hidden" name="remember" :value="shared ? 0 : 1">
                             </form>
 
                             <UiButton class="w-full" variant="outline" :disabled="passkeyBusy" @click="signInWithPasskey">
@@ -146,7 +150,7 @@ const dividerText = 'text-xs font-medium tracking-wide text-slate-500 uppercase 
                             <p v-if="passkeyError" class="text-sm text-red-600 dark:text-red-400">{{ passkeyError }}</p>
                         </template>
 
-                        <GitHubButton v-if="page.props.githubLogin" label="Sign in with GitHub" :remember="true" />
+                        <GitHubButton v-if="page.props.githubLogin" label="Sign in with GitHub" :shared="shared" />
                     </div>
                 </template>
             </div>
@@ -188,10 +192,6 @@ const dividerText = 'text-xs font-medium tracking-wide text-slate-500 uppercase 
                             <p v-if="passwordError" id="login-password-error" class="text-sm text-red-600 dark:text-red-400">{{ passwordError }}</p>
                         </div>
 
-                        <label class="flex cursor-pointer items-center gap-2.5 text-sm text-slate-700 dark:text-slate-300">
-                            <input v-model="passwordForm.remember" type="checkbox" name="remember" class="size-4 shrink-0 rounded border-slate-300 accent-sky-700 dark:border-slate-600">
-                            Remember me for 30 days
-                        </label>
 
                         <UiButton type="submit" class="w-full" :disabled="passwordForm.processing">Sign in</UiButton>
                     </form>

@@ -19,28 +19,54 @@ class MagicLinkAuthTest extends TestCase
         $user = User::factory()->create(['password' => null]);
         $remember = fn ($response) => collect($response->headers->getCookies())->first(fn ($c) => str_starts_with($c->getName(), 'remember_web_'));
 
-        $response = $this->withCookies([LoginToken::BROWSER_COOKIE => 'this-browser', LoginToken::REMEMBER_COOKIE => '1'])
+        // Asked for on an ordinary computer: kept signed in
+        $response = $this->withCookies([LoginToken::BROWSER_COOKIE => 'this-browser'])
             ->get('/auth/magic/'.LoginToken::issue($user, 'this-browser'));
         $this->assertAuthenticatedAs($user);
         $this->assertNotNull($remember($response));
         $this->post('/logout');
 
-        $response = $this->withCookies([LoginToken::BROWSER_COOKIE => 'this-browser', LoginToken::REMEMBER_COOKIE => ''])
+        // Asked for on a shared computer: not
+        $response = $this->withCookies([LoginToken::BROWSER_COOKIE => 'this-browser', LoginToken::SHARED_COOKIE => '1'])
             ->get('/auth/magic/'.LoginToken::issue($user, 'this-browser'));
         $this->assertAuthenticatedAs($user);
         $this->assertNull($remember($response));
     }
 
-    public function test_a_link_keeps_you_signed_in_only_when_asked(): void
+    public function test_a_link_keeps_you_signed_in_unless_it_is_a_shared_computer(): void
     {
         $user = User::factory()->create(['password' => null]);
         $remember = fn ($response) => collect($response->headers->getCookies())->first(fn ($c) => str_starts_with($c->getName(), 'remember_web_'));
 
-        $this->assertNull($remember($this->post('/auth/magic/'.LoginToken::issue($user))));
+        $this->assertNotNull($remember($this->post('/auth/magic/'.LoginToken::issue($user))));
         $this->post('/logout');
 
-        $this->assertNotNull($remember($this->post('/auth/magic/'.LoginToken::issue($user), ['remember' => 1])));
+        $this->assertNull($remember($this->post('/auth/magic/'.LoginToken::issue($user), ['shared_device' => 1])));
         $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_signing_out_leaves_other_devices_signed_in(): void
+    {
+        $user = User::factory()->create(['password' => null]);
+        $this->post('/auth/magic/'.LoginToken::issue($user));
+        $token = $user->fresh()->remember_token;
+        $this->assertNotNull($token);
+
+        $this->post('/logout');
+
+        $this->assertGuest();
+        $this->assertSame($token, $user->fresh()->remember_token);
+    }
+
+    public function test_signing_out_other_devices_changes_the_remember_token_and_keeps_this_browser(): void
+    {
+        $user = User::factory()->create(['password' => null, 'remember_token' => 'old-token']);
+
+        $response = $this->actingAs($user)->post('/account/sign-out-other-devices')->assertRedirect();
+
+        $this->assertNotSame('old-token', $user->fresh()->remember_token);
+        $this->assertAuthenticatedAs($user);
+        $this->assertNotNull(collect($response->headers->getCookies())->first(fn ($c) => str_starts_with($c->getName(), 'remember_web_')));
     }
 
     public function test_login_screen_renders(): void

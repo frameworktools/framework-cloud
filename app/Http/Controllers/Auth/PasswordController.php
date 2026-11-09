@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\LoginToken;
 use App\Models\User;
+use App\Support\StaySignedIn;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -33,7 +34,7 @@ class PasswordController extends Controller
 
         // Accounts without a password never match: the hasher rejects an
         // empty hash
-        if (! Auth::attempt($credentials, remember: $request->boolean('remember'))) {
+        if (! Auth::attempt($credentials, remember: StaySignedIn::wanted($request))) {
             throw ValidationException::withMessages([
                 'password' => 'That email and password don\'t match an account.',
             ]);

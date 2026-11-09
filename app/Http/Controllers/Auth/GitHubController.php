@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\GitHubAccount;
 use App\Models\User;
+use App\Support\StaySignedIn;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -69,8 +70,8 @@ class GitHubController extends Controller
     public function loginRedirect(Request $request): SymfonyRedirect
     {
         abort_unless(config('framework.github_login'), 404);
-        // "Keep me signed in" from the sign-in page, for the callback
-        $request->session()->put('auth.remember', $request->boolean('remember'));
+        // Kept signed in unless the sign-in page said it's a shared computer
+        $request->session()->put('auth.remember', StaySignedIn::wanted($request));
 
         return Socialite::driver('github-login')->redirect();
     }
