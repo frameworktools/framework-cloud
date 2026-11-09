@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api\V1;
 
+use App\Models\Facet;
 use App\Models\User;
 use App\Support\Layer;
 use Database\Seeders\BlueprintSeeder;
@@ -158,7 +159,7 @@ class PiecesTest extends TestCase
         $user = User::factory()->create();
 
         $this->withToken($this->token($user))->postJson('/api/v1/structures', ['name' => 'My bare layout', 'directories' => [], 'type' => 'bare'])->assertCreated();
-        $this->assertSame('bare', \App\Models\Facet::where('user_id', $user->id)->sole()->latestVersion->layer['type']);
+        $this->assertSame('bare', Facet::where('user_id', $user->id)->sole()->latestVersion->layer['type']);
 
         $this->withToken($this->token($user))->postJson('/api/v1/structures', ['name' => 'Odd', 'directories' => [], 'type' => 'spaceship'])->assertJsonValidationErrors('type');
     }
@@ -188,6 +189,23 @@ class PiecesTest extends TestCase
 
         // Changed choices are no longer the blueprint, and sensitive projects carry no provenance
         $this->assertArrayNotHasKey('source', $envelope);
+    }
+
+    public function test_a_sensitive_project_without_skill_sets_gets_no_framework_skill_unasked(): void
+    {
+        $envelope = $this->withToken($this->token())->postJson('/api/v1/resolve', [
+            'name' => 'Course',
+            'structure' => 'framework/project',
+            'skill_sets' => [],
+            'settings' => ['sensitive' => true],
+        ])->assertOk()->json();
+
+        foreach ($envelope['layers'] as $entry) {
+            $skills = $entry['layer']['skills'] ?? [];
+            $merged = array_key_exists('framework-sensitive-data', $skills) ? $skills['framework-sensitive-data'] : ($merged ?? null);
+        }
+        // Layers merge in order, so the last mention wins: null removes the skill
+        $this->assertNull($merged);
     }
 
     public function test_ai_off_drops_every_skill(): void

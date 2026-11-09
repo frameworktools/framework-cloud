@@ -161,9 +161,12 @@ class Resolver
                 $this->pieces->forget($tool->id);
             }
         }
-        // A project that lists its own sets has chosen them, so yours aren't added
+        // A project that lists its own sets has chosen them, so yours aren't
+        // added; nor are they to a project from someone's own blueprint, which
+        // chose its sets (as its preview shows)
+        $ownBlueprint = filled($choices['blueprint'] ?? null) && $this->blueprint?->blueprint->user_id !== null;
         foreach (['package_sets' => 'package_set', 'skill_sets' => 'skill_set'] as $field => $kind) {
-            if (array_key_exists($field, $choices)) {
+            if (array_key_exists($field, $choices) || $ownBlueprint) {
                 continue;
             }
             foreach ($defaults[$field] ?? [] as $handle) {
@@ -425,8 +428,14 @@ class Resolver
                 $layer = Facet::whereNull('user_id')->where('kind', 'setting')->where('key', 'sensitive_data')->firstOrFail()->latestVersion;
                 $this->pieces->put($layer->facet_id, $layer);
             }
-            if ($value('ai.enabled', true) !== false) {
+            // With Framework's skill sets only: a project that names just its own
+            // skills (no sets) chose them itself, so gets no Framework skill unasked
+            $usesSkillSets = $this->pieces->contains(fn (FacetVersion $v) => $v->facet->kind === 'skill_set');
+            if ($value('ai.enabled', true) !== false && $usesSkillSets) {
                 $project['skills']['framework-sensitive-data'] = ['package' => true];
+            } elseif ($value('ai.enabled', true) !== false && ! $usesSkillSets && ! array_key_exists('framework-sensitive-data', $project['skills'] ?? [])) {
+                // The sensitive_data piece brings the skill too; null removes it when layers merge
+                $project['skills']['framework-sensitive-data'] = null;
             }
         }
     }

@@ -169,4 +169,17 @@ class ResolutionPolicyTest extends TestCase
         }
         $this->assertNotContains('jupyter', $keys(['language' => 'python', 'blueprint' => 'framework/course']));
     }
+
+    public function test_your_own_blueprint_keeps_its_own_skill_and_package_sets(): void
+    {
+        $user = User::factory()->create(['project_defaults' => ['skill_sets' => ['framework/ggplot2'], 'package_sets' => ['framework/tidyverse-analysis']]]);
+        $this->withToken($user->createToken('t')->plainTextToken)->postJson('/api/v1/blueprints', [
+            'name' => 'Course exercise', 'language' => 'r', 'structure' => 'framework/project', 'skill_sets' => [], 'package_sets' => [],
+        ])->assertCreated();
+        $handle = Blueprint::where('user_id', $user->id)->firstOrFail()->handle;
+
+        $keys = collect((new Resolver($user->fresh()))->resolve(['name' => 'S', 'blueprint' => $handle, 'language' => 'r'])['pieces'])->pluck('facet.key')->all();
+        $this->assertNotContains('ggplot2', $keys);
+        $this->assertNotContains('tidyverse-analysis', $keys);
+    }
 }
