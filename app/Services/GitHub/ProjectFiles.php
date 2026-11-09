@@ -26,6 +26,15 @@ class ProjectFiles
         if (! $project->github_repo) {
             throw ValidationException::withMessages(['project' => 'This project has no GitHub repository. Create one with projects_scaffold, or link one with projects_github_link.']);
         }
+        // A finished run whose webhook never came: ask GitHub before refusing
+        if ($project->scaffold_status === 'running') {
+            try {
+                app(Scaffolder::class)->refresh($project);
+                $project->refresh();
+            } catch (RequestException|GitHubNotConnected) {
+                // Report what is recorded
+            }
+        }
         if (in_array($project->scaffold_status, ['pending', 'running'], true)) {
             throw ValidationException::withMessages(['project' => 'The repository is still being scaffolded. Write files once projects_show reports scaffold status "done".']);
         }

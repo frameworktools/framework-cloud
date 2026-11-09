@@ -7,3 +7,5 @@ Schedule::command('fw:purge-trash')->dailyAt('03:30')->withoutOverlapping()->onO
 
 // Expired and revoked OAuth tokens and codes from connected agents
 Schedule::command('passport:purge')->dailyAt('03:45');
+// GitHub's workflow_run webhook doesn't always arrive; this records finished scaffolds anyway
+Schedule::command('fw:refresh-scaffolds')->everyMinute()->withoutOverlapping()->onOneServer();

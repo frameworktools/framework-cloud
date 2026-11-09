@@ -259,4 +259,37 @@ class ProjectRepositoryTest extends TestCase
 
         Http::assertNotSent(fn (ClientRequest $r) => str_ends_with($r->url(), '/git/commits') && $r->method() === 'POST');
     }
+
+    public function test_a_write_asks_github_when_the_scaffold_webhook_never_came(): void
+    {
+        $this->fakeCommits();
+        Http::fake([
+            'api.github.com/repos/lab/course/actions/workflows/*' => Http::response(['workflow_runs' => [
+                ['status' => 'completed', 'conclusion' => 'success', 'html_url' => 'https://github.com/lab/course/actions/runs/1'],
+            ]]),
+            'api.github.com/repos/lab/course/contents/*' => Http::response([], 404),
+        ]);
+        $user = $this->connected();
+        $project = Project::factory()->for($user)->create(['github_repo' => 'lab/course', 'scaffold_status' => 'running']);
+
+        $this->withToken($user->createToken('t')->plainTextToken)->postJson("/api/v1/projects/{$project->slug}/files", ['files' => [['path' => 'README.md', 'content' => '# Course']]])
+            ->assertCreated();
+        $this->assertSame('done', $project->fresh()->scaffold_status);
+    }
+
+    public function test_the_scheduler_records_finished_runs(): void
+    {
+        Http::fake([
+            'api.github.com/repos/lab/course/actions/workflows/*' => Http::response(['workflow_runs' => [
+                ['status' => 'completed', 'conclusion' => 'success', 'html_url' => 'https://github.com/lab/course/actions/runs/1'],
+            ]]),
+            'api.github.com/repos/lab/course/contents/*' => Http::response([], 404),
+        ]);
+        $project = Project::factory()->for($this->connected())->create(['github_repo' => 'lab/course', 'scaffold_status' => 'running']);
+        Project::whereKey($project->id)->update(['updated_at' => now()->subMinutes(5)]);
+
+        $this->artisan('fw:refresh-scaffolds')->assertSuccessful();
+
+        $this->assertSame('done', $project->fresh()->scaffold_status);
+    }
 }

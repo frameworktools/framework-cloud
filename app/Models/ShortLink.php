@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -49,7 +50,8 @@ class ShortLink extends Model
                 $code .= self::ALPHABET[random_int(0, strlen(self::ALPHABET) - 1)];
             }
             try {
-                return static::create(['code' => $code, 'linkable_type' => $model->getMorphClass(), 'linkable_id' => $model->getKey()]);
+                // A savepoint, so a taken code doesn't abort a surrounding Postgres transaction
+                return DB::transaction(fn () => static::create(['code' => $code, 'linkable_type' => $model->getMorphClass(), 'linkable_id' => $model->getKey()]));
             } catch (QueryException) {
                 // Taken: try another
             }
@@ -64,7 +66,9 @@ class ShortLink extends Model
         $word = Str::lower(trim($typed));
         $compact = preg_replace('/[\s\-]+/', '', $word);
 
-        return static::with('linkable')->whereIn('code', array_unique([$word, $compact]))->first();
+        // The word as typed first, so yale-ai doesn't open yaleai
+        return static::with('linkable')->where('code', $word)->first()
+            ?? ($compact !== $word ? static::with('linkable')->where('code', $compact)->first() : null);
     }
 
     public function url(): string

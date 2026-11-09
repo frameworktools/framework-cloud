@@ -97,7 +97,7 @@ Route::get('b/{key}', PublicBlueprintController::class)->where('key', '[A-Za-z0-
 // Short links for slides and projectors: framework.pub/go/{code}
 Route::get('go', [GoController::class, 'index'])->middleware('throttle:60,1')->name('go');
 Route::get('go/{code}/qr.svg', [GoController::class, 'qr'])->where('code', '[A-Za-z0-9-]{3,40}')->middleware('throttle:120,1')->name('go.qr');
-Route::get('go/{code}', [GoController::class, 'show'])->where('code', '[A-Za-z0-9 -]{3,40}')->middleware('throttle:60,1')->name('go.show');
+Route::get('go/{code}', [GoController::class, 'show'])->where('code', '[A-Za-z0-9 -]{1,80}')->middleware('throttle:60,1')->name('go.show');
 Route::get('d/{key}', [DocumentViewController::class, 'show'])->name('documents.show');
 Route::post('d/{key}/unlock', [DocumentViewController::class, 'unlock'])->middleware('throttle:10,1')->name('documents.unlock');
 Route::get('d/{key}/download', [DocumentViewController::class, 'download'])->name('documents.download');
