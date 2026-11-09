@@ -210,6 +210,17 @@ class GitHubTest extends TestCase
         $this->assertNotSame('ghu_access', GitHubAccount::query()->toBase()->value('access_token'), 'tokens are encrypted at rest');
     }
 
+    public function test_returning_from_installing_the_app_says_it_was_installed(): void
+    {
+        $user = $this->connected();
+        Socialite::shouldReceive('driver')->never();
+
+        $this->actingAs($user)->get('/auth/github/callback?installation_id=123&setup_action=install')
+            ->assertRedirect('/account/github')
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('status', 'github-installed');
+    }
+
     public function test_a_github_account_connects_to_only_one_framework_account(): void
     {
         $this->connected(['email' => 'ada@example.org']);

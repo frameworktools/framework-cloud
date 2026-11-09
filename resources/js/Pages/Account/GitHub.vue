@@ -13,6 +13,7 @@ const props = defineProps({ available: Boolean, account: Object, installations: 
 const page = usePage();
 const error = computed(() => page.props.errors.github);
 const connected = computed(() => page.props.flash.status === 'github-connected');
+const installed = computed(() => page.props.flash.status === 'github-installed');
 // Where the app is installed, by name, for the message after connecting
 const kind = (i) => (i.type === 'Organization' ? 'organization' : 'account');
 const places = computed(() => (props.installations ?? []).map((i) => `${kind(i)} ${i.login}`));
@@ -38,6 +39,11 @@ const disconnect = async () => {
             <template v-else-if="account">Connected as @{{ account.login }}. Install the Framework app on your account or an organization to create repositories there. </template>
             Each other organization needs the app installed too.
             <a v-if="install_url" :href="install_url" class="font-medium underline">Install on another organization</a>
+        </UiCallout>
+
+        <UiCallout v-if="installed" variant="success" heading="Framework app installed">
+            <template v-if="!account">Connect GitHub to create repositories there.</template>
+            <template v-else-if="places.length">Framework can create repositories in {{ list(places) }}.</template>
         </UiCallout>
 
         <p v-if="!available" class="text-sm text-slate-500 dark:text-slate-400">GitHub is not set up on this server.</p>

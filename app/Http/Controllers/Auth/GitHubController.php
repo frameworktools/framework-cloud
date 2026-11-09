@@ -40,6 +40,13 @@ class GitHubController extends Controller
             return $failed('Connecting GitHub was cancelled.');
         }
 
+        // Back from installing the app on an account or organization. GitHub
+        // sends installation_id and setup_action but no sign-in state, so
+        // there is no code to exchange: the install itself is done.
+        if ($request->filled('setup_action') && ! $request->filled('state')) {
+            return to_route('account.github')->with('status', 'github-installed');
+        }
+
         try {
             /** @var GitHubUser $github */
             $github = Socialite::driver('github')->user();
