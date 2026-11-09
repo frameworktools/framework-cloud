@@ -32,6 +32,7 @@
             </div>
         </div>
         <div class="flex shrink-0 items-center gap-3 text-sm">
+            <x-present-link :target="$document" />
             @if ($versions->count() > 1)
                 <label class="sr-only" for="version">Version</label>
                 <select id="version" onchange="location.href = this.value"

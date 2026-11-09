@@ -10,7 +10,7 @@
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-100">
 <main class="mx-auto max-w-5xl px-6 py-12">
-    <p class="text-sm text-slate-500">{{ $collection->project->name }} · Research collection</p>
+    <div class="flex items-center justify-between gap-4"><p class="text-sm text-slate-500">{{ $collection->project->name }} · Research collection</p><x-present-link :target="$collection" /></div>
     <h1 class="mt-3 text-4xl font-semibold">{{ $collection->title }}</h1>
     @if ($collection->description)<p class="mt-5 whitespace-pre-line text-lg text-slate-600 dark:text-slate-300">{{ $collection->description }}</p>@endif
     <div class="mt-10 grid gap-5 md:grid-cols-2">

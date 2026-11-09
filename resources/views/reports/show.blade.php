@@ -43,6 +43,7 @@
                         @endforeach
                     </select>
                 @endif
+                @unless ($preview)<x-present-link :target="$report" />@endunless
                 <x-theme-toggle />
             </div>
         </div>
