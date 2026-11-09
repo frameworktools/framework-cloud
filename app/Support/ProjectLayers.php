@@ -208,7 +208,8 @@ class ProjectLayers
     public static function envelope(User $user, string $name, array $layers, ?array $blueprint): array
     {
         // The Profile tab's byline, falling back to the account
-        $author = Arr::get($user->globalSettings()->document, 'author', []) ?? [];
+        // (An unsaved user, as a blueprint's public page previews with, has none)
+        $author = $user->exists ? (Arr::get($user->globalSettings()->document, 'author', []) ?? []) : [];
         $affiliations = collect($author['affiliations'] ?? [])
             ->filter(fn ($a) => is_array($a) && filled($a['name'] ?? null))
             ->map(fn (array $a) => array_filter(Arr::only($a, ['name', 'department', 'city', 'country']), 'filled'))

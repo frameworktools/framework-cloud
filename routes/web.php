@@ -22,6 +22,7 @@ use App\Http\Controllers\DocumentViewController;
 use App\Http\Controllers\GoController;
 use App\Http\Controllers\GuideController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\PublicBlueprintController;
 use App\Http\Controllers\PublicProjectDownloadController;
 use App\Http\Controllers\ReportViewController;
 use App\Http\Controllers\Settings\AccountController;
@@ -88,6 +89,8 @@ Route::view('privacy', 'legal.privacy')->name('privacy');
 
 // Published documents. Private links use the key; versions are kept until
 // their owner deletes them.
+// A public or unlisted blueprint's page
+Route::get('b/{key}', PublicBlueprintController::class)->where('key', '[A-Za-z0-9]{16}')->middleware('throttle:60,1')->name('blueprints.public');
 // Short links for slides and projectors: framework.pub/go/{code}
 Route::get('go', [GoController::class, 'index'])->middleware('throttle:60,1')->name('go');
 Route::get('go/{code}/qr.svg', [GoController::class, 'qr'])->where('code', '[A-Za-z0-9-]{3,40}')->middleware('throttle:120,1')->name('go.qr');

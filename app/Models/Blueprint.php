@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 
 /**
  * A Blueprint is a recipe for a project: a base facet (the project type),
@@ -27,6 +28,31 @@ class Blueprint extends Model
     protected $guarded = [];
 
     protected $appends = ['handle'];
+
+    /** Whether anyone may open its public page: Framework's own, and public or unlisted ones. */
+    public function isPublic(): bool
+    {
+        return $this->isSystem() || in_array($this->visibility, ['public', 'unlisted'], true);
+    }
+
+    /** Its public page, made the first time it's asked for. Null while private. */
+    public function publicUrl(): ?string
+    {
+        if (! $this->isPublic()) {
+            return null;
+        }
+        if (! $this->public_key) {
+            $this->forceFill(['public_key' => Str::random(16)])->saveQuietly();
+        }
+
+        return route('blueprints.public', $this->public_key);
+    }
+
+    /** Where a short link to it goes. */
+    public function shareUrl(): ?string
+    {
+        return $this->publicUrl();
+    }
 
     /**
      * A version's declared compatibility: the languages and workflows it

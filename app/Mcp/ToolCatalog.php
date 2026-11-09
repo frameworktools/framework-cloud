@@ -195,7 +195,7 @@ class ToolCatalog
                 'path_params' => ['skill' => ['type' => 'string', 'description' => 'The skill key from skills_list, such as framework-reports, framework/framework-reports, or @owner/name.']],
                 'query' => ['language' => ['type' => 'string', 'enum' => ['r', 'python', 'stata'], 'description' => 'The language version to read. Defaults to the skill\'s first.']],
                 'title' => 'Show a skill',
-                'description' => 'One skill\'s SKILL.md text, its version, and whether this account can change it.',
+                'description' => 'One skill\'s SKILL.md text, its version, whether this account can change it, and public_url, the page anyone can open (null while private).',
             ],
             'skills_create' => [
                 'level' => self::FULL, 'method' => 'POST', 'path' => '/skills',
@@ -314,7 +314,7 @@ class ToolCatalog
             'properties' => [
                 'name' => ['type' => 'string', 'maxLength' => 100],
                 'description' => ['type' => 'string', 'maxLength' => 1000],
-                'visibility' => ['type' => 'string', 'enum' => ['private', 'unlisted', 'public'], 'description' => 'Defaults to private.'],
+                'visibility' => ['type' => 'string', 'enum' => ['private', 'unlisted', 'public'], 'description' => 'Defaults to private. Public and unlisted blueprints get a page anyone can open, with a QR code; unlisted ones stay out of listings. Make one public or unlisted only when the user asks.'],
             ] + $choices + [
                 'languages' => ['type' => 'array', 'items' => ['type' => 'string', 'enum' => ['r', 'python', 'stata']], 'description' => 'Languages projects from it may use. Leave out for all.'],
                 'workflows' => ['type' => 'array', 'items' => ['type' => 'string', 'enum' => ['quarto', 'jupyter', 'scripts']], 'description' => 'Workflows projects from it may use. Leave out for all.'],

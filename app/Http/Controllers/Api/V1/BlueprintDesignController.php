@@ -96,6 +96,8 @@ class BlueprintDesignController extends Controller
             'version' => $blueprint->latestVersion?->version,
             'editable' => $blueprint->user_id === $user->id,
             'url' => route('blueprints.show', $blueprint),
+            // Anyone can open it; null while the blueprint is private
+            'public_url' => $blueprint->publicUrl(),
             'choices' => $blueprint->latestVersion ? Catalog::choices($blueprint->latestVersion, $user) : null,
         ];
     }

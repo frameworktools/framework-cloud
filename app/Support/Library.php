@@ -101,6 +101,8 @@ class Library
             'description' => $blueprint->description,
             'language' => $blueprint->language ?? 'r',
             'visibility' => $blueprint->visibility,
+            // Public and unlisted blueprints have a page anyone can open
+            'public_url' => $blueprint->publicUrl(),
             'is_system' => $blueprint->isSystem(),
             'owner' => self::owner($blueprint),
             'editable' => $blueprint->isEditableBy($user),

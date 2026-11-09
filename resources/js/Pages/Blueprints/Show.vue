@@ -41,6 +41,7 @@ const date = (value) => new Date(value).toLocaleDateString();
                 <PageHeader :title="blueprint.name" :description="blueprint.description">
                     <template #actions>
                         <UiButton v-if="blueprint.editable && !blueprint.is_system" variant="ghost" @click="destroy">Delete</UiButton>
+                        <UiButton v-if="blueprint.public_url" :href="blueprint.public_url" variant="ghost">Public page</UiButton>
                         <UiButton variant="outline" @click="fork">Copy and edit</UiButton>
                         <Link v-if="blueprint.editable" :href="`/blueprints/${blueprint.id}/edit`"><UiButton variant="outline">Edit</UiButton></Link>
                         <Link :href="`/projects/create?blueprint=${blueprint.id}`"><UiButton>Use</UiButton></Link>

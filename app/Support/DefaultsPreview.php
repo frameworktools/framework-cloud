@@ -48,10 +48,11 @@ class DefaultsPreview
      *
      * @return array<string, mixed>
      */
-    public static function forBlueprint(User $user, Blueprint $blueprint, string $language, ?string $workflow): array
+    /** @param  array<string, mixed>|null  $defaults  the person's defaults; [] for none, as on a blueprint's public page */
+    public static function forBlueprint(User $user, Blueprint $blueprint, string $language, ?string $workflow, ?array $defaults = null): array
     {
         try {
-            $resolved = (new Resolver($user))->resolve(['name' => 'project', 'blueprint' => $blueprint->handle, 'language' => $language, 'workflow' => $workflow]);
+            $resolved = (new Resolver($user, true, $defaults))->resolve(['name' => 'project', 'blueprint' => $blueprint->handle, 'language' => $language, 'workflow' => $workflow]);
         } catch (ValidationException $e) {
             return ['available' => false, 'problem' => collect($e->errors())->flatten()->first()];
         }
