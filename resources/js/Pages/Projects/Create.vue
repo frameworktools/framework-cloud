@@ -34,7 +34,7 @@ const form = useForm({
     // A destination passed in the link, when it's available here; otherwise a download, which needs nothing installed
     destination: ({ download: props.downloads, github: props.github.enabled, local: true })[props.start?.destination]
         ? props.start.destination
-        : (props.downloads ? 'download' : 'local'),
+        : 'local',
     github: { owner: props.github.owners?.[0]?.login ?? null, name: '', private: true, nameEdited: false },
     // Changing pieces starts from the chosen blueprint's choices
     customized: false,
@@ -197,7 +197,7 @@ watch(workflows, (list) => { if (form.workflow && !list.includes(form.workflow))
 const onGitHub = computed(() => form.destination === 'github');
 // Why GitHub can't set up a project in this language here, if it can't
 const githubBlocked = computed(() => props.githubUnavailable?.[form.language] ?? null);
-watch(githubBlocked, (reason) => { if (reason && onGitHub.value) form.destination = props.downloads ? 'download' : 'local'; });
+watch(githubBlocked, (reason) => { if (reason && onGitHub.value) form.destination = 'local'; });
 const create = () => form
     .transform((data) => ({
         name: data.name,
@@ -210,19 +210,9 @@ const create = () => form
     }))
     .post('/projects');
 
-const destinations = computed(() => [
-    ...(props.downloads ? [{
-        key: 'download',
-        title: 'ZIP download',
-        text: 'Framework builds the project and your browser downloads it. Unzip it and open the folder. You need no Git and no Framework packages.',
-    }] : []),
-    ...(props.github.enabled ? [{
-        key: 'github',
-        title: 'GitHub repository',
-        text: githubBlocked.value ?? 'Framework creates a repository on your GitHub account and sets the project up there. Open it in VS Code, Positron, or RStudio by cloning it.',
-        disabled: !!githubBlocked.value,
-    }] : []),
-    {
+// Local setup first, always. Then GitHub before the ZIP when GitHub is ready to use, and after it when not.
+const destinations = computed(() => {
+    const local = {
         key: 'local',
         title: 'Local setup',
         text: form.language === 'stata'
@@ -230,8 +220,21 @@ const destinations = computed(() => [
             : form.language === 'python'
                 ? 'Framework issues a project token. Pass it to framework.new(key=...) in Python, or to fw new in a terminal. Framework sets up Git.'
                 : 'Framework issues a project token. Pass it to framework::setup() in R, or to fw new in a terminal. Framework sets up Git.',
-    },
-]);
+    };
+    const download = props.downloads ? [{
+        key: 'download',
+        title: 'ZIP download',
+        text: 'Framework builds the project and your browser downloads it. Unzip it and open the folder. You need no Git and no Framework packages.',
+    }] : [];
+    const github = props.github.enabled ? [{
+        key: 'github',
+        title: 'GitHub repository',
+        text: githubBlocked.value ?? 'Framework creates a repository on your GitHub account and sets the project up there. Open it in VS Code, Positron, or RStudio by cloning it.',
+        disabled: !!githubBlocked.value,
+    }] : [];
+
+    return githubReady.value ? [local, ...github, ...download] : [local, ...download, ...github];
+});
 const submitLabel = computed(() => ({ download: 'Create and download', github: 'Create on GitHub' })[form.destination] ?? 'Create project');
 const destinationName = computed(() => destinations.value.find((d) => d.key === form.destination)?.title ?? '');
 
