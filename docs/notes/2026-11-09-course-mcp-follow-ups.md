@@ -18,14 +18,7 @@ Date: 2026-11-09. Work for the Yale AI stats course (Plan Course Materials threa
 ## Steps left
 
 1. Reconnect the claude.ai "framework" connector, or start a new chat, so sessions see the new tools. Production serves them already.
-2. Delete the private test repos in erikwestlund-teaching: fc-scaffold-smoke-test, -2 and -3, and yale-ai-stats-e2e-test. The GitHub app cannot delete repositories, and gh needs the delete_repo scope, which takes a browser confirmation. Their cloud projects are in the Trash. Run:
-
-   ```sh
-   gh auth refresh -h github.com -s delete_repo
-   for r in fc-scaffold-smoke-test fc-scaffold-smoke-test-2 fc-scaffold-smoke-test-3 yale-ai-stats-e2e-test; do
-     gh repo delete "erikwestlund-teaching/$r" --yes
-   done
-   ```
+2. Done: Erik deleted the test repos fc-scaffold-smoke-test, -2, -3 and yale-ai-stats-e2e-test on 2026-11-09.
 
 Done since: the planner tested the file tools end to end (fresh project, write, zip upload, clone, here::here()); public download is on for 01–03; 04 keeps its GitHub link, because its data sits in private/; and the token `course-mcp-fix-verify` is revoked.
 
