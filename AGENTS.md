@@ -27,6 +27,10 @@ This preference does not authorize unrelated implementation, deployment, or infr
 
 Main checkout preview discovered with `tunnels` on 2026-11-02: https://framework-cloud.pequod.dev (maps to this checkout). Rediscover when preparing another checkout or worktree.
 
+## Deploying framework.pub
+
+Pushing `main` deploys through Forge's push-to-deploy. Do not also start a deployment through the Forge API: two at once collide and Forge emails a false failure. To wait for a push's deployment, or to redeploy the same commit after an env change, run `scripts/deploy-prod` (`--again` to redeploy). It never starts a deployment while another runs.
+
 ## Design
 
 Load the `cloud-design` skill (`.claude/skills/cloud-design/SKILL.md`) before building or restyling any page or component. It records the academic.page / Flux design language this app follows and the shared Vue components that implement it.

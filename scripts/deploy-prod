@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+# Deploy framework.pub without colliding with Forge's push-to-deploy.
+#
+# Pushing main already deploys. Starting a second deployment while one runs
+# makes Forge clone into a release folder that already exists, and it emails
+# a false "unable to deploy". This script never starts one while another is
+# queued or running, and never starts one for a commit already deploying or
+# deployed. It waits on that deployment instead.
+#
+#   scripts/deploy-prod           deploy origin/main (waits on push-to-deploy)
+#   scripts/deploy-prod --again   redeploy the same commit, e.g. after an env change
+#
+# Needs FORGE_API_TOKEN from ~/.config/forge/env.
+set -euo pipefail
+
+SITE=https://forge.laravel.com/api/orgs/erik-westlund/servers/1246295/sites/3357063
+AGAIN=false
+[[ "${1:-}" == "--again" ]] && AGAIN=true
+
+[[ -z "${FORGE_API_TOKEN:-}" && -f ~/.config/forge/env ]] && source ~/.config/forge/env
+[[ -n "${FORGE_API_TOKEN:-}" ]] || { echo "FORGE_API_TOKEN is not set" >&2; exit 1; }
+
+git fetch -q origin main
+HEAD_SHA=$(git rev-parse origin/main)
+
+# The token goes through stdin, never the command line
+api() {
+    printf 'header = "Authorization: Bearer %s"\n' "$FORGE_API_TOKEN" |
+        curl -sf -K - -H "Accept: application/json" -H "Content-Type: application/json" "$@"
+}
+
+# Newest deployments as lines: id status sha
+recent() {
+    api "$SITE/deployments?sort=-created_at" | python3 -c '
+import json, sys
+for d in json.load(sys.stdin)["data"][:10]:
+    a = d["attributes"]
+    print(d["id"], a["status"], (a.get("commit") or {}).get("hash") or "-")'
+}
+
+wait_for() {
+    local id=$1 status
+    while :; do
+        status=$(api "$SITE/deployments/$id" | python3 -c 'import json,sys; print(json.load(sys.stdin)["data"]["attributes"]["status"])')
+        case "$status" in
+            finished) echo "Deployment $id finished."; return 0 ;;
+            failed|cancelled) echo "Deployment $id $status. Log: $SITE/deployments/$id/log" >&2; return 1 ;;
+        esac
+        sleep 5
+    done
+}
+
+busy() { awk '$2 != "finished" && $2 != "failed" && $2 != "cancelled" {print $1; exit}'; }
+
+# A push registers its deployment a few seconds later; give it 20 seconds
+for _ in 1 2 3 4; do
+    lines=$(recent)
+    running=$(busy <<<"$lines")
+    if [[ -n "$running" ]]; then
+        echo "Deployment $running is already running; waiting for it."
+        wait_for "$running" || true
+        lines=$(recent)
+    fi
+    if ! $AGAIN && awk -v sha="$HEAD_SHA" '$3 == sha && $2 == "finished" {found=1} END {exit !found}' <<<"$lines"; then
+        echo "${HEAD_SHA:0:7} is already deployed."
+        exit 0
+    fi
+    $AGAIN && break
+    sleep 5
+done
+
+running=$(recent | busy)
+[[ -n "$running" ]] && { echo "Deployment $running started meanwhile; waiting for it."; wait_for "$running"; exit; }
+
+id=$(api -X POST "$SITE/deployments" | python3 -c 'import json,sys; print(json.load(sys.stdin)["data"]["id"])')
+echo "Started deployment $id for ${HEAD_SHA:0:7}."
+wait_for "$id"
