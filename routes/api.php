@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\PiecesController;
 use App\Http\Controllers\Api\V1\ProjectLayersController;
 use App\Http\Controllers\Api\V1\ProjectPullController;
+use App\Http\Controllers\Api\V1\ProjectRepositoryController;
 use App\Http\Controllers\Api\V1\ProjectsController;
 use App\Http\Controllers\Api\V1\ReportsController;
 use App\Http\Controllers\Api\V1\SettingsController;
@@ -43,6 +44,10 @@ Route::prefix('v1/cli')->group(function () {
 // see ArtifactsController::createUpload.
 Route::match(['put', 'post'], 'v1/uploads/{token}', [ArtifactsController::class, 'receiveUpload'])
     ->where('token', '[A-Za-z0-9]{48}')->middleware('throttle:30,1')->name('api.uploads.store');
+
+// A project upload link's raw file, committed to the project's repository; see ProjectRepositoryController::createUpload.
+Route::match(['put', 'post'], 'v1/project-uploads/{token}', [ProjectRepositoryController::class, 'receiveUpload'])
+    ->where('token', '[A-Za-z0-9]{48}')->middleware('throttle:30,1')->name('api.project-uploads.store');
 
 Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::get('/me', MeController::class);
@@ -84,6 +89,12 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::delete('/projects/{slug}', [ProjectsController::class, 'destroy'])->middleware('throttle:30,1');
     Route::get('/projects/{slug}/download', [ProjectLayersController::class, 'download'])->middleware('throttle:10,1');
     Route::get('/projects/{slug}/layers', [ProjectLayersController::class, 'layers']);
+    Route::get('/projects/{slug}/scaffold', [ProjectRepositoryController::class, 'scaffoldStatus']);
+    Route::post('/projects/{slug}/scaffold', [ProjectRepositoryController::class, 'scaffold'])->middleware('throttle:20,1');
+    Route::post('/projects/{slug}/github', [ProjectRepositoryController::class, 'link'])->middleware('throttle:20,1');
+    Route::get('/projects/{slug}/files', [ProjectRepositoryController::class, 'files'])->middleware('throttle:60,1');
+    Route::post('/projects/{slug}/files', [ProjectRepositoryController::class, 'write'])->middleware('throttle:60,1');
+    Route::post('/projects/{slug}/files/uploads', [ProjectRepositoryController::class, 'createUpload'])->middleware('throttle:60,1');
     Route::post('/projects/{slug}/pull-tokens', [ProjectLayersController::class, 'issuePullToken'])->middleware('throttle:30,1');
 
     // Project token: the project's own setup, publishing, and data ledger

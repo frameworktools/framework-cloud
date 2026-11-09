@@ -20,7 +20,7 @@ class ProjectsController extends Controller
         $user = $this->user($request);
 
         return response()->json([
-            'projects' => $user->projects()->listed()->latest()->get(['name', 'slug', 'project_type', 'language', 'description', 'created_at']),
+            'projects' => $user->projects()->listed()->latest()->get(['name', 'slug', 'project_type', 'language', 'description', 'active', 'created_at']),
         ]);
     }
 
@@ -54,12 +54,23 @@ class ProjectsController extends Controller
     public function update(Request $request, string $slug): JsonResponse
     {
         $project = $this->user($request)->projects()->listed()->where('slug', $slug)->firstOrFail();
-        $project->update($request->validate([
+        $validated = $request->validate([
             'name' => ['sometimes', 'string', 'max:100'],
             'description' => ['sometimes', 'nullable', 'string', 'max:500'],
-        ]));
+            'active' => ['sometimes', 'boolean'],
+            'public_download' => ['sometimes', 'boolean'],
+        ]);
 
-        return response()->json($project->only('slug', 'name', 'description') + ['url' => route('projects.show', $project->slug)]);
+        if (array_key_exists('public_download', $validated)) {
+            $project->setPublicDownload((bool) $validated['public_download']);
+            unset($validated['public_download']);
+        }
+        $project->update($validated);
+
+        return response()->json($project->only('slug', 'name', 'description', 'active') + [
+            'url' => route('projects.show', $project->slug),
+            'public_download_url' => $project->publicDownloadUrl(),
+        ]);
     }
 
     /** framework::new() and framework.new() register by name and type, and get a pull token for .env. */

@@ -116,6 +116,53 @@ class GitHub
         ]));
     }
 
+    /**
+     * Write and delete several files in one commit on a branch (the default
+     * branch when null). Returns the new commit's sha and URL.
+     *
+     * @param  array<string, string>  $files  path => bytes
+     * @param  list<string>  $delete  paths to remove
+     * @return array{sha: string, url: string, branch: string}
+     */
+    public function commitFiles(string $repo, array $files, array $delete, string $message, ?string $branch = null): array
+    {
+        $branch ??= $this->repository($repo)['default_branch'];
+        $head = $this->get("/repos/{$repo}/git/ref/heads/".rawurlencode($branch))->json('object.sha');
+        $baseTree = $this->get("/repos/{$repo}/git/commits/{$head}")->json('tree.sha');
+
+        $tree = [];
+        foreach ($files as $path => $bytes) {
+            $blob = $this->send('post', "/repos/{$repo}/git/blobs", ['content' => base64_encode($bytes), 'encoding' => 'base64'])->json('sha');
+            $tree[] = ['path' => $path, 'mode' => '100644', 'type' => 'blob', 'sha' => $blob];
+        }
+        foreach ($delete as $path) {
+            $tree[] = ['path' => $path, 'mode' => '100644', 'type' => 'blob', 'sha' => null];
+        }
+
+        $treeSha = $this->send('post', "/repos/{$repo}/git/trees", ['base_tree' => $baseTree, 'tree' => $tree])->json('sha');
+        $commit = $this->send('post', "/repos/{$repo}/git/commits", ['message' => $message, 'tree' => $treeSha, 'parents' => [$head]])->json();
+        $this->send('patch', "/repos/{$repo}/git/refs/heads/".rawurlencode($branch), ['sha' => $commit['sha']]);
+
+        return ['sha' => $commit['sha'], 'url' => "https://github.com/{$repo}/commit/{$commit['sha']}", 'branch' => $branch];
+    }
+
+    /**
+     * Every file in a branch, with sizes (the default branch when null).
+     *
+     * @return array{files: list<array{path: string, size: int}>, truncated: bool}
+     */
+    public function tree(string $repo, ?string $branch = null): array
+    {
+        $branch ??= $this->repository($repo)['default_branch'];
+        $data = $this->get("/repos/{$repo}/git/trees/".rawurlencode($branch), ['recursive' => 1])->json();
+
+        return [
+            'files' => collect($data['tree'] ?? [])->where('type', 'blob')
+                ->map(fn (array $e) => ['path' => $e['path'], 'size' => $e['size'] ?? 0])->values()->all(),
+            'truncated' => (bool) ($data['truncated'] ?? false),
+        ];
+    }
+
     public function deleteFile(string $repo, string $path, string $message): void
     {
         $existing = $this->file($repo, $path);

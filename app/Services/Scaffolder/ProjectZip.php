@@ -78,6 +78,62 @@ class ProjectZip
     }
 
     /**
+     * The zip a public download link serves: the repository as it is now
+     * when the project has a public one (so content added after the
+     * scaffold comes along), else the scaffolder's build. The folder inside
+     * is named for the project.
+     *
+     * @throws ProjectZipFailed
+     */
+    public function buildPublic(Project $project): string
+    {
+        if (! $project->github_repo) {
+            return $this->build($project);
+        }
+
+        $response = Http::timeout(120)->withUserAgent('Framework-Cloud')
+            ->withOptions(['allow_redirects' => true])
+            ->get("https://github.com/{$project->github_repo}/archive/HEAD.zip");
+
+        if (! $response->successful()) {
+            Log::warning('Public download zipball failed', ['project' => $project->id, 'status' => $response->status()]);
+
+            throw new ProjectZipFailed($response->status() === 404
+                ? 'The project\'s repository is private or gone, so it cannot be downloaded here.'
+                : 'The project could not be downloaded right now. Try again in a minute.');
+        }
+
+        $in = tempnam(sys_get_temp_dir(), 'project-zipball-');
+        file_put_contents($in, $response->body());
+        $out = tempnam(sys_get_temp_dir(), 'project-zip-');
+
+        try {
+            $source = new ZipArchive;
+            $target = new ZipArchive;
+            if ($source->open($in) !== true || $target->open($out, ZipArchive::OVERWRITE) !== true) {
+                throw new ProjectZipFailed('The project could not be downloaded: GitHub sent an unreadable zip.');
+            }
+
+            // GitHub names the folder owner-repo-sha; students get the project's name
+            for ($i = 0; $i < $source->numFiles; $i++) {
+                $name = $source->getNameIndex($i);
+                $relative = str_contains($name, '/') ? substr($name, strpos($name, '/') + 1) : '';
+                if ($relative === '') {
+                    continue;
+                }
+                $path = "{$project->slug}/{$relative}";
+                str_ends_with($relative, '/') ? $target->addEmptyDir(rtrim($path, '/')) : $target->addFromString($path, (string) $source->getFromIndex($i));
+            }
+            $source->close();
+            $target->close();
+        } finally {
+            @unlink($in);
+        }
+
+        return $out;
+    }
+
+    /**
      * The server address, and where to get a token, in the project's .env.
      * No token: a zip gets passed around, and a token in it would go along.
      * R, Python, and fw all read FW_PROJECT_TOKEN and FW_CLOUD_URL from .env.

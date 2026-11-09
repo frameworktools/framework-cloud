@@ -20,6 +20,8 @@ use App\Http\Controllers\CollectionViewController;
 use App\Http\Controllers\DocsController;
 use App\Http\Controllers\DocumentViewController;
 use App\Http\Controllers\GuideController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\PublicProjectDownloadController;
 use App\Http\Controllers\ReportViewController;
 use App\Http\Controllers\Settings\AccountController;
 use App\Http\Controllers\Settings\AuthorController;
@@ -49,7 +51,7 @@ foreach (array_unique(array_filter(config('framework.docs_hosts', []))) as $docs
     });
 }
 
-Route::get('/', \App\Http\Controllers\HomeController::class)->name('home');
+Route::get('/', HomeController::class)->name('home');
 
 Route::view('self-hosting', 'self-hosting')->name('self-hosting');
 
@@ -88,6 +90,9 @@ Route::view('privacy', 'legal.privacy')->name('privacy');
 Route::get('d/{key}', [DocumentViewController::class, 'show'])->name('documents.show');
 Route::post('d/{key}/unlock', [DocumentViewController::class, 'unlock'])->middleware('throttle:10,1')->name('documents.unlock');
 Route::get('d/{key}/download', [DocumentViewController::class, 'download'])->name('documents.download');
+// A project's public download link, for students and others without an account
+Route::get('downloads/{key}', PublicProjectDownloadController::class)
+    ->where('key', '[A-Za-z0-9]{32}')->middleware('throttle:60,1')->name('projects.public-download');
 Route::get('d/{key}/raw', [DocumentViewController::class, 'raw'])->name('documents.raw');
 Route::get('d/{key}/versions/{number}', [DocumentViewController::class, 'showVersion'])
     ->whereNumber('number')->name('documents.version');

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\ProjectLayers;
 use Database\Factories\ProjectFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -10,6 +11,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Laravel\Sanctum\HasApiTokens;
 
 class Project extends Model
@@ -87,6 +90,7 @@ class Project extends Model
             'payload' => 'array',
             'composition' => 'array',
             'github_private' => 'boolean',
+            'active' => 'boolean',
             'is_home' => 'boolean',
             // spec stays raw JSON text so empty maps stay {}
             'spec_received_at' => 'datetime',
@@ -117,6 +121,33 @@ class Project extends Model
     }
 
     /** Projects people made, leaving out the account's automatic home for artifacts. */
+    /**
+     * Turn the public download link on or off. A sensitive project never
+     * gets one, and neither does one whose repository is private.
+     */
+    public function setPublicDownload(bool $on): void
+    {
+        if (! $on) {
+            $this->forceFill(['public_download_key' => null])->save();
+
+            return;
+        }
+        if (ProjectLayers::isSensitive(ProjectLayers::for($this)['layers'] ?? [])) {
+            throw ValidationException::withMessages(['public_download' => 'This project handles restricted data, so it cannot have a public download link.']);
+        }
+        if ($this->github_repo && $this->github_private) {
+            throw ValidationException::withMessages(['public_download' => 'The project\'s repository is private. Make it public first.']);
+        }
+
+        $this->public_download_key ??= Str::random(32);
+        $this->save();
+    }
+
+    public function publicDownloadUrl(): ?string
+    {
+        return $this->public_download_key ? route('projects.public-download', $this->public_download_key) : null;
+    }
+
     public function scopeListed(Builder $query): void
     {
         $query->where('is_home', false);

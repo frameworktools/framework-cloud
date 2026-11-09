@@ -5,10 +5,13 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Project;
 use App\Models\User;
+use App\Services\GitHub\GitHubNotConnected;
+use App\Services\GitHub\Scaffolder;
 use App\Services\Scaffolder\ProjectZip;
 use App\Services\Scaffolder\ProjectZipFailed;
 use App\Support\Layer;
 use App\Support\ProjectLayers;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -70,6 +73,15 @@ class ProjectLayersController extends Controller
     public function show(Request $request, string $slug): JsonResponse
     {
         $project = $this->project($request, $slug)->loadMissing('blueprintVersion.blueprint.owner');
+
+        // A run under way: ask GitHub, in case its webhook was missed
+        if ($project->scaffold_status === 'running' && $project->github_repo && $project->updated_at?->lt(now()->subMinute())) {
+            try {
+                app(Scaffolder::class)->refresh($project);
+            } catch (RequestException|GitHubNotConnected) {
+                // Report what is recorded
+            }
+        }
         $version = $project->blueprintVersion;
 
         return response()->json([
@@ -78,6 +90,8 @@ class ProjectLayersController extends Controller
             'description' => $project->description,
             'language' => $project->language ?? 'r',
             'type' => $project->project_type,
+            'active' => (bool) ($project->active ?? true),
+            'public_download_url' => $project->publicDownloadUrl(),
             'adopted' => $project->adopted_at !== null,
             'blueprint' => $version ? ['key' => $version->blueprint->handle, 'version' => $version->version] : null,
             'github' => $project->github_repo ? [
@@ -86,9 +100,12 @@ class ProjectLayersController extends Controller
                 'private' => (bool) $project->github_private,
                 'scaffold_status' => $project->scaffold_status,
                 'scaffold_error' => $project->scaffold_error,
+                'scaffold_run_url' => $project->scaffold_run_url,
                 // Set while GitHub Pages publishes the repository's published/ folder
                 'pages_url' => $project->pages_url,
             ] : null,
+            // Also set while a repository is being created, before github is
+            'scaffold' => ProjectRepositoryController::scaffoldState($project),
             'spec_received_at' => $project->spec_received_at?->toIso8601String(),
             'created_at' => $project->created_at?->toIso8601String(),
             'updated_at' => $project->updated_at?->toIso8601String(),

@@ -39,7 +39,7 @@ class ToolCatalog
             'projects_show' => [
                 'level' => self::READ, 'method' => 'GET', 'path' => '/projects/{slug}', 'path_params' => $project,
                 'title' => 'Show a project',
-                'description' => 'One project: its blueprint, its GitHub repository and Pages site, and when it was created.',
+                'description' => 'One project: its blueprint, its GitHub repository and Pages site, its scaffold status (scaffold), whether it is active, its public download link, and when it was created.',
             ],
             'projects_create' => [
                 'level' => self::FULL, 'method' => 'POST', 'path' => '/projects',
@@ -63,9 +63,61 @@ class ToolCatalog
                 'body' => ['properties' => [
                     'name' => ['type' => 'string', 'maxLength' => 100],
                     'description' => ['type' => 'string', 'maxLength' => 500],
+                    'active' => ['type' => 'boolean', 'description' => 'false hides the project from the main Projects list without deleting it.'],
+                    'public_download' => ['type' => 'boolean', 'description' => 'true gives the project a link anyone can download it from as a zip, without an account (for students, say). Not for sensitive projects or private repositories.'],
                 ], 'required' => []],
                 'title' => 'Update a project',
-                'description' => 'Rename a project or change its description. Its slug and links stay the same.',
+                'description' => 'Rename a project, change its description, mark it active or inactive, or turn its public download link on or off. Its slug and links stay the same. Turn on a public download only when the user asks.',
+            ],
+            'projects_scaffold' => [
+                'level' => self::FULL, 'method' => 'POST', 'path' => '/projects/{slug}/scaffold', 'path_params' => $project,
+                'body' => ['properties' => [
+                    'github' => ['type' => 'object', 'description' => 'Only for a project with no repository yet: where to create it.', 'properties' => [
+                        'owner' => ['type' => 'string', 'description' => 'The GitHub user or organization.'],
+                        'name' => ['type' => 'string', 'description' => 'The repository name. Defaults to the project slug.'],
+                        'private' => ['type' => 'boolean'],
+                    ], 'required' => ['owner']],
+                ], 'required' => []],
+                'title' => 'Scaffold a project on GitHub',
+                'description' => 'Retry a failed GitHub scaffold, or create and scaffold the repository for a project that has none (pass github). Scaffolding runs on GitHub Actions and takes a few minutes; follow it with projects_show (scaffold.scaffold_status: pending, running, done, or failed, with scaffold_error and scaffold_run_url).',
+            ],
+            'projects_github_link' => [
+                'level' => self::FULL, 'method' => 'POST', 'path' => '/projects/{slug}/github', 'path_params' => $project,
+                'body' => ['properties' => [
+                    'repository' => ['type' => 'string', 'description' => 'owner/name of a repository the Framework app can push to.'],
+                ], 'required' => ['repository']],
+                'title' => 'Link a project to a GitHub repository',
+                'description' => 'Link a project to a repository that already exists, instead of scaffolding a new one. Nothing is written to the repository. Then projects_files_write can add files to it.',
+            ],
+            'projects_files_list' => [
+                'level' => self::READ, 'method' => 'GET', 'path' => '/projects/{slug}/files', 'path_params' => $project,
+                'title' => 'List a project\'s files',
+                'description' => 'Every file in the project\'s GitHub repository (default branch), with sizes.',
+            ],
+            'projects_files_write' => [
+                'level' => self::FULL, 'method' => 'POST', 'path' => '/projects/{slug}/files', 'path_params' => $project,
+                'body' => ['properties' => [
+                    'files' => ['type' => 'array', 'description' => 'Files to create or replace.', 'items' => ['type' => 'object', 'properties' => [
+                        'path' => ['type' => 'string', 'description' => 'Path in the repository, such as notebooks/01-explore.qmd.'],
+                        'content' => ['type' => 'string', 'description' => 'The file\'s text, or base64 with encoding base64.'],
+                        'encoding' => ['type' => 'string', 'enum' => ['utf-8', 'base64'], 'description' => 'Defaults to utf-8.'],
+                    ], 'required' => ['path', 'content']]],
+                    'delete' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Paths to remove.'],
+                    'message' => ['type' => 'string', 'description' => 'The commit message.'],
+                ], 'required' => []],
+                'title' => 'Write files to a project',
+                'description' => 'Create, replace, or delete files in the project\'s GitHub repository, in one commit: notebooks, a README, small data. The project must have a repository whose scaffold is done, or a linked one. For large files, binary files, or a whole folder, use projects_files_upload.',
+            ],
+            'projects_files_upload' => [
+                'level' => self::FULL, 'method' => 'POST', 'path' => '/projects/{slug}/files/uploads', 'path_params' => $project,
+                'body' => ['properties' => [
+                    'path' => ['type' => 'string', 'description' => 'Where the file goes, such as inputs/raw/survey.csv. With unzip: the folder the zip\'s files go under (empty for the repository root).'],
+                    'unzip' => ['type' => 'boolean', 'description' => 'The upload is a zip: commit every file in it.'],
+                    'strip_top_folder' => ['type' => 'boolean', 'description' => 'With unzip: drop a single folder that holds everything, as in a GitHub Download ZIP.'],
+                    'message' => ['type' => 'string', 'description' => 'The commit message.'],
+                ], 'required' => []],
+                'title' => 'Get a project file upload link',
+                'description' => 'For a file on disk, a large or binary file, or a whole folder as a zip, up to 50 MB: returns a one-time link and a curl command that commits the file to the project\'s GitHub repository when run. If you can run commands, run it yourself; otherwise give it to the user. The link expires in 30 minutes.',
             ],
             'projects_delete' => [
                 'level' => self::FULL, 'method' => 'DELETE', 'path' => '/projects/{slug}', 'path_params' => $project,
