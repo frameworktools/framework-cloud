@@ -18,12 +18,20 @@ Date: 2026-11-09. Work for the Yale AI stats course (Plan Course Materials threa
 ## Steps left
 
 1. Reconnect the claude.ai "framework" connector, or start a new chat, so sessions see the new tools. Production serves them already.
-2. Delete the private test repos erikwestlund-teaching/fc-scaffold-smoke-test, -2 and -3. The GitHub app cannot delete repositories. Their cloud projects are in the Trash.
-3. Revoke the API token `course-mcp-fix-verify` on erik@pequod.sh once the course build is signed off.
-4. Course planner: try projects_files_write and projects_files_upload on one exercise. Replace AGENTS.md and CLAUDE.md where the framework package isn't used. Add outputs/<x>/.gitkeep if students' code writes there.
-5. Turn on public_download for exercises 02a–04 when they are ready.
+2. Delete the private test repos in erikwestlund-teaching: fc-scaffold-smoke-test, -2 and -3, and yale-ai-stats-e2e-test. The GitHub app cannot delete repositories, and gh needs the delete_repo scope, which takes a browser confirmation. Their cloud projects are in the Trash. Run:
+
+   ```sh
+   gh auth refresh -h github.com -s delete_repo
+   for r in fc-scaffold-smoke-test fc-scaffold-smoke-test-2 fc-scaffold-smoke-test-3 yale-ai-stats-e2e-test; do
+     gh repo delete "erikwestlund-teaching/$r" --yes
+   done
+   ```
+
+Done since: the planner tested the file tools end to end (fresh project, write, zip upload, clone, here::here()); public download is on for 01–03; 04 keeps its GitHub link, because its data sits in private/; and the token `course-mcp-fix-verify` is revoked.
 
 ## Open
+
+- A per-project "include private folders (public data)" option for public downloads, for teaching projects like 04. Low priority.
 
 - `fw new --from` registers the project with its slug as the name and no description (framework-cli).
 - academic.page QR presenter and /go links: briefed to the pequod-4b session; PR pending Erik's review.
