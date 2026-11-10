@@ -55,4 +55,29 @@ class ShortLinkTest extends TestCase
         $report->delete();
         $this->get("/go/{$link->code}")->assertNotFound();
     }
+
+    public function test_qr_codes_download_as_png_or_svg_for_slides(): void
+    {
+        $report = $this->report();
+        $share = \App\Support\Share::for($report);
+
+        $png = $this->get(parse_url($share['qr_png_download'], PHP_URL_PATH).'?download=1')->assertOk()->assertHeader('Content-Type', 'image/png');
+        $this->assertStringStartsWith("\x89PNG", $png->getContent());
+        $this->assertStringContainsString('findings-qr.png', $png->headers->get('Content-Disposition'));
+        [$width] = getimagesizefromstring($png->getContent());
+        $this->assertSame(1024, $width);
+
+        $this->get(parse_url($share['qr_svg'], PHP_URL_PATH))->assertOk()->assertHeader('Content-Type', 'image/svg+xml');
+    }
+
+    public function test_private_things_have_no_qr_code_or_short_link(): void
+    {
+        $report = $this->report();
+        $link = ShortLink::for($report);
+        $report->update(['visibility' => 'private']);
+
+        $this->assertNull(\App\Support\Share::for($report));
+        $this->get("/go/{$link->code}")->assertNotFound();
+        $this->get("/go/{$link->code}/qr.png")->assertNotFound();
+    }
 }

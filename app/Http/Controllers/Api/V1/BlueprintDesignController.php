@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Support\BlueprintInput;
 use App\Support\Catalog;
 use App\Support\Library;
+use App\Support\Share;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -98,6 +99,8 @@ class BlueprintDesignController extends Controller
             'url' => route('blueprints.show', $blueprint),
             // Anyone can open it; null while the blueprint is private
             'public_url' => $blueprint->publicUrl(),
+            // Short link and QR code (SVG, PNG) for slides; null while private
+            'share' => Share::for($blueprint),
             'choices' => $blueprint->latestVersion ? Catalog::choices($blueprint->latestVersion, $user) : null,
         ];
     }

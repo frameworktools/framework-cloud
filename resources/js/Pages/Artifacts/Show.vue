@@ -1,4 +1,5 @@
 <script setup>
+import ShareQr from '@/Components/ShareQr.vue';
 import { ask } from '@/confirm.js';
 import { pageClass } from '@/ui.js';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
@@ -19,7 +20,7 @@ import { artifactKind } from '@/report-artifacts.js';
 import { EyeIcon, ArrowTopRightOnSquareIcon, LockClosedIcon, TrashIcon, CheckIcon } from '@heroicons/vue/20/solid';
 import { ClipboardDocumentIcon, Square2StackIcon, Square3Stack3DIcon } from '@heroicons/vue/24/outline';
 
-const props = defineProps({ artifact: Object, project: Object, versions: Array, usedIn: Array, mergeSources: Array, handle: String, linkedProjects: { type: Array, default: () => [] }, linkableProjects: { type: Array, default: () => [] } });
+const props = defineProps({ share: { type: Object, default: null }, artifact: Object, project: Object, versions: Array, usedIn: Array, mergeSources: Array, handle: String, linkedProjects: { type: Array, default: () => [] }, linkableProjects: { type: Array, default: () => [] } });
 
 // Projects this artifact is listed in besides its own
 const linking = useForm({ project_id: '' });
@@ -256,6 +257,7 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public', privat
                             </div>
                         </div>
                     </section>
+                    <ShareQr :share="share" />
                     <UiSeparator />
                     <section aria-label="Password">
                         <h2 v-if="artifact.password_protected" class="mb-3 text-sm font-medium text-slate-900 dark:text-white">Password</h2>

@@ -8,6 +8,7 @@ use App\Models\Project;
 use App\Models\Report;
 use App\Models\User;
 use App\Support\ReportPublisher;
+use App\Support\Share;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -207,6 +208,8 @@ class ReportsController extends Controller
     private function detail(Report $report): array
     {
         return $this->summary($report) + [
+            // Short link and QR code (SVG, PNG) for slides; null while private
+            'share' => Share::for($report),
             'blocks' => $report->draft_blocks,
             'versions' => $report->versions()->orderBy('number')->get()->map(fn ($version) => [
                 'number' => $version->number, 'title' => $version->title,

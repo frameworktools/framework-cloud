@@ -11,6 +11,7 @@ use App\Services\Scaffolder\ProjectZip;
 use App\Services\Scaffolder\ProjectZipFailed;
 use App\Support\Layer;
 use App\Support\ProjectLayers;
+use App\Support\Share;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -92,6 +93,8 @@ class ProjectLayersController extends Controller
             'type' => $project->project_type,
             'active' => (bool) ($project->active ?? true),
             'public_download_url' => $project->publicDownloadUrl(),
+            // Short link and QR code (SVG, PNG) for slides; null while private
+            'share' => Share::for($project),
             'adopted' => $project->adopted_at !== null,
             'blueprint' => $version ? ['key' => $version->blueprint->handle, 'version' => $version->version] : null,
             'github' => $project->github_repo ? [

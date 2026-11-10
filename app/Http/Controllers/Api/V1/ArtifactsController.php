@@ -10,6 +10,7 @@ use App\Models\McpConnection;
 use App\Models\Project;
 use App\Models\User;
 use App\Support\ArtifactPublisher;
+use App\Support\Share;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -70,6 +71,8 @@ class ArtifactsController extends Controller
             : $document->latestVersion();
 
         return response()->json($this->summary($document) + [
+            // Short link and QR code (SVG, PNG) for slides; null while private
+            'share' => Share::for($document),
             'version' => $version->number,
             'versions' => $document->versions()->get()->map(fn (DocumentVersion $v) => [
                 'number' => $v->number, 'url' => $v->url(), 'published_at' => $v->created_at?->toIso8601String(),

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Collection;
 use App\Models\Document;
 use App\Support\ArtifactChoices;
+use App\Support\Share;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -61,7 +62,8 @@ class CollectionsController extends Controller
             'project' => $collection->project->only('id', 'name', 'slug', 'is_home'),
             'collection' => [...$collection->only('id', 'title', 'description', 'visibility'),
                 'expires_at' => $collection->expires_at?->toIso8601String(), 'expired' => $collection->isExpired(),
-                'url' => $collection->shareUrl(), 'protected' => (bool) $collection->password_hash],
+                'url' => $collection->shareUrl(), 'protected' => (bool) $collection->password_hash,
+                'share' => Share::for($collection)],
             'items' => $collection->items->map(fn ($item) => $item->only('id', 'document_id', 'version_number', 'caption', 'share_unlisted')),
             'artifacts' => ArtifactChoices::for($collection->project_id),
         ]);

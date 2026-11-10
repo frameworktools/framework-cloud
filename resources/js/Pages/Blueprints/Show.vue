@@ -1,4 +1,5 @@
 <script setup>
+import ShareQr from '@/Components/ShareQr.vue';
 import { ask } from '@/confirm.js';
 import { computed } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
@@ -11,7 +12,7 @@ import PageHeader from '@/Components/PageHeader.vue';
 import { ChevronLeftIcon } from '@heroicons/vue/24/outline';
 import LayerSummary from '@/Components/LayerSummary.vue';
 
-const props = defineProps({ blueprint: Object, version: Object, versions: Array, forked_from: Object });
+const props = defineProps({ blueprint: Object, version: Object, versions: Array, forked_from: Object, share: { type: Object, default: null } });
 
 const page = usePage();
 const errors = computed(() => Object.values(page.props.errors ?? {}));
@@ -58,6 +59,7 @@ const date = (value) => new Date(value).toLocaleDateString();
                     </span>
                 </div>
             </div>
+            <ShareQr :share="share" class="mt-6" />
 
             <UiCallout v-if="errors.length" variant="danger">{{ errors.join(' ') }}</UiCallout>
 

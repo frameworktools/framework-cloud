@@ -9,6 +9,7 @@ use App\Models\ReportVersion;
 use App\Support\ArtifactChoices;
 use App\Support\ReportPublisher;
 use App\Support\ReportText;
+use App\Support\Share;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -92,6 +93,7 @@ class ReportsController extends Controller
         return [...$report->only('id', 'project_id', 'title', 'description', 'slug', 'key', 'visibility', 'draft_blocks', 'next_version_number'),
             'draft_blocks' => collect($report->draft_blocks)->map(fn ($block) => $block['type'] === 'text' ? [...$block, 'text' => ReportText::html($block), 'format' => 'html'] : $block)->all(),
             'url' => $report->shareUrl(), 'password_protected' => (bool) $report->password_hash,
+            'share' => Share::for($report),
             'versions' => $report->versions->map(fn (ReportVersion $version) => ['number' => $version->number, 'title' => $version->title,
                 'description' => $version->description, 'url' => $version->url(), 'created_at' => $version->created_at])];
     }

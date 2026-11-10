@@ -1,4 +1,5 @@
 <script setup>
+import ShareQr from '@/Components/ShareQr.vue';
 import { ask } from '@/confirm.js';
 import { pageClass } from '@/ui.js';
 import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
@@ -331,6 +332,8 @@ const controlClass = 'inline-flex size-7 items-center justify-center rounded-md 
                         <label v-if="report.password_protected" class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300"><input v-model="form.remove_password" type="checkbox" class="rounded border-slate-300">Remove the password</label>
                         <UiInput v-model="form.slug" label="Short name" description="Used in the report’s address." :error="form.errors.slug" />
                     </section>
+
+                    <ShareQr :share="report.share" />
 
                     <section v-if="report.versions?.length" aria-labelledby="versions-title" class="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
                         <h2 id="versions-title" class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Published versions</h2>

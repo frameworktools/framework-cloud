@@ -1,4 +1,5 @@
 <script setup>
+import ShareQr from '@/Components/ShareQr.vue';
 import { ask } from '@/confirm.js';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { router, useForm, usePage } from '@inertiajs/vue3';
@@ -298,6 +299,7 @@ onBeforeUnmount(() => { clearInterval(clock); clearTimeout(timer); window.remove
                         <label v-if="collection.protected" class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300"><input v-model="sharing.remove_password" type="checkbox" class="rounded border-slate-300">Remove the password</label>
                         <UiButton type="submit" variant="ghost" :disabled="sharing.processing">{{ sharing.processing ? 'Saving…' : 'Save sharing' }}</UiButton>
                     </form>
+                    <ShareQr :share="collection.share" />
 
                     <div v-if="collection.visibility !== 'private'" class="space-y-2 border-t border-slate-800/10 pt-6 dark:border-white/10">
                         <p class="text-sm font-medium text-slate-800 dark:text-white">Collection link</p>

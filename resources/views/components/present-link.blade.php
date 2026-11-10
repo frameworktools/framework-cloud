@@ -1,6 +1,7 @@
 @props(['target'])
-@php($short = \App\Models\ShortLink::for($target))
-{{-- Present: a full-screen QR code and short link, for slides and projectors --}}
+@php($share = \App\Support\Share::for($target))
+{{-- Present: a full-screen QR code and short link, for slides and projectors. Private things have none. --}}
+@if ($share)
 <button type="button" onclick="document.getElementById('present-link').showModal()"
     class="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm text-slate-700 hover:bg-slate-800/5 dark:text-slate-200 dark:hover:bg-white/10"
     aria-haspopup="dialog" title="Show a QR code and short link">
@@ -12,14 +13,28 @@
     onclick="if (event.target === this) this.close()">
     <div class="flex h-full flex-col items-center justify-center gap-[3vh] px-6 py-8">
         {{-- Black on white in both themes: scanners and projectors read it best --}}
-        <img src="{{ route('go.qr', $short->code) }}" alt="QR code for {{ $short->display() }}" class="aspect-square w-[min(60vh,86vw)]">
+        <img src="{{ $share['qr_svg'] }}" alt="QR code for {{ $share['short'] }}" class="aspect-square w-[min(56vh,86vw)]">
         {{-- One line, as large as fits: monospace characters are about 0.6em wide --}}
-        <p class="whitespace-nowrap text-center font-mono font-semibold leading-none tracking-tight" style="font-size: min(5rem, calc(92vw / {{ round(strlen($short->display()) * 0.62, 2) }}))">{{ $short->display() }}</p>
-        <p class="text-center text-[clamp(0.95rem,2vw,1.5rem)] text-slate-600">Scan the code, or type the address. At {{ preg_replace('#^https?://#', '', route('go')) }}, enter <span class="font-mono font-semibold text-slate-900">{{ $short->code }}</span>.</p>
-        <div class="flex gap-3">
-            <button type="button" class="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-50"
-                onclick="navigator.clipboard.writeText('{{ $short->url() }}').then(() => { this.textContent = 'Copied'; setTimeout(() => this.textContent = 'Copy link', 1500) })">Copy link</button>
-            <button type="button" class="rounded-md px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100" onclick="this.closest('dialog').close()">Close</button>
+        <p class="whitespace-nowrap text-center font-mono font-semibold leading-none tracking-tight" style="font-size: min(5rem, calc(92vw / {{ round(strlen($share['short']) * 0.62, 2) }}))">{{ $share['short'] }}</p>
+        <p class="text-center text-[clamp(0.95rem,2vw,1.5rem)] text-slate-600">Scan the code, or type the address. At {{ preg_replace('#^https?://#', '', route('go')) }}, enter <span class="font-mono font-semibold text-slate-900">{{ $share['code'] }}</span>.</p>
+        <div class="flex flex-wrap justify-center gap-2 text-sm font-medium">
+            <button type="button" class="rounded-md border border-slate-300 px-3 py-2 hover:bg-slate-50" data-label="Copy link"
+                onclick="navigator.clipboard.writeText('{{ $share['short_url'] }}').then(() => window.fwFlash(this, 'Copied'))">Copy link</button>
+            <button type="button" class="rounded-md border border-slate-300 px-3 py-2 hover:bg-slate-50" data-label="Copy QR image"
+                onclick="window.fwCopyQr(this, '{{ $share['qr_png'] }}')">Copy QR image</button>
+            <a href="{{ $share['qr_png_download'] }}" class="rounded-md border border-slate-300 px-3 py-2 hover:bg-slate-50">Download PNG</a>
+            <a href="{{ $share['qr_svg_download'] }}" class="rounded-md border border-slate-300 px-3 py-2 hover:bg-slate-50">Download SVG</a>
+            <button type="button" class="rounded-md px-3 py-2 text-slate-700 hover:bg-slate-100" onclick="this.closest('dialog').close()">Close</button>
         </div>
     </div>
 </dialog>
+<script>
+    window.fwFlash ??= (button, text) => { button.textContent = text; setTimeout(() => { button.textContent = button.dataset.label; }, 1500); };
+    // A PNG on the clipboard pastes straight into Keynote, PowerPoint, and Google Slides
+    window.fwCopyQr ??= (button, url) => {
+        const png = fetch(url).then((r) => r.blob());
+        navigator.clipboard.write([new ClipboardItem({ 'image/png': png })])
+            .then(() => window.fwFlash(button, 'Copied'), () => window.fwFlash(button, 'Use Download PNG'));
+    };
+</script>
+@endif

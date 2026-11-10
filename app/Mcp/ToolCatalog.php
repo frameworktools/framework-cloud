@@ -39,7 +39,7 @@ class ToolCatalog
             'projects_show' => [
                 'level' => self::READ, 'method' => 'GET', 'path' => '/projects/{slug}', 'path_params' => $project,
                 'title' => 'Show a project',
-                'description' => 'One project: its blueprint, its GitHub repository and Pages site, its scaffold status (scaffold), whether it is active, its public download link, and when it was created.',
+                'description' => 'One project: its blueprint, its GitHub repository and Pages site, its scaffold status (scaffold), whether it is active, its public download link with share (a short link and QR code images for slides), and when it was created.',
             ],
             'projects_create' => [
                 'level' => self::FULL, 'method' => 'POST', 'path' => '/projects',

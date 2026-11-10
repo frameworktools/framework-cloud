@@ -11,6 +11,7 @@ use App\Models\Report;
 use App\Support\ArtifactPublisher;
 use App\Support\PublishDrivers;
 use App\Support\PublishingQuota;
+use App\Support\Share;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -98,6 +99,8 @@ class DocumentsController extends Controller
                 'merged_into' => $document->merged_into_id ? Document::find($document->merged_into_id)?->only('id', 'title') : null,
             ],
             'project' => $document->project->only('id', 'name', 'slug', 'is_home'),
+            // Its short link and QR code, unless it's private
+            'share' => Share::for($document),
             'linkedProjects' => $document->linkedProjects->sortBy('name')->values()->map->only('id', 'name', 'slug'),
             'linkableProjects' => $request->user()->projects()->listed()->whereKeyNot($document->project_id)
                 ->whereNotIn('id', $document->linkedProjects->pluck('id'))->orderBy('name')->get(['id', 'name', 'slug']),

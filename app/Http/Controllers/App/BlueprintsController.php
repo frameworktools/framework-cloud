@@ -11,6 +11,7 @@ use App\Support\Catalog;
 use App\Support\DefaultsPreview;
 use App\Support\Library;
 use App\Support\ProjectDefaults;
+use App\Support\Share;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -169,6 +170,7 @@ class BlueprintsController extends Controller
             'version' => Library::blueprintVersion($version),
             'versions' => $blueprint->versions()->get(['id', 'version', 'notes', 'created_at']),
             'forked_from' => $this->forkedFrom($blueprint, $user),
+            'share' => Share::for($blueprint),
         ]);
     }
 

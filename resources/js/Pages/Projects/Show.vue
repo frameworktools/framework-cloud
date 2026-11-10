@@ -1,4 +1,5 @@
 <script setup>
+import ShareQr from '@/Components/ShareQr.vue';
 import { ask } from '@/confirm.js';
 import { computed, ref, watch, onBeforeUnmount, onMounted } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
@@ -408,6 +409,8 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                     <div><UiButton variant="ghost" @click="setPublicDownload(!project.public_download_url)">{{ project.public_download_url ? 'Turn off link' : 'Create link' }}</UiButton></div>
                 </div>
             </UiPanel>
+
+            <ShareQr v-if="section === 'setup'" :share="project.share" />
 
             <UiPanel v-if="section === 'setup'" title="Project deletion" description="Its tokens stop working, and its artifacts, collections, and reports go offline. Copies on computers and on GitHub stay.">
                 <div><UiButton variant="danger" @click="destroy">Delete project</UiButton></div>

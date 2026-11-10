@@ -145,6 +145,12 @@ class Project extends Model
         $this->save();
     }
 
+    /** Where a short link to it goes: its public download, while it has one. */
+    public function shareUrl(): ?string
+    {
+        return $this->publicDownloadUrl();
+    }
+
     public function publicDownloadUrl(): ?string
     {
         return $this->public_download_key ? route('projects.public-download', $this->public_download_key) : null;

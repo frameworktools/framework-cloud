@@ -24,6 +24,7 @@ use App\Support\ProjectDefaults;
 use App\Support\ProjectLayers;
 use App\Support\ResolvedSelections;
 use App\Support\Resolver;
+use App\Support\Share;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -108,6 +109,7 @@ class ProjectsController extends Controller
             'canPublish' => $request->user()->canPublish(),
             'setup' => fn () => $section === 'setup' ? self::setup($project) : null,
             'project' => self::summary($project) + [
+                'share' => Share::for($project),
                 'tokens' => $project->tokens->sortByDesc('id')->values()
                     ->map(fn ($t) => $t->only(['id', 'name', 'created_at', 'last_used_at'])),
                 'adopted_at' => $project->adopted_at,
