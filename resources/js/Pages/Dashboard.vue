@@ -59,7 +59,7 @@ const removeItem = async (item) => {
 };
 const menuFor = (item) => [
     { label: 'Edit', href: item.management_url },
-    { label: 'Share', onSelect: () => { shareTarget.value = { type: item.shareType, id: item.id, title: item.title, settings: item.management_url }; } },
+    { label: 'Share', onSelect: () => { shareTarget.value = { type: item.shareType, id: item.id, title: item.title, settings: item.shareType === 'artifact' ? `${item.management_url}?tab=sharing` : item.management_url }; } },
     { divider: true },
     { label: 'Delete', danger: true, onSelect: () => removeItem(item) },
 ];

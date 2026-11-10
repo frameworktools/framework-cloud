@@ -34,7 +34,7 @@ const removeArtifact = async (doc) => {
 };
 const menuFor = (doc) => [
     { label: 'Edit', href: `/artifacts/${doc.id}` },
-    { label: 'Share', onSelect: () => { shareTarget.value = { type: 'artifact', id: doc.id, title: doc.title, settings: `/artifacts/${doc.id}` }; } },
+    { label: 'Share', onSelect: () => { shareTarget.value = { type: 'artifact', id: doc.id, title: doc.title, settings: `/artifacts/${doc.id}?tab=sharing` }; } },
     { divider: true },
     { label: 'Delete', danger: true, onSelect: () => removeArtifact(doc) },
 ];

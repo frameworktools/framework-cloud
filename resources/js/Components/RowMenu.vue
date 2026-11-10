@@ -12,10 +12,17 @@ const button = ref(null);
 const menu = ref(null);
 const position = ref({ top: 0, left: 0 });
 
+// Below the button, or above it when there's no room below; it follows the button as the page scrolls
 const place = () => {
+    if (!button.value) return;
     const rect = button.value.getBoundingClientRect();
     const width = 224;
-    position.value = { top: rect.bottom + 4, left: Math.max(8, Math.min(rect.right - width, window.innerWidth - width - 8)) };
+    const height = menu.value?.offsetHeight ?? 0;
+    const below = rect.bottom + 4 + height <= window.innerHeight - 8;
+    position.value = {
+        top: below || !height ? rect.bottom + 4 : Math.max(8, rect.top - height - 4),
+        left: Math.max(8, Math.min(rect.right - width, window.innerWidth - width - 8)),
+    };
 };
 const close = () => { open.value = false; removeListeners(); };
 const onOutside = (event) => {
@@ -27,13 +34,13 @@ const onKey = (event) => {
         event.preventDefault();
         const entries = [...(menu.value?.querySelectorAll('[role=menuitem]') ?? [])];
         const at = entries.indexOf(document.activeElement);
-        entries[(at + (event.key === 'ArrowDown' ? 1 : entries.length - 1)) % entries.length]?.focus();
+        entries[(at + (event.key === 'ArrowDown' ? 1 : entries.length - 1)) % entries.length]?.focus({ preventScroll: true });
     }
 };
 const removeListeners = () => {
     document.removeEventListener('mousedown', onOutside);
     document.removeEventListener('keydown', onKey);
-    window.removeEventListener('scroll', close, true);
+    window.removeEventListener('scroll', place, true);
     window.removeEventListener('resize', close);
 };
 const toggle = async () => {
@@ -42,10 +49,13 @@ const toggle = async () => {
     open.value = true;
     document.addEventListener('mousedown', onOutside);
     document.addEventListener('keydown', onKey);
-    window.addEventListener('scroll', close, true);
+    window.addEventListener('scroll', place, true);
     window.addEventListener('resize', close);
     await nextTick();
-    menu.value?.querySelector('[role=menuitem]')?.focus();
+    // Now that it has a height, flip it above the button if it won't fit below
+    place();
+    // preventScroll: focusing mustn't scroll the page out from under the menu
+    menu.value?.querySelector('[role=menuitem]')?.focus({ preventScroll: true });
 };
 const choose = (item) => {
     close();

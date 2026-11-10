@@ -125,7 +125,7 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
 const shareTarget = ref(null);
 const artifactMenu = (doc) => [
     { label: 'Manage', href: `/artifacts/${doc.id}` },
-    { label: 'Share', onSelect: () => { shareTarget.value = { type: 'artifact', id: doc.id, title: doc.title, settings: `/artifacts/${doc.id}` }; } },
+    { label: 'Share', onSelect: () => { shareTarget.value = { type: 'artifact', id: doc.id, title: doc.title, settings: `/artifacts/${doc.id}?tab=sharing` }; } },
     { divider: true },
     // A linked artifact belongs to another project: take it off this one instead
     doc.linked_from
@@ -427,7 +427,7 @@ const artifactMenu = (doc) => [
                 </div>
             </UiPanel>
 
-            <ShareQr v-if="section === 'setup'" :share="project.share" />
+            <ShareQr v-if="section === 'setup'" :share="project.share" unavailable="Create the public download link above to get a QR code for it." />
 
             <UiPanel v-if="section === 'setup'" title="Project deletion" description="Its tokens stop working, and its artifacts, collections, and reports go offline. Copies on computers and on GitHub stay.">
                 <div><UiButton variant="danger" @click="destroy">Delete project</UiButton></div>

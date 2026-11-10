@@ -333,7 +333,7 @@ const controlClass = 'inline-flex size-7 items-center justify-center rounded-md 
                         <UiInput v-model="form.slug" label="Short name" description="Used in the report’s address." :error="form.errors.slug" />
                     </section>
 
-                    <ShareQr :share="report.share" />
+                    <ShareQr :share="report.share" unavailable="It's private, so it has no QR code. Choose Anyone with the link or Public in Sharing and save." />
 
                     <section v-if="report.versions?.length" aria-labelledby="versions-title" class="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
                         <h2 id="versions-title" class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Published versions</h2>

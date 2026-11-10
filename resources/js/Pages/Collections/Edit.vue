@@ -299,7 +299,7 @@ onBeforeUnmount(() => { clearInterval(clock); clearTimeout(timer); window.remove
                         <label v-if="collection.protected" class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300"><input v-model="sharing.remove_password" type="checkbox" class="rounded border-slate-300">Remove the password</label>
                         <UiButton type="submit" variant="ghost" :disabled="sharing.processing">{{ sharing.processing ? 'Saving…' : 'Save sharing' }}</UiButton>
                     </form>
-                    <ShareQr :share="collection.share" />
+                    <ShareQr :share="collection.share" unavailable="It's private, so it has no QR code. Choose Anyone with the link or Public above and save." />
 
                     <div v-if="collection.visibility !== 'private'" class="space-y-2 border-t border-slate-800/10 pt-6 dark:border-white/10">
                         <p class="text-sm font-medium text-slate-800 dark:text-white">Collection link</p>

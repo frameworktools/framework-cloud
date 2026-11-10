@@ -59,7 +59,7 @@ const date = (value) => new Date(value).toLocaleDateString();
                     </span>
                 </div>
             </div>
-            <ShareQr :share="share" class="mt-6" />
+            <ShareQr :share="share" :unavailable="blueprint.editable && !blueprint.is_system ? 'It\'s private, so it has no QR code or public page. Make it unlisted or public in Edit.' : null" class="mt-6" />
 
             <UiCallout v-if="errors.length" variant="danger">{{ errors.join(' ') }}</UiCallout>
 

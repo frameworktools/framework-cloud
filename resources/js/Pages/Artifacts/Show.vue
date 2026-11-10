@@ -83,8 +83,10 @@ function fit(event) {
         // The reader fills its window and scrolls inside <main>, so measure what <main> holds
         const main = doc.querySelector('main') || doc.body;
         const resize = async () => {
-            const content = main.offsetTop + main.scrollHeight;
-            frame.style.height = `${Math.max(160, content, main === doc.body ? 0 : doc.body.scrollHeight - main.clientHeight + main.scrollHeight)}px`;
+            const content = Math.max(main.offsetTop + main.scrollHeight, main === doc.body ? 0 : doc.body.scrollHeight - main.clientHeight + main.scrollHeight);
+            // At least the window's height, so the preview takes the space it has; taller content grows the page
+            frame.style.height = `${Math.max(content, window.innerHeight - 160, 512)}px`;
+            frame.setAttribute('scrolling', 'no');
         };
         resize();
         observer = new ResizeObserver(resize);
@@ -203,7 +205,7 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public', privat
                             <p class="flex items-center gap-2 text-sm"><EyeIcon class="size-4 text-slate-400" aria-hidden="true" /><span class="font-semibold text-slate-900 dark:text-white">Preview</span><span class="text-slate-500 dark:text-slate-400">Newest version, as readers see it</span></p>
                             <a v-if="hasUrl" :href="artifact.url" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">Open<ArrowTopRightOnSquareIcon class="size-4" aria-hidden="true" /></a>
                         </div>
-                        <iframe v-if="!external" :src="previewUrl" :title="`Preview of ${artifact.title}`" scrolling="no" class="block h-96 w-full overflow-hidden border-0 bg-white dark:bg-slate-950" @load="fit" />
+                        <iframe v-if="!external" :src="previewUrl" :title="`Preview of ${artifact.title}`" class="block h-[calc(100dvh-10rem)] min-h-[32rem] w-full border-0 bg-white dark:bg-slate-950" @load="fit" />
                     </div>
                     </div>
                 </div>
@@ -257,7 +259,7 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public', privat
                             </div>
                         </div>
                     </section>
-                    <ShareQr :share="share" />
+                    <ShareQr :share="share" unavailable="It's private, so it has no QR code. Choose Anyone with the link or Public above and save." />
                     <UiSeparator />
                     <section aria-label="Password">
                         <h2 v-if="artifact.password_protected" class="mb-3 text-sm font-medium text-slate-900 dark:text-white">Password</h2>
