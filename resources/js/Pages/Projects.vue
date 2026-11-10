@@ -19,12 +19,13 @@ import { languageNames } from '@/library.js';
 import { statusLabel, statusVariant, typeName } from '@/projects.js';
 
 const props = defineProps({ projects: Array, recentArtifacts: { type: Array, default: () => [] }, recentReports: { type: Array, default: () => [] }, recentCollections: { type: Array, default: () => [] }, canPublish: Boolean });
-// Active projects by default; triaged, completed, and inactive ones are a tab away
+// Active projects by default; triaged, completed, and inactive ones each have a tab
 const statuses = { active: 'Active', triaged: 'Triaged', completed: 'Completed', inactive: 'Inactive' };
 const show = ref('active');
 const count = (status) => props.projects.filter((p) => p.status === status).length;
 const tabs = computed(() => [
-    ...Object.entries(statuses).filter(([key]) => key === 'active' || count(key) > 0).map(([key, label]) => ({ label, value: key, count: count(key) })),
+    // Every status shows, even at 0, so where things go is always visible
+    ...Object.entries(statuses).map(([key, label]) => ({ label, value: key, count: count(key) })),
     { label: 'All', value: 'all', count: props.projects.length },
 ]);
 const shown = computed(() => (show.value === 'all' ? props.projects : props.projects.filter((p) => p.status === show.value)));
