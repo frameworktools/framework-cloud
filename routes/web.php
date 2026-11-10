@@ -188,6 +188,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('projects/{project}/status', [ProjectsController::class, 'setStatus'])->whereNumber('project');
     // A thing's short link and QR code, for the share dialog in lists
     Route::get('share/{type}/{id}', ShareController::class)->whereIn('type', ['artifact', 'report', 'collection', 'blueprint', 'project'])->whereNumber('id');
+    Route::post('share/{type}/{id}', [ShareController::class, 'open'])->whereIn('type', ['artifact', 'report', 'collection', 'blueprint', 'project'])->whereNumber('id')->middleware('throttle:30,1');
     Route::put('projects/{project}/public-download', [ProjectsController::class, 'setPublicDownload'])->whereNumber('project');
     Route::post('projects/{project}/scaffold/refresh', [ProjectsController::class, 'refreshScaffold']);
     Route::post('projects/{project}/scaffold/retry', [ProjectsController::class, 'retryScaffold']);

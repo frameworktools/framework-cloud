@@ -6,6 +6,7 @@ use App\Models\Project;
 use App\Models\Report;
 use App\Models\ShortLink;
 use App\Models\User;
+use App\Support\Share;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -59,7 +60,7 @@ class ShortLinkTest extends TestCase
     public function test_qr_codes_download_as_png_or_svg_for_slides(): void
     {
         $report = $this->report();
-        $share = \App\Support\Share::for($report);
+        $share = Share::for($report);
 
         $png = $this->get(parse_url($share['qr_png_download'], PHP_URL_PATH).'?download=1')->assertOk()->assertHeader('Content-Type', 'image/png');
         $this->assertStringStartsWith("\x89PNG", $png->getContent());
@@ -76,8 +77,25 @@ class ShortLinkTest extends TestCase
         $link = ShortLink::for($report);
         $report->update(['visibility' => 'private']);
 
-        $this->assertNull(\App\Support\Share::for($report));
+        $this->assertNull(Share::for($report));
         $this->get("/go/{$link->code}")->assertNotFound();
         $this->get("/go/{$link->code}/qr.png")->assertNotFound();
+    }
+
+    public function test_the_share_dialog_makes_a_private_thing_shareable_first(): void
+    {
+        $report = $this->report();
+        $report->update(['visibility' => 'private']);
+        $owner = $report->project->user;
+
+        $this->actingAs($owner)->getJson("/share/report/{$report->id}")->assertOk()->assertJsonPath('share', null);
+        $this->actingAs($owner)->postJson("/share/report/{$report->id}", ['visibility' => 'private'])->assertStatus(422);
+
+        $this->actingAs($owner)->postJson("/share/report/{$report->id}", ['visibility' => 'unlisted'])->assertOk()
+            ->assertJsonPath('visibility', 'unlisted')->assertJsonPath('share.short', fn ($s) => str_contains($s, '/go/'));
+        $this->assertSame('unlisted', $report->fresh()->visibility);
+
+        // Someone else's
+        $this->actingAs(User::factory()->create())->postJson("/share/report/{$report->id}", ['visibility' => 'public'])->assertNotFound();
     }
 }
