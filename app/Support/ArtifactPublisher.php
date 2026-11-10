@@ -120,6 +120,7 @@ class ArtifactPublisher
             // The page's preview and chart are built now, once, not when someone first opens it
             try {
                 ArtifactPreview::forVersion($version);
+                ChartPage::store($version);
             } catch (Throwable $e) {
                 report($e);
             }

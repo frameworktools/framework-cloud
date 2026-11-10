@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Chart</title>
+    <script>if (new URLSearchParams(location.search).has('dark')) document.documentElement.classList.add('dark');</script>
     <style>
         html, body { margin: 0; background: transparent; font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif; }
         body { padding: 8px; }

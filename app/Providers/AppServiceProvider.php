@@ -4,11 +4,16 @@ namespace App\Providers;
 
 use App\Http\Controllers\OAuth\ApproveMcpAuthorizationController;
 use App\Models\McpApprovedApp;
+use App\Support\ContentHost;
 use App\Support\Credentials;
 use App\Support\TrustedProxies;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Foundation\Events\DiagnosingHealth;
 use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
@@ -16,6 +21,7 @@ use Inertia\Inertia;
 use Laravel\Passport\Passport;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\GithubProvider;
+use RuntimeException;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -34,6 +40,19 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // framework.pub must never relay published files. With a content host but
+        // no Worker signing key, production logs a critical error (at most every
+        // ten minutes), /up fails, and the metric framework_content_worker_on is 0.
+        $workerMissing = fn () => app()->isProduction() && ContentHost::enabled() && blank(config('framework.content_signing_key'));
+        if ($workerMissing() && Cache::add('content-worker-missing-logged', true, 600)) {
+            Log::critical('FW_CONTENT_SIGNING_KEY is missing: published files are being relayed through the app instead of the content Worker.');
+        }
+        Event::listen(DiagnosingHealth::class, function () use ($workerMissing) {
+            if ($workerMissing()) {
+                throw new RuntimeException('FW_CONTENT_SIGNING_KEY is missing; the content Worker is off.');
+            }
+        });
+
         // Signing in with GitHub uses its own OAuth app, which reads only email addresses
         Socialite::extend('github-login', fn () => Socialite::buildProvider(GithubProvider::class, config('services.github_login')));
 

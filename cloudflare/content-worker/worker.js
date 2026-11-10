@@ -19,6 +19,9 @@ const TYPES = {
     txt: 'text/plain; charset=utf-8', pdf: 'application/pdf',
 };
 
+// A Vega-Lite chart page (App\\Support\\ChartPage::CSP): the pinned chart libraries, no network
+const CHART_CSP = "sandbox allow-scripts; default-src 'none'; script-src https://cdn.jsdelivr.net 'unsafe-inline' 'unsafe-eval'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:";
+
 const typeOf = (path) => TYPES[(path.split('.').pop() || '').toLowerCase()] || 'application/octet-stream';
 
 const fromBase64Url = (s) => {
@@ -82,7 +85,7 @@ export default {
         const headers = new Headers({
             'Content-Type': type || 'application/octet-stream',
             'X-Content-Type-Options': 'nosniff',
-            'Content-Security-Policy': `sandbox allow-scripts allow-downloads; frame-ancestors 'self' ${app}`,
+            'Content-Security-Policy': `${claims.c === 'chart' ? CHART_CSP : 'sandbox allow-scripts allow-downloads'}; frame-ancestors 'self' ${app}`,
             'Referrer-Policy': 'no-referrer',
             'Access-Control-Allow-Origin': '*',
             // Each link is signed and short-lived; browsers may keep it until it expires

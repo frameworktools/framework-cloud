@@ -58,6 +58,12 @@ class ContentWorker
         return self::link($claims, $version->contentFilename());
     }
 
+    /** A Vega-Lite artifact's stored chart page, in the chart's stricter sandbox. */
+    public static function chart(DocumentVersion $version, string $path): string
+    {
+        return self::link(['k' => $path, 't' => 'text/html; charset=utf-8', 'c' => 'chart'], 'chart.html');
+    }
+
     /** A download of an object in the Worker's bucket, saved under its name. */
     public static function download(string $path, string $filename, string $type): string
     {

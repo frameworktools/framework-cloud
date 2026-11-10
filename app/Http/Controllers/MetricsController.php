@@ -8,6 +8,7 @@ use App\Models\LedgerEntry;
 use App\Models\Project;
 use App\Models\SettingRevision;
 use App\Models\User;
+use App\Support\ContentWorker;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
@@ -24,6 +25,10 @@ class MetricsController extends Controller
             '# HELP framework_app_up Application responded to the metrics scrape.',
             '# TYPE framework_app_up gauge',
             'framework_app_up 1',
+
+            '# HELP framework_content_worker_on 1 when the content Worker serves published files; 0 means the app relays them.',
+            '# TYPE framework_content_worker_on gauge',
+            'framework_content_worker_on '.(ContentWorker::on() ? 1 : 0),
 
             '# HELP framework_queue_jobs_pending Jobs waiting on the default queue.',
             '# TYPE framework_queue_jobs_pending gauge',

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Support\ArtifactContentAccess;
+use App\Support\ChartPage;
 use App\Support\ContentHost;
 use App\Support\ContentWorker;
 use Illuminate\Database\Eloquent\Model;
@@ -121,6 +122,13 @@ class DocumentVersion extends Model
     /** The sandboxed page that draws a Vega-Lite chart. */
     public function chartUrl(): string
     {
+        // The page stored at publish time, through the Worker
+        if (ContentWorker::enabled($this) && ChartPage::ensure($this)) {
+            abort_unless($this->document->canRead(), 403, 'Enter the artifact password on its page.');
+
+            return ContentWorker::chart($this, ChartPage::path($this));
+        }
+
         return ContentHost::route('documents.chart', [
             'key' => $this->document->key, 'number' => $this->number,
             'access' => ArtifactContentAccess::issue($this),
@@ -155,6 +163,6 @@ class DocumentVersion extends Model
 
             return;
         }
-        $disk->delete(array_filter([$this->disk_path, $this->representationPath()]));
+        $disk->delete(array_filter([$this->disk_path, $this->representationPath(), ChartPage::path($this)]));
     }
 }

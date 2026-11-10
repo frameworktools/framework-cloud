@@ -156,4 +156,47 @@ class ContentWorkerTest extends TestCase
         $project->setPublicDownload(false);
         Storage::disk('local')->assertMissing("{$folder}/".str_repeat('b', 40).'.zip');
     }
+
+    public function test_charts_are_stored_pages_served_by_the_worker(): void
+    {
+        $spec = json_encode(['$schema' => 'https://vega.github.io/schema/vega-lite/v5.json', 'mark' => 'bar',
+            'data' => ['values' => [['a' => 1]]], 'encoding' => ['x' => ['field' => 'a', 'type' => 'quantitative']]]);
+        $version = $this->publish('public', 'figure.vl.json', $spec);
+        $page = dirname($version->disk_path).'/chart.html';
+
+        // Built at publish
+        Storage::disk('local')->assertExists($page);
+        $this->assertStringContainsString('data-phiz=', Storage::disk('local')->get($page));
+
+        $html = $this->get('https://app.example.test/d/'.$version->document->key)->assertOk()->getContent();
+        preg_match('/data-src="([^"]+)"/', $html, $m);
+        $claims = $this->claims(html_entity_decode($m[1]));
+        $this->assertSame($page, $claims['k']);
+        $this->assertSame('chart', $claims['c']);
+
+        // Old chart links redirect, keeping the theme
+        config(['framework.content_signing_key' => null]);
+        $old = $version->fresh()->chartUrl();
+        config(['framework.content_signing_key' => self::KEY]);
+        $location = $this->get($old.'?dark=1')->assertRedirect()->headers->get('Location');
+        $this->assertStringEndsWith('?dark=1', $location);
+
+        // A version from before stored pages gets one on first use
+        Storage::disk('local')->delete($page);
+        Cache::flush();
+        $version->fresh()->chartUrl();
+        Storage::disk('local')->assertExists($page);
+
+        // Deleting the version's files takes the page too
+        $version->fresh()->deleteFiles();
+        Storage::disk('local')->assertMissing($page);
+    }
+
+    public function test_production_fails_its_health_check_without_the_worker_key(): void
+    {
+        $this->get('/up')->assertOk();
+        $this->app->detectEnvironment(fn () => 'production');
+        config(['framework.content_signing_key' => null]);
+        $this->get('/up')->assertStatus(500);
+    }
 }

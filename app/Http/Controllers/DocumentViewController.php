@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Support\ArtifactContentAccess;
 use App\Support\ArtifactPreview;
 use App\Support\BundleExtractor;
+use App\Support\ChartPage;
 use App\Support\ContentHost;
 use App\Support\ContentWorker;
 use Illuminate\Http\RedirectResponse;
@@ -16,8 +17,6 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
-use Phiz\Assets;
-use Phiz\Html;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -169,20 +168,21 @@ class DocumentViewController extends Controller
      * A Vega-Lite chart, drawn in an opaque sandbox: a specification can run Vega expressions and name data
      * URLs, so it gets no access to this origin and no network beyond the pinned chart libraries.
      */
-    public function chart(Request $request, string $key, int $number, string $access): Response
+    public function chart(Request $request, string $key, int $number, string $access): Response|RedirectResponse
     {
         $version = $this->version($this->byKey($key), $number);
         abort_unless(ArtifactContentAccess::accepts($version, $access), 403);
         abort_unless(ArtifactPreview::isVegaLite($version->original_filename) && ! $version->isBundle() && ! $version->usesExternalUrl(), 404);
-        $spec = ArtifactPreview::vegaLiteSpec($version) ?? abort(404);
-        $dark = $request->boolean('dark');
+        // Links issued before chart pages were stored: send them to the stored page
+        if (ContentWorker::enabled($version) && ChartPage::ensure($version)) {
+            return redirect()->away(ContentWorker::chart($version, ChartPage::path($version)).($request->boolean('dark') ? '?dark=1' : ''))
+                ->header('Cache-Control', 'private, no-store');
+        }
+        $html = ChartPage::render($version, $request->boolean('dark')) ?? abort(404);
 
-        return response()->view('documents.chart', [
-            'container' => Html::container($spec, ['actions' => false, 'theme' => 'auto', 'config' => ['background' => 'transparent']], ['style' => 'width:100%']),
-            'scripts' => Assets::cdn()->scripts(),
-            'dark' => $dark,
-        ])->withHeaders([
-            'Content-Security-Policy' => "sandbox allow-scripts; default-src 'none'; script-src https://cdn.jsdelivr.net 'unsafe-inline' 'unsafe-eval'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; ".ContentHost::frameAncestors(),
+        return response($html)->withHeaders([
+            'Content-Type' => 'text/html; charset=utf-8',
+            'Content-Security-Policy' => ChartPage::CSP.'; '.ContentHost::frameAncestors(),
             'X-Content-Type-Options' => 'nosniff',
             'Referrer-Policy' => 'no-referrer',
             'Cache-Control' => 'private, no-store',
