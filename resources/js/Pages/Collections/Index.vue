@@ -10,7 +10,7 @@ import ProjectLayout from '@/Layouts/ProjectLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiTable from '@/Components/UiTable.vue';
-import { inputClass, selectClass } from '@/ui.js';
+import { inputClass, labelClass, selectClass } from '@/ui.js';
 import { ClockIcon, LockClosedIcon, RectangleStackIcon } from '@heroicons/vue/20/solid';
 
 const props = defineProps({ projects: { type: Array, default: () => [] }, project: Object, collections: Array });
@@ -40,10 +40,9 @@ const menuFor = (collection) => [
         <div class="space-y-8">
             <PageHeader title="Collections" description="Related artifacts for readers, collaborators, or reviewers. Entries can use the latest version or a fixed version." />
 
-            <form class="flex flex-wrap items-start gap-2" @submit.prevent="form.post(selectedProject ? `/projects/${selectedProject}/collections` : '/collections')">
-                <label v-if="!project" class="w-full sm:w-56"><span class="sr-only">Project for new collection</span><select v-model="selectedProject" :class="selectClass"><option value="">No project</option><option v-for="choice in projects" :key="choice.id" :value="choice.id">{{ choice.name }}</option></select></label>
-                <label class="sr-only" for="new-collection">Collection title</label>
-                <input id="new-collection" v-model="form.title" required placeholder="Collection title" :class="[inputClass, 'max-w-sm flex-1 basis-64']">
+            <form class="flex flex-wrap items-end gap-y-3 gap-2" @submit.prevent="form.post(selectedProject ? `/projects/${selectedProject}/collections` : '/collections')">
+                <div v-if="!project" class="flex w-full flex-col gap-2 sm:w-56"><label for="new-collection-project" :class="labelClass">Project</label><select id="new-collection-project" v-model="selectedProject" :class="selectClass"><option value="">No project</option><option v-for="choice in projects" :key="choice.id" :value="choice.id">{{ choice.name }}</option></select></div>
+                <div class="flex max-w-sm flex-1 basis-64 flex-col gap-2"><label for="new-collection" :class="labelClass">Title</label><input id="new-collection" v-model="form.title" required placeholder="Collection title" :class="inputClass"></div>
                 <UiButton type="submit" :disabled="form.processing">Create collection</UiButton>
                 <p v-if="form.errors.title" class="w-full text-sm text-red-600 dark:text-red-400">{{ form.errors.title }}</p>
             </form>
