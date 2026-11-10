@@ -40,7 +40,8 @@ const form = useForm({
 });
 const showAdvanced = ref(!!props.start?.extra_yaml);
 
-const save = () => (editing.value ? form.put(`/blueprints/${props.blueprint.id}`) : form.post('/blueprints'));
+const save = () => (editing.value ? form.put(`/blueprints/${props.blueprint.id}`, { preserveScroll: true, preserveState: true }) : form.post('/blueprints'));
+const saved = computed(() => page.props.flash.status === 'blueprint-saved');
 
 // What the blueprint supports. Stata has only Scripts only.
 const workflowNames = { quarto: 'Quarto', jupyter: 'Jupyter', scripts: 'Scripts only' };
@@ -180,8 +181,9 @@ const items = [
             <UiButton save-shortcut type="submit" form="blueprint-form" class="w-full" :disabled="form.processing || !form.structure">
                 {{ editing ? 'Save new version' : 'Create blueprint' }}
             </UiButton>
+            <p v-if="saved && !form.isDirty" role="status" class="text-center text-sm text-emerald-700 dark:text-emerald-400">Saved.</p>
             <UiButton v-if="editing && freshCopy" variant="ghost" class="w-full" @click="discardCopy">Discard copy</UiButton>
-            <Link v-else :href="editing ? `/blueprints/${blueprint.id}` : '/blueprints'" class="block"><UiButton variant="ghost" class="w-full">Cancel</UiButton></Link>
+            <Link v-else :href="editing ? `/blueprints/${blueprint.id}` : '/blueprints'" class="block"><UiButton variant="ghost" class="w-full">{{ saved && !form.isDirty ? 'Done' : 'Cancel' }}</UiButton></Link>
         </template>
     </SectionLayout>
 </template>

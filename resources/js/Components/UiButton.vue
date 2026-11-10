@@ -69,8 +69,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
         <slot />
         <kbd
             v-if="saveShortcut"
-            class="rounded px-1 font-sans text-[11px] leading-4 font-normal max-sm:hidden"
-            :class="variant === 'primary' ? 'text-sky-100 ring-1 ring-sky-200/50' : variant === 'danger' ? 'text-white/80 ring-1 ring-white/40' : 'text-slate-500 ring-1 ring-slate-800/15 dark:text-slate-400 dark:ring-white/20'"
+            class="ml-1 font-sans text-[11px] leading-4 font-normal max-sm:hidden"
+            :class="variant === 'primary' ? 'text-sky-100' : variant === 'danger' ? 'text-white/80' : 'text-slate-500 dark:text-slate-400'"
         >{{ hint }}</kbd>
     </component>
 </template>

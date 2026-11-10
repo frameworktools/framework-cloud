@@ -20,7 +20,7 @@ const form = useForm({
     handle: props.profile.handle ?? '',
     profile_public: props.profile.profile_public,
 });
-const save = () => form.patch('/account/account');
+const save = () => form.patch('/account/account', { preserveScroll: true });
 
 
 const showDelete = ref(false);

@@ -199,7 +199,8 @@ class BlueprintsController extends Controller
             $blueprint->publish($base, $facetVersionIds, $layer, $notes, $compatibility);
         });
 
-        return to_route('blueprints.show', $blueprint)->with('status', 'blueprint-saved');
+        // Saving keeps you where you were in the editor
+        return back()->with('status', 'blueprint-saved');
     }
 
     public function fork(Request $request, Blueprint $blueprint): RedirectResponse
