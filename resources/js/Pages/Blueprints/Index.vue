@@ -210,8 +210,11 @@ const pill = (on) => on
                                 <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ supportLine(b) }}</p>
                             </div>
                             <div class="flex shrink-0 flex-wrap items-center gap-2">
-                                <Link :href="newProject(b)"><UiButton size="sm">New project</UiButton></Link>
-                                <RowMenu :items="menuFor(b)" :label="`Actions for ${b.name}`" />
+                                <!-- One split button: New project, and the rest in its menu -->
+                                <div class="inline-flex items-stretch divide-x divide-slate-800/10 rounded-md bg-white ring-1 ring-slate-800/15 dark:divide-white/15 dark:bg-transparent dark:ring-white/20">
+                                    <Link :href="newProject(b)" class="inline-flex h-8 items-center gap-1.5 rounded-l-md px-3 text-sm font-medium text-slate-800 hover:bg-slate-800/5 focus-visible:outline-2 focus-visible:outline-sky-600 dark:text-slate-100 dark:hover:bg-white/10"><PlusIcon class="size-4 text-slate-500 dark:text-slate-400" aria-hidden="true" />New project</Link>
+                                    <RowMenu attached :items="menuFor(b)" :label="`More actions for ${b.name}`" />
+                                </div>
                             </div>
                         </div>
                         <div class="px-4 pb-3 sm:px-5" :class="openIn(section) === b.id ? '' : '-mt-2'">

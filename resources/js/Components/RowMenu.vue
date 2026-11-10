@@ -6,7 +6,8 @@ import { nextTick, onBeforeUnmount, ref } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { EllipsisHorizontalIcon } from '@heroicons/vue/20/solid';
 
-const props = defineProps({ items: { type: Array, required: true }, label: { type: String, default: 'Actions' } });
+// attached: the right half of a split button, joined to the button before it (see Blueprints)
+const props = defineProps({ items: { type: Array, required: true }, label: { type: String, default: 'Actions' }, attached: Boolean });
 const open = ref(false);
 const button = ref(null);
 const menu = ref(null);
@@ -68,7 +69,8 @@ onBeforeUnmount(removeListeners);
 
 <template>
     <button ref="button" type="button" :aria-label="label" :title="label" aria-haspopup="menu" :aria-expanded="String(open)"
-        class="inline-flex size-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-800/5 hover:text-slate-800 focus-visible:outline-2 focus-visible:outline-sky-600 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
+        class="inline-flex items-center justify-center text-slate-500 hover:bg-slate-800/5 hover:text-slate-800 focus-visible:outline-2 focus-visible:outline-sky-600 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
+        :class="attached ? 'h-8 w-8 rounded-r-md' : 'size-8 rounded-md'"
         @click.stop.prevent="toggle">
         <EllipsisHorizontalIcon class="size-5" aria-hidden="true" />
     </button>
