@@ -46,7 +46,7 @@ api=https://api.cloudflare.com/client/v4
 curl -s -K "$work/curl.cfg" -X PUT "$api/accounts/$ACCOUNT/workers/scripts/$SCRIPT" \
     -F "metadata=@$work/metadata.json;type=application/json" \
     -F "worker.js=@$HERE/cloudflare/content-worker/worker.js;type=application/javascript+module" \
-    | python3 -c 'import sys,json; r=json.load(sys.stdin); print("Worker uploaded") if r["success"] else sys.exit(f"Worker upload failed: {r[\"errors\"]}. The token needs Account > Workers Scripts > Edit.")'
+    | python3 -c 'import sys,json; r=json.load(sys.stdin); print("Worker uploaded") if r["success"] else sys.exit("Worker upload failed: %s. The token needs Account > Workers Scripts > Edit." % r["errors"])'
 
 routes=$(curl -s -K "$work/curl.cfg" "$api/zones/$ZONE/workers/routes")
 if echo "$routes" | python3 -c "import sys,json; sys.exit(0 if any(r['pattern']=='$PATTERN' for r in json.load(sys.stdin)['result']) else 1)"; then
