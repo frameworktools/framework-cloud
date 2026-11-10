@@ -90,7 +90,6 @@ class Project extends Model
             'payload' => 'array',
             'composition' => 'array',
             'github_private' => 'boolean',
-            'active' => 'boolean',
             'is_home' => 'boolean',
             // spec stays raw JSON text so empty maps stay {}
             'spec_received_at' => 'datetime',
@@ -143,6 +142,17 @@ class Project extends Model
 
         $this->public_download_key ??= Str::random(32);
         $this->save();
+    }
+
+    /** Where a project stands. Active ones make the main Projects list. */
+    public const STATUSES = ['active', 'triaged', 'completed', 'inactive'];
+
+    public const STATUS_NAMES = ['active' => 'Active', 'triaged' => 'Triaged', 'completed' => 'Completed', 'inactive' => 'Inactive'];
+
+    /** True for active projects (the old flag; API clients still read it). */
+    public function getActiveAttribute(): bool
+    {
+        return ($this->status ?? 'active') === 'active';
     }
 
     /** Where a short link to it goes: its public download, while it has one. */

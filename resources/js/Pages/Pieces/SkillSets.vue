@@ -1,4 +1,6 @@
 <script setup>
+import RowMenu from '@/Components/RowMenu.vue';
+import { ask } from '@/confirm.js';
 import { computed, reactive, ref, watch } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
 import { ChevronRightIcon } from '@heroicons/vue/20/solid';
@@ -43,6 +45,14 @@ const skillsFor = (set) => set.skills.filter((s) => fitsLanguage(s.language, lan
 const read = (skill) => `/skills/${skill.id}?language=${language.value}&from=skill-sets`;
 const fork = (id) => router.post(`/skill-sets/${id}/fork`);
 const sourceNames = { cran: 'CRAN', bioc: 'Bioconductor', github: 'GitHub', pypi: 'PyPI' };
+
+const removeItem = async (item) => {
+    if (await ask(`Delete ${item.name}? This can't be undone.`)) router.delete(`/skill-sets/${item.id}`, { preserveScroll: true });
+};
+const menuFor = (item) => [
+    item.editable && !item.is_system ? { label: 'Edit', href: `/skill-sets/${item.id}/edit` } : { label: 'Copy and edit', onSelect: () => fork(item.id) },
+    ...(item.editable && !item.is_system ? [{ label: 'Copy and edit', onSelect: () => fork(item.id) }, { divider: true }, { label: 'Delete', danger: true, onSelect: () => removeItem(item) }] : []),
+];
 </script>
 
 <template>
@@ -94,6 +104,7 @@ const sourceNames = { cran: 'CRAN', bioc: 'Bioconductor', github: 'GitHub', pypi
                             </button>
                             <Link v-if="s.editable" :href="`/skill-sets/${s.id}/edit`" class="shrink-0"><UiButton size="sm" variant="outline">Edit</UiButton></Link>
                             <UiButton v-else size="sm" variant="outline" class="shrink-0" @click="fork(s.id)">Copy and edit</UiButton>
+                            <RowMenu :items="menuFor(s)" :label="`Actions for ${s.name}`" />
                         </div>
 
                         <div v-if="open.has(s.id)" :id="`set-${s.id}-skills`" class="px-4 pb-4 sm:px-5 sm:pl-12">

@@ -178,7 +178,8 @@ class ProjectsController extends Controller
     private static function summary(Project $p): array
     {
         return $p->only(['id', 'name', 'slug', 'project_type', 'language', 'description', 'created_at']) + [
-            'active' => (bool) ($p->active ?? true),
+            'status' => $p->status ?? 'active',
+            'active' => $p->active,
             'public_download_url' => $p->publicDownloadUrl(),
             'github' => $p->github_repo ? [
                 'repo' => $p->github_repo,
@@ -387,11 +388,11 @@ class ProjectsController extends Controller
         return response()->download($path, "{$project->slug}.zip", ['Content-Type' => 'application/zip'])->deleteFileAfterSend();
     }
 
-    /** Mark a project active or inactive; inactive projects leave the main Projects list. */
-    public function setActive(Request $request, int $project): RedirectResponse
+    /** Set where a project stands: active, triaged, completed, or inactive. Only active ones make the main list. */
+    public function setStatus(Request $request, int $project): RedirectResponse
     {
         $project = $request->user()->projects()->listed()->findOrFail($project);
-        $project->update(['active' => $request->validate(['active' => ['required', 'boolean']])['active']]);
+        $project->update($request->validate(['status' => ['required', Rule::in(Project::STATUSES)]]));
 
         return back();
     }

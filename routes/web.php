@@ -10,6 +10,7 @@ use App\Http\Controllers\App\FacetsController;
 use App\Http\Controllers\App\GitHubLibraryController;
 use App\Http\Controllers\App\ProjectsController;
 use App\Http\Controllers\App\ReportsController;
+use App\Http\Controllers\App\ShareController;
 use App\Http\Controllers\App\SkillsController;
 use App\Http\Controllers\App\SkillTagsController;
 use App\Http\Controllers\App\TokensController;
@@ -184,7 +185,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('projects/{project}/token', [ProjectsController::class, 'issueToken']);
     Route::delete('projects/{project}/tokens/{token}', [ProjectsController::class, 'revokeToken']);
     Route::delete('projects/{project}', [ProjectsController::class, 'destroy']);
-    Route::put('projects/{project}/active', [ProjectsController::class, 'setActive'])->whereNumber('project');
+    Route::put('projects/{project}/status', [ProjectsController::class, 'setStatus'])->whereNumber('project');
+    // A thing's short link and QR code, for the share dialog in lists
+    Route::get('share/{type}/{id}', ShareController::class)->whereIn('type', ['artifact', 'report', 'collection', 'blueprint', 'project'])->whereNumber('id');
     Route::put('projects/{project}/public-download', [ProjectsController::class, 'setPublicDownload'])->whereNumber('project');
     Route::post('projects/{project}/scaffold/refresh', [ProjectsController::class, 'refreshScaffold']);
     Route::post('projects/{project}/scaffold/retry', [ProjectsController::class, 'retryScaffold']);

@@ -1,4 +1,8 @@
 <script setup>
+import RowMenu from '@/Components/RowMenu.vue';
+import ShareDialog from '@/Components/ShareDialog.vue';
+import { ask } from '@/confirm.js';
+import { router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -15,6 +19,19 @@ const form = useForm({ title: '' });
 const selectedProject = ref(props.project?.id ?? '');
 const sharing = { private: 'Private', unlisted: 'Anyone with the link', public: 'Public' };
 const day = value => new Date(value).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+
+const shareTarget = ref(null);
+const removeCollection = async (collection) => {
+    if (await ask(`Delete ${collection.title}? It goes to the Trash, where you can restore it.`)) {
+        router.delete(`/collections/${collection.id}?then=back`, { preserveScroll: true });
+    }
+};
+const menuFor = (collection) => [
+    { label: 'Edit', href: `/collections/${collection.id}/edit` },
+    { label: 'Share', onSelect: () => { shareTarget.value = { type: 'collection', id: collection.id, title: collection.title, settings: `/collections/${collection.id}/edit` }; } },
+    { divider: true },
+    { label: 'Delete', danger: true, onSelect: () => removeCollection(collection) },
+];
 </script>
 
 <template>
@@ -56,11 +73,13 @@ const day = value => new Date(value).toLocaleDateString(undefined, { year: 'nume
                             <div class="flex justify-end gap-1">
                                 <UiButton v-if="collection.visibility !== 'private'" :href="collection.url" external variant="ghost" size="sm" :aria-label="`View ${collection.title}`">View</UiButton>
                                 <UiButton :href="`/collections/${collection.id}/edit`" variant="ghost" size="sm" :aria-label="`Edit ${collection.title}`">Edit</UiButton>
+                                <RowMenu :items="menuFor(collection)" :label="`Actions for ${collection.title}`" />
                             </div>
                         </td>
                     </tr>
                 </tbody>
             </UiTable>
+            <ShareDialog :target="shareTarget" @close="shareTarget = null" />
         </div>
     </component>
 </template>

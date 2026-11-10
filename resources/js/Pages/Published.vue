@@ -1,4 +1,8 @@
 <script setup>
+import RowMenu from '@/Components/RowMenu.vue';
+import ShareDialog from '@/Components/ShareDialog.vue';
+import { ask } from '@/confirm.js';
+import { router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import ArtifactUpload from '@/Components/ArtifactUpload.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -21,6 +25,19 @@ const shown = computed(() => {
         && words.every(word => `${doc.title} ${doc.slug} ${artifactKind(doc.kind).label} ${doc.project.name} ${(doc.linked_projects ?? []).map(p => p.name).join(' ')}`.toLowerCase().includes(word)));
 });
 const date = (value) => new Date(value).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+
+const shareTarget = ref(null);
+const removeArtifact = async (doc) => {
+    if (await ask(`Delete ${doc.title}? It goes to the Trash, where you can restore it.`)) {
+        router.delete(`/published/${doc.id}`, { preserveScroll: true });
+    }
+};
+const menuFor = (doc) => [
+    { label: 'Edit', href: `/artifacts/${doc.id}` },
+    { label: 'Share', onSelect: () => { shareTarget.value = { type: 'artifact', id: doc.id, title: doc.title, settings: `/artifacts/${doc.id}` }; } },
+    { divider: true },
+    { label: 'Delete', danger: true, onSelect: () => removeArtifact(doc) },
+];
 </script>
 
 <template>
@@ -74,11 +91,13 @@ const date = (value) => new Date(value).toLocaleDateString(undefined, { year: 'n
                                 <div class="flex justify-end gap-1">
                                     <UiButton v-if="!doc.driver || doc.driver === 'cloud' || doc.external_url" :href="doc.url" external variant="ghost" size="sm" :aria-label="`View ${doc.title}`">View</UiButton>
                                     <UiButton :href="`/artifacts/${doc.id}`" variant="ghost" size="sm">Edit</UiButton>
+                                    <RowMenu :items="menuFor(doc)" :label="`Actions for ${doc.title}`" />
                                 </div>
                             </td>
                         </tr>
                     </tbody>
                 </UiTable>
+                <ShareDialog :target="shareTarget" @close="shareTarget = null" />
                 <p v-if="!shown.length" class="text-sm text-slate-500 dark:text-slate-400">Nothing matches that search.</p>
             </template>
 

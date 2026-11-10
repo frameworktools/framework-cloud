@@ -10,20 +10,41 @@ import GitHubMark from '@/Components/GitHubMark.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import UiCallout from '@/Components/UiCallout.vue';
 import UiTabs from '@/Components/UiTabs.vue';
+import RowMenu from '@/Components/RowMenu.vue';
+import ShareDialog from '@/Components/ShareDialog.vue';
+import { ask } from '@/confirm.js';
 import EmptyState from '@/Components/EmptyState.vue';
 import { FolderIcon } from '@heroicons/vue/24/outline';
 import { languageNames } from '@/library.js';
 import { statusLabel, statusVariant, typeName } from '@/projects.js';
 
 const props = defineProps({ projects: Array, recentArtifacts: { type: Array, default: () => [] }, recentReports: { type: Array, default: () => [] }, recentCollections: { type: Array, default: () => [] }, canPublish: Boolean });
-// Active projects by default; inactive ones stay a tab away
+// Active projects by default; triaged, completed, and inactive ones are a tab away
+const statuses = { active: 'Active', triaged: 'Triaged', completed: 'Completed', inactive: 'Inactive' };
 const show = ref('active');
-const inactiveCount = computed(() => props.projects.filter((p) => !p.active).length);
+const count = (status) => props.projects.filter((p) => p.status === status).length;
 const tabs = computed(() => [
-    { label: 'Active', value: 'active', count: props.projects.length - inactiveCount.value },
+    ...Object.entries(statuses).filter(([key]) => key === 'active' || count(key) > 0).map(([key, label]) => ({ label, value: key, count: count(key) })),
     { label: 'All', value: 'all', count: props.projects.length },
 ]);
-const shown = computed(() => (show.value === 'all' ? props.projects : props.projects.filter((p) => p.active)));
+const shown = computed(() => (show.value === 'all' ? props.projects : props.projects.filter((p) => p.status === show.value)));
+
+const shareTarget = ref(null);
+const setStatus = (project, status) => router.put(`/projects/${project.id}/status`, { status }, { preserveScroll: true });
+const destroy = async (project) => {
+    if (await ask(`Delete ${project.name}? It goes to the Trash, where you can restore it. Its tokens stop working, and its artifacts, collections, and reports go offline until then. Copies on computers and on GitHub stay.`)) {
+        router.delete(`/projects/${project.id}`, { preserveScroll: true });
+    }
+};
+const menu = (project) => [
+    { label: 'Open', href: `/projects/${project.slug}` },
+    { label: 'Setup', href: `/projects/${project.slug}/setup` },
+    { label: 'Share', onSelect: () => { shareTarget.value = { type: 'project', id: project.id, title: project.name, settings: `/projects/${project.slug}/setup` }; } },
+    { divider: true },
+    ...Object.entries(statuses).map(([key, label]) => ({ label: `Mark ${label.toLowerCase()}`, current: project.status === key, onSelect: () => setStatus(project, key) })).filter((item) => !item.current),
+    { divider: true },
+    { label: 'Delete', danger: true, onSelect: () => destroy(project) },
+];
 const inProgress = computed(() => props.projects.some((p) => ['pending', 'running'].includes(p.github?.status)));
 let timer = null;
 watch(inProgress, (value) => {
@@ -56,7 +77,7 @@ const titleClass = 'font-medium text-slate-900 hover:underline hover:underline-o
                 <section class="mt-7" aria-labelledby="workspace-projects-title">
                     <h2 id="workspace-projects-title" class="sr-only">Projects</h2>
                     <UiTabs v-model="show" :tabs="tabs" label="Projects shown" />
-                    <p v-if="!shown.length" class="py-6 text-sm text-slate-500 dark:text-slate-400">No active projects. Inactive projects are under All.</p>
+                    <p v-if="!shown.length" class="py-6 text-sm text-slate-500 dark:text-slate-400">No {{ show === 'all' ? '' : statuses[show].toLowerCase() }} projects.</p>
                     <ul class="divide-y divide-slate-100 dark:divide-slate-800">
                         <li v-for="project in shown" :key="project.id" :class="rowClass">
                             <div class="min-w-0 flex-1 basis-full sm:basis-48">
@@ -67,8 +88,9 @@ const titleClass = 'font-medium text-slate-900 hover:underline hover:underline-o
                             <span class="text-xs text-slate-500 dark:text-slate-400">{{ typeName(project.project_type) }} · {{ languageNames[project.language] }}</span>
                             <UiBadge v-if="project.github?.status && project.github.status !== 'done'" :variant="statusVariant[project.github.status]">{{ statusLabel[project.github.status] }}</UiBadge>
                             <UiBadge v-if="project.github?.pages_url" variant="green">Pages</UiBadge>
-                            <UiBadge v-if="!project.active">Inactive</UiBadge>
+                            <UiBadge v-if="show === 'all' && project.status !== 'active'">{{ statuses[project.status] }}</UiBadge>
                             <UiButton :href="`/projects/${project.slug}/setup`" :aria-label="`Set up ${project.name}`" variant="ghost" size="sm">Setup</UiButton>
+                            <RowMenu :items="menu(project)" :label="`Actions for ${project.name}`" />
                         </li>
                     </ul>
                 </section>
@@ -77,6 +99,7 @@ const titleClass = 'font-medium text-slate-900 hover:underline hover:underline-o
                 v-else :icon="FolderIcon" title="No projects" class="mt-12"
                 description="Start a project from your defaults or a blueprint. Its published artifacts and reports appear here."
             />
+            <ShareDialog :target="shareTarget" @close="shareTarget = null" />
         </div>
     </AppLayout>
 </template>

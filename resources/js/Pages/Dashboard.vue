@@ -1,4 +1,7 @@
 <script setup>
+import RowMenu from '@/Components/RowMenu.vue';
+import ShareDialog from '@/Components/ShareDialog.vue';
+import { ask } from '@/confirm.js';
 import { computed, ref } from 'vue';
 import { CheckIcon, ClipboardDocumentIcon } from '@heroicons/vue/20/solid';
 import UiTabs from '@/Components/UiTabs.vue';
@@ -8,7 +11,7 @@ import PageHeader from '@/Components/PageHeader.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiTable from '@/Components/UiTable.vue';
 import UiCallout from '@/Components/UiCallout.vue';
-import { usePage } from '@inertiajs/vue3';
+import { router, usePage } from '@inertiajs/vue3';
 import { PlusIcon } from '@heroicons/vue/24/outline';
 import { artifactKind } from '@/report-artifacts.js';
 import { languageNames } from '@/library.js';
@@ -22,9 +25,9 @@ const destinations = [
     { key: 'reports', label: 'Reports', href: '/reports' },
 ];
 const activity = computed(() => [
-    ...props.recentArtifacts.map(item => ({ ...item, activityKey: `artifact-${item.id}`, type: artifactKind(item.kind).label })),
-    ...props.recentCollections.map(item => ({ ...item, activityKey: `collection-${item.id}`, type: 'Collection' })),
-    ...props.recentReports.map(item => ({ ...item, activityKey: `report-${item.id}`, type: 'Report' })),
+    ...props.recentArtifacts.map(item => ({ ...item, activityKey: `artifact-${item.id}`, type: artifactKind(item.kind).label, shareType: 'artifact', deleteUrl: `/published/${item.id}` })),
+    ...props.recentCollections.map(item => ({ ...item, activityKey: `collection-${item.id}`, type: 'Collection', shareType: 'collection', deleteUrl: `/collections/${item.id}?then=back` })),
+    ...props.recentReports.map(item => ({ ...item, activityKey: `report-${item.id}`, type: 'Report', shareType: 'report', deleteUrl: `/reports/${item.id}?then=back` })),
 ].sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at) || b.id - a.id).slice(0, 8));
 // Sign-in commands for each client. Each opens this server's approval page in a browser.
 const server = computed(() => clientUrl(page));
@@ -49,6 +52,17 @@ async function copySignIn() {
     setTimeout(() => (copied.value = false), 1500);
 }
 const date = value => new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+
+const shareTarget = ref(null);
+const removeItem = async (item) => {
+    if (await ask(`Delete ${item.title}? It goes to the Trash, where you can restore it.`)) router.delete(item.deleteUrl, { preserveScroll: true });
+};
+const menuFor = (item) => [
+    { label: 'Edit', href: item.management_url },
+    { label: 'Share', onSelect: () => { shareTarget.value = { type: item.shareType, id: item.id, title: item.title, settings: item.management_url }; } },
+    { divider: true },
+    { label: 'Delete', danger: true, onSelect: () => removeItem(item) },
+];
 </script>
 
 <template>
@@ -90,10 +104,12 @@ const date = value => new Date(value).toLocaleDateString(undefined, { month: 'sh
                         <td class="actions"><div class="flex justify-end gap-1">
                             <UiButton v-if="item.url" :href="item.url" external variant="ghost" size="sm">View</UiButton>
                             <UiButton :href="item.management_url" variant="ghost" size="sm">Edit</UiButton>
+                            <RowMenu :items="menuFor(item)" :label="`Actions for ${item.title}`" />
                         </div></td>
                     </tr></tbody>
                 </UiTable>
                 <p v-else class="py-4 text-sm text-slate-500 dark:text-slate-400">No recent activity. Published artifacts, collections, and reports appear here.</p>
+                <ShareDialog :target="shareTarget" @close="shareTarget = null" />
             </section>
             <section>
                 <div class="mb-3 flex items-center justify-between gap-3">
@@ -102,7 +118,7 @@ const date = value => new Date(value).toLocaleDateString(undefined, { month: 'sh
                 </div>
                 <UiTable v-if="projects.length" label="Recent projects" class="dashboard-projects">
                     <thead><tr><th>Name</th><th class="max-sm:hidden">Language</th><th class="actions"><span class="sr-only">Actions</span></th></tr></thead>
-                    <tbody><tr v-for="project in projects.filter((p) => p.active).slice(0, 4)" :key="project.id">
+                    <tbody><tr v-for="project in projects.filter((p) => p.status === 'active').slice(0, 4)" :key="project.id">
                         <td class="strong max-w-96 truncate"><Link :href="`/projects/${project.slug}`" class="block truncate py-0.5 hover:underline">{{ project.name }}</Link></td>
                         <td class="max-sm:hidden">{{ languageNames[project.language] }}</td>
                         <td class="actions"><UiButton :href="`/projects/${project.slug}`" variant="ghost" size="sm">Open</UiButton></td>

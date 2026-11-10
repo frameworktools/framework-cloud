@@ -1,4 +1,6 @@
 <script setup>
+import RowMenu from '@/Components/RowMenu.vue';
+import ShareDialog from '@/Components/ShareDialog.vue';
 import ShareQr from '@/Components/ShareQr.vue';
 import { ask } from '@/confirm.js';
 import { computed, ref, watch, onBeforeUnmount, onMounted } from 'vue';
@@ -106,7 +108,8 @@ const revokeToken = async (tokenId) => {
         router.delete(`/projects/${props.project.id}/tokens/${tokenId}`, { preserveScroll: true });
     }
 };
-const setActive = (active) => router.put(`/projects/${props.project.id}/active`, { active }, { preserveScroll: true });
+const setStatus = (status) => router.put(`/projects/${props.project.id}/status`, { status }, { preserveScroll: true });
+const statusNames = { active: 'Active', triaged: 'Triaged', completed: 'Completed', inactive: 'Inactive' };
 const setPublicDownload = (on) => router.put(`/projects/${props.project.id}/public-download`, { on }, { preserveScroll: true });
 const destroy = async () => {
     if (await ask(`Delete ${props.project.name}? Its tokens stop working, and its artifacts, collections, and reports go offline. Copies on computers and on GitHub stay.`)) {
@@ -118,6 +121,17 @@ const date = (value) => (value ? new Date(value).toLocaleDateString(undefined, {
 
 const rowClass = 'flex flex-col gap-1 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:gap-4';
 const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-white';
+
+const shareTarget = ref(null);
+const artifactMenu = (doc) => [
+    { label: 'Manage', href: `/artifacts/${doc.id}` },
+    { label: 'Share', onSelect: () => { shareTarget.value = { type: 'artifact', id: doc.id, title: doc.title, settings: `/artifacts/${doc.id}` }; } },
+    { divider: true },
+    // A linked artifact belongs to another project: take it off this one instead
+    doc.linked_from
+        ? { label: 'Remove from this project', danger: true, onSelect: async () => { if (await ask(`Remove ${doc.title} from ${props.project.name}? It stays in its own project.`)) router.delete(`/artifacts/${doc.id}/projects/${props.project.id}`, { preserveScroll: true }); } }
+        : { label: 'Delete', danger: true, onSelect: async () => { if (await ask(`Delete ${doc.title}? It goes to the Trash, where you can restore it.`)) router.delete(`/published/${doc.id}`, { preserveScroll: true }); } },
+];
 </script>
 
 <template>
@@ -360,6 +374,7 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                                 <div class="flex justify-end gap-1">
                                     <UiButton :href="doc.url" external variant="ghost" size="sm" square :aria-label="`View ${doc.title}`" title="View"><ArrowTopRightOnSquareIcon aria-hidden="true" /></UiButton>
                                     <UiButton :href="`/artifacts/${doc.id}`" variant="outline" size="sm">Manage</UiButton>
+                                    <RowMenu :items="artifactMenu(doc)" :label="`Actions for ${doc.title}`" />
                                 </div>
                             </td>
                         </tr>
@@ -398,8 +413,10 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                 </ul>
             </UiPanel>
 
-            <UiPanel v-if="section === 'setup'" title="Project status" :description="project.active ? 'Active. The project is on your Projects list.' : 'Inactive. The project is only under All on your Projects list. Nothing else changes.'">
-                <div><UiButton variant="ghost" @click="setActive(!project.active)">{{ project.active ? 'Mark inactive' : 'Mark active' }}</UiButton></div>
+            <UiPanel v-if="section === 'setup'" title="Project status" description="Active projects make the main Projects list. Triaged, completed, and inactive ones each have their own tab. Nothing else changes.">
+                <div class="flex flex-wrap gap-2">
+                    <UiButton v-for="(label, key) in statusNames" :key="key" :variant="project.status === key ? 'primary' : 'ghost'" size="sm" :aria-pressed="project.status === key" @click="setStatus(key)">{{ label }}</UiButton>
+                </div>
             </UiPanel>
 
             <UiPanel v-if="section === 'setup'" title="Public download" description="A link anyone can use to download the project as a zip, without an account. With a GitHub repository, the zip holds the repository as it is now.">
@@ -416,5 +433,6 @@ const termClass = 'w-36 shrink-0 text-sm font-medium text-slate-900 dark:text-wh
                 <div><UiButton variant="danger" @click="destroy">Delete project</UiButton></div>
             </UiPanel>
         </div>
+        <ShareDialog :target="shareTarget" @close="shareTarget = null" />
     </ProjectLayout>
 </template>

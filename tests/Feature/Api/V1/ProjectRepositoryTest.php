@@ -190,7 +190,10 @@ class ProjectRepositoryTest extends TestCase
         $url = $this->withToken($token)->patchJson("/api/v1/projects/{$project->slug}", ['active' => false, 'public_download' => true])
             ->assertOk()->assertJsonPath('active', false)->json('public_download_url');
         $this->assertNotNull($url);
-        $this->withToken($token)->getJson('/api/v1/projects')->assertJsonPath('projects.0.active', false);
+        // The older flag still works: false is inactive
+        $this->withToken($token)->getJson('/api/v1/projects')->assertJsonPath('projects.0.status', 'inactive');
+        $this->withToken($token)->patchJson("/api/v1/projects/{$project->slug}", ['status' => 'triaged'])->assertOk()->assertJsonPath('status', 'triaged');
+        $this->withToken($token)->patchJson("/api/v1/projects/{$project->slug}", ['status' => 'archived'])->assertStatus(422);
 
         $zipPath = tempnam(sys_get_temp_dir(), 'zip');
         $zip = new ZipArchive;
@@ -231,9 +234,15 @@ class ProjectRepositoryTest extends TestCase
         $user = User::factory()->create(['setup_completed_at' => now(), 'email_verified_at' => now()]);
         $project = Project::factory()->for($user)->create();
 
-        $this->actingAs($user)->put("/projects/{$project->id}/active", ['active' => false])->assertRedirect();
+        $this->actingAs($user)->put("/projects/{$project->id}/status", ['status' => 'completed'])->assertRedirect();
+        $this->assertSame('completed', $project->fresh()->status);
         $this->assertFalse($project->fresh()->active);
-        $this->actingAs($user)->get('/projects')->assertInertia(fn ($page) => $page->where('projects.0.active', false));
+        $this->actingAs($user)->get('/projects')->assertInertia(fn ($page) => $page->where('projects.0.status', 'completed'));
+
+        // The share dialog's data: private things say why there's nothing to share
+        $this->actingAs($user)->getJson("/share/project/{$project->id}")->assertOk()->assertJsonPath('share', null)->assertJsonPath('reason', fn ($r) => str_contains($r, 'public download'));
+        $other = Project::factory()->create();
+        $this->actingAs($user)->getJson("/share/project/{$other->id}")->assertNotFound();
 
         $this->actingAs($user)->put("/projects/{$project->id}/public-download", ['on' => true])->assertRedirect();
         $this->assertNotNull($project->fresh()->public_download_key);

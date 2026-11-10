@@ -1,4 +1,6 @@
 <script setup>
+import RowMenu from '@/Components/RowMenu.vue';
+import { ask } from '@/confirm.js';
 import { computed, ref, watch } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
 import { PlusIcon, MagnifyingGlassIcon, DocumentDuplicateIcon, PencilSquareIcon } from '@heroicons/vue/24/outline';
@@ -31,6 +33,14 @@ const toggleTag = key => { selectedTags.value = selectedTags.value.includes(key)
 const clear = () => { search.value = ''; source.value = ''; selectedTags.value = []; };
 const read = skill => `/skills/${skill.id}?language=${language.value}`;
 const fork = id => router.post(`/skills/${id}/fork`);
+
+const removeItem = async (item) => {
+    if (await ask(`Delete ${item.name}? This can't be undone.`)) router.delete(`/skills/${item.id}`, { preserveScroll: true });
+};
+const menuFor = (item) => [
+    item.editable && !item.is_system ? { label: 'Edit', href: `/skills/${item.id}/edit` } : { label: 'Copy and edit', onSelect: () => fork(item.id) },
+    ...(item.editable && !item.is_system ? [{ label: 'Copy and edit', onSelect: () => fork(item.id) }, { divider: true }, { label: 'Delete', danger: true, onSelect: () => removeItem(item) }] : []),
+];
 </script>
 
 <template>
@@ -99,6 +109,7 @@ const fork = id => router.post(`/skills/${id}/fork`);
                         <td class="actions align-top">
                             <UiButton v-if="skill.editable" :href="`/skills/${skill.id}/edit?language=${language}`" :aria-label="`Edit ${skill.name}`" size="sm" variant="ghost"><PencilSquareIcon class="sm:hidden" /><span class="hidden sm:inline">Edit</span></UiButton>
                             <UiButton v-else size="sm" variant="ghost" :aria-label="`Copy and edit ${skill.name}`" @click="fork(skill.id)"><DocumentDuplicateIcon class="sm:hidden" /><span class="hidden sm:inline">Copy and edit</span></UiButton>
+                            <RowMenu :items="menuFor(skill)" :label="`Actions for ${skill.name}`" />
                         </td>
                     </tr></tbody>
                 </UiTable>

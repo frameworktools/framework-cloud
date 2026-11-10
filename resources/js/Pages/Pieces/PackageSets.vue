@@ -1,4 +1,6 @@
 <script setup>
+import RowMenu from '@/Components/RowMenu.vue';
+import { ask } from '@/confirm.js';
 import { computed, reactive, ref, watch } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
 import { ChevronRightIcon } from '@heroicons/vue/20/solid';
@@ -52,6 +54,14 @@ const sourceNames = { cran: 'CRAN', bioc: 'Bioconductor', github: 'GitHub', pypi
 const tab = (on) => on
     ? 'border-sky-600 text-sky-700 dark:border-sky-400 dark:text-sky-300'
     : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-800 dark:text-slate-400 dark:hover:border-slate-600 dark:hover:text-slate-200';
+
+const removeItem = async (item) => {
+    if (await ask(`Delete ${item.name}? This can't be undone.`)) router.delete(`/package-sets/${item.id}`, { preserveScroll: true });
+};
+const menuFor = (item) => [
+    item.editable && !item.is_system ? { label: 'Edit', href: `/package-sets/${item.id}/edit` } : { label: 'Copy and edit', onSelect: () => fork(item.id) },
+    ...(item.editable && !item.is_system ? [{ label: 'Copy and edit', onSelect: () => fork(item.id) }, { divider: true }, { label: 'Delete', danger: true, onSelect: () => removeItem(item) }] : []),
+];
 </script>
 
 <template>
@@ -128,6 +138,7 @@ const tab = (on) => on
                                 </UiButton>
                                 <Link v-if="s.editable" :href="`/package-sets/${s.id}/edit`"><UiButton size="sm" variant="ghost">Edit</UiButton></Link>
                                 <UiButton v-else size="sm" variant="ghost" @click="fork(s.id)">Copy and edit</UiButton>
+                            <RowMenu :items="menuFor(s)" :label="`Actions for ${s.name}`" />
                             </div>
                         </div>
 

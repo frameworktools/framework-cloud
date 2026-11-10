@@ -80,7 +80,8 @@ class ReportsController extends Controller
             $report->refresh()->delete();
         });
 
-        return redirect()->route('reports.index', ['project' => $project]);
+        // From a list's menu, stay on the list
+        return $request->query('then') === 'back' ? back() : redirect()->route('reports.index', ['project' => $project]);
     }
 
     private function owned(Request $request, int $id): Report

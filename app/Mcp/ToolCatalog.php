@@ -63,11 +63,11 @@ class ToolCatalog
                 'body' => ['properties' => [
                     'name' => ['type' => 'string', 'maxLength' => 100],
                     'description' => ['type' => 'string', 'maxLength' => 500],
-                    'active' => ['type' => 'boolean', 'description' => 'false hides the project from the main Projects list without deleting it.'],
+                    'status' => ['type' => 'string', 'enum' => ['active', 'triaged', 'completed', 'inactive'], 'description' => 'Where the project stands. Only active projects show on the main Projects list; the others are a tab away.'],
                     'public_download' => ['type' => 'boolean', 'description' => 'true gives the project a link anyone can download it from as a zip, without an account (for students, say). Not for sensitive projects or private repositories.'],
                 ], 'required' => []],
                 'title' => 'Update a project',
-                'description' => 'Rename a project, change its description, mark it active or inactive, or turn its public download link on or off. Its slug and links stay the same. Turn on a public download only when the user asks.',
+                'description' => 'Rename a project, change its description, set its status (active, triaged, completed, or inactive), or turn its public download link on or off. Its slug and links stay the same. Turn on a public download only when the user asks.',
             ],
             'projects_scaffold' => [
                 'level' => self::FULL, 'method' => 'POST', 'path' => '/projects/{slug}/scaffold', 'path_params' => $project,

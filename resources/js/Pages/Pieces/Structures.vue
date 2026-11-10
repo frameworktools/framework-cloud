@@ -1,4 +1,6 @@
 <script setup>
+import RowMenu from '@/Components/RowMenu.vue';
+import { ask } from '@/confirm.js';
 import { computed, reactive } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
 import { ChevronRightIcon } from '@heroicons/vue/20/solid';
@@ -31,6 +33,14 @@ const fork = (id) => router.post(`/structures/${id}/fork`);
 
 const label = 'text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400';
 const dir = (path) => (path === '.' ? 'the project folder' : `${path}/`);
+
+const removeItem = async (item) => {
+    if (await ask(`Delete ${item.name}? This can't be undone.`)) router.delete(`/structures/${item.id}`, { preserveScroll: true });
+};
+const menuFor = (item) => [
+    item.editable && !item.is_system ? { label: 'Edit', href: `/structures/${item.id}/edit` } : { label: 'Copy and edit', onSelect: () => fork(item.id) },
+    ...(item.editable && !item.is_system ? [{ label: 'Copy and edit', onSelect: () => fork(item.id) }, { divider: true }, { label: 'Delete', danger: true, onSelect: () => removeItem(item) }] : []),
+];
 </script>
 
 <template>
@@ -73,6 +83,7 @@ const dir = (path) => (path === '.' ? 'the project folder' : `${path}/`);
                             </button>
                             <Link v-if="s.editable" :href="`/structures/${s.id}/edit`" class="shrink-0"><UiButton size="sm" variant="outline">Edit</UiButton></Link>
                             <UiButton v-else size="sm" variant="outline" class="shrink-0" @click="fork(s.id)">Copy and edit</UiButton>
+                            <RowMenu :items="menuFor(s)" :label="`Actions for ${s.name}`" />
                         </div>
 
                         <div v-if="open.has(s.id)" :id="`structure-${s.id}`" class="px-4 pb-4 sm:px-5 sm:pl-12">

@@ -1,4 +1,7 @@
 <script setup>
+import RowMenu from '@/Components/RowMenu.vue';
+import ShareDialog from '@/Components/ShareDialog.vue';
+import { ask } from '@/confirm.js';
 import { computed, reactive, ref, watch } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
 import { ChevronRightIcon } from '@heroicons/vue/20/solid';
@@ -76,9 +79,12 @@ const chosen = reactive({});
 const openIn = (section) => {
     const ids = section.rows.map((b) => b.id);
     if (ids.includes(chosen[section.key])) return chosen[section.key];
+    // Collapsed on purpose: none open until one is chosen
+    if (chosen[section.key] === null) return null;
     return section.rows.find(isDefault)?.id ?? section.rows.find((b) => b.handle === props.default_blueprint)?.id ?? ids[0];
 };
-const choose = (section, id) => (chosen[section.key] = id);
+// Choosing the open one again collapses it
+const choose = (section, id) => (chosen[section.key] = openIn(section) === id ? null : id);
 // A click on the card's text opens it, unless the click ends a text selection
 const pick = (section, id) => window.getSelection()?.toString() || choose(section, id);
 const source = (b) => ({ url: `/blueprints/${b.id}/preview`, body: { language: language.value, workflow: workflow.value } });
@@ -93,6 +99,24 @@ const savedDefault = computed(() => page.props.flash.status === 'blueprint-defau
 
 const newProject = (b) => `/projects/create?${new URLSearchParams({ blueprint: b.id, language: language.value, workflow: workflow.value })}`;
 const fork = (b) => router.post(`/blueprints/${b.id}/fork`, { language: language.value, workflow: workflow.value });
+
+const shareTarget = ref(null);
+const destroy = async (b) => {
+    if (await ask(`Delete ${b.name}? Projects already made from it keep their setup.`)) {
+        router.delete(`/blueprints/${b.id}`, { preserveScroll: true });
+    }
+};
+const menuFor = (b) => [
+    { label: 'New project', href: newProject(b) },
+    ...(b.can_be_default && !isDefault(b) ? [{ label: 'Set as default', onSelect: () => setDefault(b) }] : []),
+    { label: 'Open', href: `/blueprints/${b.id}` },
+    b.editable && !b.is_system ? { label: 'Edit', href: `/blueprints/${b.id}/edit` } : { label: 'Copy and edit', onSelect: () => fork(b) },
+    ...(b.editable && !b.is_system ? [{ label: 'Copy and edit', onSelect: () => fork(b) }] : []),
+    { divider: true },
+    ...(b.public_url ? [{ label: 'Public page', href: b.public_url, external: true }] : []),
+    ...(!b.is_system ? [{ label: 'Share', onSelect: () => { shareTarget.value = { type: 'blueprint', id: b.id, title: b.name, settings: b.editable ? `/blueprints/${b.id}/edit` : null }; } }] : []),
+    ...(b.editable && !b.is_system ? [{ divider: true }, { label: 'Delete', danger: true, onSelect: () => destroy(b) }] : []),
+];
 
 const tab = (on) => on
     ? 'border-sky-600 text-sky-700 dark:border-sky-400 dark:text-sky-300'
@@ -187,9 +211,7 @@ const pill = (on) => on
                             </div>
                             <div class="flex shrink-0 flex-wrap items-center gap-2">
                                 <Link :href="newProject(b)"><UiButton size="sm">New project</UiButton></Link>
-                                <UiButton v-if="b.can_be_default && !isDefault(b)" size="sm" variant="outline" @click="setDefault(b)">Set as default</UiButton>
-                                <Link v-if="b.editable" :href="`/blueprints/${b.id}/edit`"><UiButton size="sm" variant="ghost">Edit</UiButton></Link>
-                                <UiButton v-else size="sm" variant="ghost" @click="fork(b)">Copy and edit</UiButton>
+                                <RowMenu :items="menuFor(b)" :label="`Actions for ${b.name}`" />
                             </div>
                         </div>
                         <div class="px-4 pb-3 sm:px-5" :class="openIn(section) === b.id ? '' : '-mt-2'">
@@ -208,6 +230,7 @@ const pill = (on) => on
                     </div>
                 </div>
             </section>
+            <ShareDialog :target="shareTarget" @close="shareTarget = null" />
         </div>
     </AppLayout>
 </template>

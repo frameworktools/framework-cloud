@@ -91,7 +91,8 @@ class ProjectLayersController extends Controller
             'description' => $project->description,
             'language' => $project->language ?? 'r',
             'type' => $project->project_type,
-            'active' => (bool) ($project->active ?? true),
+            'status' => $project->status ?? 'active',
+            'active' => $project->active,
             'public_download_url' => $project->publicDownloadUrl(),
             // Short link and QR code (SVG, PNG) for slides; null while private
             'share' => Share::for($project),

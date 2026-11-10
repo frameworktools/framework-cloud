@@ -20,7 +20,7 @@ class ProjectsController extends Controller
         $user = $this->user($request);
 
         return response()->json([
-            'projects' => $user->projects()->listed()->latest()->get(['name', 'slug', 'project_type', 'language', 'description', 'active', 'created_at']),
+            'projects' => $user->projects()->listed()->latest()->get(['name', 'slug', 'project_type', 'language', 'description', 'status', 'created_at']),
         ]);
     }
 
@@ -57,6 +57,8 @@ class ProjectsController extends Controller
         $validated = $request->validate([
             'name' => ['sometimes', 'string', 'max:100'],
             'description' => ['sometimes', 'nullable', 'string', 'max:500'],
+            'status' => ['sometimes', Rule::in(Project::STATUSES)],
+            // The older flag: false is inactive, true active
             'active' => ['sometimes', 'boolean'],
             'public_download' => ['sometimes', 'boolean'],
         ]);
@@ -65,9 +67,13 @@ class ProjectsController extends Controller
             $project->setPublicDownload((bool) $validated['public_download']);
             unset($validated['public_download']);
         }
+        if (array_key_exists('active', $validated)) {
+            $validated['status'] ??= $validated['active'] ? 'active' : 'inactive';
+            unset($validated['active']);
+        }
         $project->update($validated);
 
-        return response()->json($project->only('slug', 'name', 'description', 'active') + [
+        return response()->json($project->only('slug', 'name', 'description', 'status', 'active') + [
             'url' => route('projects.show', $project->slug),
             'public_download_url' => $project->publicDownloadUrl(),
         ]);

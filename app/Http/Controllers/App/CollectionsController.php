@@ -111,7 +111,8 @@ class CollectionsController extends Controller
         $project = $collection->project_id;
         $collection->delete();
 
-        return redirect('/projects/'.$project.'/collections');
+        // From a list's menu, stay on the list
+        return $request->query('then') === 'back' ? back() : redirect('/projects/'.$project.'/collections');
     }
 
     public function storeItem(Request $request, int $collection)
