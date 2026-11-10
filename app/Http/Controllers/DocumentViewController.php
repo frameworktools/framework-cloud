@@ -9,6 +9,7 @@ use App\Support\ArtifactContentAccess;
 use App\Support\ArtifactPreview;
 use App\Support\BundleExtractor;
 use App\Support\ContentHost;
+use App\Support\ContentWorker;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -81,6 +82,13 @@ class DocumentViewController extends Controller
         $version = $this->version($this->byKey($key), $number);
         abort_unless(ArtifactContentAccess::accepts($version, $access), 403);
         abort_if($version->usesExternalUrl() || ($version->document->driver ?? 'cloud') !== 'cloud', 404);
+        // Links issued before the Worker served files: send them to it
+        if (ContentWorker::enabled($version)) {
+            abort_if(str_contains($path, '..') || str_contains($path, "\0"), 404);
+
+            return redirect()->away(ContentWorker::url($version, $version->isBundle() && $path !== '' ? $path : null))
+                ->header('Cache-Control', 'private, no-store');
+        }
         // A single file, under its own name (any name works; the signed access names the version)
         if (! $version->isBundle()) {
             return $this->serveFile($version);
@@ -120,17 +128,17 @@ class DocumentViewController extends Controller
         return redirect()->to(isset($validated['version']) ? $this->version($document, $validated['version'])->url() : $document->publicUrl());
     }
 
-    public function download(string $key): StreamedResponse
+    public function download(string $key): StreamedResponse|RedirectResponse
     {
         return $this->serveDownload($this->byKey($key)->latestVersion());
     }
 
-    public function versionDownload(string $key, int $number): StreamedResponse
+    public function versionDownload(string $key, int $number): StreamedResponse|RedirectResponse
     {
         return $this->serveDownload($this->version($this->byKey($key), $number));
     }
 
-    private function serveDownload(DocumentVersion $version): StreamedResponse
+    private function serveDownload(DocumentVersion $version): StreamedResponse|RedirectResponse
     {
         abort_unless(($version->document->driver ?? 'cloud') === 'cloud', 404);
         abort_unless($version->document->canRead(), 403, 'Enter the artifact password on its page.');
@@ -140,6 +148,12 @@ class DocumentViewController extends Controller
         $filename = $version->source_path
             ? ($version->original_filename ?? $version->document->slug.'.zip')
             : ($version->isBundle() ? basename($version->entrypoint) : ($version->original_filename ?? $version->document->slug.'.html'));
+
+        $type = $version->source_path ? 'application/zip' : $version->content_type;
+        // The Worker sends the bytes; the app only checks and signs
+        if (ContentWorker::enabled($version)) {
+            return redirect()->away(ContentWorker::download($path, $filename, (string) $type))->header('Cache-Control', 'private, no-store');
+        }
 
         return $disk->download($path, $filename, [
             'Content-Type' => $version->source_path ? 'application/zip' : $version->content_type,
@@ -270,6 +284,9 @@ class DocumentViewController extends Controller
             $base = config('framework.documents_base_url');
 
             return redirect()->away(rtrim($base, '/').'/'.$version->disk_path.'/'.$path);
+        }
+        if (ContentWorker::enabled($version)) {
+            return redirect()->away(ContentWorker::url($version, $path));
         }
         if (ContentHost::enabled()) {
             return redirect()->away(ContentHost::route('documents.content', [

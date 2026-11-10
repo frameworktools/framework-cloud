@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Support\ArtifactContentAccess;
 use App\Support\ContentHost;
+use App\Support\ContentWorker;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -92,6 +93,12 @@ class DocumentVersion extends Model
 
         if ($this->usesExternalUrl()) {
             return rtrim($base, '/').'/'.$this->entryPath();
+        }
+        // Served by the content Worker straight from the bucket
+        if (ContentWorker::enabled($this)) {
+            abort_unless($this->document->canRead(), 403, 'Enter the artifact password on its page.');
+
+            return ContentWorker::url($this);
         }
         // Its own host: a signed link for every file, since the content host has no session
         if (ContentHost::enabled()) {

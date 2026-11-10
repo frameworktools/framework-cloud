@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\DocumentVersion;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 
 class ArtifactPreview
@@ -21,8 +22,21 @@ class ArtifactPreview
     /** A Vega-Lite specification, or null when the file isn't one. */
     public static function vegaLiteSpec(DocumentVersion $version): ?array
     {
+        if (! $version->exists || ! $version->disk_path) {
+            return self::readVegaLiteSpec($version);
+        }
+        // Kept like the preview; null is kept as false
+        $spec = self::remember(self::cacheKey('chart', $version), fn () => self::readVegaLiteSpec($version) ?? false);
+
+        return $spec === false ? null : $spec;
+    }
+
+    private static function readVegaLiteSpec(DocumentVersion $version): ?array
+    {
         $stream = Storage::disk($version->disk())->readStream($version->entryPath());
         if ($stream === false) {
+            self::$readFailed = true;
+
             return null;
         }
         try {
@@ -39,7 +53,42 @@ class ArtifactPreview
             && str_contains($spec['$schema'], 'vega-lite') ? $spec : null;
     }
 
+    /**
+     * What the artifact page shows for a version. A version's files never
+     * change, so the preview is built once, from storage, and kept.
+     */
     public static function forVersion(DocumentVersion $version): array
+    {
+        if (! $version->exists || ! $version->disk_path) {
+            return self::build($version);
+        }
+
+        return self::remember(self::cacheKey('preview', $version), fn () => self::build($version));
+    }
+
+    /** A storage read failed while building: don't keep the result. */
+    private static bool $readFailed = false;
+
+    private static function remember(string $key, \Closure $build): mixed
+    {
+        if (Cache::has($key)) {
+            return Cache::get($key);
+        }
+        self::$readFailed = false;
+        $value = $build();
+        if (! self::$readFailed) {
+            Cache::forever($key, $value);
+        }
+
+        return $value;
+    }
+
+    private static function cacheKey(string $what, DocumentVersion $version): string
+    {
+        return "artifact-{$what}:{$version->id}:".md5($version->disk().':'.$version->disk_path);
+    }
+
+    private static function build(DocumentVersion $version): array
     {
         $type = strtolower(explode(';', $version->content_type)[0]);
         if (in_array($type, ['text/html', 'application/xhtml+xml', 'application/pdf'])) {
@@ -76,6 +125,8 @@ class ArtifactPreview
         $limit = $json ? ArtifactRepresentation::MAX_BYTES : self::MAX_BYTES;
         $stream = Storage::disk($version->disk())->readStream($version->entryPath());
         if ($stream === false) {
+            self::$readFailed = true;
+
             return ['type' => 'download'];
         }
         try {
@@ -84,6 +135,8 @@ class ArtifactPreview
             fclose($stream);
         }
         if ($content === false) {
+            self::$readFailed = true;
+
             return ['type' => 'download'];
         }
         if ($json) {

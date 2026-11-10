@@ -68,6 +68,15 @@ return [
     'content_url' => env('FW_CONTENT_URL'),
 
     /*
+    | The content host's Cloudflare Worker, which serves files from the R2
+    | bucket so their bytes never pass through the app. The key signs its links
+    | (the Worker holds the same key); the disk is the one its bucket binding
+    | reads. Unset key: the app serves files itself. See App\Support\ContentWorker.
+    */
+    'content_signing_key' => env('FW_CONTENT_SIGNING_KEY'),
+    'content_worker_disk' => env('FW_CONTENT_WORKER_DISK', 'r2'),
+
+    /*
     | Whether AI agents may connect over MCP. On unless FW_AGENTS=false, or
     | turned off in Server administration. See App\Support\Agents.
     */

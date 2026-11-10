@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Support\ArtifactPublisher;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -59,6 +60,8 @@ class ArtifactPublishingTest extends TestCase
             ->assertSee('111 rows');
         // Without its typed table (as for files published before them), a CSV keeps the bounded plain preview
         Storage::disk('local')->delete($table->latestVersion()->representationPath());
+        // Previews are kept once built; a version's files never change outside a test
+        Cache::flush();
         $this->get($table->publicUrl())->assertOk()->assertDontSee('<script>alert(1)</script>', false)
             ->assertSee('Preview limited to 100 rows')->assertDontSee('term-109');
         $text = $this->publish($project, 'notes.txt', '<script>unsafe</script>'.str_repeat('x', 1_048_576));

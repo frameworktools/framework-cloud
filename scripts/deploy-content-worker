@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# Deploy the content Worker (cloudflare/content-worker/worker.js) that serves
+# framework.pub's published files from R2 at content.framework.pub/c/*, and
+# make sure its route exists. Reads the Cloudflare token and the signing key
+# from the framework.pub vault; neither is printed or passed as an argument.
+set -euo pipefail
+
+ACCOUNT=4d70d0f810424217b99890dba7bebc5f
+ZONE=8a39148c223f2b7cc20696fb9aeedb02
+SCRIPT=framework-content
+BUCKET=framework-pub-artifacts
+PATTERN='content.framework.pub/c/*'
+APP_ORIGIN=https://framework.pub
+VAULT=~/System/ansible/vault/apps/framework-pub.yml
+HERE=$(cd "$(dirname "$0")/.." && pwd)
+
+work=$(mktemp -d); trap 'rm -rf "$work"' EXIT
+(cd ~/System/ansible && ansible-vault view "$VAULT") > "$work/vault.yml"
+# Ansible's Python has PyYAML
+PY_YAML=$(head -1 "$(command -v ansible-vault)" | sed 's/^#!//')
+"$PY_YAML" - "$work" <<'PY'
+import sys, yaml, json, os
+work = sys.argv[1]
+v = yaml.safe_load(open(f"{work}/vault.yml"))
+os.umask(0o077)
+open(f"{work}/curl.cfg", "w").write(f'header = "Authorization: Bearer {v["cloudflare"]["api_token"]}"\n')
+open(f"{work}/key", "w").write(v["env"]["FW_CONTENT_SIGNING_KEY"])
+PY
+rm "$work/vault.yml"
+
+python3 - "$work" "$BUCKET" "$APP_ORIGIN" <<'PY'
+import sys, json
+work, bucket, origin = sys.argv[1:]
+json.dump({
+    "main_module": "worker.js",
+    "compatibility_date": "2026-11-01",
+    "bindings": [
+        {"type": "r2_bucket", "name": "BUCKET", "bucket_name": bucket},
+        {"type": "plain_text", "name": "APP_ORIGIN", "text": origin},
+        {"type": "secret_text", "name": "SIGNING_KEY", "text": open(f"{work}/key").read()},
+    ],
+}, open(f"{work}/metadata.json", "w"))
+PY
+
+api=https://api.cloudflare.com/client/v4
+curl -s -K "$work/curl.cfg" -X PUT "$api/accounts/$ACCOUNT/workers/scripts/$SCRIPT" \
+    -F "metadata=@$work/metadata.json;type=application/json" \
+    -F "worker.js=@$HERE/cloudflare/content-worker/worker.js;type=application/javascript+module" \
+    | python3 -c 'import sys,json; r=json.load(sys.stdin); print("Worker uploaded") if r["success"] else sys.exit(f"Worker upload failed: {r[\"errors\"]}. The token needs Account > Workers Scripts > Edit.")'
+
+routes=$(curl -s -K "$work/curl.cfg" "$api/zones/$ZONE/workers/routes")
+if echo "$routes" | python3 -c "import sys,json; sys.exit(0 if any(r['pattern']=='$PATTERN' for r in json.load(sys.stdin)['result']) else 1)"; then
+    echo "Route $PATTERN exists"
+else
+    curl -s -K "$work/curl.cfg" -X POST "$api/zones/$ZONE/workers/routes" -H 'Content-Type: application/json' \
+        --data "{\"pattern\":\"$PATTERN\",\"script\":\"$SCRIPT\"}" \
+        | python3 -c 'import sys,json; r=json.load(sys.stdin); print("Route added" if r["success"] else r["errors"])'
+fi

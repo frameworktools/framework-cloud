@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\ContentWorker;
 use App\Support\ProjectLayers;
 use Database\Factories\ProjectFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -11,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Laravel\Sanctum\HasApiTokens;
@@ -127,6 +129,10 @@ class Project extends Model
     public function setPublicDownload(bool $on): void
     {
         if (! $on) {
+            // A kept zip goes too, so links already handed out stop working
+            if ($this->public_download_key && ContentWorker::on()) {
+                Storage::disk(ContentWorker::disk())->delete(self::publicDownloadObject($this->public_download_key));
+            }
             $this->forceFill(['public_download_key' => null])->save();
 
             return;
@@ -142,6 +148,12 @@ class Project extends Model
 
         $this->public_download_key ??= Str::random(32);
         $this->save();
+    }
+
+    /** Where the content Worker's bucket keeps a public download's zip. */
+    public static function publicDownloadObject(string $key): string
+    {
+        return "project-downloads/{$key}.zip";
     }
 
     /** Where a project stands. Active ones make the main Projects list. */
