@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Support\ArtifactPublisher;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
@@ -76,6 +77,16 @@ class ContentWorkerTest extends TestCase
 
         $this->assertSame($version->disk_path, $claims['k']);
         $this->assertSame('notebook.html', $claims['a']);
+        $this->assertSame(1, $version->document->fresh()->downloads);
+    }
+
+    public function test_previews_are_built_when_publishing_not_when_viewing(): void
+    {
+        $version = $this->publish('public', 'table.csv', "a,b\n1,2\n");
+
+        // The stored file is gone, yet the page still shows the preview made at publish time
+        Storage::disk('local')->deleteDirectory(dirname($version->disk_path));
+        $this->get('https://app.example.test/d/'.$version->document->key)->assertOk()->assertSee('<table', false);
     }
 
     public function test_old_content_host_links_redirect_to_the_worker(): void
@@ -116,22 +127,33 @@ class ContentWorkerTest extends TestCase
         $zip->open($zipPath, \ZipArchive::OVERWRITE);
         $zip->addFromString('course-abc/README.md', '# Course');
         $zip->close();
-        Http::fake(['github.com/lab/course/archive/HEAD.zip' => Http::response(file_get_contents($zipPath), 200)]);
+        $sha = str_repeat('a', 40);
+        Http::fake([
+            'api.github.com/repos/lab/course/commits/HEAD' => Http::sequence()->push($sha)->push(str_repeat('b', 40)),
+            'github.com/lab/course/archive/*' => Http::response(file_get_contents($zipPath), 200),
+        ]);
         unlink($zipPath);
+        $url = parse_url($project->publicDownloadUrl(), PHP_URL_PATH);
+        $folder = Project::publicDownloadFolder($project->public_download_key);
 
-        $response = $this->get(parse_url($project->publicDownloadUrl(), PHP_URL_PATH))->assertRedirect();
-        $object = Project::publicDownloadObject($project->public_download_key);
-        $claims = $this->claims($response->headers->get('Location'));
-        $this->assertSame($object, $claims['k']);
+        $claims = $this->claims($this->get($url)->assertRedirect()->headers->get('Location'));
+        $this->assertSame("{$folder}/{$sha}.zip", $claims['k']);
         $this->assertSame("{$project->slug}.zip", $claims['a']);
-        Storage::disk('local')->assertExists($object);
+        Storage::disk('local')->assertExists("{$folder}/{$sha}.zip");
+        Http::assertSent(fn ($r) => str_ends_with($r->url(), "/archive/{$sha}.zip"));
 
-        // Kept for five minutes: no second build
-        $this->get(parse_url($project->publicDownloadUrl(), PHP_URL_PATH))->assertRedirect();
-        Http::assertSentCount(1);
+        // The same commit: no second build
+        $this->get($url)->assertRedirect();
+        $this->assertCount(1, collect(Http::recorded())->filter(fn ($p) => str_contains($p[0]->url(), '/archive/')));
 
-        // Turning it off removes the kept zip
+        // A new commit: rebuilt, and the old zip removed
+        Cache::forget("public-download-head:{$project->public_download_key}");
+        $this->assertSame("{$folder}/".str_repeat('b', 40).'.zip', $this->claims($this->get($url)->headers->get('Location'))['k']);
+        Storage::disk('local')->assertMissing("{$folder}/{$sha}.zip");
+        $this->assertSame(3, $project->fresh()->public_downloads);
+
+        // Turning it off removes the kept zips
         $project->setPublicDownload(false);
-        Storage::disk('local')->assertMissing($object);
+        Storage::disk('local')->assertMissing("{$folder}/".str_repeat('b', 40).'.zip');
     }
 }

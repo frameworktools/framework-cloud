@@ -81,7 +81,7 @@ class ArtifactPublisher
             }
             $stored += ['content_type' => $type, 'original_filename' => $filename, 'storage_disk' => $disk, 'kind' => $input['kind'] ?? $representationKind ?? $this->kind($type, $filename)];
 
-            return DB::transaction(function () use ($project, $slug, $stored, $input) {
+            $version = DB::transaction(function () use ($project, $slug, $stored, $input) {
                 PublishingQuota::check($project, (int) $stored['size_bytes']);
                 Project::whereKey($project->id)->lockForUpdate()->firstOrFail();
                 // Publishing again under a deleted artifact's name brings it back from the Trash
@@ -116,6 +116,15 @@ class ArtifactPublisher
 
                 return $document->versions()->create($stored + ['number' => $number] + $provenance)->load('document.project.user');
             });
+
+            // The page's preview and chart are built now, once, not when someone first opens it
+            try {
+                ArtifactPreview::forVersion($version);
+            } catch (Throwable $e) {
+                report($e);
+            }
+
+            return $version;
         } catch (Throwable $exception) {
             Storage::disk($disk)->deleteDirectory($prefix);
             if ($exception instanceof RuntimeException && ! $exception instanceof ValidationException) {

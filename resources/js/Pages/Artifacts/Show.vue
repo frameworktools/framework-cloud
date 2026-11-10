@@ -186,6 +186,7 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public', privat
                     <dl class="flex flex-wrap gap-x-10 gap-y-4 text-sm">
                         <div><dt class="text-slate-500 dark:text-slate-400">Versions</dt><dd class="mt-0.5 font-medium text-slate-800 dark:text-white">{{ versions.length }}</dd></div>
                         <div v-if="!external"><dt class="text-slate-500 dark:text-slate-400">Views</dt><dd class="mt-0.5 font-medium text-slate-800 dark:text-white">{{ artifact.views?.toLocaleString() ?? 0 }}</dd></div>
+                        <div v-if="!external"><dt class="text-slate-500 dark:text-slate-400">Downloads</dt><dd class="mt-0.5 font-medium text-slate-800 dark:text-white">{{ artifact.downloads?.toLocaleString() ?? 0 }}</dd></div>
                         <div><dt class="text-slate-500 dark:text-slate-400">Size</dt><dd class="mt-0.5 font-medium text-slate-800 dark:text-white">{{ size(artifact.size_bytes) }}</dd></div>
                         <div v-if="chosenFile" class="min-w-0"><dt class="text-slate-500 dark:text-slate-400">File</dt><dd class="mt-0.5 break-all font-medium text-slate-800 dark:text-white">{{ artifact.original_filename }}</dd></div>
                         <div><dt class="text-slate-500 dark:text-slate-400">First published</dt><dd class="mt-0.5 font-medium text-slate-800 dark:text-white">{{ date(artifact.published_at) }}</dd></div>

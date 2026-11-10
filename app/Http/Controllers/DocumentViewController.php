@@ -150,6 +150,9 @@ class DocumentViewController extends Controller
             : ($version->isBundle() ? basename($version->entrypoint) : ($version->original_filename ?? $version->document->slug.'.html'));
 
         $type = $version->source_path ? 'application/zip' : $version->content_type;
+        // Counted here, before the file leaves through the Worker or the app
+        // Counted without touching updated_at, which means a content change
+        Document::whereKey($version->document_id)->toBase()->increment('downloads');
         // The Worker sends the bytes; the app only checks and signs
         if (ContentWorker::enabled($version)) {
             return redirect()->away(ContentWorker::download($path, $filename, (string) $type))->header('Cache-Control', 'private, no-store');
@@ -208,7 +211,7 @@ class DocumentViewController extends Controller
             ? ($readable ? $document->readableUrl() : $document->publicUrl())
             : ($readable ? $document->readableUrl($n) : route('documents.version', ['key' => $document->key, 'number' => $n]));
 
-        $document->increment('views');
+        Document::whereKey($document->id)->toBase()->increment('views');
 
         return response()->view('documents.show', [
             'document' => $document,

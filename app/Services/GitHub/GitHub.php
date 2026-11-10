@@ -151,6 +151,12 @@ class GitHub
         return ['sha' => $commit['sha'], 'url' => "https://github.com/{$repo}/commit/{$commit['sha']}", 'branch' => $branch, 'unchanged' => false];
     }
 
+    /** The commit the default branch points at. */
+    public function headSha(string $repo): string
+    {
+        return trim($this->request()->accept('application/vnd.github.sha')->get(self::API."/repos/{$repo}/commits/HEAD")->throw()->body());
+    }
+
     /**
      * Every file in a branch, with sizes (the default branch when null).
      *

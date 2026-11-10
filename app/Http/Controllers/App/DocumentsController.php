@@ -87,7 +87,7 @@ class DocumentsController extends Controller
         return Inertia::render('Artifacts/Show', [
             'handle' => $request->user()->handle,
             'artifact' => [
-                ...$document->only('driver', 'external_url', 'id', 'kind', 'slug', 'description', 'visibility', 'views', 'size_bytes', 'original_filename', 'merged_into_id', 'merged_at'),
+                ...$document->only('driver', 'external_url', 'id', 'kind', 'slug', 'description', 'visibility', 'views', 'downloads', 'size_bytes', 'original_filename', 'merged_into_id', 'merged_at'),
                 'capabilities' => PublishDrivers::capabilities($document->driver ?? 'cloud'),
                 'location' => PublishDrivers::label($document->driver ?? 'cloud'),
                 'title' => $document->title ?? $document->slug,

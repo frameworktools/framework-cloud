@@ -131,7 +131,7 @@ class Project extends Model
         if (! $on) {
             // A kept zip goes too, so links already handed out stop working
             if ($this->public_download_key && ContentWorker::on()) {
-                Storage::disk(ContentWorker::disk())->delete(self::publicDownloadObject($this->public_download_key));
+                Storage::disk(ContentWorker::disk())->deleteDirectory(self::publicDownloadFolder($this->public_download_key));
             }
             $this->forceFill(['public_download_key' => null])->save();
 
@@ -150,10 +150,10 @@ class Project extends Model
         $this->save();
     }
 
-    /** Where the content Worker's bucket keeps a public download's zip. */
-    public static function publicDownloadObject(string $key): string
+    /** Where the content Worker's bucket keeps a public download's zips, one per commit. */
+    public static function publicDownloadFolder(string $key): string
     {
-        return "project-downloads/{$key}.zip";
+        return "project-downloads/{$key}";
     }
 
     /** Where a project stands. Active ones make the main Projects list. */

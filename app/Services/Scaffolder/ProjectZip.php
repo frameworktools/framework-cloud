@@ -85,7 +85,8 @@ class ProjectZip
      *
      * @throws ProjectZipFailed
      */
-    public function buildPublic(Project $project): string
+    /** $ref: the commit to package, the default branch's head when null. */
+    public function buildPublic(Project $project, ?string $ref = null): string
     {
         if (! $project->github_repo) {
             return $this->build($project);
@@ -93,7 +94,7 @@ class ProjectZip
 
         $response = Http::timeout(120)->withUserAgent('Framework-Cloud')
             ->withOptions(['allow_redirects' => true])
-            ->get("https://github.com/{$project->github_repo}/archive/HEAD.zip");
+            ->get("https://github.com/{$project->github_repo}/archive/".($ref ?? 'HEAD').'.zip');
 
         if (! $response->successful()) {
             Log::warning('Public download zipball failed', ['project' => $project->id, 'status' => $response->status()]);
