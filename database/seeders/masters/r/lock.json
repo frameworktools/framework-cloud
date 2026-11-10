@@ -1,5 +1,5 @@
 {
-    "commit": "a497c33503b59055cb917a555d53240d2de8c651",
+    "commit": "d381566109d34280faed9a2d26791b0f1706cd91",
     "files": {
         "conformance/create/python/bare-jupyter.json": {
             "source": "inst/conformance/create/python/bare-jupyter.json",
@@ -180,6 +180,10 @@
         "sets/packages/causal-inference-r.json": {
             "source": "inst/sets/packages/causal-inference-r.json",
             "sha256": "85caa461ac4eddedce26f294d0021cd4e752c5934f6b31eeeb9630fccb5e77f9"
+        },
+        "sets/packages/easystats-r.json": {
+            "source": "inst/sets/packages/easystats-r.json",
+            "sha256": "6216e0393059cdc974170573674fd17ab32a3bec864be239e23b73d026e5c296"
         },
         "sets/packages/fastapi-python.json": {
             "source": "inst/sets/packages/fastapi-python.json",

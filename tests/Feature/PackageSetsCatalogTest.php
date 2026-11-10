@@ -44,9 +44,9 @@ class PackageSetsCatalogTest extends TestCase
             ->where('sets.1.in_defaults', 7)
             ->where('sets.3.language', ['python'])
             ->where('sets.3.packages.0.name', 'pandas')
-            ->where('sets.26.language', ['python'])
-            ->where('sets.26.requirements', 'Nothing outside Python.')
-            ->where('sets.26.packages.0.source', 'pypi'));
+            ->where('sets.27.language', ['python'])
+            ->where('sets.27.requirements', 'Nothing outside Python.')
+            ->where('sets.27.packages.0.source', 'pypi'));
 
         // Stata prefers neither, so the catalog starts at R
         $stata = User::factory()->create(['email_verified_at' => now(), 'project_defaults' => ['language' => 'stata']]);
