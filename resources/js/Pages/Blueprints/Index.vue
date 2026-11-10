@@ -11,6 +11,7 @@ import UiButton from '@/Components/UiButton.vue';
 import UiCallout from '@/Components/UiCallout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import BlueprintPreview from '@/Components/BlueprintPreview.vue';
+import { prefetchPreview } from '@/blueprintPreviews.js';
 import { group, groups, languageNames } from '@/library.js';
 
 const props = defineProps({
@@ -88,6 +89,7 @@ const choose = (section, id) => (chosen[section.key] = openIn(section) === id ? 
 // A click on the card's text opens it, unless the click ends a text selection
 const pick = (section, id) => window.getSelection()?.toString() || choose(section, id);
 const source = (b) => ({ url: `/blueprints/${b.id}/preview`, body: { language: language.value, workflow: workflow.value } });
+const prefetch = (b) => { const { url, body } = source(b); prefetchPreview(url, body, page.props.csrf); };
 
 const isDefault = (b) => b.handle === props.default_blueprint && props.workflows?.[language.value] === workflow.value;
 const lastDefault = ref(null);
@@ -197,6 +199,7 @@ const pill = (on) => on
                     <div
                         v-for="b in section.rows" :key="b.id"
                         class="rounded-xl border bg-white transition dark:bg-slate-900"
+                        @pointerenter="prefetch(b)" @focusin="prefetch(b)"
                         :class="openIn(section) === b.id ? 'border-slate-300 shadow-sm dark:border-slate-700' : 'border-slate-200 dark:border-slate-800'"
                     >
                         <div class="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-start sm:px-5">

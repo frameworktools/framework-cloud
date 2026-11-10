@@ -1,5 +1,6 @@
 <script setup>
 import { onBeforeUnmount, ref, watch } from 'vue';
+import { cachedPreview, fetchPreview } from '@/blueprintPreviews.js';
 import { usePage } from '@inertiajs/vue3';
 import { ChevronRightIcon } from '@heroicons/vue/20/solid';
 import ProjectTreeView from '@/Components/ProjectTreeView.vue';
@@ -22,29 +23,34 @@ const props = defineProps({
 });
 const page = usePage();
 
-const preview = ref(null);
+const url = () => props.source?.url ?? '/settings/blueprint/preview';
+const body = () => props.source?.body ?? { blueprint: props.blueprint.key, language: props.language, values: props.values };
+
+const preview = ref(cachedPreview(url(), body()) ?? null);
 const loading = ref(false);
 let request = 0;
 const load = async () => {
     const id = ++request;
-    loading.value = true;
+    const cached = cachedPreview(url(), body());
+    if (cached) preview.value = cached;
+    // A cached preview is rechecked quietly
+    loading.value = !cached;
     try {
-        const response = await fetch(props.source?.url ?? '/settings/blueprint/preview', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': page.props.csrf, 'X-Requested-With': 'XMLHttpRequest' },
-            body: JSON.stringify(props.source?.body ?? { blueprint: props.blueprint.key, language: props.language, values: props.values }),
-        });
-        const data = response.ok ? await response.json() : { available: false, problem: "The preview couldn't be loaded." };
+        const data = await fetchPreview(url(), body(), page.props.csrf);
         // A later request may have finished first
         if (id === request) preview.value = data;
+    } catch {
+        if (id === request && !cached) preview.value = { available: false, problem: "The preview couldn't be loaded." };
     } finally {
         if (id === request) loading.value = false;
     }
 };
 let timer = null;
-watch([() => props.blueprint.key, () => props.language, () => JSON.stringify(props.values), () => JSON.stringify(props.source ?? null)], () => {
+watch([() => props.blueprint.key, () => props.language, () => JSON.stringify(props.values), () => JSON.stringify(props.source ?? null)], (_, old) => {
     clearTimeout(timer);
-    timer = setTimeout(load, 150);
+    // Load at once when opened; wait out typing in the settings form
+    if (!old) load();
+    else timer = setTimeout(load, props.source ? 0 : 150);
 }, { immediate: true });
 onBeforeUnmount(() => clearTimeout(timer));
 
