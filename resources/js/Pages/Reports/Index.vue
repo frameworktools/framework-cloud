@@ -27,7 +27,7 @@ const removeReport = async (report) => {
     }
 };
 const menuFor = (report) => [
-    { label: 'Edit', href: `/reports/${report.id}/edit` },
+    ...(report.versions?.length ? [{ label: 'View', href: report.url, external: true }] : []),
     { label: 'Share', onSelect: () => { shareTarget.value = { type: 'report', id: report.id, title: report.title, settings: `/reports/${report.id}/edit` }; } },
     { divider: true },
     { label: 'Delete', danger: true, onSelect: () => removeReport(report) },
@@ -65,7 +65,6 @@ const menuFor = (report) => [
                         <td class="max-sm:hidden">{{ report.versions?.length ? `Version ${report.versions[0].number}, ${date(report.versions[0].created_at)}` : 'Draft' }}</td>
                         <td class="actions">
                             <div class="flex justify-end gap-1">
-                                <UiButton v-if="report.versions?.length" :href="report.url" external variant="ghost" size="sm" :aria-label="`View ${report.title}`">View</UiButton>
                                 <UiButton :href="`/reports/${report.id}/edit`" variant="ghost" size="sm" :aria-label="`Edit ${report.title}`">Edit</UiButton>
                                 <RowMenu :items="menuFor(report)" :label="`Actions for ${report.title}`" />
                             </div>

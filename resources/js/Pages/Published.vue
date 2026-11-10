@@ -33,7 +33,7 @@ const removeArtifact = async (doc) => {
     }
 };
 const menuFor = (doc) => [
-    { label: 'Edit', href: `/artifacts/${doc.id}` },
+    ...(!doc.driver || doc.driver === 'cloud' || doc.external_url ? [{ label: 'View', href: doc.url, external: true }] : []),
     { label: 'Share', onSelect: () => { shareTarget.value = { type: 'artifact', id: doc.id, title: doc.title, settings: `/artifacts/${doc.id}?tab=sharing` }; } },
     { divider: true },
     { label: 'Delete', danger: true, onSelect: () => removeArtifact(doc) },
@@ -89,7 +89,6 @@ const menuFor = (doc) => [
                             <td class="max-sm:hidden">{{ date(doc.updated_at) }}</td>
                             <td class="actions">
                                 <div class="flex justify-end gap-1">
-                                    <UiButton v-if="!doc.driver || doc.driver === 'cloud' || doc.external_url" :href="doc.url" external variant="ghost" size="sm" :aria-label="`View ${doc.title}`">View</UiButton>
                                     <UiButton :href="`/artifacts/${doc.id}`" variant="ghost" size="sm">Edit</UiButton>
                                     <RowMenu :items="menuFor(doc)" :label="`Actions for ${doc.title}`" />
                                 </div>

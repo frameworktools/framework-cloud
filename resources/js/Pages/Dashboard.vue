@@ -58,7 +58,7 @@ const removeItem = async (item) => {
     if (await ask(`Delete ${item.title}? It goes to the Trash, where you can restore it.`)) router.delete(item.deleteUrl, { preserveScroll: true });
 };
 const menuFor = (item) => [
-    { label: 'Edit', href: item.management_url },
+    ...(item.url ? [{ label: 'View', href: item.url, external: true }] : []),
     { label: 'Share', onSelect: () => { shareTarget.value = { type: item.shareType, id: item.id, title: item.title, settings: item.shareType === 'artifact' ? `${item.management_url}?tab=sharing` : item.management_url }; } },
     { divider: true },
     { label: 'Delete', danger: true, onSelect: () => removeItem(item) },
@@ -102,7 +102,6 @@ const menuFor = (item) => [
                         <td class="max-sm:hidden">{{ item.type }}</td>
                         <td class="max-lg:hidden">{{ date(item.updated_at) }}</td>
                         <td class="actions"><div class="flex justify-end gap-1">
-                            <UiButton v-if="item.url" :href="item.url" external variant="ghost" size="sm">View</UiButton>
                             <UiButton :href="item.management_url" variant="ghost" size="sm">Edit</UiButton>
                             <RowMenu :items="menuFor(item)" :label="`Actions for ${item.title}`" />
                         </div></td>

@@ -27,7 +27,7 @@ const removeCollection = async (collection) => {
     }
 };
 const menuFor = (collection) => [
-    { label: 'Edit', href: `/collections/${collection.id}/edit` },
+    ...(collection.visibility !== 'private' ? [{ label: 'View', href: collection.url, external: true }] : []),
     { label: 'Share', onSelect: () => { shareTarget.value = { type: 'collection', id: collection.id, title: collection.title, settings: `/collections/${collection.id}/edit` }; } },
     { divider: true },
     { label: 'Delete', danger: true, onSelect: () => removeCollection(collection) },
@@ -71,7 +71,6 @@ const menuFor = (collection) => [
                         </td>
                         <td class="actions">
                             <div class="flex justify-end gap-1">
-                                <UiButton v-if="collection.visibility !== 'private'" :href="collection.url" external variant="ghost" size="sm" :aria-label="`View ${collection.title}`">View</UiButton>
                                 <UiButton :href="`/collections/${collection.id}/edit`" variant="ghost" size="sm" :aria-label="`Edit ${collection.title}`">Edit</UiButton>
                                 <RowMenu :items="menuFor(collection)" :label="`Actions for ${collection.title}`" />
                             </div>
