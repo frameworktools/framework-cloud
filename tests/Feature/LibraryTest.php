@@ -435,7 +435,7 @@ class LibraryTest extends TestCase
 
         // Removing the title falls back to the official name
         $this->actingAs($user)->put("/skills/{$skill->id}", ['content' => "---\nname: irb-checklist\ndescription: Use before sharing output.\n---\n", 'visibility' => 'private']);
-        $this->assertSame('irb-checklist', $skill->fresh()->name);
+        $this->assertSame('Irb checklist', $skill->fresh()->name);
 
         // The system skills carry readable titles
         $this->assertSame('Reading and saving data', Skill::whereNull('user_id')->where('key', 'framework-data')->value('name'));

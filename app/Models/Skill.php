@@ -145,8 +145,14 @@ class Skill extends Model
         return [
             'key' => $key,
             'description' => trim($description[1]),
-            'title' => mb_substr(trim($title[1] ?? '') ?: $key, 0, 100),
+            'title' => mb_substr(trim($title[1] ?? '') ?: self::titleFromKey($key), 0, 100),
             'summary' => filled($summary[1] ?? null) ? mb_substr(trim($summary[1]), 0, 200) : null,
         ];
+    }
+
+    /** A readable name for a skill whose SKILL.md has no metadata.title: analysis-report reads Analysis report. */
+    public static function titleFromKey(string $key): string
+    {
+        return Str::ucfirst(str_replace('-', ' ', $key));
     }
 }
