@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { ArrowLeftIcon, CheckIcon, ClipboardDocumentIcon } from '@heroicons/vue/20/solid';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import UiBadge from '@/Components/UiBadge.vue';
 import UiButton from '@/Components/UiButton.vue';
 import { languageNames, languageScope } from '@/library.js';
 
@@ -48,29 +49,12 @@ const pill = (on) => on
                 <ArrowLeftIcon class="size-4" />{{ backLabel }}
             </Link>
 
-            <!-- A skill with its own text per language shows the one a project in that language gets; the description below follows it -->
-            <div v-if="variants.length > 1" class="flex flex-wrap items-center gap-x-4 gap-y-2">
-                <div role="radiogroup" aria-label="Language" class="inline-flex gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-900">
-                    <button v-for="l in variants" :key="l" type="button" role="radio" :aria-checked="language === l" class="rounded-md px-3 py-1 text-sm font-medium transition" :class="pill(language === l)" @click="switchTo(l)">
-                        {{ languageNames[l] }}
-                    </button>
-                </div>
-                <span class="text-xs text-slate-500 dark:text-slate-400">{{ languageNames[language] }} project instructions</span>
-            </div>
-
             <header class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div class="min-w-0 max-w-[70ch]">
                     <h1 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{{ skill.name }}</h1>
                     <p v-if="skill.summary" class="mt-2 text-base text-slate-700 dark:text-slate-300">{{ skill.summary }}</p>
-                    <details class="group mt-2 text-sm">
-                        <summary class="cursor-pointer list-none text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 [&::-webkit-details-marker]:hidden">
-                            <span class="group-open:hidden">Agent instructions ›</span><span class="hidden group-open:inline">Agent instructions ⌄</span>
-                        </summary>
-                        <p class="mt-1 text-slate-600 dark:text-slate-400">{{ skill.descriptions?.[language] ?? skill.description }}</p>
-                    </details>
-                    <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">{{ languageScope(skill.language) }}</p>
-                    <div v-if="skill.tags?.length" class="mt-3 flex flex-wrap gap-3">
-                        <Link v-for="tag in skill.tags" :key="tag.id" :href="`/skills?tag=${tag.key}`" class="text-xs text-slate-500 dark:text-slate-400 underline underline-offset-4">{{ tag.name }}</Link>
+                    <div v-if="skill.tags?.length" class="mt-4 flex flex-wrap gap-2">
+                        <Link v-for="tag in skill.tags" :key="tag.id" :href="`/skills?tag=${tag.key}`" class="rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"><UiBadge class="hover:bg-slate-200 dark:hover:bg-slate-700">{{ tag.name }}</UiBadge></Link>
                     </div>
                 </div>
                 <div class="flex shrink-0 gap-2">
@@ -85,13 +69,28 @@ const pill = (on) => on
                         {{ v === 'read' ? 'Read' : 'Source' }}
                     </button>
                 </div>
+                <!-- A skill with its own text per language shows the one a project in that language gets -->
+                <div v-if="variants.length > 1" role="radiogroup" aria-label="Language" class="inline-flex gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-900">
+                    <button v-for="l in variants" :key="l" type="button" role="radio" :aria-checked="language === l" class="rounded-md px-3 py-1 text-sm font-medium transition" :class="pill(language === l)" @click="switchTo(l)">
+                        {{ languageNames[l] }}
+                    </button>
+                </div>
+                <span v-if="variants.length > 1" class="text-xs text-slate-500 dark:text-slate-400">{{ languageNames[language] }} project instructions</span>
+                <span v-else class="text-xs text-slate-500 dark:text-slate-400">{{ languageScope(skill.language) }}</span>
                 <button type="button" class="ml-auto inline-flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white" @click="copy">
                     <component :is="copied ? CheckIcon : ClipboardDocumentIcon" class="size-4" />{{ copied ? 'Copied' : 'Copy source' }}
                 </button>
             </div>
 
             <p v-if="skill.parent" class="text-sm text-slate-500 dark:text-slate-400">Forked from <Link :href="`/skills/${skill.parent.id}`" class="underline">{{ skill.parent.name }}</Link>, version {{ skill.parent.version }}.</p>
-            <article v-if="view === 'read'" class="skill-prose" v-html="html" />
+            <template v-if="view === 'read'">
+                <section aria-labelledby="agent-instructions" class="max-w-[70ch]">
+                    <h2 id="agent-instructions" class="text-sm font-medium text-slate-800 dark:text-white">Agent instructions</h2>
+                    <p class="mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{{ skill.descriptions?.[language] ?? skill.description }}</p>
+                </section>
+                <hr class="border-slate-800/10 dark:border-white/15" />
+                <article class="skill-prose" v-html="html" />
+            </template>
             <pre v-else class="max-w-[90ch] overflow-x-auto whitespace-pre-wrap break-words rounded-lg bg-slate-50 p-4 font-mono text-[0.8125rem] leading-relaxed text-slate-800 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-200 dark:ring-slate-800">{{ source }}</pre>
 
             <footer class="flex flex-wrap gap-x-3 gap-y-1 border-t border-slate-200 pt-3 text-xs text-slate-500 dark:text-slate-400 dark:border-slate-800">
