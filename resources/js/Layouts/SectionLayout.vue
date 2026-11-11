@@ -22,8 +22,9 @@ const props = defineProps({
     back: Object, // { label, href }: a way out of this context, shown above the heading
     group: String,
     items: { type: Array, default: () => [] },
-    // A narrower column with roomier sides, for short labels such as Project defaults'
+    // A narrower column with roomier sides, for short labels such as Settings'
     narrow: Boolean,
+    wide: Boolean,
     // Unsaved changes somewhere in this section: an amber dot by the heading
     dirty: Boolean,
 });
@@ -31,7 +32,7 @@ const props = defineProps({
 const page = usePage();
 const active = ref(props.items.find((i) => i.anchor)?.anchor ?? null);
 
-const isActive = (item) => (item.href
+const isActive = (item) => item.current ?? (item.href
     ? page.url === item.href || page.url.startsWith(item.href + '?') || (!item.exact && page.url.startsWith(item.href + '/'))
     : active.value === item.anchor);
 
@@ -91,12 +92,12 @@ const itemClass = (item) => [
 
                         <slot name="lead" />
 
-                        <nav :aria-label="heading ?? 'Section'" class="flex gap-1 max-lg:-mx-1 max-lg:overflow-x-auto lg:flex-col lg:gap-0.5">
+                        <nav :aria-label="heading ?? 'Section'" class="flex gap-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden max-lg:-mx-1 max-lg:overflow-x-auto lg:flex-col lg:gap-0.5">
                             <div v-if="group" class="mb-1 mt-2 text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400 max-lg:hidden">{{ group }}</div>
                             <template v-for="item in items" :key="item.href ?? item.anchor ?? item.heading">
                                 <div v-if="item.heading" class="mb-1 mt-4 text-xs font-semibold uppercase tracking-wider text-slate-500 first:mt-5 max-lg:hidden dark:text-slate-400">{{ item.heading }}</div>
                                 <Link
-                                    v-else-if="item.href" :href="item.href" :preserve-state="!!item.preserveState" :preserve-scroll="!!item.preserveState"
+                                    v-else-if="item.href" :href="item.href" :preserve-state="!!item.preserveState" :preserve-scroll="item.preserveScroll ?? !!item.preserveState" :aria-current="isActive(item) ? 'page' : undefined"
                                     class="flex shrink-0 items-center justify-between gap-2 rounded-md px-3 py-2 text-sm transition lg:-mx-3" :class="itemClass(item)"
                                 >
                                     <span class="truncate">{{ item.label }}</span>
@@ -123,8 +124,8 @@ const itemClass = (item) => [
             </aside>
 
             <!-- The same margins as the project list, with the content against its left edge -->
-            <div class="min-w-0 flex-1 py-10" :class="pageGutter">
-                <div class="max-w-4xl">
+            <div class="min-w-0 flex-1 py-10" :class="wide ? 'px-6 lg:px-8' : pageGutter">
+                <div :class="wide ? 'max-w-none' : 'max-w-4xl'">
                     <slot />
 
                     <!-- Narrow screens: the sidebar's summary and button go under the page -->

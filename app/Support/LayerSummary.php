@@ -100,6 +100,10 @@ class LayerSummary
             ]];
         }
 
+        if (is_string($layer['publish']['default'] ?? null)) {
+            $add('Publishing', [$layer['publish']['default']]);
+        }
+
         foreach (['scaffold', 'quarto', 'connections', 'env', 'data_hooks'] as $key) {
             if (! empty($layer[$key])) {
                 $add(ucfirst(str_replace('_', ' ', $key)), array_keys($layer[$key]));

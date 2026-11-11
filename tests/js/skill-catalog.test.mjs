@@ -20,3 +20,8 @@ test('filters combine language, ownership, search, and every selected tag', () =
     assert.deepEqual(filterSkills(skills, { language: 'stata', tags: ['framework', 'packages'] }), []);
     assert.deepEqual(filterSkills(skills, { language: 'stata' }).map(s => s.id), [2, 3]);
 });
+test('category filters combine with search, source, and tags', () => {
+    assert.deepEqual(filterSkills(skills, { language: 'stata', category: 'framework', source: 'mine', search: 'survey' }).map(s => s.id), [2]);
+    assert.deepEqual(filterSkills(skills, { language: 'r', category: 'framework', tags: ['packages'] }).map(s => s.id), [1]);
+    assert.deepEqual(filterSkills(skills, { language: 'r', category: 'modeling' }), []);
+});

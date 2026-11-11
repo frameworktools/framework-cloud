@@ -1,0 +1,17 @@
+{
+  "id": "data-cleaning",
+  "name": "Data cleaning",
+  "description": "Transformations and validation of analysis data.",
+  "category": "data-cleaning",
+  "language": [
+    "r",
+    "python",
+    "stata"
+  ],
+  "layer": {
+    "skills": {
+      "cleaning-data": {},
+      "checking-data": {}
+    }
+  }
+}

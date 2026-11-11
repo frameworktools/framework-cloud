@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\ProjectDefaults;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -10,6 +11,13 @@ use Illuminate\Support\Collection;
 class BlueprintVersion extends Model
 {
     protected $guarded = [];
+
+    /**
+     * The editor files a version's projects get, in the ide column, as
+     * scaffold.ide names them: RStudio's .Rproj, VS Code and Positron's
+     * .code-workspace, both, or none. Null leaves it to the person.
+     */
+    public const IDES = ['rstudio', 'vscode', 'both', 'none'];
 
     protected function casts(): array
     {
@@ -20,6 +28,7 @@ class BlueprintVersion extends Model
             'default_workflow' => 'array',
             'requires_tools' => 'array',
             'requires' => 'array',
+            'agent_defaults' => 'array',
         ];
     }
 
@@ -54,11 +63,27 @@ class BlueprintVersion extends Model
      */
     public function compatibility(): array
     {
+        $languages = $this->languages ?: null;
+        $workflows = $this->workflows ?: null;
+        $defaults = $this->default_workflow ?? [];
+        // Older personal blueprints allowed several languages and workflows.
+        // Read them as one choice without rewriting their pinned versions.
+        if ($this->blueprint->user_id !== null) {
+            $language = count($languages ?? []) === 1 ? $languages[0] : $this->blueprint->language;
+            $languages = [$language];
+            $available = array_values(array_filter($workflows ?? ProjectDefaults::WORKFLOW_KEYS,
+                fn ($workflow) => ProjectDefaults::workflowFits($workflow, $language)));
+            $workflow = collect([$defaults[$language] ?? null, ProjectDefaults::WORKFLOWS[$language]])
+                ->first(fn ($workflow) => in_array($workflow, $available, true)) ?? ($available[0] ?? null);
+            $workflows = $workflow ? [$workflow] : [];
+            $defaults = $workflow ? [$language => $workflow] : [];
+        }
+
         return [
-            'languages' => $this->languages ?: null,
-            'workflows' => $this->workflows ?: null,
-            'default_workflow' => $this->default_workflow ?? [],
-            'requires_tools' => $this->requires_tools ?? [],
+            'languages' => $languages,
+            'workflows' => $workflows,
+            'default_workflow' => $defaults,
+            'requires_tools' => $this->blueprint->user_id !== null && $languages === ['stata'] ? [] : ($this->requires_tools ?? []),
             'requires' => $this->requires ?? [],
         ];
     }

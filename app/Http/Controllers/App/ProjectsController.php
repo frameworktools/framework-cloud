@@ -5,12 +5,14 @@ namespace App\Http\Controllers\App;
 use App\Http\Controllers\Controller;
 use App\Jobs\ScaffoldOnGitHub;
 use App\Models\Blueprint;
+use App\Models\BlueprintVersion;
 use App\Models\Collection;
 use App\Models\Document;
 use App\Models\Facet;
 use App\Models\Project;
 use App\Models\Report;
 use App\Models\Skill;
+use App\Models\User;
 use App\Services\GitHub\GitHubNotConnected;
 use App\Services\GitHub\Installations;
 use App\Services\GitHub\Pages;
@@ -19,7 +21,10 @@ use App\Services\GitHub\RepositoryTarget;
 use App\Services\GitHub\Scaffolder;
 use App\Services\Scaffolder\ProjectZip;
 use App\Services\Scaffolder\ProjectZipFailed;
+use App\Support\BlueprintInput;
 use App\Support\Catalog;
+use App\Support\Layer;
+use App\Support\Library;
 use App\Support\ProjectDefaults;
 use App\Support\ProjectLayers;
 use App\Support\ResolvedSelections;
@@ -30,6 +35,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -199,19 +205,31 @@ class ProjectsController extends Controller
         ];
     }
 
+    /** The New project page's steps: a blueprint to start from, the project's choices, and a review. */
+    public const STAGES = ['start', 'project', 'review'];
+
     public function create(Request $request): Response
     {
         $user = $request->user();
         $account = $user->githubAccount;
         $defaults = ProjectDefaults::for($user);
 
+        $blueprints = Catalog::blueprints($user);
+        $versions = Blueprint::with('latestVersion')->whereIn('id', array_column($blueprints, 'id'))->get()->mapWithKeys(fn (Blueprint $b) => [$b->id => $b->latestVersion]);
+
         return Inertia::render('Projects/Create', [
-            'blueprints' => collect(Catalog::blueprints($user))->map(fn (array $b) => $b + [
+            'blueprints' => collect($blueprints)->map(fn (array $b) => array_replace($b, [
                 'sensitive' => $b['choices']['settings']['sensitive'],
-            ])->all(),
+                'choices' => self::settingChoices($versions[$b['id']] ?? null, $b['choices']['extra_yaml'] ?? '') + $b['choices'],
+            ]))->values()->all(),
             'catalog' => fn () => Catalog::for($user),
+            'ggplotThemes' => ProjectDefaults::GGPLOT_THEMES,
+            'quartoChoices' => ProjectDefaults::QUARTO_CHOICES,
             'defaults' => $defaults,
             'selected' => $request->integer('blueprint') ?: null,
+            // The step and choice tab the page opens on; a blueprint link opens on the project's choices
+            'stage' => in_array($request->query('stage'), self::STAGES, true) ? $request->query('stage') : ($request->integer('blueprint') ? 'project' : 'start'),
+            'tab' => is_string($request->query('tab')) ? Str::limit($request->query('tab'), 40, '') : null,
             // A language and workflow to start with, as the Blueprints page passes them
             'start' => [
                 'language' => in_array($request->query('language'), Project::LANGUAGES, true) ? $request->query('language') : null,
@@ -247,12 +265,25 @@ class ProjectsController extends Controller
             'description' => ['nullable', 'string', 'max:500'],
             'customized' => ['boolean'],
             'structure' => ['required_if_accepted:customized', 'nullable', 'string', 'max:200'],
+            'notebook_format' => ['nullable', Rule::in(['quarto', 'rmarkdown', 'jupyter'])],
+            'extra_yaml' => ['nullable', 'string', 'max:20000'],
+            'settings.hooks' => ['nullable', 'array'],
+            'settings.hooks.*' => [Rule::in(ProjectDefaults::HOOKS)],
+            // Also save these choices as a personal blueprint, in the blueprint builder's format
+            'new_blueprint' => ['nullable', 'array'],
+            ...self::settingRules(),
             'tools' => ['nullable', 'array'],
             'tools.*' => ['boolean'],
             'package_sets' => ['nullable', 'array'],
             'package_sets.*' => ['string', 'max:200'],
+            'package_overrides' => ['nullable', 'array'],
+            'package_overrides.*' => ['boolean'],
+            'package_auto_attach' => ['nullable', 'array'],
+            'package_auto_attach.*' => ['boolean'],
             'skill_sets' => ['nullable', 'array'],
             'skill_sets.*' => ['string', 'max:200'],
+            'excluded_skills' => ['nullable', 'array'],
+            'excluded_skills.*' => ['string', 'max:200'],
             'skills' => ['nullable', 'array'],
             'skills.*' => ['string', 'max:200'],
             'settings' => ['nullable', 'array'],
@@ -280,6 +311,9 @@ class ProjectsController extends Controller
             return back()->withErrors(['blueprint_id' => 'Choose a blueprint.']);
         }
 
+        // Checked before anything is made, so a problem with the blueprint creates neither
+        $newBlueprint = filled($validated['new_blueprint'] ?? null) ? self::blueprintInput($request, $validated['new_blueprint']) : null;
+
         $resolver = new Resolver($request->user());
         $resolved = $resolver->resolve(self::choicesFrom($validated, $blueprint));
 
@@ -293,6 +327,10 @@ class ProjectsController extends Controller
 
         $sensitive = ProjectLayers::isSensitive($resolved['envelope']['layers']);
         $github = ($validated['github']['enabled'] ?? false) ? RepositoryTarget::for($request->user(), $validated['github'], $sensitive) : null;
+
+        if ($newBlueprint) {
+            self::saveBlueprint($request->user(), $newBlueprint);
+        }
 
         $project = $resolver->createProject($validated['name'], $resolved, $validated['description'] ?? null, [
             'scaffold_status' => $github ? 'pending' : null,
@@ -332,17 +370,28 @@ class ProjectsController extends Controller
             'workflow' => ['nullable', Rule::in(ProjectDefaults::WORKFLOW_KEYS)],
             'customized' => ['boolean'],
             'structure' => ['nullable', 'string', 'max:200'],
+            'notebook_format' => ['nullable', Rule::in(['quarto', 'rmarkdown', 'jupyter'])],
+            'extra_yaml' => ['nullable', 'string', 'max:20000'],
+            'settings.hooks' => ['nullable', 'array'],
+            'settings.hooks.*' => [Rule::in(ProjectDefaults::HOOKS)],
             'tools' => ['nullable', 'array'],
             'tools.*' => ['boolean'],
             'package_sets' => ['nullable', 'array'],
             'package_sets.*' => ['string', 'max:200'],
+            'package_overrides' => ['nullable', 'array'],
+            'package_overrides.*' => ['boolean'],
+            'package_auto_attach' => ['nullable', 'array'],
+            'package_auto_attach.*' => ['boolean'],
             'skill_sets' => ['nullable', 'array'],
             'skill_sets.*' => ['string', 'max:200'],
+            'excluded_skills' => ['nullable', 'array'],
+            'excluded_skills.*' => ['string', 'max:200'],
             'skills' => ['nullable', 'array'],
             'skills.*' => ['string', 'max:200'],
             'settings' => ['nullable', 'array'],
             'settings.ai' => ['nullable'],
             'settings.ai.assistants' => ['sometimes', 'array'],
+            ...self::settingRules(),
         ]);
         $blueprint = Blueprint::with('owner', 'latestVersion.facetVersions.facet')->find($validated['blueprint_id']);
         abort_unless($blueprint?->isVisibleTo($request->user()) && $blueprint->latestVersion, 404);
@@ -357,6 +406,64 @@ class ProjectsController extends Controller
     }
 
     /**
+     * A blueprint version's scaffold, Quarto, editor, and publishing settings
+     * as a project from it gets them: the version's own values over
+     * Framework's, as creating the project from it as it is would apply them.
+     * Choices that move into these settings leave the extra settings YAML.
+     *
+     * @return array<string, mixed>
+     */
+    private static function settingChoices(?BlueprintVersion $version, string $extraYaml): array
+    {
+        $layer = $version?->layer ?? [];
+        [$extra] = Layer::fromYaml($extraYaml);
+
+        return [
+            'scaffold' => ProjectDefaults::scaffold((array) ($layer['scaffold'] ?? [])),
+            'quarto' => ProjectDefaults::quarto((array) ($layer['quarto'] ?? [])),
+            'ide' => BlueprintInput::ide(ProjectDefaults::ide($version)) ?? ProjectDefaults::IDE,
+            'publish_destination' => BlueprintInput::destination($layer) ?? '',
+            'extra_yaml' => is_array($extra) ? Layer::toYaml(BlueprintInput::withoutSettings($extra)) : $extraYaml,
+        ];
+    }
+
+    /**
+     * Rules for a project's scaffold, Quarto, editor, and publishing
+     * choices, as the blueprint builder checks them.
+     *
+     * @return array<string, list<mixed>>
+     */
+    private static function settingRules(): array
+    {
+        $rules = [
+            'scaffold' => ['sometimes', 'nullable', 'array'],
+            'scaffold.seed_on_scaffold' => ['boolean'],
+            'scaffold.seed' => ['nullable', 'regex:/^-?\d{1,9}$/'],
+            'scaffold.set_theme_on_scaffold' => ['boolean'],
+            'scaffold.ggplot_theme' => ['nullable', Rule::in(ProjectDefaults::GGPLOT_THEMES)],
+            'scaffold.source_all_functions' => ['boolean'],
+            'quarto' => ['sometimes', 'nullable', 'array'],
+            'quarto.html' => ['array'],
+            'quarto.revealjs' => ['array'],
+            'ide' => ['sometimes', 'nullable', Rule::in(BlueprintInput::IDE_CHOICES)],
+            'publish_destination' => ['sometimes', 'nullable', Rule::in(['', ...BlueprintInput::DESTINATIONS])],
+        ];
+        foreach (ProjectDefaults::QUARTO as $format => $values) {
+            foreach ($values as $key => $default) {
+                $choices = ProjectDefaults::QUARTO_CHOICES["{$format}.{$key}"]
+                    ?? ProjectDefaults::QUARTO_CHOICES[str_ends_with($key, 'transition') ? 'transition' : $key] ?? [];
+                $rules["quarto.{$format}.{$key}"] = match (true) {
+                    is_bool($default) => ['boolean'],
+                    is_int($default) => ['integer', 'between:1,6'],
+                    default => [Rule::in($choices)],
+                };
+            }
+        }
+
+        return $rules;
+    }
+
+    /**
      * The resolver's choices for the New project form: the blueprint as it
      * is, or, customized, exactly the pieces shown. Lists that are present,
      * even empty, are the project's own.
@@ -367,8 +474,44 @@ class ProjectsController extends Controller
     private static function choicesFrom(array $validated, Blueprint $blueprint): array
     {
         return ($validated['customized'] ?? false)
-            ? ['from' => $blueprint->handle] + Arr::only($validated, ['name', 'language', 'workflow', 'structure', 'tools', 'package_sets', 'skill_sets', 'skills', 'settings'])
+            ? ['from' => $blueprint->handle] + Arr::only($validated, ['name', 'language', 'workflow', 'notebook_format', 'structure', 'tools', 'package_sets', 'package_overrides', 'package_auto_attach', 'skill_sets', 'skills', 'excluded_skills', 'settings', 'extra_yaml', 'scaffold', 'quarto', 'ide', 'publish_destination'])
             : ['blueprint' => $blueprint->handle] + Arr::only($validated, ['name', 'language', 'workflow']);
+    }
+
+    /**
+     * Blueprint choices from the New project form, validated as the blueprint
+     * builder validates them. Problems are reported under new_blueprint.
+     *
+     * @param  array<string, mixed>  $input
+     * @return array<int, mixed> as BlueprintInput::validated() returns them
+     */
+    private static function blueprintInput(Request $request, array $input): array
+    {
+        $sub = Request::create('/blueprints', 'POST', $input);
+        $sub->setUserResolver(fn () => $request->user());
+
+        try {
+            return BlueprintInput::validated($sub);
+        } catch (ValidationException $e) {
+            throw ValidationException::withMessages(collect($e->errors())->mapWithKeys(fn (array $messages, string $key) => ["new_blueprint.{$key}" => $messages])->all());
+        }
+    }
+
+    /** @param  array<int, mixed>  $input  from blueprintInput() */
+    private static function saveBlueprint(User $user, array $input): Blueprint
+    {
+        [$meta, $base, $facetVersionIds, $layer, $notes, $compatibility] = $input;
+
+        return DB::transaction(function () use ($user, $meta, $base, $facetVersionIds, $layer, $notes, $compatibility) {
+            $blueprint = Blueprint::create($meta + [
+                'user_id' => $user->id,
+                'key' => Library::uniqueKey(Blueprint::query(), $meta['name'], $user->id),
+                'is_system' => false,
+            ]);
+            $blueprint->publish($base, $facetVersionIds, $layer, $notes, $compatibility);
+
+            return $blueprint;
+        });
     }
 
     /**

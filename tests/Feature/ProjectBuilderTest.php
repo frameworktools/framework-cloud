@@ -26,16 +26,17 @@ class ProjectBuilderTest extends TestCase
         return Blueprint::whereNull('user_id')->where('key', $key)->firstOrFail();
     }
 
-    public function test_the_preview_combines_a_named_blueprint_with_your_defaults_and_marks_required_tools(): void
+    public function test_the_preview_shows_a_named_blueprint_alone_and_marks_required_tools(): void
     {
+        // Account defaults from before blueprints held everything don't come along
         $user = User::factory()->create(['project_defaults' => ['skill_sets' => ['framework/ggplot2'], 'tools' => ['quarto_manuscript' => true]]]);
 
         $preview = $this->actingAs($user)->postJson('/projects/preview', ['blueprint_id' => $this->blueprint('bare')->id, 'language' => 'r'])->assertOk();
 
         $this->assertSame('quarto', $preview->json('workflow.key'));
-        $this->assertSame(['framework/ggplot2'], array_column($preview->json('skill_sets'), 'key'));
-        $this->assertSame('yours', $preview->json('skill_sets.0.from'));
-        $this->assertTrue($preview->json('tools.quarto_manuscript.on'));
+        $this->assertSame(['framework/git'], array_column($preview->json('skill_sets'), 'key'));
+        $this->assertSame('blueprint', $preview->json('skill_sets.0.from'));
+        $this->assertFalse($preview->json('tools.quarto_manuscript.on'));
         $this->assertSame('Required by the Quarto workflow', $preview->json('tools.quarto.required'));
         $this->assertNull($preview->json('tools.targets.required'));
     }
@@ -59,11 +60,12 @@ class ProjectBuilderTest extends TestCase
         $this->assertNotContains('framework/ggplot2', $keys);
         $this->assertNotContains('framework/tidyverse-analysis', $keys);
 
-        // Leaving the lists out is different: your defaults come along
+        // Leaving the lists out gives the blueprint's own; old account defaults don't come along
         $this->actingAs($user)->post('/projects', ['name' => 'Plain', 'blueprint_id' => $this->blueprint('project')->id, 'language' => 'r'])->assertSessionHasNoErrors();
         $plain = array_column(ProjectLayers::for($user->projects()->where('slug', 'plain')->sole())['layers'], 'key');
-        $this->assertContains('framework/ggplot2', $plain);
-        $this->assertContains('framework/tidyverse-analysis', $plain);
+        $this->assertNotContains('framework/ggplot2', $plain);
+        $this->assertNotContains('framework/tidyverse-analysis', $plain);
+        $this->assertContains('framework/git', $plain);
     }
 
     public function test_a_required_tool_cant_be_turned_off_for_a_project(): void
@@ -87,7 +89,13 @@ class ProjectBuilderTest extends TestCase
         $paths = array_column($preview->json('tree'), 'path');
         $this->assertContains('clinic-visits.code-workspace', $paths);
         $this->assertContains(['from' => 'notebooks', 'to' => 'outputs/notebooks'], $preview->json('render_dirs'));
-        $this->assertSame(['enabled' => true, 'named' => ['claude'], 'other' => false], $preview->json('agents'));
+        // Agents come from the blueprint, so the account's old agent setting doesn't apply
+        $this->assertSame(['enabled' => true, 'named' => [], 'other' => true], $preview->json('agents'));
+        $this->actingAs($user)->post("/blueprints/{$this->blueprint('project')->id}/fork", ['language' => 'r', 'workflow' => 'quarto']);
+        $mine = Blueprint::where('user_id', $user->id)->sole();
+        $mine->latestVersion->update(['agent_defaults' => ['claude']]);
+        $this->assertSame(['enabled' => true, 'named' => ['claude'], 'other' => false], $this->actingAs($user)->postJson('/projects/preview', ['blueprint_id' => $mine->id, 'language' => 'r'])->json('agents'));
+        $mine->delete();
 
         // Codex for this project only
         $choices = [

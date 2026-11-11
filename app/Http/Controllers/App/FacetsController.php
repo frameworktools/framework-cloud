@@ -10,6 +10,7 @@ use App\Support\GitignoreTemplate;
 use App\Support\Layer;
 use App\Support\Library;
 use App\Support\ProjectDefaults;
+use App\Support\SkillTags;
 use App\Support\StructurePreview;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -38,17 +39,13 @@ class FacetsController extends Controller
         $pieces = Facet::listedFor($user)->where('kind', $kind)->with(['owner', 'latestVersion'])
             ->orderByRaw('user_id is not null')->orderBy('position')->orderBy('name')->get();
 
-        // Package sets by language, each with how much of it your defaults already have
+        // Package sets by language, each with its packages
         if ($kind === 'package_set') {
-            $mine = ProjectDefaults::for($user)['packages'];
-
             return Inertia::render('Pieces/PackageSets', [
                 'sets' => $pieces->map(fn (Facet $f) => Library::facet($f, $user) + [
                     'packages' => self::setPackages($f),
-                    'in_defaults' => self::inDefaults($f, $mine),
                 ]),
-                'language' => ($language = ProjectDefaults::for($user)['language'] ?? 'r') === 'python' ? 'python' : 'r',
-                'defaults_count' => array_map('count', $mine),
+                'language' => ($language = ProjectDefaults::chosenLanguage($user) ?? 'r') === 'python' ? 'python' : 'r',
             ]);
         }
 
@@ -58,7 +55,7 @@ class FacetsController extends Controller
 
             return Inertia::render('Pieces/SkillSets', [
                 'sets' => $pieces->map(fn (Facet $f) => Library::facet($f, $user) + [
-                    'skills' => collect($f->latestVersion?->layer['skills'] ?? [])->map(function ($entry, $key) use ($skills, $f) {
+                    'skills' => collect($f->latestVersion?->catalogLayer()['skills'] ?? [])->map(function ($entry, $key) use ($skills, $f) {
                         // Framework's copy for a packaged skill, else the owner's
                         $skill = ($entry['package'] ?? false) ? $skills->first(fn (Skill $s) => $s->key === $key && $s->isSystem())
                             : ($skills->first(fn (Skill $s) => $s->key === $key && $s->user_id === $f->user_id) ?? $skills->firstWhere('key', $key));
@@ -71,10 +68,13 @@ class FacetsController extends Controller
                             'summary' => $skill?->summary,
                             'descriptions' => (object) ($skill?->descriptions() ?? []),
                             'language' => $skill?->language,
+                            'set_languages' => array_values(array_filter(['r', 'python', 'stata'], fn ($language) => array_key_exists($key, $f->latestVersion->catalogLayer($language)['skills'] ?? []))),
                         ];
                     })->values(),
                     'packages' => self::setPackages($f),
+                    'packages_by_language' => collect(['r', 'python', 'stata'])->mapWithKeys(fn ($language) => [$language => collect($f->latestVersion->catalogLayer($language)['packages']['default_packages'] ?? [])->map(fn ($entry, $name) => ['name' => $name, 'source' => $entry['source'] ?? 'cran'])->values()]),
                 ]),
+                'categories' => SkillTags::categories(),
                 'language' => SkillsController::preferredLanguage($user),
             ]);
         }
@@ -120,37 +120,24 @@ class FacetsController extends Controller
         abort_unless($facet->kind === $kind && $facet->isEditableBy($request->user()), 403);
 
         [$meta, $layer, $notes] = $this->validated($request, $kind);
+        $variant = $request->input('variant');
+        $languageLayers = $facet->latestVersion->language_layers;
+        if ($kind === 'skill_set' && $languageLayers) {
+            abort_unless(is_string($variant) && in_array($variant, $facet->language ?? Project::LANGUAGES, true), 422);
+            foreach (array_keys($facet->latestVersion->layer['skills'] ?? []) as $key) {
+                $layer['skills'][$key] ??= null;
+            }
+            $languageLayers[$variant] = $layer;
+            $layer = $facet->latestVersion->layer;
+            $meta['language'] = $facet->language;
+        }
 
-        DB::transaction(function () use ($facet, $meta, $layer, $notes) {
+        DB::transaction(function () use ($facet, $meta, $layer, $notes, $languageLayers) {
             $facet->update($meta);
-            $facet->publishVersion(['layer' => $layer, 'notes' => $notes]);
+            $facet->publishVersion(['layer' => $layer, 'language_layers' => $languageLayers, 'notes' => $notes]);
         });
 
         return back()->with('status', 'facet-saved');
-    }
-
-    /**
-     * POST /package-sets/{facet}/defaults: add the set's packages your
-     * default list for its language doesn't have. Packages already in the
-     * list stay as you set them, and nothing is removed.
-     */
-    public function addToDefaults(Request $request, Facet $facet): RedirectResponse
-    {
-        $user = $request->user();
-        abort_unless($facet->kind === 'package_set' && $facet->isVisibleTo($user) && $facet->latestVersion, 404);
-        $language = $facet->language[0] ?? null;
-        if (! in_array($language, ProjectDefaults::PACKAGE_LANGUAGES, true)) {
-            return back()->withErrors(['package_set' => "{$facet->name} doesn't say which language it's for, so it can't be added."]);
-        }
-
-        $lists = ProjectDefaults::for($user)['packages'];
-        $have = array_map('strtolower', array_column($lists[$language], 'name'));
-        $added = array_values(array_filter(self::setPackages($facet), fn (array $p) => ! in_array(strtolower($p['name']), $have, true)));
-        $lists[$language] = [...$lists[$language], ...$added];
-
-        $user->forceFill(['project_defaults' => ['packages' => ProjectDefaults::packages($lists)] + ($user->project_defaults ?? [])])->save();
-
-        return back()->with('status', 'package-set-added')->with('added', ['set' => $facet->name, 'language' => $language, 'added' => count($added), 'kept' => count(self::setPackages($facet)) - count($added)]);
     }
 
     /**
@@ -171,14 +158,6 @@ class FacetsController extends Controller
             ])->values()->all();
     }
 
-    /** How many of a set's packages a default list already has. */
-    private static function inDefaults(Facet $facet, array $lists): int
-    {
-        $have = array_map('strtolower', array_column($lists[$facet->language[0] ?? 'r'] ?? [], 'name'));
-
-        return count(array_filter(self::setPackages($facet), fn (array $p) => in_array(strtolower($p['name']), $have, true)));
-    }
-
     public function fork(Request $request, Facet $facet, string $kind): RedirectResponse
     {
         $user = $request->user();
@@ -192,13 +171,14 @@ class FacetsController extends Controller
             'name' => $facet->name,
             'description' => $facet->description,
             'requirements' => $facet->requirements,
+            'category' => $facet->category,
             'language' => $facet->language,
             'visibility' => 'private',
             'forked_from_id' => $source->id,
         ]);
-        $copy->publishVersion(['layer' => $source->layer, 'notes' => "Copied from {$facet->handle} v{$source->version}"]);
+        $copy->publishVersion(['layer' => $source->layer, 'language_layers' => $source->language_layers, 'notes' => "Copied from {$facet->handle} v{$source->version}"]);
 
-        return to_route(self::PATHS[$kind].'.edit', ['facet' => $copy, 'copy' => 1])->with('status', 'facet-forked');
+        return to_route(self::PATHS[$kind].'.edit', ['facet' => $copy, 'copy' => 1, 'language' => $request->input('language')])->with('status', 'facet-forked');
     }
 
     public function destroy(Request $request, Facet $facet, string $kind): RedirectResponse
@@ -222,7 +202,12 @@ class FacetsController extends Controller
     private function form(Request $request, ?Facet $facet, string $kind): Response
     {
         $user = $request->user();
-        $layer = $facet?->latestVersion?->layer ?? ($kind === 'structure' ? ['type' => 'project'] : []);
+        $variant = null;
+        if ($kind === 'skill_set' && $facet?->latestVersion?->language_layers) {
+            $asked = $request->query('language', SkillsController::preferredLanguage($user));
+            $variant = in_array($asked, $facet->language ?? Project::LANGUAGES, true) ? $asked : ($facet->language[0] ?? 'r');
+        }
+        $layer = ($variant ? $facet->latestVersion->catalogLayer($variant) : $facet?->latestVersion?->layer) ?? ($kind === 'structure' ? ['type' => 'project'] : []);
 
         $settings = Arr::except($layer, ['files', 'skills', 'packages']);
         Arr::forget($settings, 'git.gitignore_content');
@@ -231,9 +216,10 @@ class FacetsController extends Controller
         }
 
         return Inertia::render('Pieces/Edit', [
+            'variant' => $variant,
             'kind' => $kind,
             'path' => self::PATHS[$kind],
-            'language' => $kind === 'package_set' && SkillsController::preferredLanguage($user) === 'stata' ? 'r' : SkillsController::preferredLanguage($user),
+            'language' => $variant ?? ($kind === 'package_set' && SkillsController::preferredLanguage($user) === 'stata' ? 'r' : SkillsController::preferredLanguage($user)),
             'facet' => $facet ? Library::facet($facet->load('owner'), $user) + [
                 'language' => $facet->language,
                 'versions' => $facet->versions()->get(['id', 'version', 'notes', 'created_at']),
@@ -384,7 +370,12 @@ class FacetsController extends Controller
                 throw ValidationException::withMessages(['skills' => "Skill \"{$skill['name']}\" is not available."]);
             }
 
-            return [$library->key, $library->layerEntry()];
+            $language = $request->input('language') ?: 'r';
+            if (! $library->fits($language)) {
+                throw ValidationException::withMessages(['skills' => "{$library->name} is not available for ".Project::LANGUAGE_NAMES[$language].'.']);
+            }
+
+            return [$library->key, $library->layerEntry($language)];
         }
 
         return [$skill['name'], $skill['entry'] ?? null];

@@ -6,6 +6,7 @@ use App\Models\Blueprint;
 use App\Models\Facet;
 use App\Models\User;
 use App\Support\DefaultsPreview;
+use App\Support\ProjectDefaults;
 use App\Support\ProjectLayers;
 use App\Support\Resolver;
 use App\Support\Trust;
@@ -48,28 +49,32 @@ class ResolutionPolicyTest extends TestCase
         (new Resolver($user))->resolve(['name' => 'Survey', 'language' => 'python', 'tools' => ['jupyter' => false]]);
     }
 
-    public function test_a_default_the_blueprint_cant_take_is_set_aside_with_a_notice(): void
+    public function test_each_language_takes_a_default_blueprint_that_fits_it(): void
     {
         $user = User::factory()->create(['email_verified_at' => now()]);
-        $this->actingAs($user)->patch('/settings', ['project_type' => 'course', 'ide' => 'vscode', 'workflows' => ['python' => 'jupyter']])->assertSessionHasNoErrors();
+        // The project type saved before per-language defaults
+        $setting = $user->globalSettings();
+        $doc = $setting->document;
+        $doc['defaults']['project_type'] = 'course';
+        $setting->replaceDocument($doc);
 
         // Course has only the Quarto workflow
         $resolved = (new Resolver($user->fresh()))->resolve(['name' => 'Class', 'language' => 'python']);
+        $this->assertSame('course', $resolved['structure']->facet->key);
         $this->assertSame('quarto', $resolved['workflow']);
-        $this->assertStringContainsString('your Jupyter default', $resolved['notices'][0]);
 
-        // Course has no Stata, so a Stata project falls back to the standard project
+        // Course has no Stata, so Stata projects use the standard project
         $stata = (new Resolver($user->fresh()))->resolve(['name' => 'Do', 'language' => 'stata']);
         $this->assertSame('project', $stata['structure']->facet->key);
         $this->assertSame('scripts', $stata['workflow']);
-        $this->assertStringContainsString("doesn't support Stata", $stata['notices'][0]);
+        $this->assertSame('framework/project', ProjectDefaults::for($user->fresh())['blueprints']['stata']);
 
         // An explicit blueprint that can't take the language is refused
         $this->expectException(ValidationException::class);
         (new Resolver($user->fresh()))->resolve(['name' => 'Do', 'language' => 'stata', 'blueprint' => 'framework/course']);
     }
 
-    public function test_resolve_sends_the_defaults_revision_and_notices_as_headers(): void
+    public function test_resolve_sends_the_defaults_revision_and_it_changes_with_the_default_blueprint(): void
     {
         $user = User::factory()->create(['email_verified_at' => now()]);
         Sanctum::actingAs($user);
@@ -79,25 +84,29 @@ class ResolutionPolicyTest extends TestCase
         $revision = $first->headers->get('Framework-Defaults-Revision');
         $this->assertNotEmpty($revision);
         $this->assertSame($revision, $this->getJson('/api/v1/defaults')->headers->get('Framework-Defaults-Revision'));
+        $this->assertNull($first->headers->get('Framework-Notice'));
 
-        $this->actingAs($user)->patch('/settings', ['project_type' => 'course', 'ide' => 'vscode'])->assertSessionHasNoErrors();
+        ProjectDefaults::setBlueprint($user, 'r', Blueprint::whereNull('user_id')->where('key', 'course')->firstOrFail());
         $second = $this->postJson('/api/v1/resolve', ['language' => 'stata'])->assertOk();
         $this->assertNotSame($revision, $second->headers->get('Framework-Defaults-Revision'));
-        $this->assertStringContainsString("doesn't support Stata", $second->headers->get('Framework-Notice'));
+
+        // A new version of a default blueprint changes it too
+        $standard = Blueprint::whereNull('user_id')->where('key', 'project')->firstOrFail()->latestVersion;
+        $standard->replicate()->fill(['version' => $standard->version + 1, 'layer' => ['git' => ['use_git' => false]]])->save();
+        $this->assertNotSame($second->headers->get('Framework-Defaults-Revision'), $this->getJson('/api/v1/defaults')->headers->get('Framework-Defaults-Revision'));
     }
 
-    public function test_a_requirement_wins_over_the_persons_default(): void
+    public function test_a_requirement_wins_over_the_blueprints_own_values(): void
     {
         $user = User::factory()->create(['email_verified_at' => now()]);
-        $this->actingAs($user)->patch('/settings', ['project_type' => 'project', 'ide' => 'vscode', 'use_git' => false])->assertSessionHasNoErrors();
 
         $blueprint = Blueprint::whereNull('user_id')->where('key', 'project')->firstOrFail();
-        $blueprint->latestVersion->update(['requires' => ['git' => ['use_git' => true]]]);
+        $blueprint->latestVersion->update(['layer' => ['git' => ['use_git' => false]], 'requires' => ['git' => ['use_git' => true]]]);
 
         $resolved = (new Resolver($user->fresh()))->resolve(['name' => 'Survey']);
         $spec = DefaultsPreview::merge($resolved['envelope']['layers']);
         $this->assertTrue($spec['git']['use_git']);
-        $this->assertFalse(collect($resolved['envelope']['layers'])->firstWhere('kind', 'settings')['layer']['git']['use_git']);
+        $this->assertFalse($resolved['layers']['blueprint']['git']['use_git']);
     }
 
     public function test_projects_keep_their_configuration_when_defaults_change(): void
@@ -107,7 +116,7 @@ class ResolutionPolicyTest extends TestCase
         $project = $user->projects()->sole();
         $before = ProjectLayers::for($project);
 
-        $this->actingAs($user)->patch('/settings', ['project_type' => 'project', 'ide' => 'rstudio', 'workflows' => ['r' => 'scripts']])->assertSessionHasNoErrors();
+        ProjectDefaults::setBlueprint($user, 'r', Blueprint::whereNull('user_id')->where('key', 'course')->firstOrFail());
 
         $this->assertSame($before, ProjectLayers::for($project->fresh()));
     }
@@ -147,22 +156,22 @@ class ResolutionPolicyTest extends TestCase
         );
     }
 
-    public function test_starter_documents_and_skill_sets_combine_with_a_chosen_blueprint(): void
+    public function test_account_tools_and_sets_no_longer_join_a_blueprint(): void
     {
         $user = User::factory()->create(['project_defaults' => ['tools' => ['quarto_manuscript' => true, 'jupyter' => false], 'skill_sets' => ['framework/ggplot2']]]);
         $keys = fn (array $choices) => collect((new Resolver($user))->resolve(['name' => 'S'] + $choices)['pieces'])->pluck('facet.key')->all();
 
-        // Your starter document and skill set come along with a blueprint you name
+        // The blueprint decides, so the old account defaults don't come along
         $bare = $keys(['blueprint' => 'framework/bare', 'language' => 'r']);
-        $this->assertContains('quarto_manuscript', $bare);
-        $this->assertContains('ggplot2', $bare);
+        $this->assertNotContains('quarto_manuscript', $bare);
+        $this->assertNotContains('ggplot2', $bare);
 
-        // Choices for the project win: its own skill sets replace yours, and a tool turned off stays off
-        $chosen = $keys(['blueprint' => 'framework/bare', 'language' => 'r', 'skill_sets' => [], 'tools' => ['quarto_manuscript' => false]]);
-        $this->assertNotContains('ggplot2', $chosen);
-        $this->assertNotContains('quarto_manuscript', $chosen);
+        // Choices for the project still add them
+        $chosen = $keys(['blueprint' => 'framework/bare', 'language' => 'r', 'skill_sets' => ['framework/ggplot2'], 'tools' => ['quarto_manuscript' => true]]);
+        $this->assertContains('ggplot2', $chosen);
+        $this->assertContains('quarto_manuscript', $chosen);
 
-        // Jupyter comes with the Jupyter workflow only; your switch being off doesn't remove it
+        // Jupyter comes with the Jupyter workflow only
         $this->assertContains('jupyter', $keys(['language' => 'python', 'workflow' => 'jupyter']));
         foreach (['quarto', 'scripts'] as $workflow) {
             $this->assertNotContains('jupyter', $keys(['language' => 'python', 'workflow' => $workflow]));

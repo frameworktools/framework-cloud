@@ -12,6 +12,7 @@ use App\Models\SkillVersion;
 use App\Models\User;
 use App\Support\Layer;
 use App\Support\LayerSummary;
+use App\Support\ProjectLayers;
 use Database\Seeders\BlueprintSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -68,8 +69,8 @@ class LibraryTest extends TestCase
     public function test_seeder_builds_the_system_library_and_is_idempotent(): void
     {
         $counts = Facet::whereNull('user_id')->get()->countBy('kind')->all();
-        $this->assertEquals(['structure' => 9, 'workflow' => 3, 'tool' => 7, 'setting' => 1, 'skill_set' => 2, 'package_set' => 27], $counts);
-        $this->assertSame(12, Skill::whereNull('user_id')->count());
+        $this->assertEquals(['structure' => 9, 'workflow' => 3, 'tool' => 7, 'setting' => 1, 'skill_set' => 12, 'package_set' => 27], $counts);
+        $this->assertSame(26, Skill::whereNull('user_id')->count());
         // Single-language skills offer only their own language
         $this->assertSame(['python'], Skill::whereNull('user_id')->where('key', 'matplotlib-exploring')->value('language'));
         $this->assertSame(['stata'], Skill::whereNull('user_id')->where('key', 'stata-graphs')->value('language'));
@@ -233,7 +234,8 @@ class LibraryTest extends TestCase
         $blueprint = Blueprint::where('user_id', $user->id)->firstOrFail();
         $version = $blueprint->latestVersion;
         $this->assertSame(1, $version->version);
-        $this->assertSame(['quarto', 'quarto_manuscript', 'renv'], $version->facetVersions->map(fn ($v) => $v->facet->key)->all());
+        // A personal blueprint pins its one workflow too
+        $this->assertSame(['workflow-quarto', 'quarto', 'quarto_manuscript', 'renv'], $version->facetVersions->map(fn ($v) => $v->facet->key)->all());
 
         // Saving the same choices keeps v1
         $this->actingAs($user)->put("/blueprints/{$blueprint->id}", $this->blueprintPayload(['quarto' => true, 'quarto_manuscript' => true, 'renv' => true]));
@@ -258,7 +260,8 @@ class LibraryTest extends TestCase
         $hidden = Facet::create(['user_id' => $other->id, 'kind' => 'package_set', 'key' => 'secret', 'name' => 'Secret', 'visibility' => 'private']);
         $hidden->publishVersion(['layer' => []]);
 
-        $this->actingAs($user)->from('/blueprints/create')->post('/blueprints', $this->blueprintPayload(['quarto_slides' => true]))
+        // The Quarto workflow brings the quarto tool, so ask for slides without it
+        $this->actingAs($user)->from('/blueprints/create')->post('/blueprints', $this->blueprintPayload(['quarto_slides' => true], ['workflow' => 'scripts']))
             ->assertSessionHasErrors(['tools' => 'Quarto slides needs the quarto tool.']);
         $this->actingAs($user)->from('/blueprints/create')->post('/blueprints', $this->blueprintPayload([], ['package_sets' => ['other/secret']]))
             ->assertSessionHasErrors('package_sets');
@@ -272,25 +275,43 @@ class LibraryTest extends TestCase
     {
         $user = $this->user();
 
+        // Sensitive data comes from the structure: a sensitive flag alone no longer applies
         $this->actingAs($user)->post('/blueprints', $this->blueprintPayload([], [
+            'structure' => 'framework/project_sensitive',
             'skill_sets' => ['framework/ggplot2'],
             'package_sets' => ['framework/tidyverse-analysis'],
-            'settings' => ['sensitive' => true, 'ai' => true, 'git' => false],
+            'settings' => ['ai' => true, 'git' => false],
             'extra_yaml' => "scaffold:\n  ggplot_theme: theme_minimal\n",
         ]))->assertSessionHasNoErrors();
 
         $version = Blueprint::where('user_id', $user->id)->firstOrFail()->latestVersion;
-        $this->assertTrue($version->layer['security']['sensitive']);
+        $this->assertSame('project_sensitive', $version->base->facet->key);
+        $this->assertTrue($version->base->layer['security']['sensitive']);
+        $this->assertArrayHasKey('inputs_private_raw', $version->base->layer['directories']);
+        $this->assertArrayNotHasKey('security', $version->layer);
         $this->assertFalse($version->layer['git']['use_git']);
         $this->assertSame('theme_minimal', $version->layer['scaffold']['ggplot_theme']);
-        $this->assertContains('sensitive_data', $version->facetVersions->map(fn ($v) => $v->facet->key)->all());
 
         // The edit page gives the same choices back
         $this->actingAs($user)->get("/blueprints/{$version->blueprint_id}/edit")->assertInertia(fn (Assert $page) => $page
+            ->where('start.structure', 'framework/project_sensitive')
             ->where('start.skill_sets', ['framework/ggplot2'])
             ->where('start.package_sets', ['framework/tidyverse-analysis'])
-            ->where('start.settings', ['sensitive' => true, 'ai' => true, 'git' => false])
-            ->where('start.extra_yaml', "scaffold:\n  ggplot_theme: theme_minimal\n"));
+            ->where('start.settings', ['sensitive' => true, 'ai' => true, 'git' => false, 'hooks' => []])
+            // The Scaffold tab holds scaffold settings, so the extra YAML doesn't repeat them
+            ->where('start.scaffold.ggplot_theme', 'theme_minimal')
+            ->where('start.extra_yaml', ''));
+
+        // A project from the blueprint is sensitive
+        $this->actingAs($user)->post('/projects', ['name' => 'Clinic visits', 'blueprint_id' => $version->blueprint_id])->assertSessionHasNoErrors()->assertRedirect();
+        $project = Project::where('slug', 'clinic-visits')->firstOrFail();
+        $this->assertSame($version->id, $project->blueprint_version_id);
+        $this->assertSame('project_sensitive', $project->project_type);
+        $layers = ProjectLayers::for($project)['layers'];
+        $this->assertTrue(ProjectLayers::isSensitive($layers));
+        // With AI on, it gets the sensitive-data skill
+        $skills = array_merge(...array_map(fn (array $entry) => $entry['layer']['skills'] ?? [], $layers));
+        $this->assertSame(['package' => true], $skills['framework-sensitive-data']);
     }
 
     public function test_visibility_controls_who_sees_and_who_edits(): void
@@ -438,7 +459,7 @@ class LibraryTest extends TestCase
         $this->assertSame('Irb checklist', $skill->fresh()->name);
 
         // The system skills carry readable titles
-        $this->assertSame('Reading and saving data', Skill::whereNull('user_id')->where('key', 'framework-data')->value('name'));
+        $this->assertSame('Framework: reading and saving data', Skill::whereNull('user_id')->where('key', 'framework-data')->value('name'));
     }
 
     public function test_library_pages_render(): void
@@ -446,14 +467,16 @@ class LibraryTest extends TestCase
         $user = $this->user();
 
         $this->actingAs($user)->get('/blueprints/create')->assertInertia(fn (Assert $page) => $page
-            ->component('Blueprints/Builder')->has('catalog.structures', 9)->has('catalog.tools', 7)->has('catalog.skill_sets', 2));
+            ->component('Blueprints/Builder')->has('catalog.structures', 9)->has('catalog.tools', 6)->has('catalog.skill_sets', 12)
+            // Targets is no longer offered in the builder
+            ->where('catalog.tools', fn ($tools) => ! collect($tools)->contains('key', 'targets')));
         $this->actingAs($user)->get('/structures')->assertInertia(fn (Assert $page) => $page->component('Pieces/Structures')->has('structures', 9));
         $this->actingAs($user)->get('/package-sets')->assertInertia(fn (Assert $page) => $page->component('Pieces/PackageSets')->has('sets', 27));
-        $this->actingAs($user)->get('/skill-sets')->assertInertia(fn (Assert $page) => $page->component('Pieces/SkillSets')->has('sets', 2));
+        $this->actingAs($user)->get('/skill-sets')->assertInertia(fn (Assert $page) => $page->component('Pieces/SkillSets')->has('sets', 12));
         $this->actingAs($user)->get('/structures/create')->assertInertia(fn (Assert $page) => $page
             ->component('Pieces/Edit')->where('kind', 'structure')->where('values.settings_yaml', "type: project\n"));
         $this->actingAs($user)->get('/facets')->assertRedirect('/structures');
-        $this->actingAs($user)->get('/skills')->assertInertia(fn (Assert $page) => $page->component('Skills/Index')->has('skills', 12));
+        $this->actingAs($user)->get('/skills')->assertInertia(fn (Assert $page) => $page->component('Skills/Index')->has('skills', 26));
 
         $system = $this->system(Blueprint::class, 'project_sensitive');
         $this->actingAs($user)->get("/blueprints/{$system->id}")->assertInertia(fn (Assert $page) => $page

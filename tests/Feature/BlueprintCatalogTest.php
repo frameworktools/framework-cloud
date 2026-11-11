@@ -65,15 +65,18 @@ class BlueprintCatalogTest extends TestCase
     public function test_set_as_default_changes_only_the_blueprint_and_that_languages_workflow(): void
     {
         $user = User::factory()->create(['email_verified_at' => now()]);
-        $this->actingAs($user)->patch('/settings', ['project_type' => 'project', 'ide' => 'vscode', 'workflows' => ['r' => 'quarto', 'python' => 'jupyter'], 'rmarkdown' => true])->assertSessionHasNoErrors();
+        $setting = $user->globalSettings();
+        $doc = $setting->document;
+        $doc['defaults'] = ['project_type' => 'project', 'ide' => 'vscode', 'workflows' => ['r' => 'quarto', 'python' => 'jupyter'], 'notebook_format' => 'rmarkdown'] + $doc['defaults'];
+        $setting->replaceDocument($doc);
 
+        // A Python default doesn't touch R's, or the R project type the packages read offline
         $this->actingAs($user)->post("/blueprints/{$this->system('project_sensitive')->id}/default", ['language' => 'python', 'workflow' => 'scripts'])
             ->assertSessionHas('status', 'blueprint-default');
+        $this->assertSame('framework/project_sensitive', ProjectDefaults::blueprint($user->fresh(), 'python')->handle);
+        $this->assertSame('framework/project', ProjectDefaults::blueprint($user->fresh(), 'r')->handle);
         $doc = $user->fresh()->globalSettings()->document;
-        $this->assertSame('project_sensitive', $doc['defaults']['project_type']);
-        $this->assertSame(['r' => 'quarto', 'python' => 'scripts', 'stata' => 'scripts'], $doc['defaults']['workflows']);
-        $this->assertSame('rmarkdown', $doc['defaults']['notebook_format']);
-        $this->assertSame('vscode', $doc['defaults']['ide']);
+        $this->assertSame('project', $doc['defaults']['project_type']);
 
         // Only supported combinations
         $this->actingAs($user)->post("/blueprints/{$this->system('course')->id}/default", ['language' => 'r', 'workflow' => 'jupyter'])->assertSessionHasErrors('workflow');
@@ -112,16 +115,17 @@ class BlueprintCatalogTest extends TestCase
         $copy = Blueprint::where('user_id', $user->id)->sole();
         $this->assertSame('python', $copy->language);
         $this->assertSame(['python' => 'scripts'], $copy->latestVersion->default_workflow);
-        $this->assertSame(['r', 'python', 'stata'], $copy->latestVersion->languages);
+        $this->assertSame(['python'], $copy->latestVersion->languages);
+        $this->assertSame(['scripts'], $copy->latestVersion->workflows);
 
         // Narrowing the copy drops a default workflow it no longer has
         $this->actingAs($user)->put("/blueprints/{$copy->id}", ['name' => 'Notebooks', 'visibility' => 'private', 'language' => 'python', 'structure' => 'framework/project', 'tools' => [], 'package_sets' => [], 'skill_sets' => [], 'skills' => [],
             'settings' => ['sensitive' => false, 'ai' => true, 'git' => true], 'languages' => ['python'], 'workflows' => ['jupyter']])->assertSessionHasNoErrors();
-        $this->assertNull($copy->fresh()->latestVersion->default_workflow);
+        $this->assertSame(['python' => 'jupyter'], $copy->fresh()->latestVersion->default_workflow);
         $copy->fresh()->latestVersion->update(['default_workflow' => ['python' => 'scripts']]);
 
         $this->actingAs($user)->get("/blueprints/{$copy->id}/edit")->assertInertia(fn (Assert $page) => $page
-            ->where('start.language', 'python')->where('start.default_workflow.python', 'scripts'));
+            ->where('start.language', 'python')->where('start.default_workflow.python', 'jupyter'));
     }
 
     public function test_new_project_opens_with_the_destination_the_homepage_links_pass(): void

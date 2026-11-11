@@ -7,50 +7,22 @@ use App\Models\Blueprint;
 use App\Models\Facet;
 use App\Models\Project;
 use App\Models\User;
-use App\Support\Catalog;
 use App\Support\DefaultsPreview;
 use App\Support\ProjectDefaults;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
-use Inertia\Inertia;
-use Inertia\Response;
 
+/**
+ * Guided setup's account defaults: the form values it starts from, the
+ * Framework blueprints it offers, and its preview. Default settings
+ * themselves are gone; new projects take everything from their blueprint.
+ */
 class DefaultsController extends Controller
 {
-    /** The settings pages, in sidebar order. They share one form. */
-    public const SECTIONS = ['language', 'publishing', 'blueprint', 'editor', 'packages', 'scaffold', 'git', 'hooks', 'agents', 'notebooks', 'quarto', 'jupyter'];
-
-    public function edit(Request $request, string $section): Response
-    {
-        $setting = $request->user()->globalSettings();
-        $doc = $setting->document;
-
-        return Inertia::render('Settings/Defaults', [
-            'section' => $section,
-            'revision' => $setting->revision,
-            'blueprints' => self::blueprintList(),
-            'catalog' => Catalog::for($request->user()),
-            // Package sets load their packages into a list, for each language they fit
-            'presets' => Facet::visibleTo($request->user())->where('kind', 'package_set')->with('latestVersion')
-                ->orderByRaw('user_id is not null')->orderBy('position')->orderBy('name')->get()
-                ->map(fn (Facet $set) => [
-                    'key' => $set->handle,
-                    'name' => $set->name,
-                    'language' => $set->language ?? ProjectDefaults::PACKAGE_LANGUAGES,
-                    'packages' => self::rowsFrom($set->latestVersion?->layer ?? []),
-                ])->values(),
-            'ggplotThemes' => ProjectDefaults::GGPLOT_THEMES,
-            'quartoChoices' => ProjectDefaults::QUARTO_CHOICES,
-            'values' => self::values($request->user()),
-        ]);
-    }
-
     /**
-     * The person's defaults as the Project defaults form holds them. Guided
-     * setup starts from these too.
+     * The person's stored defaults as guided setup's form holds them.
      *
      * @return array<string, mixed>
      */
@@ -60,7 +32,7 @@ class DefaultsController extends Controller
 
         return [
             'publish_destination' => $user->project_defaults['publish_destination'] ?? '',
-            'language' => $user->project_defaults['language'] ?? ProjectDefaults::LANGUAGE,
+            'language' => ProjectDefaults::language($user),
             'project_type' => Arr::get($doc, 'defaults.project_type', ProjectDefaults::BLUEPRINT),
             // A workflow per language; R Markdown is a variant of R's Quarto workflow
             'workflows' => ProjectDefaults::workflows(Arr::get($doc, 'defaults.workflows')),
@@ -136,7 +108,7 @@ class DefaultsController extends Controller
 
     /**
      * A blueprint as the Blueprint page lists it. What it creates comes
-     * from preview(), resolved with the person's defaults.
+     * from preview().
      *
      * @return array<string, mixed>
      */
@@ -175,93 +147,5 @@ class DefaultsController extends Controller
         $blueprint = Blueprint::systemTypes()->where('key', $validated['blueprint'])->with('latestVersion.base', 'latestVersion.facetVersions.facet')->firstOrFail();
 
         return response()->json(DefaultsPreview::for($request->user(), $blueprint, $validated['language'], $validated['values'] ?? []));
-    }
-
-    public function update(Request $request): RedirectResponse
-    {
-        $validated = $request->validate([
-            'publish_destination' => ['sometimes', 'nullable', 'in:cloud,github'],
-            'language' => ['sometimes', 'in:r,python,stata'],
-            'project_type' => ['required', 'exists:blueprints,key'],
-            'workflows' => ['array'],
-            'workflows.r' => ['sometimes', 'in:quarto,jupyter,scripts'],
-            'workflows.python' => ['sometimes', 'in:quarto,jupyter,scripts'],
-            'workflows.stata' => ['sometimes', 'in:scripts'],
-            'rmarkdown' => ['boolean'],
-            'ide' => ['required', 'in:positron,vscode,rstudio,both,none'],
-            'use_git' => ['boolean'],
-            'use_renv' => ['boolean'],
-            'seed_on_scaffold' => ['boolean'],
-            'seed' => ['nullable', 'regex:/^-?\d{1,9}$/'],
-            'set_theme_on_scaffold' => ['boolean'],
-            'ggplot_theme' => ['nullable', 'in:'.implode(',', ProjectDefaults::GGPLOT_THEMES)],
-            'source_all_functions' => ['boolean'],
-            'ai_enabled' => ['boolean'],
-            'quarto' => ['array'],
-            'quarto.html' => ['array'],
-            'quarto.revealjs' => ['array'],
-            'ai_other' => ['boolean'],
-            'ai_agents' => ['array'],
-            'ai_agents.*' => ['in:'.implode(',', ProjectDefaults::AGENTS)],
-            'ai_skills' => ['boolean'],
-            'package_sets' => ['array'],
-            'package_sets.*' => ['string', 'max:200'],
-            'packages' => ['array'],
-            'packages.*' => ['array'],
-            'packages.*.*.name' => ['required', 'string', 'max:100', 'regex:/^[A-Za-z0-9][A-Za-z0-9._-]*$/'],
-            'packages.*.*.source' => ['required', 'in:cran,bioc,github,pypi'],
-            'packages.*.*.auto_attach' => ['boolean'],
-            'packages.*.*.version' => ['nullable', 'string', 'max:50'],
-            'packages.*.*.repo' => ['nullable', 'string', 'max:200', 'regex:/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/'],
-            'skill_sets' => ['array'],
-            'skill_sets.*' => ['string', 'max:200'],
-            'tools' => ['array'],
-            'tools.*' => ['boolean'],
-            'hooks' => ['array'],
-            'hooks.*' => ['boolean'],
-        ]);
-
-        $setting = $request->user()->globalSettings();
-        $doc = $setting->document;
-
-        Arr::set($doc, 'defaults.project_type', $validated['project_type']);
-        // R and Python read these; notebook_format is R's, for clients that predate workflows
-        $workflows = ProjectDefaults::workflows($validated['workflows'] ?? Arr::get($doc, 'defaults.workflows'));
-        $rmarkdown = $workflows['r'] === 'quarto' && (bool) ($validated['rmarkdown'] ?? false);
-        Arr::set($doc, 'defaults.workflows', $workflows);
-        Arr::set($doc, 'defaults.notebook_format', ProjectDefaults::notebookFormat($workflows['r'], 'r', $rmarkdown) ?? 'quarto');
-        Arr::set($doc, 'defaults.ide', $validated['ide']);
-        Arr::set($doc, 'defaults.use_git', (bool) ($validated['use_git'] ?? true));
-        Arr::set($doc, 'defaults.use_renv', (bool) ($validated['use_renv'] ?? false));
-        // R's own settings read these from defaults too
-        foreach (ProjectDefaults::scaffold($validated) as $name => $value) {
-            Arr::set($doc, "defaults.{$name}", $value);
-        }
-        Arr::set($doc, 'ai.enabled', (bool) ($validated['ai_enabled'] ?? true));
-        // R reads the agents as a list. AGENTS.md holds the instructions, and
-        // Claude Code gets a CLAUDE.md that imports it.
-        Arr::set($doc, 'ai.assistants', ProjectDefaults::agents($validated['ai_agents'] ?? null));
-        Arr::set($doc, 'ai.canonical_file', 'AGENTS.md');
-        // In the shape R's global settings use, so R can read them too
-        Arr::set($doc, 'quarto', ProjectDefaults::quarto($validated['quarto'] ?? (array) ($doc['quarto'] ?? [])));
-        Arr::set($doc, 'ai.skills', (bool) ($validated['ai_skills'] ?? true));
-
-        $setting->replaceDocument($doc, client: ['device' => 'web', 'app' => 'framework.pub']);
-
-        // Preferred pieces stay in the cloud; renv already lives in the synced settings
-        $request->user()->forceFill(['project_defaults' => [
-            'publish_destination' => array_key_exists('publish_destination', $validated) ? ($validated['publish_destination'] ?? '') : ($request->user()->project_defaults['publish_destination'] ?? ''),
-            'language' => $validated['language'] ?? $request->user()->project_defaults['language'] ?? ProjectDefaults::LANGUAGE,
-            // Package sets now only load packages into the lists, which hold the result
-            'package_sets' => [],
-            'packages' => ProjectDefaults::packages($validated['packages'] ?? []),
-            'skill_sets' => array_values($validated['skill_sets'] ?? []),
-            // Jupyter notebooks need the Jupyter tool's kernel
-            'tools' => array_map('boolval', Arr::except($validated['tools'] ?? [], ['renv'])),
-            'hooks' => array_map('boolval', Arr::only($validated['hooks'] ?? [], ProjectDefaults::HOOKS)),
-            'ai_other' => (bool) ($validated['ai_other'] ?? $request->user()->project_defaults['ai_other'] ?? false),
-        ]])->save();
-
-        return back()->with('status', 'defaults-updated');
     }
 }

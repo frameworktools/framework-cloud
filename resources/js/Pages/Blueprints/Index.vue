@@ -141,7 +141,7 @@ const pill = (on) => on
 
             <UiCallout v-if="savedDefault" variant="success">
                 {{ savedDefault.name }} is your default blueprint, and new {{ languageNames[savedDefault.language] }} projects use {{ workflowNames[savedDefault.workflow] }}.
-                <Link href="/settings/blueprint" class="font-medium underline">Default settings</Link>
+                <Link href="/settings/blueprint" class="font-medium underline">Settings</Link>
             </UiCallout>
 
             <!-- What to browse: a language, then a workflow it has -->

@@ -26,83 +26,76 @@ class SettingsAndAdminTest extends TestCase
         $this->seed(BlueprintSeeder::class);
     }
 
-    public function test_defaults_page_saves_into_settings_document_with_revision_bump(): void
+    public function test_the_default_blueprint_page_saves_a_blueprint_for_each_language(): void
     {
         $user = User::factory()->create(['email_verified_at' => now()]);
+        $standard = $this->system('project');
+        $mine = $this->mine($user, 'python', 'scripts');
 
         $this->actingAs($user)->get('/settings/blueprint')
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Settings/Defaults')
-                ->where('revision', 0)
-                // Standard first and the default for an account that never chose; Bare last
-                ->where('values.project_type', 'project')
-                ->where('blueprints.0.key', 'project')
-                ->where('blueprints.8.key', 'bare')
-                ->where('blueprints.2.languages', ['r', 'python']));
+                ->component('Settings/DefaultBlueprint')
+                ->where('language', 'r')
+                // An account that never chose has the standard project everywhere
+                ->where('defaults', ['r' => $standard->id, 'python' => $standard->id, 'stata' => $standard->id])
+                // Framework's first, then your own, which takes only its language
+                ->where('blueprints.0.name', $standard->name)
+                ->where('blueprints', fn ($list) => collect($list)->firstWhere('id', $mine->id)['languages'] === ['python']
+                    && collect($list)->firstWhere('id', $mine->id)['workflows'] === ['python' => 'scripts']));
 
-        $this->actingAs($user)
-            ->patch('/settings', [
-                'project_type' => 'bare',
-                'notebook_format' => 'quarto',
-                'ide' => 'rstudio',
-                'use_git' => true,
-                'use_renv' => true,
-                'seed_on_scaffold' => true,
-                'ai_enabled' => true,
-                'ai_canonical_file' => 'AGENTS.md',
-                'ai_skills' => true,
-                'package_sets' => ['framework/tidyverse-analysis'],
-                'packages' => [
-                    'r' => [['name' => 'dplyr', 'source' => 'cran', 'auto_attach' => true], ['name' => 'fw-helpers', 'source' => 'github', 'repo' => 'example/fw-helpers', 'auto_attach' => false]],
-                    'python' => [['name' => 'pandas', 'source' => 'pypi', 'version' => '>=2', 'auto_attach' => false]],
-                ],
-                'skill_sets' => ['framework/ggplot2'],
-                'tools' => ['targets' => true, 'renv' => true],
-                'hooks' => ['data_security' => true, 'not_a_hook' => true],
-            ])
-            ->assertRedirect();
+        $this->actingAs($user)->patch('/settings/blueprint', [
+            'language' => 'python',
+            'blueprints' => ['r' => $this->system('course')->id, 'python' => $mine->id, 'stata' => $standard->id],
+        ])->assertSessionHasNoErrors()->assertSessionHas('status', 'defaults-updated');
 
-        // Preferred pieces stay in the cloud, out of the synced document; renv stays synced
-        $this->assertSame([
-            'publish_destination' => '',
-            'language' => 'r',
-            // Sets only load packages into the lists now, so the lists are what's kept
-            'package_sets' => [],
-            'packages' => [
-                'r' => [
-                    ['name' => 'dplyr', 'source' => 'cran', 'auto_attach' => true, 'version' => null, 'repo' => null],
-                    ['name' => 'fw-helpers', 'source' => 'github', 'auto_attach' => false, 'version' => null, 'repo' => 'example/fw-helpers'],
-                ],
-                'python' => [['name' => 'pandas', 'source' => 'pypi', 'auto_attach' => false, 'version' => '>=2', 'repo' => null]],
-            ],
-            'skill_sets' => ['framework/ggplot2'],
-            'tools' => ['targets' => true],
-            'hooks' => ['data_security' => true],
-            'ai_other' => false,
-        ], $user->fresh()->project_defaults);
-        $this->assertArrayNotHasKey('package_sets', $user->globalSettings()->document['defaults']);
+        $user = $user->fresh();
+        $this->assertSame(['language' => 'python', 'blueprints' => ['r' => $this->system('course')->id, 'python' => $mine->id, 'stata' => $standard->id]], $user->blueprint_defaults);
+        $this->assertSame($mine->handle, ProjectDefaults::for($user)['blueprint']);
+        $this->assertSame(['r' => 'framework/course', 'python' => $mine->handle, 'stata' => 'framework/project'], ProjectDefaults::for($user)['blueprints']);
+        // The packages read the default language's type and workflow when they work offline
+        $doc = $user->globalSettings()->document;
+        $this->assertSame('project', $doc['defaults']['project_type']);
+        $this->assertSame('scripts', $doc['defaults']['workflows']['python']);
 
-        $setting = $user->globalSettings();
-        $this->assertSame(1, $setting->revision);
-        $this->assertSame('rstudio', $setting->document['defaults']['ide']);
-        $this->assertSame('bare', $setting->document['defaults']['project_type']);
-        $this->assertTrue($setting->document['defaults']['use_renv']);
+        // A new project without a blueprint takes its language's default
+        $this->assertSame($mine->handle, (new Resolver($user))->resolve(['name' => 'Survey'])['blueprint']->blueprint->handle);
+        $this->assertSame('python', (new Resolver($user))->resolve(['name' => 'Survey'])['language']);
+        $this->assertSame('framework/course', (new Resolver($user))->resolve(['name' => 'Survey', 'language' => 'r'])['blueprint']->blueprint->handle);
+
+        // A blueprint for another language, or someone else's, can't be the default
+        $this->actingAs($user)->patch('/settings/blueprint', ['language' => 'r', 'blueprints' => ['r' => $mine->id]])->assertSessionHasErrors('blueprints.r');
+        $theirs = $this->mine(User::factory()->create(), 'r', 'quarto');
+        $this->actingAs($user)->patch('/settings/blueprint', ['language' => 'r', 'blueprints' => ['r' => $theirs->id]])->assertSessionHasErrors('blueprints.r');
+        $this->actingAs($user)->patch('/settings/blueprint', ['language' => 'fortran', 'blueprints' => []])->assertSessionHasErrors('language');
     }
 
-    public function test_profile_saves_a_quarto_author_block(): void
+    public function test_the_old_settings_pages_lead_to_the_new_ones(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+
+        $this->actingAs($user)->get('/settings')->assertRedirect('/settings/blueprint');
+        foreach (['defaults', 'language', 'packages', 'scaffold', 'agents', 'quarto', 'jupyter', 'hooks'] as $old) {
+            $this->get("/settings/{$old}")->assertRedirect('/settings/blueprint');
+        }
+        $this->get('/settings/profile')->assertRedirect('/settings/personal-data');
+        $this->get('/account/profile')->assertRedirect('/settings/personal-data');
+        $this->get('/account')->assertRedirect('/account/account');
+    }
+
+    public function test_personal_data_saves_a_quarto_author_block(): void
     {
         $user = User::factory()->create(['email_verified_at' => now(), 'name' => 'Ada Lovelace']);
 
-        $this->actingAs($user)->get('/account/profile')
+        $this->actingAs($user)->get('/settings/personal-data')
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Account/Profile')
+                ->component('Settings/PersonalData')
                 ->where('author.name', 'Ada Lovelace')
                 // The private sign-in address is never offered as the public one
                 ->where('author.email', '')
                 ->where('author.affiliations', []));
 
         $this->actingAs($user)
-            ->patch('/account/profile', [
+            ->patch('/settings/personal-data', [
                 'name' => 'Ada Lovelace',
                 'email' => 'ada@example.edu',
                 'orcid' => '0000-0002-1825-0097',
@@ -129,14 +122,16 @@ class SettingsAndAdminTest extends TestCase
         $this->assertSame('0000-0002-1825-0097', $envelope['author']['orcid']);
         $this->assertCount(2, $envelope['author']['affiliations']);
         $this->assertSame([], Layer::envelopeProblems($envelope));
+        // A resolved project carries it too
+        $this->assertSame('ada@example.edu', (new Resolver($user->fresh()))->resolve(['name' => 'Survey'])['envelope']['author']['email']);
     }
 
-    public function test_profile_rejects_a_malformed_orcid(): void
+    public function test_personal_data_rejects_a_malformed_orcid(): void
     {
         $user = User::factory()->create(['email_verified_at' => now()]);
 
         $this->actingAs($user)
-            ->patch('/account/profile', ['name' => 'A', 'orcid' => '1234'])
+            ->patch('/settings/personal-data', ['name' => 'A', 'orcid' => '1234'])
             ->assertSessionHasErrors('orcid');
     }
 
@@ -204,6 +199,7 @@ class SettingsAndAdminTest extends TestCase
         $user = User::factory()->create(['email_verified_at' => now()]);
         $this->assertSame('framework/project', ProjectDefaults::for($user)['blueprint']);
 
+        // The type saved before per-language defaults still counts where it fits
         $setting = $user->globalSettings();
         $doc = $setting->document;
         $doc['defaults']['project_type'] = 'bare';
@@ -211,134 +207,115 @@ class SettingsAndAdminTest extends TestCase
 
         $this->assertSame('framework/bare', ProjectDefaults::for($user->fresh())['blueprint']);
         $this->actingAs($user)->get('/settings/blueprint')
-            ->assertInertia(fn (Assert $page) => $page->where('values.project_type', 'bare'));
+            ->assertInertia(fn (Assert $page) => $page->where('defaults.r', $this->system('bare')->id));
     }
 
-    public function test_the_blueprint_preview_resolves_with_unsaved_defaults_and_saves_nothing(): void
+    public function test_the_guided_setup_preview_resolves_a_framework_blueprint_and_saves_nothing(): void
     {
         $user = User::factory()->create(['email_verified_at' => now()]);
         $revision = $user->globalSettings()->revision;
 
         $preview = $this->actingAs($user)->postJson('/settings/blueprint/preview', [
-            'blueprint' => 'project_sensitive', 'language' => 'r',
-            'values' => ['package_sets' => ['framework/tidyverse-analysis'], 'use_git' => false],
+            'blueprint' => 'project_sensitive', 'language' => 'r', 'values' => ['workflows' => ['r' => 'scripts']],
         ])->assertOk();
 
         $paths = collect($preview->json('tree'))->pluck('path');
         $this->assertTrue($paths->contains('inputs/private/raw'));
         $this->assertTrue($paths->contains('scaffold.R'));
-        $this->assertFalse($paths->contains('.git'));
-        $this->assertSame('defaults', $preview->json('package_sets.0.from'));
+        $this->assertSame('scripts', $preview->json('workflow'));
         $this->assertTrue($preview->json('settings.sensitive.on'));
 
         // Stata has no presentation structure; previewing changes nothing saved
         $this->actingAs($user)->postJson('/settings/blueprint/preview', ['blueprint' => 'presentation', 'language' => 'stata'])
             ->assertOk()->assertJsonPath('available', false);
         $this->assertSame($revision, $user->globalSettings()->revision);
-        $this->assertNull($user->fresh()->project_defaults);
+        $this->assertNull($user->fresh()->blueprint_defaults);
     }
 
-    public function test_the_default_language_starts_as_r_and_saves_with_the_other_defaults(): void
+    public function test_without_a_language_a_project_takes_the_blueprints_then_the_default_language(): void
     {
         $user = User::factory()->create(['email_verified_at' => now()]);
-        $this->actingAs($user)->get('/settings/language')
-            ->assertInertia(fn (Assert $page) => $page->where('section', 'language')->where('values.language', 'r'));
+        $this->assertSame('r', (new Resolver($user))->resolve(['name' => 'Survey'])['language']);
 
-        $this->actingAs($user)->patch('/settings', [
-            'language' => 'stata', 'project_type' => 'project', 'ide' => 'positron', 'ai_canonical_file' => 'AGENTS.md',
-        ])->assertSessionHasNoErrors();
-        $this->assertSame('stata', $user->fresh()->project_defaults['language']);
-
-        $this->actingAs($user)->patch('/settings', ['language' => 'fortran', 'project_type' => 'project', 'ide' => 'positron', 'ai_canonical_file' => 'AGENTS.md'])
-            ->assertSessionHasErrors('language');
+        ProjectDefaults::setLanguage($user, 'stata');
+        $this->assertSame('stata', (new Resolver($user->fresh()))->resolve(['name' => 'Survey'])['language']);
+        // A blueprint that takes the default language uses it; one pinned to a language uses its own
+        $this->assertSame('stata', (new Resolver($user->fresh()))->resolve(['name' => 'Survey', 'blueprint' => 'framework/project'])['language']);
+        $mine = $this->mine($user, 'python', 'jupyter');
+        $this->assertSame('python', (new Resolver($user->fresh()))->resolve(['name' => 'Survey', 'blueprint' => $mine->handle])['language']);
     }
 
-    public function test_editor_support_decides_the_editor_files_and_goes_in_the_project_layer(): void
+    public function test_framework_settings_sit_beneath_the_blueprint_and_account_settings_no_longer_apply(): void
     {
         $user = User::factory()->create(['email_verified_at' => now()]);
-        $paths = fn (string $ide) => collect($this->actingAs($user)->postJson('/settings/blueprint/preview', [
-            'blueprint' => 'project', 'language' => 'r', 'values' => ['ide' => $ide],
-        ])->json('tree'))->pluck('path');
-
-        $this->assertTrue($paths('rstudio')->contains('project.Rproj'));
-        $this->assertFalse($paths('rstudio')->contains('project.code-workspace'));
-        $this->assertTrue($paths('vscode')->contains('project.code-workspace'));
-        // VS Code projects keep the .Rproj too: it is how here::here() finds the root without .git
-        $this->assertTrue($paths('vscode')->contains('project.Rproj'));
-        $this->assertTrue($paths('both')->contains('project.Rproj') && $paths('both')->contains('project.code-workspace'));
-        $this->assertFalse($paths('none')->contains('project.Rproj') || $paths('none')->contains('project.code-workspace'));
-
+        // Values the old default settings pages saved
         $setting = $user->globalSettings();
         $doc = $setting->document;
-        $doc['defaults']['ide'] = 'both';
+        $doc['defaults'] = ['ide' => 'both', 'seed' => '20241107', 'ggplot_theme' => 'theme_bw', 'set_theme_on_scaffold' => true, 'use_git' => false, 'workflows' => ['r' => 'jupyter']] + $doc['defaults'];
+        $doc['ai']['assistants'] = ['codex'];
+        $doc['quarto'] = ['html' => ['theme' => 'cosmo']];
         $setting->replaceDocument($doc);
-        $layers = (new Resolver($user->fresh()))->resolve(['name' => 'Survey'])['envelope']['layers'];
-        $this->assertSame('both', $this->personal($layers)['scaffold']['ide']);
+        $user->forceFill(['project_defaults' => ['skill_sets' => ['framework/ggplot2'], 'tools' => ['renv' => true], 'packages' => ['r' => [['name' => 'dplyr', 'source' => 'cran']]]]])->save();
+
+        $resolved = (new Resolver($user->fresh()))->resolve(['name' => 'Survey', 'language' => 'r']);
+        $this->assertTrue($resolved['unchanged']);
+        $this->assertSame('quarto', $resolved['workflow']);
+        $base = $this->base($resolved['envelope']['layers']);
+        $this->assertSame(['ide' => 'vscode', 'seed_on_scaffold' => true, 'seed' => '123', 'set_theme_on_scaffold' => false, 'ggplot_theme' => 'theme_minimal', 'source_all_functions' => true], $base['scaffold']);
+        $this->assertSame(['claude' => false, 'codex' => false, 'copilot' => false], $base['ai']['assistants']);
+        $spec = DefaultsPreview::merge($resolved['envelope']['layers']);
+        $this->assertNotSame('cosmo', $spec['quarto']['html']['theme'] ?? null);
+        $this->assertNotSame(false, $spec['git']['use_git'] ?? true);
+        $this->assertFalse($spec['tools']['renv'] ?? false);
+        // Python seeds and puts functions/ on the import path; the theme is R's. Stata has no scaffold settings
+        $this->assertSame(['ide', 'seed_on_scaffold', 'seed', 'source_all_functions'], array_keys($this->base((new Resolver($user->fresh()))->resolve(['name' => 'S', 'language' => 'python'])['envelope']['layers'])['scaffold']));
+        $this->assertArrayNotHasKey('scaffold', $this->base((new Resolver($user->fresh()))->resolve(['name' => 'S', 'language' => 'stata'])['envelope']['layers']));
     }
 
-    public function test_scaffold_settings_save_to_the_synced_defaults_and_go_in_the_project_layer(): void
+    public function test_the_blueprint_decides_agents_scaffold_quarto_and_packages(): void
     {
         $user = User::factory()->create(['email_verified_at' => now()]);
-        $this->actingAs($user)->get('/settings/scaffold')
-            ->assertInertia(fn (Assert $page) => $page
-                ->where('values.seed', '123')
-                ->where('values.set_theme_on_scaffold', false)
-                ->where('values.source_all_functions', true));
+        $mine = $this->mine($user, 'r', 'quarto');
+        $mine->latestVersion->update([
+            'agent_defaults' => ['codex', 'copilot'],
+            'ide' => 'rstudio',
+            'layer' => [
+                'scaffold' => ['seed' => '42'],
+                'quarto' => ['html' => ['theme' => 'cosmo']],
+                'packages' => ['default_packages' => ['fixest' => ['source' => 'cran', 'auto_attach' => true], 'glue' => null]],
+            ] + ($mine->latestVersion->layer ?? []),
+        ]);
 
-        $base = ['project_type' => 'project', 'ide' => 'vscode', 'ai_canonical_file' => 'AGENTS.md'];
-        $this->actingAs($user)->patch('/settings', $base + [
-            'seed_on_scaffold' => true, 'seed' => '20241107', 'set_theme_on_scaffold' => true, 'ggplot_theme' => 'theme_bw', 'source_all_functions' => false,
-        ])->assertSessionHasNoErrors();
+        $resolved = (new Resolver($user))->resolve(['name' => 'Survey', 'blueprint' => $mine->handle]);
+        $this->assertSame(['claude' => false, 'codex' => true, 'copilot' => true], $this->base($resolved['envelope']['layers'])['ai']['assistants']);
+        $this->assertSame('rstudio', $this->base($resolved['envelope']['layers'])['scaffold']['ide']);
+        $this->assertContains('survey.Rproj', array_column($this->actingAs($user)->postJson('/projects/preview', ['blueprint_id' => $mine->id, 'language' => 'r', 'name' => 'Survey'])->json('tree'), 'path'));
+        $this->assertNotContains('survey.code-workspace', array_column($this->actingAs($user)->postJson('/projects/preview', ['blueprint_id' => $mine->id, 'language' => 'r', 'name' => 'Survey'])->json('tree'), 'path'));
+        $spec = DefaultsPreview::merge($resolved['envelope']['layers']);
+        $this->assertSame('42', $spec['scaffold']['seed']);
+        $this->assertSame('cosmo', $spec['quarto']['html']['theme']);
+        $this->assertSame(['source' => 'cran', 'auto_attach' => true], $spec['packages']['default_packages']['fixest']);
 
-        $defaults = $user->globalSettings()->document['defaults'];
-        $this->assertSame('20241107', $defaults['seed']);
-        $this->assertSame('theme_bw', $defaults['ggplot_theme']);
-        $this->assertTrue($defaults['set_theme_on_scaffold']);
-        $this->assertFalse($defaults['source_all_functions']);
+        // The defaults API describes the same blueprint once it's the default
+        ProjectDefaults::setBlueprint($user, 'r', $mine->fresh());
+        $defaults = ProjectDefaults::for($user->fresh());
+        $this->assertSame(['codex', 'copilot'], $defaults['settings']['agents']);
+        $this->assertSame('rstudio', $defaults['settings']['ide']);
+        $this->assertSame('42', $defaults['settings']['scaffold']['seed']);
+        $this->assertSame('cosmo', $defaults['settings']['quarto']['html']['theme']);
+        $names = array_column($defaults['packages']['r'], 'name');
+        $this->assertContains('fixest', $names);
+        $this->assertNotContains('glue', $names);
 
-        // Your defaults layer holds the editor and every scaffold setting for
-        // the language, since the packages fill gaps with their own defaults
-        $scaffold = fn (string $language) => $this->personal((new Resolver($user->fresh()))->resolve(['name' => 'Survey', 'language' => $language])['envelope']['layers'])['scaffold'] ?? [];
-        $this->assertSame(['ide' => 'vscode', 'seed_on_scaffold' => true, 'seed' => '20241107', 'set_theme_on_scaffold' => true, 'ggplot_theme' => 'theme_bw', 'source_all_functions' => false], $scaffold('r'));
-        // Python seeds and puts functions/ on the import path; the theme is R's
-        $this->assertSame(['ide' => 'vscode', 'seed_on_scaffold' => true, 'seed' => '20241107', 'source_all_functions' => false], $scaffold('python'));
-        $this->assertSame([], $scaffold('stata'));
-
-        $this->actingAs($user)->patch('/settings', $base + ['seed' => 'abc', 'ggplot_theme' => 'theme_neon'])
-            ->assertSessionHasErrors(['seed', 'ggplot_theme']);
+        // A blueprint with agents set to none turns agent files off
+        $mine->latestVersion->update(['agent_defaults' => ['none']]);
+        $spec = DefaultsPreview::merge((new Resolver($user->fresh()))->resolve(['name' => 'Survey', 'blueprint' => $mine->handle])['envelope']['layers']);
+        $this->assertFalse($spec['ai']['enabled']);
     }
 
-    public function test_agents_you_use_decide_the_agent_files(): void
+    public function test_each_language_uses_its_blueprints_workflow(): void
     {
         $user = User::factory()->create(['email_verified_at' => now()]);
-        $this->actingAs($user)->get('/settings/agents')
-            ->assertInertia(fn (Assert $page) => $page->where('values.ai_agents', []));
-
-        $base = ['project_type' => 'project', 'ide' => 'vscode'];
-        $this->actingAs($user)->patch('/settings', $base + ['ai_agents' => ['copilot', 'codex'], 'ai_canonical_file' => 'AGENTS.md'])->assertSessionHasNoErrors();
-        $this->assertSame(['codex', 'copilot'], $user->globalSettings()->document['ai']['assistants']);
-
-        $layers = (new Resolver($user->fresh()))->resolve(['name' => 'Survey'])['envelope']['layers'];
-        $this->assertSame(['claude' => false, 'codex' => true, 'copilot' => true], $this->personal($layers)['ai']['assistants']);
-
-        $tree = fn (array $values) => collect($this->actingAs($user)->postJson('/settings/blueprint/preview', [
-            'blueprint' => 'project', 'language' => 'r', 'values' => $values,
-        ])->json('tree'))->pluck('path');
-        $paths = $tree(['ai_agents' => ['codex', 'copilot']]);
-        $this->assertTrue($paths->contains('AGENTS.md') && $paths->contains('.github') && $paths->contains('.agents'));
-        $this->assertFalse($paths->contains('CLAUDE.md') || $paths->contains('.claude'));
-        $paths = $tree(['ai_agents' => ['claude']]);
-        $this->assertTrue($paths->contains('AGENTS.md') && $paths->contains('CLAUDE.md') && $paths->contains('.claude'));
-        $this->assertFalse($paths->contains('.agents'));
-    }
-
-    public function test_each_language_keeps_its_own_workflow_and_r_markdown_is_r_quartos_variant(): void
-    {
-        $user = User::factory()->create(['email_verified_at' => now()]);
-        $this->actingAs($user)->get('/settings/notebooks')
-            ->assertInertia(fn (Assert $page) => $page->where('values.workflows', ['r' => 'quarto', 'python' => 'jupyter', 'stata' => 'scripts'])->where('values.rmarkdown', false));
-
-        $base = ['project_type' => 'project', 'ide' => 'vscode'];
         $resolve = fn (string $language) => (new Resolver($user->fresh()))->resolve(['name' => 'Survey', 'language' => $language]);
         $this->assertSame('jupyter', $resolve('python')['workflow']);
         $this->assertSame('quarto', $resolve('r')['workflow']);
@@ -348,88 +325,31 @@ class SettingsAndAdminTest extends TestCase
         $this->assertContains('jupyter', $keys($resolve('python')));
         $this->assertContains('quarto', $keys($resolve('python')));
 
-        // Choosing Jupyter for R leaves Python's alone
-        $this->actingAs($user)->patch('/settings', $base + ['workflows' => ['r' => 'jupyter', 'python' => 'scripts']])->assertSessionHasNoErrors();
-        $this->assertSame(['r' => 'jupyter', 'python' => 'scripts', 'stata' => 'scripts'], $user->globalSettings()->document['defaults']['workflows']);
+        // A default blueprint for R with Jupyter leaves Python's alone
+        ProjectDefaults::setBlueprint($user, 'r', $this->mine($user, 'r', 'jupyter'));
         $this->assertSame('jupyter', $resolve('r')['workflow']);
-        $this->assertNotContains('quarto', $keys($resolve('python')));
-
-        // R Markdown only under R's Quarto workflow
-        $this->actingAs($user)->patch('/settings', $base + ['workflows' => ['r' => 'quarto'], 'rmarkdown' => true])->assertSessionHasNoErrors();
-        $this->assertSame('rmarkdown', $user->globalSettings()->document['defaults']['notebook_format']);
-        $this->assertSame('rmarkdown', $this->personal($resolve('r')['envelope']['layers'])['scaffold']['notebook_format']);
-        $this->actingAs($user)->patch('/settings', $base + ['workflows' => ['r' => 'scripts'], 'rmarkdown' => true])->assertSessionHasNoErrors();
-        $this->assertSame('quarto', $user->globalSettings()->document['defaults']['notebook_format']);
-
-        $this->actingAs($user)->patch('/settings', $base + ['workflows' => ['stata' => 'jupyter']])->assertSessionHasErrors('workflows.stata');
+        $this->assertSame('jupyter', $resolve('python')['workflow']);
 
         // A creation choice the blueprint can't take is refused
         $this->expectException(ValidationException::class);
         (new Resolver($user->fresh()))->resolve(['name' => 'Talk', 'blueprint' => 'framework/presentation', 'workflow' => 'jupyter']);
     }
 
-    public function test_quarto_settings_save_in_r_shape_and_go_to_r_and_python_projects(): void
+    private function system(string $key): Blueprint
     {
-        $user = User::factory()->create(['email_verified_at' => now()]);
-        $this->actingAs($user)->get('/settings/quarto')
-            ->assertInertia(fn (Assert $page) => $page
-                ->where('values.quarto.html.toc_depth', 3)
-                ->where('values.quarto.revealjs.transition', 'slide')
-                ->where('blueprints.0.render_dirs', fn ($dirs) => collect($dirs)->contains(['from' => 'notebooks', 'to' => 'outputs/notebooks'])));
-
-        $this->actingAs($user)->patch('/settings', [
-            'project_type' => 'project', 'ide' => 'vscode',
-            'quarto' => ['html' => ['theme' => 'cosmo', 'code_fold' => true, 'toc_depth' => 2], 'revealjs' => ['transition' => 'zoom', 'theme' => 'not-a-theme']],
-        ])->assertSessionHasNoErrors();
-
-        $quarto = $user->globalSettings()->document['quarto'];
-        $this->assertSame('cosmo', $quarto['html']['theme']);
-        $this->assertTrue($quarto['html']['code_fold']);
-        $this->assertSame(2, $quarto['html']['toc_depth']);
-        $this->assertSame('zoom', $quarto['revealjs']['transition']);
-        // An unknown choice keeps R's default
-        $this->assertSame('default', $quarto['revealjs']['theme']);
-
-        $layer = fn (string $language) => $this->personal((new Resolver($user->fresh()))->resolve(['name' => 'Survey', 'language' => $language])['envelope']['layers']);
-        $this->assertSame('cosmo', $layer('r')['quarto']['html']['theme']);
-        $this->assertSame('zoom', $layer('python')['quarto']['revealjs']['transition']);
-        $this->assertArrayNotHasKey('quarto', $layer('stata'));
+        return Blueprint::whereNull('user_id')->where('key', $key)->firstOrFail();
     }
 
-    public function test_default_packages_go_into_new_projects_without_a_blueprint(): void
+    /** A personal blueprint for one language and workflow, copied from the standard project. */
+    private function mine(User $user, string $language, string $workflow): Blueprint
     {
-        $user = User::factory()->create(['email_verified_at' => now(), 'project_defaults' => ['packages' => [
-            'r' => [['name' => 'dplyr', 'source' => 'cran', 'auto_attach' => true]],
-            'python' => [['name' => 'pandas', 'source' => 'pypi', 'version' => '>=2']],
-        ]]]);
+        $this->actingAs($user)->post("/blueprints/{$this->system('project')->id}/fork", ['language' => $language, 'workflow' => $workflow])->assertRedirect();
 
-        $spec = fn (string $language) => DefaultsPreview::merge((new Resolver($user))->resolve(['name' => 'Survey', 'language' => $language])['envelope']['layers']);
-        $this->assertSame(['source' => 'cran', 'auto_attach' => true], $spec('r')['packages']['default_packages']['dplyr']);
-        $this->assertSame(['source' => 'pypi', 'version' => '>=2', 'auto_attach' => false], $spec('python')['packages']['default_packages']['pandas']);
-        $this->assertArrayNotHasKey('pandas', $spec('r')['packages']['default_packages']);
-
-        // R starts every project with Framework's own list, so what the person took out goes as a null
-        $layers = (new Resolver($user))->resolve(['name' => 'Survey', 'language' => 'r'])['envelope']['layers'];
-        $personal = $this->personal($layers);
-        $this->assertArrayHasKey('glue', $personal['packages']['default_packages']);
-        $this->assertNull($personal['packages']['default_packages']['glue']);
-
-        // A list left as Framework's own sends nothing, and the blueprint stays pinned
-        $plain = User::factory()->create();
-        $this->assertTrue((new Resolver($plain))->resolve(['name' => 'X'])['unchanged']);
-
-        // Your packages come along with a chosen blueprint too
-        $chosen = DefaultsPreview::merge((new Resolver($user))->resolve(['name' => 'Survey', 'blueprint' => 'framework/course'])['envelope']['layers']);
-        $this->assertArrayHasKey('dplyr', $chosen['packages']['default_packages']);
-
-        // An account with default package sets from before sees them as its lists
-        $old = User::factory()->create(['email_verified_at' => now(), 'project_defaults' => ['package_sets' => ['framework/tidyverse-analysis']]]);
-        $this->actingAs($old)->get('/settings/packages')
-            ->assertInertia(fn (Assert $page) => $page->where('values.packages.r', fn ($rows) => collect($rows)->contains('name', 'dplyr')));
+        return Blueprint::where('user_id', $user->id)->latest('id')->firstOrFail()->load('latestVersion');
     }
 
-    /** The person's defaults layer in an envelope's layers. */
-    private function personal(array $layers): array
+    /** Framework's settings layer in an envelope's layers. */
+    private function base(array $layers): array
     {
         return collect($layers)->firstWhere('kind', 'settings')['layer'] ?? [];
     }

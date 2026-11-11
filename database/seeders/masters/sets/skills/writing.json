@@ -1,0 +1,16 @@
+{
+  "id": "writing",
+  "name": "Writing",
+  "description": "Plain, exact prose about data and findings.",
+  "category": "writing",
+  "language": [
+    "r",
+    "python",
+    "stata"
+  ],
+  "layer": {
+    "skills": {
+      "writing": {}
+    }
+  }
+}

@@ -7,7 +7,19 @@ description: 'Managing R packages in Framework projects'
 ---
 ## Overview
 
-Framework manages your project's R package dependencies through `settings.yml`. When you call `scaffold()`, packages are automatically installed and loaded.
+Framework manages your project's R package dependencies through `settings.yml`. When you call `scaffold()`, it installs missing packages and loads packages marked `auto_attach: true`.
+
+## Language support
+
+Auto-attach is an R feature. It calls `library()` when `scaffold()` runs. Python and Stata do not implement this option.
+
+In Python, install project dependencies with uv or pip and write explicit imports in each notebook or script, such as `import pandas as pd`. Python's `scaffold()` does not auto-import those dependencies into the calling notebook or script.
+
+Stata supports add-on packages, but Framework's Stata setup has no auto-attach or auto-import setting.
+
+## Blueprint package choices
+
+For an R blueprint, choose package sets, then review the individual packages below. Use each selected package's **Auto-attach** switch to control whether `scaffold()` loads it. Turning auto-attach off keeps the package selected for installation. Sets supply the initial value; individual switches override it. Python and Stata blueprints do not show these switches.
 
 ## Configuring Packages
 

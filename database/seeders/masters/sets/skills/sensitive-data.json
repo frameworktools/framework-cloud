@@ -1,0 +1,17 @@
+{
+  "id": "sensitive-data",
+  "name": "Sensitive data",
+  "description": "Restricted-data handling and Framework private folders.",
+  "category": "privacy",
+  "language": [
+    "r",
+    "python",
+    "stata"
+  ],
+  "layer": {
+    "skills": {
+      "framework-sensitive-data": {},
+      "identifiable-data": {}
+    }
+  }
+}

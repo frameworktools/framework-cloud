@@ -1,0 +1,16 @@
+{
+  "id": "git",
+  "name": "Git",
+  "description": "Reviewable changes and repository synchronization.",
+  "category": "git",
+  "language": [
+    "r",
+    "python",
+    "stata"
+  ],
+  "layer": {
+    "skills": {
+      "git-workflow": {}
+    }
+  }
+}

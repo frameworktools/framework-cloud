@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { useForm, usePage } from '@inertiajs/vue3';
-import AccountLayout from '@/Layouts/AccountLayout.vue';
+import SettingsLayout from '@/Layouts/SettingsLayout.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiInput from '@/Components/UiInput.vue';
 import UiPanel from '@/Components/UiPanel.vue';
@@ -14,7 +14,7 @@ const page = usePage();
 const saved = computed(() => page.props.flash.status === 'author-updated');
 
 const form = useForm({ ...props.author, affiliations: props.author.affiliations.map((a) => ({ ...a })) });
-const save = () => form.patch('/account/profile', { preserveScroll: true });
+const save = () => form.patch('/settings/personal-data', { preserveScroll: true });
 
 const MAX = 5;
 const blank = () => ({ name: '', department: '', city: '', country: '' });
@@ -47,11 +47,12 @@ const yaml = computed(() => {
 </script>
 
 <template>
-    <Head title="Profile" />
+    <Head title="Personal data · Settings" />
 
-    <AccountLayout
-        heading="Profile"
-        subheading="Author details for new notebooks, reports, and slides."
+    <SettingsLayout
+        heading="Personal data"
+        subheading="Author details for new projects, notebooks, reports, and slides."
+        :dirty="form.isDirty"
     >
         <form id="settings-form" class="flex flex-col gap-8" @submit.prevent="save">
             <UiPanel title="Author details">
@@ -99,5 +100,5 @@ const yaml = computed(() => {
             </UiButton>
             <p v-if="saved" class="text-center text-xs text-slate-500 dark:text-slate-400">Saved.</p>
         </template>
-    </AccountLayout>
+    </SettingsLayout>
 </template>

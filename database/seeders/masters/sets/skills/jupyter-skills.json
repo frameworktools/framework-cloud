@@ -1,0 +1,15 @@
+{
+  "id": "jupyter-skills",
+  "name": "Jupyter",
+  "description": "Kernel selection, cell order, and reproducible execution.",
+  "category": "jupyter",
+  "language": [
+    "r",
+    "python"
+  ],
+  "layer": {
+    "skills": {
+      "jupyter-notebooks": {}
+    }
+  }
+}

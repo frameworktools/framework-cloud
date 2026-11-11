@@ -43,7 +43,7 @@ class ProjectLayersTest extends TestCase
         $this->assertSame('NHANES Study', $response->json('name'));
         $kinds = array_column($response->json('layers'), 'kind');
         $this->assertSame('base', $kinds[0]);
-        $this->assertSame(['blueprint', 'settings', 'project'], array_slice($kinds, -3));
+        $this->assertSame(['settings', 'blueprint', 'project'], array_slice($kinds, -3));
         $this->assertSame('stata', last($response->json('layers'))['layer']['language']);
         $this->assertSame([], Layer::envelopeProblems($response->json()));
 

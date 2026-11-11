@@ -3,6 +3,7 @@
 namespace App\Mcp;
 
 use App\Models\McpConnection;
+use App\Support\ProjectDefaults;
 
 /**
  * The API operations offered as MCP tools, and the access level each needs.
@@ -47,8 +48,8 @@ class ToolCatalog
                 'body' => ['properties' => [
                     'name' => ['type' => 'string', 'maxLength' => 100],
                     'description' => ['type' => 'string', 'maxLength' => 500],
-                    'language' => ['type' => 'string', 'enum' => ['r', 'python', 'stata'], 'description' => 'Defaults to the account\'s default language.'],
-                    'blueprint' => ['type' => 'string', 'description' => 'A blueprint key from blueprints_list. Defaults to the account\'s default blueprint.'],
+                    'language' => ['type' => 'string', 'enum' => ['r', 'python', 'stata'], 'description' => 'Defaults to the blueprint\'s language, else the account\'s default language.'],
+                    'blueprint' => ['type' => 'string', 'description' => 'A blueprint key from blueprints_list. Defaults to the account\'s default blueprint for the language.'],
                     'github' => ['type' => 'object', 'description' => 'Also create its GitHub repository. Needs the account\'s GitHub connection.', 'properties' => [
                         'owner' => ['type' => 'string', 'description' => 'The GitHub user or organization.'],
                         'name' => ['type' => 'string', 'description' => 'The repository name. Defaults to the project slug.'],
@@ -56,7 +57,7 @@ class ToolCatalog
                     ], 'required' => ['owner']],
                 ], 'required' => ['name']],
                 'title' => 'Create a project',
-                'description' => 'Create a Framework project from the account\'s defaults or a blueprint. Its files are made on the user\'s computer (framework::new_project, fw new) or in a GitHub repository with github. Create one only when the user asks.',
+                'description' => 'Create a Framework project from a blueprint, or from the account\'s default blueprint for the language. The blueprint sets everything about the project; the account adds its author details. Its files are made on the user\'s computer (framework::new_project, fw new) or in a GitHub repository with github. Create one only when the user asks.',
             ],
             'projects_update' => [
                 'level' => self::FULL, 'method' => 'PATCH', 'path' => '/projects/{slug}', 'path_params' => $project,
@@ -219,7 +220,7 @@ class ToolCatalog
             'blueprints_options' => [
                 'level' => self::READ, 'method' => 'GET', 'path' => '/blueprints/options',
                 'title' => 'List blueprint parts',
-                'description' => 'What a blueprint is built from: structures (folder layouts), tools (quarto, jupyter, renv, uv, targets, and others, with the languages they fit and what they require), package sets, skill sets, and skills, each with its key and a summary. Use the keys in blueprints_preview and blueprints_create.',
+                'description' => 'What a blueprint is built from: structures (folder layouts), notebook tools, environment tools (renv for R and uv for Python), package sets, skill sets, and skills. Each blueprint uses one language and notebook format. Use the keys in blueprints_preview and blueprints_create.',
             ],
             'blueprints_show' => [
                 'level' => self::READ, 'method' => 'GET', 'path' => '/blueprints/{blueprint}',
@@ -290,15 +291,22 @@ class ToolCatalog
     private static function blueprintBody(bool $preview = false): array
     {
         $choices = [
-            'language' => ['type' => 'string', 'enum' => ['r', 'python', 'stata'], 'description' => 'The default language.'],
+            'language' => ['type' => 'string', 'enum' => ['r', 'python', 'stata'], 'description' => 'The blueprint\'s single language.'],
+            'workflow' => ['type' => 'string', 'enum' => ['quarto', 'jupyter', 'scripts'], 'description' => 'One notebook workflow. Stata uses scripts automatically.'],
+            'notebook_format' => ['type' => 'string', 'enum' => ['quarto', 'rmarkdown', 'jupyter'], 'description' => 'Notebook file format. R Markdown requires R and the Quarto workflow. Omit for Stata.'],
+            'agents' => ['type' => 'array', 'items' => ['type' => 'string', 'enum' => [...ProjectDefaults::AGENTS, 'other', 'none']], 'description' => 'Preferred agent files for projects from this blueprint. None disables agent files and skills. Other writes AGENTS.md for any compatible agent.'],
             'structure' => ['type' => 'string', 'description' => 'A structure key from blueprints_options, such as framework/project.'],
             'tools' => ['type' => 'object', 'additionalProperties' => ['type' => 'boolean'], 'description' => 'Tool keys from blueprints_options, each true to include, such as {"quarto": true, "renv": true}.'],
             'package_sets' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Package set keys.'],
+            'package_overrides' => ['type' => 'object', 'additionalProperties' => ['type' => 'boolean'], 'description' => 'Individual package choices by name. True adds a catalog package; false removes it even when selected sets include it.'],
+            'package_auto_attach' => ['type' => 'object', 'additionalProperties' => ['type' => 'boolean'], 'description' => 'R only: load selected packages with library() when scaffold() runs. Overrides each package set\'s auto_attach flag. Python and Stata have no auto-import equivalent.'],
             'skill_sets' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Skill set keys.'],
             'skills' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Skill keys, beyond those the skill sets add.'],
+            'excluded_skills' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Skill keys to remove, including members of selected sets.'],
             'settings' => ['type' => 'object', 'properties' => [
                 'sensitive' => ['type' => 'boolean', 'description' => 'Private and public data folders, and rules that keep private data from AI assistants.'],
                 'git' => ['type' => 'boolean'],
+                'hooks' => ['type' => 'array', 'items' => ['type' => 'string', 'enum' => ProjectDefaults::HOOKS]],
                 'ai' => ['type' => 'boolean', 'description' => 'Agent files and skills for AI assistants.'],
             ]],
             'extra_yaml' => ['type' => 'string', 'description' => 'More settings.yml settings, as YAML.'],
@@ -316,8 +324,6 @@ class ToolCatalog
                 'description' => ['type' => 'string', 'maxLength' => 1000],
                 'visibility' => ['type' => 'string', 'enum' => ['private', 'unlisted', 'public'], 'description' => 'Defaults to private. Public and unlisted blueprints get a page anyone can open, with a QR code; unlisted ones stay out of listings. Make one public or unlisted only when the user asks.'],
             ] + $choices + [
-                'languages' => ['type' => 'array', 'items' => ['type' => 'string', 'enum' => ['r', 'python', 'stata']], 'description' => 'Languages projects from it may use. Leave out for all.'],
-                'workflows' => ['type' => 'array', 'items' => ['type' => 'string', 'enum' => ['quarto', 'jupyter', 'scripts']], 'description' => 'Workflows projects from it may use. Leave out for all.'],
                 'notes' => ['type' => 'string', 'description' => 'A short note for the version history.'],
             ],
             'required' => ['name', 'language', 'structure'],

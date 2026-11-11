@@ -9,6 +9,8 @@ description: 'Initialize your project environment'
 
 `scaffold()` is the primary entry point for working with Framework projects. Call it at the start of every notebook or script to set up your environment.
 
+This guide describes R's `scaffold()`. Package auto-attach is available in R only. Python's `scaffold()` does not auto-import packages into your notebook or script, and Framework's Stata setup has no equivalent option.
+
 ```r
 library(framework)
 scaffold()
@@ -39,7 +41,7 @@ When you call `scaffold()`, it:
 
 Once `scaffold()` runs:
 
-- Your configured packages are loaded and ready to use
+- Packages marked `auto_attach: true` are loaded and ready to use
 - All functions from `functions/` are available
 - Project settings are accessible via `settings()`
 

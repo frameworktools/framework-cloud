@@ -14,15 +14,13 @@ import { pieceCopy } from '@/pieces.js';
 
 // Package sets for one language at a time, each opening to its packages
 const props = defineProps({
-    sets: Array, // each with packages and in_defaults: how many your defaults already have
+    sets: Array, // each with its packages
     language: String, // the preferred language, R or Python
-    defaults_count: Object, // packages in your default list, by language
 });
 
 const page = usePage();
 const copy = pieceCopy.package_set;
 const errors = computed(() => Object.values(page.props.errors ?? {}));
-const added = computed(() => (page.props.flash.status === 'package-set-added' ? page.props.flash.added : null));
 
 const languages = ['r', 'python'];
 const language = ref(languageTab(props.language, languages));
@@ -47,8 +45,6 @@ const open = reactive(new Set());
 const toggle = (id) => (open.has(id) ? open.delete(id) : open.add(id));
 
 const fork = (id) => router.post(`/package-sets/${id}/fork`);
-const addToDefaults = (s) => router.post(`/package-sets/${s.id}/defaults`, {}, { preserveScroll: true });
-const missing = (s) => s.packages.length - s.in_defaults;
 
 const sourceNames = { cran: 'CRAN', bioc: 'Bioconductor', github: 'GitHub', pypi: 'PyPI' };
 const tab = (on) => on
@@ -76,12 +72,6 @@ const menuFor = (item) => [
             </PageHeader>
 
             <UiCallout v-if="errors.length" variant="danger">{{ errors.join(' ') }}</UiCallout>
-            <UiCallout v-if="added" variant="success">
-                <template v-if="added.added">Added {{ added.added }} {{ added.added === 1 ? 'package' : 'packages' }} from {{ added.set }} to your {{ languageNames[added.language] }} defaults.</template>
-                <template v-else>Your {{ languageNames[added.language] }} defaults already had every package in {{ added.set }}.</template>
-                <template v-if="added.added && added.kept"> {{ added.kept }} were already there and kept as you set them.</template>
-                <Link href="/settings/packages" class="ml-1 font-medium underline">Review your packages</Link>
-            </UiCallout>
 
             <div role="tablist" aria-label="Language" class="flex gap-6 border-b border-slate-200 dark:border-slate-800">
                 <button
@@ -129,13 +119,6 @@ const menuFor = (item) => [
                                 </span>
                             </button>
                             <div class="flex shrink-0 flex-wrap items-center gap-2 pl-7 sm:pl-0">
-                                <span v-if="s.language?.length && !missing(s)" class="text-xs text-slate-500 dark:text-slate-400">In your defaults</span>
-                                <UiButton
-                                    v-else-if="s.language?.length" size="sm" variant="outline" @click="addToDefaults(s)"
-                                    :title="`Adds the ${missing(s)} packages your ${languageNames[language]} defaults don't have. Nothing is removed or changed.`"
-                                >
-                                    Add {{ missing(s) }} to defaults
-                                </UiButton>
                                 <Link v-if="s.editable" :href="`/package-sets/${s.id}/edit`"><UiButton size="sm" variant="ghost">Edit</UiButton></Link>
                                 <UiButton v-else size="sm" variant="ghost" @click="fork(s.id)">Copy and edit</UiButton>
                             <RowMenu :items="menuFor(s)" :label="`Actions for ${s.name}`" />
@@ -159,10 +142,6 @@ const menuFor = (item) => [
                                 <div v-if="s.requirements" class="mt-3 rounded-md border border-amber-200 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/60 dark:text-amber-200">
                                     <span class="font-medium">Also needs:</span> {{ s.requirements }}
                                 </div>
-                                <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">
-                                    Adding to your defaults adds only packages your {{ languageNames[language] }} list doesn't have ({{ missing(s) }} of {{ s.packages.length }}).
-                                    Packages already there keep your settings, and nothing is removed.
-                                </p>
                                 <div class="mt-3 border-t border-slate-200 pt-2 font-mono text-xs text-slate-500 dark:text-slate-400 dark:border-slate-800">{{ s.handle }} v{{ s.version }}</div>
                             </div>
                         </div>

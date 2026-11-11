@@ -60,7 +60,9 @@ class WelcomeTest extends TestCase
         $this->assertFalse($doc['defaults']['use_git']);
         $this->assertSame(['claude', 'codex'], $doc['ai']['assistants']);
 
-        // The same thing R, Python, and fw get when they ask for the defaults
+        // They become the Python default blueprint: R, Python, fw, and agents get it
+        $this->assertSame('My defaults (Python)', ProjectDefaults::blueprint($user, 'python')->name);
+        $this->assertSame('python', $user->blueprint_defaults['language']);
         $resolved = (new Resolver($user))->resolve(['name' => 'Survey']);
         $this->assertSame('python', $resolved['language']);
         $this->assertSame('scripts', $resolved['workflow']);
@@ -147,7 +149,9 @@ class WelcomeTest extends TestCase
         $this->actingAs($user)->post('/welcome', $answers + ['ai' => true, 'agents' => ['claude'], 'other_agents' => true])->assertSessionHasNoErrors();
         $this->assertTrue($user->fresh()->project_defaults['ai_other']);
         $this->assertSame(['claude'], $user->fresh()->globalSettings()->document['ai']['assistants']);
-        $this->actingAs($user)->get('/settings/agents')->assertInertia(fn (Assert $page) => $page->where('values.ai_other', true)->where('values.ai_agents', ['claude']));
+        // They become the R default blueprint's agents
+        $this->assertSame(['claude', 'other'], ProjectDefaults::agentDefaults(ProjectDefaults::blueprint($user->fresh(), 'r')->latestVersion));
+        $this->assertSame(['claude'], ProjectDefaults::for($user->fresh())['settings']['agents']);
 
         // None turns setup off and keeps which agents were saved
         $this->actingAs($user)->post('/welcome', $answers + ['ai' => false, 'agents' => [], 'other_agents' => false])->assertSessionHasNoErrors();

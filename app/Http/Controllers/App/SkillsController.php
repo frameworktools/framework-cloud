@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Support\Docs\Markdown;
 use App\Support\Library;
 use App\Support\ProjectDefaults;
+use App\Support\SkillTags;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -29,13 +30,14 @@ class SkillsController extends Controller
                 ->get()->map(fn ($s) => Library::skill($s, $user)),
             'language' => self::preferredLanguage($user),
             'tagOptions' => SkillTag::options(),
+            'categories' => SkillTags::categories(),
         ]);
     }
 
     /** Catalogs start at the saved environment preference. */
     public static function preferredLanguage(User $user): string
     {
-        $language = ProjectDefaults::for($user)['language'] ?? 'r';
+        $language = ProjectDefaults::chosenLanguage($user) ?? 'r';
 
         return in_array($language, ['r', 'python', 'stata'], true) ? $language : 'r';
     }

@@ -1,4 +1,5 @@
 <script setup>
+import UiCheckbox from '@/Components/UiCheckbox.vue';
 // Any number of choices, as stacked cards with a visible checkbox at the
 // right, like UiRadioCards' stacked layout. The checkboxes are real inputs.
 defineProps({
@@ -25,11 +26,7 @@ const toggle = (value, on) => {
                     ? 'border-sky-500 bg-sky-50 dark:border-sky-500 dark:bg-sky-950/40'
                     : 'border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-600']"
             >
-                <input
-                    type="checkbox" :value="option.value" :checked="model.includes(option.value)" :disabled="option.disabled"
-                    class="mt-0.5 size-4 shrink-0 rounded accent-sky-600 focus:outline-none"
-                    @change="toggle(option.value, $event.target.checked)"
-                >
+                <UiCheckbox :model-value="model.includes(option.value)" :disabled="option.disabled" @update:model-value="toggle(option.value, $event)" />
                 <span class="flex min-w-0 flex-col gap-0.5">
                     <span class="text-base font-medium text-slate-900 dark:text-white">{{ option.label }}</span>
                     <span v-if="option.description" class="mt-0.5 text-sm text-slate-600 dark:text-slate-400">{{ option.description }}</span>

@@ -1,0 +1,37 @@
+{
+  "id": "framework",
+  "name": "Framework",
+  "description": "Core operations in projects that use Framework packages.",
+  "category": "framework",
+  "language": [
+    "r",
+    "python",
+    "stata"
+  ],
+  "layer": {
+    "skills": {}
+  },
+  "language_layers": {
+    "r": {
+      "skills": {
+        "framework-workflow": {},
+        "framework-data": {},
+        "framework-packages": {},
+        "framework-outputs": {}
+      }
+    },
+    "python": {
+      "skills": {
+        "framework-workflow": {},
+        "framework-data": {},
+        "framework-packages": {},
+        "framework-outputs": {}
+      }
+    },
+    "stata": {
+      "skills": {
+        "framework-stata": {}
+      }
+    }
+  }
+}

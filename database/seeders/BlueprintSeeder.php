@@ -31,7 +31,7 @@ class BlueprintSeeder extends Seeder
         $this->seedSkills("$mastersDir/skills");
         $this->seedPieces('tool', $this->fromR('features', self::TOOL_ORDER));
         $this->seedPieces('setting', $this->json("$mastersDir/settings.json"));
-        $this->seedPieces('skill_set', $this->fromR('sets/skills'));
+        $this->seedPieces('skill_set', $this->skillSets($mastersDir));
         $this->seedPieces('package_set', $this->fromR('sets/packages', self::PACKAGE_SET_ORDER));
         // Workflows key as workflow-<id>; the id stays in category, as the spec names it
         $this->seedPieces('workflow', collect($this->fromR('workflows', ['quarto', 'jupyter', 'scripts']))
@@ -126,16 +126,15 @@ class BlueprintSeeder extends Seeder
      * Skills written for one language only. Their SKILL.md is that language's
      * text, so they offer no R default.
      */
-    private const SINGLE_LANGUAGE_SKILLS = ['matplotlib-exploring' => 'python', 'stata-graphs' => 'stata'];
-
-    /** Skills that work the same in every language, such as the reports API one. */
-    private const EVERY_LANGUAGE_SKILLS = ['framework-reports', 'writing'];
-
     private function seedSkills(string $dir): void
     {
         $registry = File::exists(dirname($dir).'/skill-bundles.json') ? $this->json(dirname($dir).'/skill-bundles.json') : [];
+        $languages = $this->json("{$dir}/languages.json");
         $sources = [];
         foreach (File::files($dir) as $file) {
+            if ($file->getExtension() !== 'md') {
+                continue;
+            }
             $content = File::get($file->getPathname());
             $key = Skill::frontmatter($content, 'content')['key'];
             $sources[$key] = $content;
@@ -152,25 +151,61 @@ class BlueprintSeeder extends Seeder
                 $texts[$variant] = base64_decode(collect($snapshot['bundle'])->firstWhere('path', 'SKILL.md')['content']);
                 $files[$variant] = array_values(array_filter($snapshot['bundle'], fn ($f) => $f['path'] !== 'SKILL.md'));
             }
-            if (! $texts && File::exists($path = "{$dir}/python/{$key}.md")) {
-                $texts['python'] = File::get($path);
+            foreach (['python', 'stata'] as $variant) {
+                if (! isset($texts[$variant]) && File::exists($path = "{$dir}/{$variant}/{$key}.md")) {
+                    $texts[$variant] = File::get($path);
+                }
             }
             $skill = Skill::updateOrCreate(['user_id' => null, 'key' => $key], [
                 'name' => $frontmatter['title'], 'description' => $frontmatter['description'], 'summary' => $frontmatter['summary'],
                 'language' => match (true) {
                     isset($registry[$key]) => array_keys($registry[$key]),
-                    isset(self::SINGLE_LANGUAGE_SKILLS[$key]) => [self::SINGLE_LANGUAGE_SKILLS[$key]],
-                    in_array($key, self::EVERY_LANGUAGE_SKILLS, true) => ['r', 'python', 'stata'],
+                    isset($languages[$key]) => $languages[$key],
                     (bool) $texts => array_keys($texts + ['r' => $content]),
                     default => ['r'],
                 }, 'visibility' => 'public',
             ]);
-            if ($skill->wasRecentlyCreated) {
-                $skill->tags()->sync(SkillTag::whereIn('key', SkillTags::SKILLS[$key] ?? [])->pluck('id'));
-            }
+            $skill->tags()->sync(SkillTag::whereIn('key', SkillTags::SKILLS[$key] ?? [])->pluck('id'));
             unset($texts['r']);
             $skill->publishVersion(['content' => $content, 'variants' => $texts ?: null, 'files' => [], 'bundle_files' => $files ?: null]);
         }
+    }
+
+    /** Cloud sets extend the package catalog without changing its locked snapshots. */
+    private function skillSets(string $mastersDir): array
+    {
+        $sets = $this->fromR('sets/skills');
+        foreach (File::files("{$mastersDir}/sets/skills") as $file) {
+            $definition = $this->json($file->getPathname());
+            // Inline sync metadata names the project language, even when the
+            // prose is shared. Keep those entries in language-specific layers.
+            foreach ($definition['language'] ?? ['r', 'python', 'stata'] as $language) {
+                $definition['language_layers'][$language]['skills'] = array_replace(
+                    $definition['layer']['skills'] ?? [],
+                    $definition['language_layers'][$language]['skills'] ?? [],
+                );
+            }
+            unset($definition['layer']['skills']);
+            foreach (['layer', 'language_layers'] as $field) {
+                $layers = $field === 'layer' ? ['' => $definition[$field] ?? []] : ($definition[$field] ?? []);
+                foreach ($layers as $language => &$layer) {
+                    foreach (array_keys($layer['skills'] ?? []) as $key) {
+                        // Resolve cloud members now so the published facet is an immutable snapshot.
+                        $skill = Skill::whereNull('user_id')->where('key', $key)->firstOrFail();
+                        $layer['skills'][$key] = $skill->layerEntry($language ?: null);
+                    }
+                }
+                unset($layer);
+                $definition[$field] = $field === 'layer' ? $layers[''] : $layers;
+            }
+            $sets[$definition['id']] = $definition;
+        }
+        foreach ($sets as $key => &$set) {
+            $set['category'] ??= $key === 'ggplot2' ? 'visualization' : 'framework';
+        }
+        unset($set);
+
+        return $sets;
     }
 
     private function seedPieces(string $kind, array $definitions): void
@@ -243,7 +278,10 @@ class BlueprintSeeder extends Seeder
 
             // Figures come with every type that has the Framework skills
             if ($sets->contains('framework')) {
-                $sets->push('ggplot2');
+                $sets->push('visualization', 'writing');
+                if ($key === 'project_sensitive') {
+                    $sets->push('sensitive-data');
+                }
             }
 
             // uv for Python projects (left out of R and Stata ones). The

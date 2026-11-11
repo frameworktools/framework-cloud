@@ -41,8 +41,8 @@ class Resolver
     private array $workflowPieces = [];
 
     /**
-     * @param  bool  $withDefaults  false when building a blueprint, which shouldn't carry anyone's defaults
-     * @param  array<string, mixed>|null  $defaults  other defaults than the saved ones, to preview them
+     * @param  bool  $withDefaults  false when building a blueprint: no default blueprint, workflow, or Framework settings
+     * @param  array<string, mixed>|null  $defaults  in place of ProjectDefaults::for(); [] for none, as on a blueprint's public page
      */
     public function __construct(private User $user, private bool $withDefaults = true, private ?array $defaults = null) {}
 
@@ -52,22 +52,25 @@ class Resolver
      *
      * 1. the project structure,
      * 2. the workflow, then pieces: tools, package sets, and skill sets,
-     * 3. the blueprint's own values (its defaults),
-     * 4. the person's defaults (settings): only what they set apart from
-     *    Framework's own, plus their editor and agents,
+     * 3. Framework's settings (settings): scaffold values, and the editor
+     *    files and agents the blueprint asks for,
+     * 4. the blueprint's own values,
      * 5. choices made for this project (project choices),
      * 6. the blueprint's requirements, which nothing overrides,
      * 7. the project itself: its language and, with the tools key, every tool.
      *
-     * A creation choice that conflicts with a requirement is refused. A
-     * default that conflicts is set aside, and the result says so.
+     * Without a blueprint or structure, the project uses the person's
+     * default blueprint for its language. Without a language, it takes the
+     * one its blueprint takes, else the person's default language, else the
+     * blueprint's own. Nothing else of the
+     * person's applies apart from their author details. A creation choice
+     * that conflicts with a requirement is refused.
      *
      * @param  array{name?: string, language?: string, blueprint?: string, structure?: string, workflow?: string, notebook_format?: string, tools?: array<string, bool>, package_sets?: list<string>, skill_sets?: list<string>, skills?: list<string>, settings?: array<string, mixed>}  $choices
      * @return array{envelope: array<string, mixed>, blueprint: ?BlueprintVersion, structure: FacetVersion, pieces: list<FacetVersion>, layer: array<string, mixed>, language: string, workflow: ?string, unchanged: bool, notices: list<string>, layers: array<string, array<string, mixed>>}
      */
     public function resolve(array $choices): array
     {
-        $defaults = $this->withDefaults ? ($this->defaults ?? ProjectDefaults::for($this->user)) : null;
         $this->pieces = collect();
         $this->notices = [];
         $chose = [];
@@ -80,17 +83,29 @@ class Resolver
             }
         }
 
-        // Without a blueprint or structure, the person's default blueprint
+        // Without a blueprint or structure, the person's default blueprint for the language
         $explicit = filled($choices['blueprint'] ?? null);
-        if (! $explicit && blank($choices['structure'] ?? null) && $defaults) {
-            $choices['blueprint'] = $defaults['blueprint'];
+        $language = filled($choices['language'] ?? null) ? $choices['language'] : null;
+        $chosenLanguage = $this->defaults === null ? ProjectDefaults::chosenLanguage($this->user) : ($this->defaults['language'] ?? null);
+        if (! $explicit && blank($choices['structure'] ?? null) && $this->withDefaults && $this->defaults !== []) {
+            $language ??= $chosenLanguage ?? ProjectDefaults::LANGUAGE;
+            $choices['blueprint'] = $this->defaults === null
+                ? ProjectDefaults::blueprint($this->user, $language)->handle
+                : $this->defaults['blueprints'][$language] ?? $this->defaults['blueprint'] ?? 'framework/'.ProjectDefaults::BLUEPRINT;
         }
-        $language = $choices['language'] ?? $defaults['language'] ?? null;
 
         if (filled($choices['blueprint'] ?? null)) {
             $this->blueprint = $this->findBlueprint($choices['blueprint']);
-            $language ??= $this->blueprint->blueprint->language ?? 'r';
             $supported = $this->blueprint->compatibility()['languages'];
+            // The one language the blueprint takes, else the person's default
+            // language when it takes it, else the blueprint's own
+            $takes = fn (?string $l) => $l && (! $supported || in_array($l, $supported, true));
+            $language ??= match (true) {
+                count($supported ?? []) === 1 => $supported[0],
+                $takes($chosenLanguage) => $chosenLanguage,
+                $takes($this->blueprint->blueprint->language) => $this->blueprint->blueprint->language,
+                default => $supported[0] ?? ProjectDefaults::LANGUAGE,
+            };
             if ($supported && ! in_array($language, $supported, true)) {
                 if ($explicit) {
                     throw ValidationException::withMessages(['language' => "{$this->blueprint->blueprint->name} supports ".$this->languageList($supported).' projects.']);
@@ -136,7 +151,7 @@ class Resolver
         $compatibility = $this->blueprint && filled($choices['blueprint'] ?? null) ? $this->blueprint->compatibility() : null;
 
         // The workflow, and the tools it and the blueprint need
-        $workflow = $this->withDefaults || filled($choices['workflow'] ?? null) ? $this->workflow($choices, $defaults, $compatibility) : null;
+        $workflow = $this->withDefaults || filled($choices['workflow'] ?? null) ? $this->workflow($choices, $compatibility) : null;
         $required = $compatibility['requires_tools'] ?? [];
         if ($workflow) {
             $piece = $this->workflowPiece($workflow);
@@ -146,35 +161,6 @@ class Resolver
         foreach ($required as $key) {
             $tool = $this->findPiece("framework/{$key}", ['tool'], 'tools');
             $this->pieces->put($tool->id, $tool->latestVersion);
-        }
-
-        // The person's tools and sets: a tool they turned off stays when
-        // something requires it
-        foreach ($defaults['tools'] ?? [] as $key => $on) {
-            $tool = Facet::whereNull('user_id')->where('kind', 'tool')->where('key', $key)->with('latestVersion')->first();
-            if (! $tool || ! $this->fits($tool->latestVersion)) {
-                continue;
-            }
-            if ($on) {
-                $this->pieces->put($tool->id, $tool->latestVersion);
-            } elseif (! in_array($key, $required, true)) {
-                $this->pieces->forget($tool->id);
-            }
-        }
-        // A project that lists its own sets has chosen them, so yours aren't
-        // added; nor are they to a project from someone's own blueprint, which
-        // chose its sets (as its preview shows)
-        $ownBlueprint = filled($choices['blueprint'] ?? null) && $this->blueprint?->blueprint->user_id !== null;
-        foreach (['package_sets' => 'package_set', 'skill_sets' => 'skill_set'] as $field => $kind) {
-            if (array_key_exists($field, $choices) || $ownBlueprint) {
-                continue;
-            }
-            foreach ($defaults[$field] ?? [] as $handle) {
-                $piece = Facet::visibleTo($this->user)->where('kind', $kind)->with('owner', 'latestVersion')->get()->first(fn (Facet $f) => $f->handle === $handle);
-                if ($piece && $this->fits($piece->latestVersion)) {
-                    $this->pieces->put($piece->id, $piece->latestVersion);
-                }
-            }
         }
 
         // Choices for this project
@@ -208,7 +194,8 @@ class Resolver
             }
         }
 
-        $personal = $defaults ? $this->personalLayer($defaults, $workflow) : [];
+        // Framework's settings, with the editor files and agents the blueprint asks for
+        $base = $this->withDefaults ? ProjectDefaults::baseLayer($language, filled($choices['blueprint'] ?? null) ? $this->blueprint : null) : [];
         $project = $this->choicesLayer($choices, $workflow);
         // Building a blueprint: its settings are the blueprint's own
         if (! $this->withDefaults) {
@@ -223,19 +210,19 @@ class Resolver
         $this->settings = Trust::withoutPersonal($this->settings);
         $requires = Trust::withoutPersonal($requires);
         $this->checkTrust($requires);
-        $this->derived($personal, $project, $requires);
+        $this->derived($base, $project, $requires, ! array_key_exists('skill_sets', $choices));
         $this->checkTools($language, array_keys(array_filter($choices['tools'] ?? [])));
 
         $pieces = $this->pieces->values()->all();
-        $named = ['blueprint' => $this->settings, 'settings' => $personal, 'choices' => $project, 'requires' => $requires];
+        $named = ['blueprint' => $this->settings, 'settings' => $base, 'choices' => $project, 'requires' => $requires];
         $layers = [
             ['kind' => 'base', 'key' => $this->structure->facet->handle, 'version' => $this->structure->version, 'layer' => ProjectLayers::pieceLayer($this->structure->facet, $this->structure->layer)],
             ...collect($pieces)->flatMap(fn (FacetVersion $v) => ProjectLayers::entries($v, $language))->all(),
-            ['kind' => 'blueprint', 'key' => $this->blueprint?->blueprint->handle ?? 'choices', 'layer' => $this->settings],
         ];
-        if ($personal) {
-            $layers[] = ['kind' => 'settings', 'key' => 'your defaults', 'layer' => $personal];
+        if ($base) {
+            $layers[] = ['kind' => 'settings', 'key' => ProjectDefaults::BASE_LAYER, 'layer' => $base];
         }
+        $layers[] = ['kind' => 'blueprint', 'key' => $this->blueprint?->blueprint->handle ?? 'choices', 'layer' => $this->settings];
         $slug = str((string) ($choices['name'] ?? 'project'))->slug()->value() ?: 'project';
         if ($project) {
             $layers[] = ['kind' => 'project', 'key' => "{$slug} choices", 'layer' => $project];
@@ -271,12 +258,11 @@ class Resolver
     }
 
     /**
-     * The workflow: this project's choice, else the person's for the
-     * language, else the blueprint's default, else the first it supports.
-     * A choice the blueprint or language can't take is refused; a default
-     * it can't take is set aside with a notice.
+     * The workflow: this project's choice, else the blueprint's default for
+     * the language, else Framework's, else the first it supports. A choice
+     * the blueprint or language can't take is refused.
      */
-    private function workflow(array $choices, ?array $defaults, ?array $compatibility): string
+    private function workflow(array $choices, ?array $compatibility): string
     {
         $supported = array_values(array_filter($compatibility['workflows'] ?? ProjectDefaults::WORKFLOW_KEYS, fn (string $w) => ProjectDefaults::workflowFits($w, $this->language)));
         if (! $supported) {
@@ -291,58 +277,13 @@ class Resolver
             return $chosen;
         }
 
-        // Your workflow, then the blueprint's default, then Framework's
-        $preferred = $defaults['workflows'][$this->language] ?? null;
-        if ($preferred && in_array($preferred, $supported, true)) {
-            return $preferred;
-        }
-        $fallback = collect([$compatibility['default_workflow'][$this->language] ?? null, ProjectDefaults::WORKFLOWS[$this->language]])
+        return collect([$compatibility['default_workflow'][$this->language] ?? null, ProjectDefaults::WORKFLOWS[$this->language]])
             ->first(fn ($w) => in_array($w, $supported, true)) ?? $supported[0];
-        if ($preferred) {
-            $this->notices[] = "This blueprint uses the {$this->workflowPiece($fallback)->facet->name} workflow, so your {$this->workflowPiece($preferred)->facet->name} default doesn't apply.";
-        }
-
-        return $fallback;
     }
 
     private function workflowPiece(string $workflow): FacetVersion
     {
         return $this->workflowPieces[$workflow] ??= Facet::whereNull('user_id')->where('kind', 'workflow')->where('category', $workflow)->with('latestVersion.facet')->firstOrFail()->latestVersion;
-    }
-
-    /**
-     * The person's defaults layer for this project: their settings apart
-     * from Framework's own, R Markdown under the Quarto workflow, and their
-     * package list. R starts every project with Framework's own list, so a
-     * package taken out of it is removed with a null.
-     *
-     * @return array<string, mixed>
-     */
-    private function personalLayer(array $defaults, ?string $workflow): array
-    {
-        $layer = ProjectDefaults::personalLayer($defaults, $this->language);
-
-        if ($workflow && ProjectDefaults::notebookFormat($workflow, $this->language, $defaults['rmarkdown']) === 'rmarkdown') {
-            $layer['scaffold']['notebook_format'] = 'rmarkdown';
-        }
-
-        $rows = $defaults['packages'][$this->language] ?? null;
-        if ($rows !== null && $rows !== ProjectDefaults::packages(ProjectDefaults::DEFAULT_PACKAGES)[$this->language]) {
-            $entries = ProjectDefaults::packageLayer($rows);
-            if ($this->language === 'r') {
-                $fromPieces = $this->pieces->flatMap(fn (FacetVersion $v) => array_keys($v->layer['packages']['default_packages'] ?? []))->all();
-                foreach (array_column(ProjectDefaults::DEFAULT_PACKAGES['r'], 'name') as $name) {
-                    if (! isset($entries[$name]) && ! in_array($name, $fromPieces, true)) {
-                        $entries[$name] = null;
-                    }
-                }
-            }
-            if ($entries) {
-                $layer['packages']['default_packages'] = $entries;
-            }
-        }
-
-        return $layer;
     }
 
     /**
@@ -355,6 +296,33 @@ class Resolver
     {
         $settings = $choices['settings'] ?? [];
         $layer = [];
+
+        if (isset($choices['package_overrides'])) {
+            $available = Catalog::packageOptions($this->user, $this->language);
+            foreach ($choices['package_overrides'] as $name => $on) {
+                if ($on && ! isset($available[$name])) {
+                    throw ValidationException::withMessages(['package_overrides' => "There is no package {$name} for ".Project::LANGUAGE_NAMES[$this->language].'.']);
+                }
+                $layer['packages']['default_packages'][$name] = $on ? $available[$name]['definition'] : null;
+            }
+        }
+
+        if (! empty($choices['package_auto_attach'])) {
+            if ($this->language !== 'r') {
+                throw ValidationException::withMessages(['package_auto_attach' => 'Auto-attach is available for R only. Python and Stata do not auto-import packages.']);
+            }
+            $entries = [];
+            foreach ($this->pieces as $piece) {
+                $entries = array_replace($entries, $piece->catalogLayer($this->language)['packages']['default_packages'] ?? []);
+            }
+            $entries = array_replace($entries, $this->settings['packages']['default_packages'] ?? [], $layer['packages']['default_packages'] ?? []);
+            foreach ($choices['package_auto_attach'] as $name => $on) {
+                // A remembered switch never adds a package that was deselected.
+                if (isset($entries[$name]) && is_array($entries[$name])) {
+                    $layer['packages']['default_packages'][$name] = array_replace($entries[$name], ['auto_attach' => (bool) $on]);
+                }
+            }
+        }
 
         if (array_key_exists('sensitive', $settings)) {
             $layer['security']['sensitive'] = (bool) $settings['sensitive'];
@@ -369,8 +337,13 @@ class Resolver
         if (array_key_exists('git', $settings)) {
             $layer['git']['use_git'] = (bool) $settings['git'];
         }
-        foreach (array_intersect($settings['hooks'] ?? [], ProjectDefaults::HOOKS) as $hook) {
-            $layer['git']['hooks'][$hook] = true;
+        if (array_key_exists('hooks', $settings)) {
+            $layer['git']['hooks'] = array_fill_keys(ProjectDefaults::HOOKS, false);
+            if (($settings['git'] ?? true) && $this->language !== 'stata') {
+                foreach (array_intersect($settings['hooks'] ?? [], ProjectDefaults::HOOKS) as $hook) {
+                    $layer['git']['hooks'][$hook] = true;
+                }
+            }
         }
 
         foreach ($choices['skills'] ?? [] as $handle) {
@@ -385,11 +358,23 @@ class Resolver
             $layer['skills'][$skill->key] = $skill->layerEntry($this->language);
         }
 
+        foreach ($choices['excluded_skills'] ?? [] as $handle) {
+            $skill = Skill::visibleTo($this->user)->with('owner')->get()->firstWhere('handle', $handle)
+                ?? throw ValidationException::withMessages(['excluded_skills' => "There is no skill {$handle}."]);
+            $layer['skills'][$skill->key] = null;
+        }
+
         if (filled($format = $choices['notebook_format'] ?? null)) {
             if ($format !== ProjectDefaults::notebookFormat($workflow ?? '', $this->language, $format === 'rmarkdown')) {
                 throw ValidationException::withMessages(['notebook_format' => 'R Markdown is for R projects with the Quarto workflow.']);
             }
             $layer['scaffold']['notebook_format'] = $format;
+        }
+
+        // Scaffold, Quarto, and publishing settings, written as a blueprint writes them, and the editor files
+        $layer = BlueprintInput::withSettings($layer, ['language' => $this->language] + Arr::only($choices, ['scaffold', 'quarto', 'publish_destination']));
+        if (filled($choices['ide'] ?? null) && $this->language !== 'stata' && ($ide = BlueprintInput::ide($choices['ide']))) {
+            $layer['scaffold']['ide'] = $ide;
         }
 
         return $layer;
@@ -400,9 +385,9 @@ class Resolver
      * private and public folders and, with AI on, the sensitive-data skill;
      * AI off leaves out skill sets and skills; Git off leaves out hooks.
      */
-    private function derived(array &$personal, array &$project, array $requires): void
+    private function derived(array &$base, array &$project, array $requires, bool $automaticSkills): void
     {
-        $stack = [$this->structure->layer, $this->settings, $personal, $project, $requires];
+        $stack = [$this->structure->layer, $base, $this->settings, $project, $requires];
         $value = function (string $path, $default) use (&$stack) {
             $out = $default;
             foreach ($stack as $layer) {
@@ -414,13 +399,38 @@ class Resolver
             return $out;
         };
 
+        // Derived defaults belong to Framework blueprints. Personal and course
+        // blueprints retain the exact skill composition their authors chose.
+        if ($automaticSkills && $this->withDefaults && $this->blueprint?->blueprint->isSystem() && $value('ai.enabled', true) !== false) {
+            $sets = [];
+            if ($value('git.use_git', true) !== false) {
+                $sets[] = 'git';
+            }
+            $type = $this->structure->layer['type'] ?? 'bare';
+            if (in_array($type, ['project', 'project_sensitive', 'course', 'presentation'], true)) {
+                $workflow = $this->pieces->first(fn (FacetVersion $v) => $v->facet->kind === 'workflow')?->facet->category;
+                if (in_array($workflow, ['quarto', 'jupyter'], true)) {
+                    $sets[] = $workflow.'-skills';
+                }
+                if ($value('security.sensitive', false) === true) {
+                    $sets[] = 'sensitive-data';
+                }
+            }
+            foreach ($sets as $key) {
+                $set = $this->findPiece("framework/{$key}", ['skill_set'], 'skill_sets');
+                if ($this->fits($set->latestVersion)) {
+                    $this->pieces->put($set->id, $set->latestVersion);
+                }
+            }
+        }
+
         if ($value('ai.enabled', true) === false) {
             $this->pieces = $this->pieces->reject(fn (FacetVersion $v) => $v->facet->kind === 'skill_set');
-            unset($this->settings['skills'], $project['skills']);
+            unset($this->settings['skills'], $base['skills'], $project['skills']);
         }
 
         if ($value('git.use_git', true) === false) {
-            unset($personal['git']['hooks'], $project['git']['hooks']);
+            unset($base['git']['hooks'], $project['git']['hooks']);
         }
 
         if ($value('security.sensitive', false) === true) {
@@ -450,12 +460,12 @@ class Resolver
             $present = [
                 ...$this->pieces->flatMap(fn (FacetVersion $v) => $skillsOf($v))->all(),
                 ...array_keys($this->settings['skills'] ?? []),
-                ...array_keys($personal['skills'] ?? []),
+                ...array_keys($base['skills'] ?? []),
                 ...array_keys($project['skills'] ?? []),
                 ...array_keys($requires['skills'] ?? []),
             ];
-            $framework = Facet::whereNull('user_id')->where('kind', 'skill_set')->with('latestVersion')->get()
-                ->flatMap(fn (Facet $f) => $skillsOf($f->latestVersion))->unique();
+            $registry = json_decode(file_get_contents(database_path('seeders/masters/skill-bundles.json')), true);
+            $framework = collect($registry)->filter(fn ($variants) => isset($variants[$this->language]))->keys();
             foreach ($framework->diff($present) as $key) {
                 $project['skills'][$key] = null;
             }

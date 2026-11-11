@@ -7,18 +7,17 @@ import ProjectTreeView from '@/Components/ProjectTreeView.vue';
 import { agentSummary } from '@/agents.js';
 
 /**
- * What a blueprint creates as someone's default, for one language: the
- * folder tree and what else the project gets, resolved on the server from
- * the defaults given (saved or not). Shared by the Blueprint page and guided
- * setup, so both show exactly what creation writes.
+ * What a blueprint creates, for one language: the folder tree and what else
+ * the project gets, resolved on the server. Shared by the Blueprints page
+ * and guided setup, so both show exactly what creation writes.
  */
 const props = defineProps({
     blueprint: { type: Object, required: true }, // { key, handle, version, id }
     language: { type: String, required: true },
-    values: { type: Object, default: () => ({}) }, // the defaults to resolve with
+    values: { type: Object, default: () => ({}) }, // guided setup's answers, for the workflow
     // Only the folder tree, without the summary beside it
     treeOnly: Boolean,
-    // Where to resolve it instead, as { url, body }: the Blueprints page resolves with saved defaults
+    // Where to resolve it instead, as { url, body }: the Blueprints page's own preview
     source: Object,
 });
 const page = usePage();
@@ -86,7 +85,7 @@ const link = 'text-sky-700 hover:underline dark:text-sky-400';
                 <ul class="mt-1 flex flex-col gap-1">
                     <li v-for="p in preview.packages" :key="p.name" class="flex flex-wrap items-baseline gap-x-1.5">
                         <span class="font-mono text-xs">{{ p.name }}</span>
-                        <span class="text-xs text-slate-500 dark:text-slate-400" :title="p.from ? `From ${p.from}` : 'From your Project defaults'">{{ p.from ? `with ${p.from}` : 'your default' }}</span>
+                        <span v-if="p.from" class="text-xs text-slate-500 dark:text-slate-400" :title="`From ${p.from}`">with {{ p.from }}</span>
                     </li>
                     <li v-if="!preview.packages.length" class="text-slate-500 dark:text-slate-400">None</li>
                 </ul>
@@ -94,7 +93,7 @@ const link = 'text-sky-700 hover:underline dark:text-sky-400';
 
             <section>
                 <div :class="label">AI agents</div>
-                <div class="mt-1">{{ agentSummary(preview.agents, preview.agent_keys, preview.agent_other) }} <span v-if="preview.settings.agents.from === 'defaults'" class="text-xs text-slate-500 dark:text-slate-400" title="From your Project defaults">· your default</span></div>
+                <div class="mt-1">{{ agentSummary(preview.agents, preview.agent_keys, preview.agent_other) }}</div>
             </section>
 
             <!-- Each skill on its own line, under the set it comes from -->
@@ -107,7 +106,6 @@ const link = 'text-sky-700 hover:underline dark:text-sky-400';
                         <summary class="flex cursor-pointer list-none items-center gap-1 [&::-webkit-details-marker]:hidden">
                             <ChevronRightIcon class="-ml-1 size-4 shrink-0 text-slate-400 transition-transform group-open:rotate-90" />
                             <span>{{ set.name }}</span>
-                            <span v-if="set.from === 'defaults'" class="text-xs text-slate-500 dark:text-slate-400" title="From your Project defaults">· your default</span>
                         </summary>
                         <ul class="mb-1 mt-1.5 flex flex-col gap-1 pl-4 text-xs text-slate-600 dark:text-slate-400">
                             <li v-for="skill in set.skills" :key="skill">{{ skill }}</li>
@@ -126,12 +124,11 @@ const link = 'text-sky-700 hover:underline dark:text-sky-400';
                     <template v-for="(t, i) in preview.tools" :key="t.name">{{ i ? ' · ' : '' }}{{ t.name }}</template>
                     <span v-if="!preview.tools.length">None</span>
                 </div>
-                <div v-for="name in preview.tools_off" :key="name" class="mt-0.5 text-slate-500 dark:text-slate-400" title="Turned off in your Project defaults"><s>{{ name }}</s> off in your defaults</div>
             </section>
 
             <section>
                 <div :class="label">Git</div>
-                <div class="mt-1">{{ preview.settings.git.on ? 'On' : 'Off' }} <span v-if="preview.settings.git.from === 'defaults'" class="text-xs text-slate-500 dark:text-slate-400" title="From your Project defaults">· your default</span></div>
+                <div class="mt-1">{{ preview.settings.git.on ? 'On' : 'Off' }}</div>
             </section>
 
             <!-- Hooks need Git, so they only show with it on -->

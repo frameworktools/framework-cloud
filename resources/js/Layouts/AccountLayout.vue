@@ -7,7 +7,6 @@ defineProps({ heading: String, subheading: String });
 
 <script>
 export const accountItems = [
-    { label: 'Author profile', href: '/account/profile' },
     { label: 'Account details', href: '/account/account' },
     { label: 'Sign-in & security', href: '/account/security' },
     { label: 'Computers & API tokens', href: '/tokens' },

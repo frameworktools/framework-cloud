@@ -10,9 +10,8 @@ use App\Models\User;
 use Illuminate\Validation\ValidationException;
 
 /**
- * What a new project would get with a blueprint as the default, resolved
- * the way project creation resolves it: the blueprint, then the person's
- * defaults (saved or still in the form), for one language. Read-only.
+ * What a new project from a blueprint would get, resolved the way project
+ * creation resolves it, for one language and workflow. Read-only.
  */
 class DefaultsPreview
 {
@@ -20,7 +19,10 @@ class DefaultsPreview
     private const ATOMIC = ['files', 'skills', 'extra_directories', 'packages/default_packages'];
 
     /**
-     * @param  array<string, mixed>  $values  the Project defaults form's values
+     * A Framework blueprint with the workflow guided setup's form has for
+     * the language, when the blueprint takes it.
+     *
+     * @param  array<string, mixed>  $values  guided setup's form values
      * @return array<string, mixed>
      */
     public static function for(User $user, Blueprint $blueprint, string $language, array $values): array
@@ -30,25 +32,21 @@ class DefaultsPreview
             return ['available' => false, 'problem' => $problem];
         }
 
-        $defaults = ProjectDefaults::fromValues(['project_type' => $blueprint->key] + $values);
+        $workflow = $values['workflows'][$language] ?? null;
+        $supported = $blueprint->latestVersion->compatibility()['workflows'];
+        $fits = is_string($workflow) && ProjectDefaults::workflowFits($workflow, $language) && (! $supported || in_array($workflow, $supported, true));
 
-        try {
-            $resolved = (new Resolver($user, true, $defaults))->resolve(['name' => 'project', 'language' => $language]);
-        } catch (ValidationException $e) {
-            return ['available' => false, 'problem' => collect($e->errors())->flatten()->first()];
-        }
-
-        return self::describe($resolved, $blueprint, $values);
+        return self::forBlueprint($user, $blueprint, $language, $fits ? $workflow : null);
     }
 
     /**
      * What a project from any blueprint the person can see gets, for one
-     * language and workflow, with their saved defaults: the same resolution
-     * New project makes with that blueprint, language, and workflow.
+     * language and workflow: the same resolution New project makes with
+     * that blueprint, language, and workflow.
      *
+     * @param  array<string, mixed>|null  $defaults  the person's defaults; [] for none, as on a blueprint's public page
      * @return array<string, mixed>
      */
-    /** @param  array<string, mixed>|null  $defaults  the person's defaults; [] for none, as on a blueprint's public page */
     public static function forBlueprint(User $user, Blueprint $blueprint, string $language, ?string $workflow, ?array $defaults = null): array
     {
         try {
@@ -57,7 +55,7 @@ class DefaultsPreview
             return ['available' => false, 'problem' => collect($e->errors())->flatten()->first()];
         }
 
-        return self::describe($resolved, $blueprint, ['ai_other' => (bool) ($user->project_defaults['ai_other'] ?? false)]);
+        return self::describe($resolved, $blueprint, ['ai_other' => in_array('other', ProjectDefaults::agentDefaults($resolved['blueprint']), true)]);
     }
 
     /**
@@ -74,15 +72,15 @@ class DefaultsPreview
             : $layers);
         $version = $blueprint->latestVersion;
         $own = $version->facetVersions->pluck('id')->all();
-        $from = fn (FacetVersion $v) => in_array($v->id, $own, true) ? 'blueprint' : 'defaults';
+        $from = fn (FacetVersion $v) => in_array($v->id, $own, true) ? 'blueprint' : 'framework';
         $ofKind = fn (string $kind) => collect($resolved['pieces'])->filter(fn (FacetVersion $v) => $v->facet->kind === $kind)->values();
         $packages = fn (?array $layer) => array_keys($layer['packages']['default_packages'] ?? []);
 
         $skillSets = $ofKind('skill_set');
-        $inSets = $skillSets->flatMap(fn (FacetVersion $v) => array_keys($v->layer['skills'] ?? []))->all();
+        $inSets = $skillSets->flatMap(fn (FacetVersion $v) => array_keys($v->catalogLayer($resolved['language'])['skills'] ?? []))->all();
         $aiOn = (bool) ($spec['ai']['enabled'] ?? true);
 
-        // Settings the blueprint (or its structure) sets itself; the rest come from the defaults
+        // Settings the blueprint (or its structure) sets itself; the rest are Framework's
         $blueprintLayer = $version->layer ?? [];
         $sensitive = ProjectLayers::isSensitive($layers);
 
@@ -97,17 +95,17 @@ class DefaultsPreview
                 'name' => (string) $name,
                 'source' => $entry['source'] ?? null,
                 'auto_attach' => (bool) ($entry['auto_attach'] ?? false),
-                'from' => collect($resolved['pieces'])->first(fn (FacetVersion $v) => isset($v->layer['packages']['default_packages'][$name]))?->facet->name,
+                'from' => collect($resolved['pieces'])->first(fn (FacetVersion $v) => isset($v->catalogLayer($resolved['language'])['packages']['default_packages'][$name]))?->facet->name,
             ])->values()->all(),
             'package_sets' => $ofKind('package_set')->map(fn (FacetVersion $v) => [
-                'name' => $v->facet->name, 'id' => $v->facet->id, 'packages' => $packages($v->layer), 'from' => $from($v),
+                'name' => $v->facet->name, 'id' => $v->facet->id, 'packages' => $packages($v->catalogLayer($resolved['language'])), 'from' => $from($v),
             ])->all(),
             // Packages that come with other pieces, such as ggplot2 with its skill set
             'other_packages' => collect($resolved['pieces'])->reject(fn (FacetVersion $v) => $v->facet->kind === 'package_set')
-                ->flatMap(fn (FacetVersion $v) => array_map(fn ($p) => ['package' => $p, 'from' => $v->facet->name], $packages($v->layer)))->values()->all(),
+                ->flatMap(fn (FacetVersion $v) => array_map(fn ($p) => ['package' => $p, 'from' => $v->facet->name], $packages($v->catalogLayer($resolved['language']))))->values()->all(),
             'skill_sets' => $skillSets->map(fn (FacetVersion $v) => [
                 'name' => $v->facet->name, 'id' => $v->facet->id, 'from' => $from($v),
-                'skills' => array_map(self::skillName(...), array_keys($v->layer['skills'] ?? [])),
+                'skills' => array_map(self::skillName(...), array_keys($v->catalogLayer($resolved['language'])['skills'] ?? [])),
             ])->all(),
             'skills' => $aiOn ? array_map(self::skillName(...), array_values(array_diff(array_keys($spec['skills'] ?? []), $inSets))) : [],
             'agents' => $aiOn,
@@ -115,18 +113,16 @@ class DefaultsPreview
             'agent_other' => (bool) ($values['ai_other'] ?? false),
             'agent_names' => array_values(array_map(fn (string $a) => ProjectDefaults::AGENT_NAMES[$a], array_intersect(ProjectDefaults::AGENTS, array_keys(array_filter((array) ($spec['ai']['assistants'] ?? [])))))),
             'tools' => $ofKind('tool')->map(fn (FacetVersion $v) => ['name' => $v->facet->name, 'from' => $from($v)])->all(),
-            // A tool the blueprint has that the defaults turn off
-            'tools_off' => $version->facetVersions->filter(fn (FacetVersion $v) => $v->facet->kind === 'tool' && ProjectLayers::fits($v, $resolved['language']))
-                ->reject(fn (FacetVersion $v) => collect($resolved['pieces'])->contains('id', $v->id))
-                ->map(fn (FacetVersion $v) => $v->facet->name)->values()->all(),
+            // Kept for older pages: nothing outside the blueprint turns its tools off now
+            'tools_off' => [],
             'settings' => [
-                'git' => ['on' => (bool) ($spec['git']['use_git'] ?? true), 'from' => isset($blueprintLayer['git']['use_git']) ? 'blueprint' : 'defaults'],
+                'git' => ['on' => (bool) ($spec['git']['use_git'] ?? true), 'from' => isset($blueprintLayer['git']['use_git']) ? 'blueprint' : 'framework'],
                 // The blueprint and its structure decide
                 'sensitive' => ['on' => $sensitive],
-                'agents' => ['on' => $aiOn, 'from' => isset($blueprintLayer['ai']) ? 'blueprint' : 'defaults'],
+                'agents' => ['on' => $aiOn, 'from' => isset($blueprintLayer['ai']) ? 'blueprint' : 'framework'],
                 'hooks' => [
                     'on' => array_keys(array_filter((array) ($spec['git']['hooks'] ?? []))),
-                    'from' => isset($blueprintLayer['git']['hooks']) ? 'blueprint' : 'defaults',
+                    'from' => isset($blueprintLayer['git']['hooks']) ? 'blueprint' : 'framework',
                 ],
             ],
         ];

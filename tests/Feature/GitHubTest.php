@@ -12,6 +12,11 @@ use App\Services\GitHub\Scaffolder;
 use App\Support\Layer;
 use App\Support\ProjectLayers;
 use Database\Seeders\BlueprintSeeder;
+use GuzzleHttp\Client;
+use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
+use GuzzleHttp\Psr7\Response;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request as HttpRequest;
 use Illuminate\Support\Facades\Http;
@@ -128,17 +133,17 @@ class GitHubTest extends TestCase
         // address (private), and /user/emails, which the user:email scope opens, lists
         // it as primary and verified
         $requests = [];
-        $mock = new \GuzzleHttp\Handler\MockHandler([
-            new \GuzzleHttp\Psr7\Response(200, [], json_encode(['access_token' => 'gho_private', 'token_type' => 'bearer', 'scope' => 'user:email'])),
-            new \GuzzleHttp\Psr7\Response(200, [], json_encode(['id' => 77, 'node_id' => 'U_kgDOgrace', 'login' => 'grace', 'name' => 'Grace Hopper', 'email' => null, 'avatar_url' => null])),
-            new \GuzzleHttp\Psr7\Response(200, [], json_encode([
+        $mock = new MockHandler([
+            new Response(200, [], json_encode(['access_token' => 'gho_private', 'token_type' => 'bearer', 'scope' => 'user:email'])),
+            new Response(200, [], json_encode(['id' => 77, 'node_id' => 'U_kgDOgrace', 'login' => 'grace', 'name' => 'Grace Hopper', 'email' => null, 'avatar_url' => null])),
+            new Response(200, [], json_encode([
                 ['email' => 'old@example.org', 'primary' => false, 'verified' => true],
                 ['email' => 'Grace@Example.org', 'primary' => true, 'verified' => true],
             ])),
         ]);
-        $stack = \GuzzleHttp\HandlerStack::create($mock);
-        $stack->push(\GuzzleHttp\Middleware::history($requests));
-        $provider = Socialite::driver('github-login')->stateless()->setHttpClient(new \GuzzleHttp\Client(['handler' => $stack]));
+        $stack = HandlerStack::create($mock);
+        $stack->push(Middleware::history($requests));
+        $provider = Socialite::driver('github-login')->stateless()->setHttpClient(new Client(['handler' => $stack]));
         Socialite::shouldReceive('driver')->with('github-login')->andReturn($provider);
 
         $this->get('/auth/github/login/callback?code=x&state=y')->assertRedirect('/dashboard');
@@ -244,9 +249,15 @@ class GitHubTest extends TestCase
         $envelope = ProjectLayers::for($project);
 
         $this->assertSame([], Layer::envelopeProblems($envelope));
-        // The structure, the skill sets, Quarto and the workflow, the blueprint, your defaults, and the project
-        $this->assertSame(['base', 'facet', 'facet', 'facet', 'facet', 'blueprint', 'settings', 'project'], array_column($envelope['layers'], 'kind'));
-        $this->assertSame(['framework/project', 'framework/framework', 'framework/ggplot2', 'framework/quarto', 'framework/workflow-quarto'], array_slice(array_column($envelope['layers'], 'key'), 0, 5));
+        // The structure, the skill sets with their R layers, Quarto and the workflow, Framework's settings, the blueprint, and the project
+        $this->assertSame(['base', 'facet', 'facet', 'facet', 'facet', 'facet', 'facet', 'facet', 'facet', 'settings', 'blueprint', 'project'], array_column($envelope['layers'], 'kind'));
+        $this->assertSame([
+            'framework/project',
+            'framework/framework', 'framework/framework-r',
+            'framework/visualization', 'framework/visualization-r',
+            'framework/writing', 'framework/writing-r',
+            'framework/quarto', 'framework/workflow-quarto',
+        ], array_slice(array_column($envelope['layers'], 'key'), 0, 9));
         $this->assertSame('framework/project', $envelope['source']['blueprint']['key']);
         // The sign-in email stays private: only a public email the person entered goes in
         $this->assertSame(['name' => 'Ada Lovelace', 'email' => '', 'affiliation' => ''], $envelope['author']);

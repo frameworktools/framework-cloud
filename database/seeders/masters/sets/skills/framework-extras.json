@@ -1,0 +1,17 @@
+{
+  "id": "framework-extras",
+  "name": "Framework extras",
+  "description": "Caching, database queries, and artifact publication with Framework packages.",
+  "category": "framework",
+  "language": [
+    "r",
+    "python"
+  ],
+  "layer": {
+    "skills": {
+      "framework-cache": {},
+      "framework-databases": {},
+      "framework-publishing": {}
+    }
+  }
+}

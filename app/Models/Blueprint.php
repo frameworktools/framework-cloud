@@ -57,9 +57,10 @@ class Blueprint extends Model
     /**
      * A version's declared compatibility: the languages and workflows it
      * supports, its default workflow per language, the tools it needs, and
-     * the values it requires. Tags never affect resolution.
+     * the values it requires, and the agents and editor files its projects
+     * get. Tags never affect resolution.
      */
-    public const COMPATIBILITY = ['languages', 'workflows', 'default_workflow', 'requires_tools', 'requires'];
+    public const COMPATIBILITY = ['languages', 'workflows', 'default_workflow', 'requires_tools', 'requires', 'agent_defaults', 'ide'];
 
     /** Statuses: a draft has no published version yet. */
     public const STATUSES = ['draft', 'published'];
@@ -139,7 +140,7 @@ class Blueprint extends Model
         $version = $this->latestVersion;
         $layer = $version?->base?->layer ?? [];
         $entries = $version
-            ? $version->fragments()->map(fn ($fragment) => $fragment->layer['skills'] ?? [])->push($version->layer['skills'] ?? [])->reduce(fn (array $all, $more) => array_merge($all, is_array($more) ? $more : []), [])
+            ? $version->fragments()->map(fn ($fragment) => $fragment->catalogLayer('r')['skills'] ?? [])->push($version->layer['skills'] ?? [])->reduce(fn (array $all, $more) => array_merge($all, is_array($more) ? $more : []), [])
             : [];
 
         $skills = [];

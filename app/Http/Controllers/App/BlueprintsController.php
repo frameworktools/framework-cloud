@@ -102,23 +102,8 @@ class BlueprintsController extends Controller
             throw ValidationException::withMessages(['workflow' => "{$blueprint->name} doesn't support that language and workflow."]);
         }
 
-        $setting = $user->globalSettings();
-        $doc = $setting->document;
-        // The packages work offline from the project type, so an own blueprint
-        // also sets the type of its structure
-        $type = $system ? $blueprint->key : ($blueprint->latestVersion?->base?->layer['type'] ?? null);
-        Arr::set($doc, 'defaults.project_type', in_array($type, Project::TYPES, true) ? $type : ProjectDefaults::BLUEPRINT);
-        $own = Arr::except($user->project_defaults ?? [], 'blueprint_id');
-        $user->forceFill(['project_defaults' => $system ? $own : $own + ['blueprint_id' => $blueprint->id]])->save();
-        $workflows = ProjectDefaults::workflows(Arr::get($doc, 'defaults.workflows'));
-        $workflows[$data['language']] = $data['workflow'];
-        Arr::set($doc, 'defaults.workflows', $workflows);
-        if ($data['language'] === 'r') {
-            // R Markdown is a Quarto choice, so it stays when Quarto does
-            $rmarkdown = Arr::get($doc, 'defaults.notebook_format') === 'rmarkdown';
-            Arr::set($doc, 'defaults.notebook_format', ProjectDefaults::notebookFormat($workflows['r'], 'r', $rmarkdown) ?? 'quarto');
-        }
-        $setting->replaceDocument($doc, client: ['device' => 'web', 'app' => 'framework.pub']);
+        // The language's default blueprint; saving also keeps the synced settings the packages read offline
+        ProjectDefaults::setBlueprint($user, $data['language'], $blueprint);
 
         return back()->with('status', 'blueprint-default');
     }
@@ -129,10 +114,10 @@ class BlueprintsController extends Controller
 
         if ($from = $request->integer('from')) {
             $source = Blueprint::with(Library::BLUEPRINT_WITH)->find($from);
-            $start = $source?->isVisibleTo($request->user()) ? Catalog::choices($source->latestVersion, $request->user()) : null;
+            $start = $source?->isVisibleTo($request->user()) ? BlueprintInput::start($source->latestVersion, Catalog::choices($source->latestVersion, $request->user()), $request->user()) : null;
         }
 
-        return $this->builder($request, null, $start);
+        return $this->builder($request, null, $start ?? BlueprintInput::start(null, null, $request->user()));
     }
 
     public function store(Request $request): RedirectResponse
@@ -180,7 +165,7 @@ class BlueprintsController extends Controller
 
         $blueprint->load(Library::BLUEPRINT_WITH);
 
-        return $this->builder($request, $blueprint, Catalog::choices($blueprint->latestVersion, $request->user()));
+        return $this->builder($request, $blueprint, BlueprintInput::start($blueprint->latestVersion, Catalog::choices($blueprint->latestVersion, $request->user()), $request->user()));
     }
 
     public function update(Request $request, Blueprint $blueprint): RedirectResponse
@@ -215,11 +200,10 @@ class BlueprintsController extends Controller
             'workflow' => ['nullable', Rule::in(ProjectDefaults::WORKFLOW_KEYS)],
         ]);
         $combinations = self::supports($source)['combinations'];
-        $language = isset($combinations[$chosen['language'] ?? '']) ? $chosen['language'] : $blueprint->language;
-        $compatibility = $source->only(Blueprint::COMPATIBILITY);
-        if (in_array($chosen['workflow'] ?? null, $combinations[$language] ?? [], true)) {
-            $compatibility['default_workflow'] = [$language => $chosen['workflow']] + ($source->default_workflow ?? []);
-        }
+        $language = isset($combinations[$chosen['language'] ?? '']) ? $chosen['language'] : (isset($combinations[$blueprint->language]) ? $blueprint->language : array_key_first($combinations));
+        $workflow = collect([$chosen['workflow'] ?? null, $source->default_workflow[$language] ?? null, ProjectDefaults::WORKFLOWS[$language]])
+            ->first(fn ($workflow) => in_array($workflow, $combinations[$language] ?? [], true)) ?? $combinations[$language][0];
+        $compatibility = BlueprintInput::compatibility(['language' => $language, 'workflow' => $workflow]) + $source->only(Blueprint::COMPATIBILITY);
 
         $copy = DB::transaction(function () use ($user, $blueprint, $source, $language, $compatibility) {
             $copy = Blueprint::create([
@@ -237,7 +221,7 @@ class BlueprintsController extends Controller
                 $source->facetVersions->pluck('id')->all(),
                 $source->layer ?? [],
                 "Forked from {$blueprint->handle} v{$source->version}",
-                // A fork supports and requires what its source does
+                // A copy pins the language and notebook format being browsed.
                 $compatibility,
             );
 
@@ -260,15 +244,23 @@ class BlueprintsController extends Controller
         return to_route('blueprints.index');
     }
 
+    /** The editor's tabs, as ?tab= names them. */
+    private const TABS = ['name', 'language', 'notebooks', 'quarto', 'jupyter', 'structure', 'environment', 'packages', 'scaffold', 'editor', 'ai', 'skills', 'git', 'publishing'];
+
     /** @param array<string, mixed>|null $start choices to begin from: the version being edited, or ?from= */
     private function builder(Request $request, ?Blueprint $blueprint, ?array $start): Response
     {
         $user = $request->user();
+        $defaults = ProjectDefaults::for($user);
 
         return Inertia::render('Blueprints/Builder', [
             'blueprint' => $blueprint ? Library::blueprint($blueprint, $user) : null,
             'start' => $start,
+            'agents' => $defaults['settings']['ai'] ? ($defaults['settings']['agents'] ?: ['other']) : ['none'],
             'catalog' => Catalog::for($user),
+            'ggplotThemes' => ProjectDefaults::GGPLOT_THEMES,
+            'quartoChoices' => ProjectDefaults::QUARTO_CHOICES,
+            'section' => in_array($request->query('tab'), self::TABS, true) ? $request->query('tab') : 'name',
         ]);
     }
 

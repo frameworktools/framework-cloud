@@ -10,7 +10,8 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * The author details Framework writes into documents: the `author` block of
+ * Personal data: the author details Framework writes into projects and
+ * documents, the `author` block of
  * the synced settings, in the shape of Quarto's author schema. `affiliation`
  * stays a plain string (the first affiliation's name) for framework
  * versions that only read name, email, and affiliation.
@@ -33,7 +34,7 @@ class AuthorController extends Controller
             $affiliations = [['name' => $author['affiliation'], 'department' => '', 'city' => '', 'country' => '']];
         }
 
-        return Inertia::render('Account/Profile', [
+        return Inertia::render('Settings/PersonalData', [
             'author' => [
                 'name' => ($author['name'] ?? '') ?: $user->name,
                 // Only an address the person entered: the sign-in email stays private

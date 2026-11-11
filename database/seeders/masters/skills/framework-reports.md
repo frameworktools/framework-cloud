@@ -2,11 +2,11 @@
 name: framework-reports
 description: Use when asked to write up results as a report or notebook page on Framework Cloud - an ordered page of Markdown or HTML text and published figures, tables, and models, built and published through the Framework Cloud reports API from R, Python, Stata, or a terminal.
 metadata:
-  title: Creating Framework reports
+  title: "Framework Cloud: publishing reports"
   summary: Build a report of text and published results through the Framework Cloud API, then publish it at a stable link.
 ---
 
-# Creating Framework reports
+# Framework Cloud: publishing reports
 
 A report is one page that reads like a notebook: text blocks in Markdown (or
 HTML) with published results placed between them. Each result is an artifact

@@ -11,11 +11,12 @@ import UiInput from '@/Components/UiInput.vue';
 import UiSelect from '@/Components/UiSelect.vue';
 import UiSwitch from '@/Components/UiSwitch.vue';
 import UiTextarea from '@/Components/UiTextarea.vue';
-import { visibilityOptions } from '@/library.js';
+import { fitsLanguage, visibilityOptions } from '@/library.js';
 import { pieceCopy } from '@/pieces.js';
 
 const props = defineProps({
     kind: String,
+    variant: String,
     path: String,
     facet: Object, // null when creating
     values: Object,
@@ -33,10 +34,11 @@ const isStructure = computed(() => props.kind === 'structure');
 const isSkillSet = computed(() => props.kind === 'skill_set');
 
 const form = useForm({
+    variant: props.variant,
     name: props.facet?.name ?? '',
     description: props.facet?.description ?? '',
     visibility: props.facet?.visibility ?? 'private',
-    language: props.facet?.language?.[0] ?? props.language ?? 'r',
+    language: props.variant ?? props.facet?.language?.[0] ?? props.language ?? 'r',
     requirements: props.facet?.requirements ?? '',
     settings_yaml: props.values.settings_yaml,
     gitignore_content: props.values.gitignore_content ?? '',
@@ -59,7 +61,7 @@ const pick = ref('');
 const skillOptions = computed(() => [
     { value: '', label: 'Add a skill…' },
     ...props.library
-        .filter((s) => !form.skills.some((chosen) => chosen.name === s.key))
+        .filter((s) => fitsLanguage(s.language, form.language) && !form.skills.some((chosen) => chosen.name === s.key))
         .map((s) => ({ value: s.id, label: `${s.name}${s.is_system ? '' : ` (${s.handle})`}` })),
 ]);
 const addSkill = () => {
@@ -111,7 +113,7 @@ const errorFor = (prefix) => Object.entries(form.errors).filter(([k]) => k.start
             <UiPanel id="details" title="Details" class="scroll-mt-6">
                 <UiInput v-model="form.name" label="Name" required :error="form.errors.name" />
                 <UiTextarea v-model="form.description" label="Description" :rows="2" :error="form.errors.description" />
-                <UiSelect v-if="!isStructure" v-model="form.language" label="Language" :options="languageOptions" :error="form.errors.language" />
+                <UiSelect v-if="!isStructure" v-model="form.language" :disabled="!!variant" label="Language" :options="languageOptions" :error="form.errors.language" />
                 <UiSelect v-model="form.visibility" label="Visibility" :options="visibilityOptions" :error="form.errors.visibility" />
             </UiPanel>
 

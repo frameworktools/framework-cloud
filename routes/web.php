@@ -28,6 +28,7 @@ use App\Http\Controllers\PublicProjectDownloadController;
 use App\Http\Controllers\ReportViewController;
 use App\Http\Controllers\Settings\AccountController;
 use App\Http\Controllers\Settings\AuthorController;
+use App\Http\Controllers\Settings\DefaultBlueprintController;
 use App\Http\Controllers\Settings\DefaultsController;
 use App\Http\Controllers\Settings\GitHubController;
 use App\Http\Controllers\Settings\PackageSearchController;
@@ -206,7 +207,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post("{$path}/{facet}/fork", [FacetsController::class, 'fork'])->defaults('kind', $kind)->name("{$path}.fork");
     }
     Route::redirect('facets', 'structures');
-    Route::post('package-sets/{facet}/defaults', [FacetsController::class, 'addToDefaults'])->name('package-sets.defaults');
 
     foreach ([
         'blueprints' => BlueprintsController::class,
@@ -251,10 +251,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('device/approve', [DeviceController::class, 'approve'])->middleware('throttle:30,1');
     Route::post('device/deny', [DeviceController::class, 'deny'])->middleware('throttle:30,1');
 
-    // Your account: who you are, how you sign in, and what's connected
-    Route::redirect('account', 'account/profile');
-    Route::get('account/profile', [AuthorController::class, 'edit'])->name('account.profile');
-    Route::patch('account/profile', [AuthorController::class, 'update']);
+    // Your account: how you sign in and what's connected. Author details are Settings' personal data
+    Route::redirect('account', 'account/account');
+    Route::redirect('account/profile', '/settings/personal-data');
     Route::get('account/account', [AccountController::class, 'edit'])->name('account.account');
     Route::patch('account/account', [AccountController::class, 'update']);
     Route::delete('account/account', [AccountController::class, 'destroy']);
@@ -282,23 +281,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('welcome/passkey', [PasskeyPromptController::class, 'show'])->name('passkey.prompt');
     Route::post('welcome/passkey/skip', [PasskeyPromptController::class, 'skip']);
 
-    // Your defaults for new projects: one form, shown a section at a time.
-    // The account pages used to live here.
-    Route::redirect('settings', '/settings/language');
-    Route::redirect('settings/defaults', '/settings/language');
-    // Blueprint & editor were one page
-    Route::redirect('settings/basics', '/settings/blueprint');
-    // Blueprints decide whether a project is sensitive
-    Route::redirect('settings/data', '/settings/hooks');
-    foreach (['profile', 'account', 'github', 'passkeys'] as $moved) {
+    // Settings: the default blueprint for each language, and personal data
+    // (author details). Everything else about a project is its blueprint's,
+    // so the old default settings pages lead to the default blueprint.
+    Route::redirect('settings', '/settings/blueprint');
+    Route::get('settings/blueprint', [DefaultBlueprintController::class, 'edit'])->name('settings');
+    Route::patch('settings/blueprint', [DefaultBlueprintController::class, 'update']);
+    Route::get('settings/personal-data', [AuthorController::class, 'edit'])->name('settings.personal-data');
+    Route::patch('settings/personal-data', [AuthorController::class, 'update']);
+    foreach (['defaults', 'basics', 'language', 'publishing', 'editor', 'packages', 'scaffold', 'git', 'hooks', 'data', 'agents', 'notebooks', 'quarto', 'jupyter'] as $gone) {
+        Route::redirect("settings/{$gone}", '/settings/blueprint');
+    }
+    Route::redirect('settings/profile', '/settings/personal-data');
+    foreach (['account', 'github', 'passkeys'] as $moved) {
         Route::redirect("settings/{$moved}", $moved === 'passkeys' ? '/account/security' : "/account/{$moved}");
     }
-    Route::get('settings/{section}', [DefaultsController::class, 'edit'])
-        ->whereIn('section', DefaultsController::SECTIONS)->name('settings');
-    Route::patch('settings', [DefaultsController::class, 'update']);
     // Package names for the package lists
     Route::get('packages/search', PackageSearchController::class)->middleware('throttle:120,1');
-    // What a blueprint would create as the default, with the form's unsaved values
+    // What a Framework blueprint creates, for guided setup
     Route::post('settings/blueprint/preview', [DefaultsController::class, 'preview'])->middleware('throttle:120,1');
 
     // This server's own credentials (GitHub App, storage, mail)

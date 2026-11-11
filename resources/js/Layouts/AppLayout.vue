@@ -34,7 +34,7 @@ watch(() => page.url, () => { menuOpen.value = false; });
             </div>
 
             <div class="flex items-center justify-between gap-2 border-t border-slate-200 pt-3 dark:border-slate-800">
-                <Link href="/account/profile" class="flex min-w-0 items-center gap-2 rounded-md px-1 py-1 hover:bg-slate-100 dark:hover:bg-slate-800">
+                <Link href="/account/account" class="flex min-w-0 items-center gap-2 rounded-md px-1 py-1 hover:bg-slate-100 dark:hover:bg-slate-800">
                     <span class="flex size-7 shrink-0 items-center justify-center rounded-full bg-sky-700 text-xs font-semibold text-white">
                         {{ user?.initials }}
                     </span>

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Skill;
 use App\Models\SkillTag;
 use App\Models\User;
+use App\Support\SkillTags;
 use Database\Seeders\BlueprintSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -15,7 +16,7 @@ class SkillTagsTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_curated_tags_survive_reseeding_and_forks_inherit_assignments(): void
+    public function test_builtin_assignments_resync_and_forks_inherit_assignments(): void
     {
         $this->seed(BlueprintSeeder::class);
         $source = Skill::whereNull('user_id')->where('key', 'framework-packages')->sole();
@@ -25,14 +26,15 @@ class SkillTagsTest extends TestCase
         $source->tags()->sync([$tag->id]);
         $this->seed(BlueprintSeeder::class);
         $this->assertSame('Package management', $tag->fresh()->name);
-        $this->assertSame([$tag->id], $source->tags()->pluck('skill_tags.id')->all());
+        $this->assertEqualsCanonicalizing(['framework', 'packages'], $source->tags()->pluck('key')->all());
+        $assigned = $source->tags()->pluck('skill_tags.id')->all();
         $user = User::factory()->create(['email_verified_at' => now()]);
         $this->actingAs($user)->post("/skills/{$source->id}/fork")->assertSessionHasNoErrors();
         $fork = Skill::where('user_id', $user->id)->sole();
-        $this->assertSame([$tag->id], $fork->tags()->pluck('skill_tags.id')->all());
+        $this->assertSame($assigned, $fork->tags()->pluck('skill_tags.id')->all());
         // The model hook also covers the sync API's private forks.
         $child = Skill::create(['user_id' => $user->id, 'key' => 'second-fork', 'name' => 'Fork', 'visibility' => 'private', 'forked_from_id' => $fork->latestVersion->id]);
-        $this->assertSame([$tag->id], $child->tags()->pluck('skill_tags.id')->all());
+        $this->assertSame($assigned, $child->tags()->pluck('skill_tags.id')->all());
     }
 
     public function test_only_admins_can_extend_or_rename_the_taxonomy(): void
@@ -77,7 +79,7 @@ class SkillTagsTest extends TestCase
     {
         foreach (['r', 'python', 'stata'] as $language) {
             $user = User::factory()->create(['email_verified_at' => now(), 'project_defaults' => ['language' => $language]]);
-            $this->actingAs($user)->get('/skills?language=python')->assertInertia(fn (Assert $page) => $page->where('language', $language)->has('tagOptions', 12));
+            $this->actingAs($user)->get('/skills?language=python')->assertInertia(fn (Assert $page) => $page->where('language', $language)->has('tagOptions', count(SkillTags::DEFAULTS))->has('categories', 10));
             $this->get('/skills/create')->assertInertia(fn (Assert $page) => $page->where('language', $language));
             $this->get('/skill-sets?language=r')->assertInertia(fn (Assert $page) => $page->where('language', $language));
         }

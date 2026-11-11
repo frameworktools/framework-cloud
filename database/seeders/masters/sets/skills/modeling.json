@@ -1,0 +1,17 @@
+{
+  "id": "modeling",
+  "name": "Modeling",
+  "description": "Regression specification, diagnostics, and presentation.",
+  "category": "modeling",
+  "language": [
+    "r",
+    "python",
+    "stata"
+  ],
+  "layer": {
+    "skills": {
+      "regression-models": {},
+      "model-results": {}
+    }
+  }
+}

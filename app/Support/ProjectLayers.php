@@ -24,7 +24,7 @@ class ProjectLayers
      * A project's layers. A project keeps the envelope it was resolved from
      * at creation, so later changes to anyone's defaults or to a blueprint
      * leave it alone. A project made before that has its envelope built from
-     * what it recorded and the owner's defaults, once, and then keeps it.
+     * what it recorded and Framework's settings, once, and then keeps it.
      */
     public static function for(Project $project): array
     {
@@ -47,11 +47,10 @@ class ProjectLayers
         $layers = $fragments->filter(fn (FacetVersion $fragment) => $fragment->facet->isStructure() || self::fits($fragment, $language))
             ->flatMap(fn (FacetVersion $fragment) => self::entries($fragment, $language))->all();
 
-        // Recorded before workflows: the owner's workflow, else the blueprint's, else Framework's
-        $defaults = ProjectDefaults::for($user);
+        // Recorded before workflows: the blueprint's workflow, else Framework's
         if (! $fragments->contains(fn (FacetVersion $f) => $f->facet->kind === 'workflow')) {
             $supported = array_values(array_filter($version?->workflows ?: ProjectDefaults::WORKFLOW_KEYS, fn (string $w) => ProjectDefaults::workflowFits($w, $language)));
-            $workflow = collect([$defaults['workflows'][$language] ?? null, $version?->default_workflow[$language] ?? null, ProjectDefaults::WORKFLOWS[$language]])
+            $workflow = collect([$version?->default_workflow[$language] ?? null, ProjectDefaults::WORKFLOWS[$language]])
                 ->first(fn ($w) => in_array($w, $supported, true)) ?? $supported[0] ?? null;
             $piece = $workflow ? Facet::whereNull('user_id')->where('kind', 'workflow')->where('category', $workflow)->with('latestVersion.facet')->first()?->latestVersion : null;
             if ($piece) {
@@ -66,6 +65,7 @@ class ProjectLayers
             }
         }
 
+        $layers[] = ['kind' => 'settings', 'key' => ProjectDefaults::BASE_LAYER, 'layer' => ProjectDefaults::baseLayer($language, $version)];
         if ($composition) {
             $layers[] = ['kind' => 'blueprint', 'key' => $version?->blueprint->handle ?? 'choices', 'layer' => $composition['layer'] ?? []];
         } elseif ($version) {
@@ -77,9 +77,6 @@ class ProjectLayers
             ];
         }
 
-        if ($personal = ProjectDefaults::personalLayer($defaults, $language)) {
-            $layers[] = ['kind' => 'settings', 'key' => 'your defaults', 'layer' => $personal];
-        }
         $layers[] = self::projectLayer($project->slug, $language, $layers);
 
         $envelope = self::envelope($user, $project->name, $layers, $version && ! $composition ? ['key' => $version->blueprint->handle, 'version' => $version->version] : null);
@@ -100,8 +97,7 @@ class ProjectLayers
     /**
      * The topmost layer: the project's language, for Stata the R-only folders
      * removed, and, with the spec's tools key on, every tool for the
-     * language named on or off, so no client has to guess. The person's
-     * defaults sit beneath it in their own layer.
+     * language named on or off, so no client has to guess.
      */
     public static function projectLayer(string $key, string $language, array $layers): array
     {

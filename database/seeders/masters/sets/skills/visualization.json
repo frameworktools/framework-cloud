@@ -1,0 +1,54 @@
+{
+  "id": "visualization",
+  "name": "Visualization",
+  "description": "Exploratory and publication figures for the project language.",
+  "category": "visualization",
+  "language": [
+    "r",
+    "python",
+    "stata"
+  ],
+  "layer": {
+    "skills": {}
+  },
+  "language_layers": {
+    "r": {
+      "skills": {
+        "ggplot2-exploring": {},
+        "ggplot2-publishing": {}
+      },
+      "packages": {
+        "default_packages": {
+          "ggplot2": {
+            "source": "cran",
+            "auto_attach": true
+          }
+        }
+      }
+    },
+    "python": {
+      "skills": {
+        "matplotlib-exploring": {},
+        "matplotlib-publishing": {}
+      },
+      "packages": {
+        "default_packages": {
+          "matplotlib": {
+            "source": "pypi",
+            "auto_attach": false
+          },
+          "seaborn": {
+            "source": "pypi",
+            "auto_attach": false
+          }
+        }
+      }
+    },
+    "stata": {
+      "skills": {
+        "stata-graphs": {},
+        "stata-graphs-publishing": {}
+      }
+    }
+  }
+}

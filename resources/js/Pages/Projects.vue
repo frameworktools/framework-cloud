@@ -98,7 +98,7 @@ const titleClass = 'font-medium text-slate-900 hover:underline hover:underline-o
             </template>
             <EmptyState
                 v-else :icon="FolderIcon" title="No projects" class="mt-12"
-                description="Start a project from your defaults or a blueprint. Its published artifacts and reports appear here."
+                description="Start a project from a blueprint. Its published artifacts and reports appear here."
             />
             <ShareDialog :target="shareTarget" @close="shareTarget = null" />
         </div>

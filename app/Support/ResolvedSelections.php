@@ -24,14 +24,7 @@ class ResolvedSelections
     {
         $language = $resolved['language'];
         $pieces = collect($resolved['pieces']);
-        $defaults = ProjectDefaults::for($user);
-        $fromBlueprint = $version->facetVersions->pluck('facet_id')->all();
-        $from = fn (FacetVersion $v, string $field) => match (true) {
-            $customized => 'chosen',
-            in_array($v->facet_id, $fromBlueprint, true) => 'blueprint',
-            in_array($v->facet->handle, $defaults[$field] ?? [], true) => 'yours',
-            default => 'blueprint',
-        };
+        $from = fn (FacetVersion $v, string $field) => $customized ? 'chosen' : 'blueprint';
 
         // Why a tool can't be removed: the workflow or the blueprint needs it
         $workflow = $pieces->first(fn (FacetVersion $v) => $v->facet->kind === 'workflow');
@@ -60,26 +53,34 @@ class ResolvedSelections
         $named = array_keys(array_filter((array) ($spec['ai']['assistants'] ?? [])));
         $aiOn = (bool) ($spec['ai']['enabled'] ?? true);
 
+        $skillEntries = [...($resolved['layers']['blueprint']['skills'] ?? []), ...($resolved['layers']['choices']['skills'] ?? [])];
+        $packageEntries = array_replace($resolved['layers']['blueprint']['packages']['default_packages'] ?? [], $resolved['layers']['choices']['packages']['default_packages'] ?? []);
+
         return [
             'language' => $language,
             // The files and folders creation writes, and where documents render
             'tree' => ProjectTree::for($spec, $language, $on, (bool) ($spec['security']['sensitive'] ?? false)),
             'render_dirs' => collect((array) ($spec['render_dirs'] ?? []))
                 ->map(fn ($target, $key) => ['from' => $spec['directories'][$key] ?? $key, 'to' => $target])->values()->all(),
-            // Agents as the shared selector shows them; other agents is the person's own answer
+            // Agents as the shared selector shows them; other agents is the blueprint's answer
             'agents' => [
                 'enabled' => $aiOn,
                 'named' => array_values(array_intersect(ProjectDefaults::AGENTS, $named)),
-                'other' => $aiOn && ((bool) ($user->project_defaults['ai_other'] ?? false) || ! $named),
+                'other' => $aiOn && (in_array('other', ProjectDefaults::agentDefaults($version), true) || ! $named),
             ],
             'structure' => $resolved['structure']->facet->handle,
             'workflow' => $resolved['workflow'] ? ['key' => $resolved['workflow'], 'name' => $workflow?->facet->name] : null,
             'tools' => (object) $tools,
             'package_sets' => $sets('package_set', 'package_sets'),
+            'package_overrides' => Catalog::packageOverrides($packageEntries, $pieces, $language),
+            'package_auto_attach' => $language === 'r' ? collect($packageEntries)->filter(fn ($entry) => is_array($entry) && array_key_exists('auto_attach', $entry))->map(fn ($entry) => (bool) $entry['auto_attach'])->all() : [],
             'skill_sets' => $sets('skill_set', 'skill_sets'),
             // Single skills only, by handle, as the form lists them; sets bring their own
-            'skills' => collect(array_keys([...($resolved['layers']['blueprint']['skills'] ?? []), ...($resolved['layers']['choices']['skills'] ?? [])]))
+            'skills' => collect($skillEntries)->filter(fn ($entry) => $entry !== null)->keys()
                 ->reject(fn ($key) => $key === 'framework-sensitive-data')
+                ->map(fn ($key) => Skill::visibleTo($user)->where('key', $key)->with('owner')->orderByRaw('user_id is not null')->first()?->handle)
+                ->filter()->values()->all(),
+            'excluded_skills' => collect($skillEntries)->filter(fn ($entry) => $entry === null)->keys()
                 ->map(fn ($key) => Skill::visibleTo($user)->where('key', $key)->with('owner')->orderByRaw('user_id is not null')->first()?->handle)
                 ->filter()->values()->all(),
             'settings' => [

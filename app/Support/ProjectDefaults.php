@@ -3,23 +3,25 @@
 namespace App\Support;
 
 use App\Models\Blueprint;
+use App\Models\BlueprintVersion;
+use App\Models\FacetVersion;
 use App\Models\Project;
 use App\Models\User;
 use Illuminate\Support\Arr;
 
 /**
- * What a user's new projects start with when they don't choose otherwise.
- * Some of it lives in the synced settings document that the R package also
- * reads (the default blueprint, git, renv, and AI); the rest is cloud-only in
- * users.project_defaults (package sets, skill sets, tools, sensitive, and
- * git hooks).
+ * What a user's new projects start with when they don't choose otherwise:
+ * their default blueprint for the project's language, stored with their
+ * default language in users.blueprint_defaults. Everything else about a
+ * project comes from its blueprint, plus the author details in the synced
+ * settings. Also Framework's own values beneath every blueprint.
  */
 class ProjectDefaults
 {
     /** The blueprint for an account that never chose one: the standard project, as in R. */
     public const BLUEPRINT = 'project';
 
-    /** The language the Project defaults pages start from when the person hasn't picked one. */
+    /** The default language for a person who hasn't picked one. */
     public const LANGUAGE = 'r';
 
     /**
@@ -103,45 +105,240 @@ class ProjectDefaults
     /** The git hooks a user can turn on for new projects, as the R package names them. */
     public const HOOKS = ['data_security', 'check_sensitive_dirs', 'check_notebook_outputs'];
 
-    /** The handle of the person's own default blueprint, while it still exists. */
-    private static function ownBlueprint(User $user, mixed $id): ?string
+    /** The key of the layer of Framework's own settings beneath every blueprint. */
+    public const BASE_LAYER = 'framework defaults';
+
+    /** The editor files a blueprint can ask for, as R and Python read scaffold.ide. Positron means vscode. */
+    public const IDES = ['vscode', 'positron', 'rstudio', 'both', 'none'];
+
+    /**
+     * The person's default language: the one they chose, else the language
+     * guided setup saved before blueprint defaults, else R.
+     */
+    public static function language(User $user): string
+    {
+        return self::chosenLanguage($user) ?? self::LANGUAGE;
+    }
+
+    /** The default language only when the person chose one. */
+    public static function chosenLanguage(User $user): ?string
+    {
+        foreach ([$user->blueprint_defaults['language'] ?? null, $user->project_defaults['language'] ?? null] as $language) {
+            if (in_array($language, Project::LANGUAGES, true)) {
+                return $language;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * The person's default blueprint for a language, with its latest version
+     * loaded: the one they chose for the language, else the default saved
+     * before per-language defaults (their own blueprint or a Framework
+     * type), else Framework's standard project. One that no longer exists,
+     * can't be seen, or doesn't take the language is passed over.
+     */
+    public static function blueprint(User $user, string $language): Blueprint
+    {
+        $with = ['owner', 'latestVersion.blueprint', 'latestVersion.base.facet.owner', 'latestVersion.facetVersions.facet.owner'];
+        $candidates = [
+            fn () => self::visibleBlueprint($user, $user->blueprint_defaults['blueprints'][$language] ?? null, $with),
+            fn () => self::visibleBlueprint($user, $user->project_defaults['blueprint_id'] ?? null, $with, own: true),
+            fn () => Blueprint::systemTypes()->where('key', Arr::get($user->exists ? $user->globalSettings()->document : [], 'defaults.project_type'))->with($with)->first(),
+        ];
+        foreach ($candidates as $candidate) {
+            $blueprint = $candidate();
+            if ($blueprint && self::fits($blueprint, $language)) {
+                return $blueprint;
+            }
+        }
+
+        return Blueprint::whereNull('user_id')->where('key', self::BLUEPRINT)->with($with)->firstOrFail();
+    }
+
+    private static function visibleBlueprint(User $user, mixed $id, array $with, bool $own = false): ?Blueprint
     {
         if (! is_int($id)) {
             return null;
         }
+        $blueprint = Blueprint::with($with)->find($id);
 
-        return Blueprint::where('user_id', $user->id)->find($id)?->handle;
+        return $blueprint && ($own ? $blueprint->user_id === $user->id : self::canBeDefault($blueprint, $user)) ? $blueprint : null;
+    }
+
+    /** Whether a blueprint can be someone's default: Framework's project types and their own. */
+    public static function canBeDefault(Blueprint $blueprint, User $user): bool
+    {
+        return ($blueprint->isSystem() && in_array($blueprint->key, Project::TYPES, true)) || ($user->exists && $blueprint->user_id === $user->id);
+    }
+
+    /** Whether a blueprint takes a language: its latest version lists it, and its structure works in it. */
+    public static function fits(Blueprint $blueprint, string $language): bool
+    {
+        $version = $blueprint->latestVersion;
+        if (! $version?->base) {
+            return false;
+        }
+        $languages = $version->compatibility()['languages'];
+
+        return (! $languages || in_array($language, $languages, true)) && ! Project::typeProblem($language, $version->base->layer['type'] ?? 'bare');
+    }
+
+    /** Make a blueprint the person's default for a language. */
+    public static function setBlueprint(User $user, string $language, Blueprint $blueprint): void
+    {
+        self::save($user, null, [$language => $blueprint]);
+    }
+
+    /** Set the person's default language. */
+    public static function setLanguage(User $user, string $language): void
+    {
+        self::save($user, $language, []);
     }
 
     /**
-     * @return array{blueprint: string, package_sets: list<string>, skill_sets: list<string>, packages: array<string, list<array<string, mixed>>>, tools: array<string, bool>, settings: array{git: bool, ai: bool, hooks: list<string>, ide: string, scaffold: array<string, bool|string>, agents: list<string>, quarto: array<string, array<string, mixed>>}, language: ?string, workflows: array<string, string>, rmarkdown: bool}
+     * Save the default language and default blueprints by language.
+     *
+     * @param  array<string, Blueprint>  $blueprints
+     */
+    public static function save(User $user, ?string $language, array $blueprints): void
+    {
+        $saved = $user->blueprint_defaults ?? [];
+        if ($language) {
+            $saved['language'] = $language;
+        }
+        foreach ($blueprints as $for => $blueprint) {
+            $saved['blueprints'][$for] = $blueprint->id;
+        }
+        $user->forceFill(['blueprint_defaults' => $saved])->save();
+        self::syncSettings($user);
+    }
+
+    /**
+     * Copy the default language's blueprint into the synced settings as a
+     * project type and workflow, which R and Python read when they create
+     * a project offline.
+     */
+    private static function syncSettings(User $user): void
+    {
+        $language = self::language($user);
+        $version = self::blueprint($user, $language)->latestVersion;
+        $setting = $user->globalSettings();
+        $doc = $setting->document;
+        $type = $version->base->layer['type'] ?? null;
+        Arr::set($doc, 'defaults.project_type', in_array($type, Project::TYPES, true) ? $type : self::BLUEPRINT);
+        $workflows = self::workflows(Arr::get($doc, 'defaults.workflows'));
+        $workflows[$language] = self::workflowOf($version, $language);
+        Arr::set($doc, 'defaults.workflows', $workflows);
+        if ($language === 'r') {
+            $rmarkdown = ($version->layer['scaffold']['notebook_format'] ?? null) === 'rmarkdown';
+            Arr::set($doc, 'defaults.notebook_format', self::notebookFormat($workflows['r'], 'r', $rmarkdown) ?? 'quarto');
+        }
+        if ($doc !== $setting->document) {
+            $setting->replaceDocument($doc, client: ['device' => 'web', 'app' => 'framework.pub']);
+        }
+    }
+
+    /**
+     * What a person's new projects start with, read from their default
+     * blueprints: the shape GET /api/v1/defaults has always returned, so
+     * older R and Python packages keep working. Settings and pieces describe
+     * the default language's blueprint; blueprints, workflows, and packages
+     * cover each language.
+     *
+     * @return array{publish_destination: string, blueprint: string, blueprints: array<string, string>, language: ?string, workflows: array<string, string>, rmarkdown: bool, package_sets: list<string>, skill_sets: list<string>, packages: array<string, list<array<string, mixed>>>, tools: array<string, bool>, settings: array{git: bool, ai: bool, hooks: list<string>, ide: string, scaffold: array<string, bool|string>, agents: list<string>, quarto: array<string, array<string, mixed>>}}
      */
     public static function for(User $user): array
     {
-        $doc = $user->globalSettings()->document;
-        $own = $user->project_defaults ?? [];
+        return self::read($user)['defaults'];
+    }
+
+    /** @return array{defaults: array<string, mixed>, versions: array<string, int>} */
+    private static function read(User $user): array
+    {
+        $language = self::chosenLanguage($user);
+        $main = $language ?? self::LANGUAGE;
+        $blueprints = collect(Project::LANGUAGES)->mapWithKeys(fn (string $l) => [$l => self::blueprint($user, $l)]);
+        $version = $blueprints[$main]->latestVersion;
+        $layer = $version->layer ?? [];
+        $pieces = $version->facetVersions->filter(fn (FacetVersion $v) => ProjectLayers::fits($v, $main));
+        $handles = fn (string $kind) => $pieces->filter(fn (FacetVersion $v) => $v->facet->kind === $kind)->map(fn (FacetVersion $v) => $v->facet->handle)->values()->all();
+        $agents = self::agentDefaults($version);
 
         return [
-            'publish_destination' => $own['publish_destination'] ?? '',
-            'blueprint' => self::ownBlueprint($user, $own['blueprint_id'] ?? null) ?? 'framework/'.Arr::get($doc, 'defaults.project_type', self::BLUEPRINT),
-            // Only what the person chose: a blueprint's own language and workflow show through the rest
-            'language' => in_array($own['language'] ?? null, Project::LANGUAGES, true) ? $own['language'] : null,
-            'workflows' => self::chosenWorkflows(Arr::get($doc, 'defaults.workflows')),
-            'rmarkdown' => Arr::get($doc, 'defaults.notebook_format') === 'rmarkdown',
-            'package_sets' => array_values($own['package_sets'] ?? []),
-            'skill_sets' => array_values($own['skill_sets'] ?? []),
-            'packages' => self::packages($own['packages'] ?? self::DEFAULT_PACKAGES),
-            'tools' => ['renv' => (bool) Arr::get($doc, 'defaults.use_renv', false)] + ($own['tools'] ?? []),
-            'settings' => [
-                'git' => (bool) Arr::get($doc, 'defaults.use_git', true),
-                'ai' => (bool) Arr::get($doc, 'ai.enabled', true),
-                'hooks' => array_keys(array_filter(Arr::only($own['hooks'] ?? [], self::HOOKS))),
-                'ide' => (string) Arr::get($doc, 'defaults.ide', self::IDE),
-                'scaffold' => self::scaffold((array) ($doc['defaults'] ?? [])),
-                'agents' => self::agents(Arr::get($doc, 'ai.assistants')),
-                'quarto' => self::quarto((array) ($doc['quarto'] ?? [])),
+            'versions' => $blueprints->map(fn (Blueprint $b) => $b->latestVersion->id)->all(),
+            'defaults' => [
+                'publish_destination' => (string) ($layer['publish']['default'] ?? ''),
+                'blueprint' => $blueprints[$main]->handle,
+                'blueprints' => $blueprints->map(fn (Blueprint $b) => $b->handle)->all(),
+                'language' => $language,
+                'workflows' => $blueprints->map(fn (Blueprint $b, string $l) => self::workflowOf($b->latestVersion, $l))->all(),
+                'rmarkdown' => ($blueprints['r']->latestVersion->layer['scaffold']['notebook_format'] ?? null) === 'rmarkdown',
+                'package_sets' => $handles('package_set'),
+                'skill_sets' => $handles('skill_set'),
+                'packages' => collect(self::PACKAGE_LANGUAGES)->mapWithKeys(fn (string $l) => [$l => self::packageRows($blueprints[$l]->latestVersion, $l)])->all(),
+                'tools' => ['renv' => false] + $pieces->filter(fn (FacetVersion $v) => $v->facet->kind === 'tool')->mapWithKeys(fn (FacetVersion $v) => [$v->facet->key => true])->all(),
+                'settings' => [
+                    'git' => (bool) ($layer['git']['use_git'] ?? true),
+                    'ai' => ! in_array('none', $agents, true) && (bool) ($layer['ai']['enabled'] ?? true),
+                    'hooks' => array_keys(array_filter(Arr::only((array) ($layer['git']['hooks'] ?? []), self::HOOKS))),
+                    'ide' => self::ide($version),
+                    'scaffold' => self::scaffold((array) ($layer['scaffold'] ?? [])),
+                    'agents' => self::agents($agents),
+                    'quarto' => self::quarto((array) ($layer['quarto'] ?? [])),
+                ],
             ],
         ];
+    }
+
+    /** The workflow a blueprint version gives a language: its default, else Framework's, else the first it supports. */
+    public static function workflowOf(BlueprintVersion $version, string $language): string
+    {
+        $compatibility = $version->compatibility();
+        $supported = array_values(array_filter($compatibility['workflows'] ?? self::WORKFLOW_KEYS, fn (string $w) => self::workflowFits($w, $language)));
+
+        return collect([$compatibility['default_workflow'][$language] ?? null, self::WORKFLOWS[$language]])
+            ->first(fn ($w) => in_array($w, $supported, true)) ?? $supported[0] ?? self::WORKFLOWS[$language];
+    }
+
+    /**
+     * The packages a blueprint version starts a language's projects with:
+     * for R, Framework's own list beneath, then its sets, then its own list,
+     * where a null takes a package out.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private static function packageRows(BlueprintVersion $version, string $language): array
+    {
+        $entries = $language === 'r' ? self::packageLayer(self::packages(self::DEFAULT_PACKAGES)['r']) : [];
+        foreach ($version->facetVersions as $piece) {
+            if (ProjectLayers::fits($piece, $language)) {
+                $entries = array_replace($entries, $piece->catalogLayer($language)['packages']['default_packages'] ?? []);
+            }
+        }
+        $entries = array_filter(array_replace($entries, $version->layer['packages']['default_packages'] ?? []), fn ($entry) => $entry !== null);
+
+        return self::packages([$language => collect($entries)->map(fn ($entry, $name) => ['name' => $name] + (array) $entry)->values()->all()])[$language];
+    }
+
+    /** The editor files a blueprint version asks for, else Framework's. */
+    public static function ide(?BlueprintVersion $version): string
+    {
+        $ide = $version?->getAttribute('ide');
+
+        return in_array($ide, self::IDES, true) ? $ide : self::IDE;
+    }
+
+    /**
+     * The agents a blueprint version sets projects up for: named agents,
+     * other (AGENTS.md only), or none. Empty when it doesn't say.
+     *
+     * @return list<string>
+     */
+    public static function agentDefaults(?BlueprintVersion $version): array
+    {
+        return array_values(array_intersect([...self::AGENTS, 'other', 'none'], (array) ($version?->agent_defaults ?? [])));
     }
 
     /**
@@ -166,12 +363,12 @@ class ProjectDefaults
 
     /**
      * An opaque revision of a person's defaults: it changes whenever what
-     * their new projects start with changes. Clients cache the default
-     * envelope by it.
+     * their new projects start with changes, including a new version of a
+     * default blueprint. Clients cache the default envelope by it.
      */
     public static function revision(User $user): string
     {
-        return substr(hash('sha256', json_encode(self::for($user))), 0, 16);
+        return substr(hash('sha256', json_encode(self::read($user))), 0, 16);
     }
 
     /**
@@ -223,52 +420,28 @@ class ProjectDefaults
     }
 
     /**
-     * A person's defaults as a layer for one language, under creation
-     * choices and above the blueprint's own values. It holds what the
-     * person set that differs from Framework's own, so a blueprint's values
-     * show through wherever the person kept Framework's. Editor files and
-     * agents are the person's alone, so they're always here.
+     * Framework's own settings for a project, beneath its blueprint's: the
+     * scaffold settings (every key, since the packages fill a missing one
+     * with their own default, which differs from Cloud's), and the editor
+     * files and agents the blueprint asks for. Editor files and agents
+     * never come from a blueprint's layer, so they're set here.
      *
-     * Tools, package sets, and skill sets are pieces; the resolver adds them.
-     *
-     * @param  array<string, mixed>  $defaults  from for() or fromValues()
      * @return array<string, mixed>
      */
-    public static function personalLayer(array $defaults, string $language): array
+    public static function baseLayer(string $language, ?BlueprintVersion $version): array
     {
-        $settings = $defaults['settings'];
         $layer = [];
-        if (in_array($destination = $defaults['publish_destination'] ?? '', ['cloud', 'github'], true)) {
-            $layer['publish'] = ['default' => $destination, 'destinations' => [$destination => ['driver' => $destination]]];
-        }
-
         if ($language !== 'stata') {
-            $layer['scaffold']['ide'] = $settings['ide'];
-            $keys = $language === 'r' ? array_keys(self::SCAFFOLD) : ['seed_on_scaffold', 'seed', 'source_all_functions'];
-            // Every key is sent. The packages fill a missing key with their own
-            // default, which differs from Cloud's (R turns the ggplot2 theme
-            // on, and both turn seeding off), so leaving one out changes it
-            foreach ($keys as $key) {
-                $layer['scaffold'][$key] = $settings['scaffold'][$key];
-            }
-            foreach (self::QUARTO as $format => $values) {
-                foreach ($values as $key => $value) {
-                    if ($settings['quarto'][$format][$key] !== $value) {
-                        $layer['quarto'][$format][$key] = $settings['quarto'][$format][$key];
-                    }
-                }
+            $layer['scaffold']['ide'] = self::ide($version);
+            foreach ($language === 'r' ? array_keys(self::SCAFFOLD) : ['seed_on_scaffold', 'seed', 'source_all_functions'] as $key) {
+                $layer['scaffold'][$key] = self::SCAFFOLD[$key];
             }
         }
 
-        $layer['ai']['assistants'] = array_combine(self::AGENTS, array_map(fn (string $a) => in_array($a, $settings['agents'], true), self::AGENTS));
-        if (! $settings['ai']) {
+        $agents = self::agentDefaults($version);
+        $layer['ai']['assistants'] = array_combine(self::AGENTS, array_map(fn (string $a) => in_array($a, $agents, true), self::AGENTS));
+        if (in_array('none', $agents, true)) {
             $layer['ai']['enabled'] = false;
-        }
-
-        if (! $settings['git']) {
-            $layer['git']['use_git'] = false;
-        } elseif ($settings['hooks'] && $language !== 'stata') {
-            $layer['git']['hooks'] = array_fill_keys($settings['hooks'], true);
         }
 
         return $layer;
@@ -369,36 +542,5 @@ class ProjectDefaults
             'repo' => $row['source'] === 'github' ? ($row['repo'] ?? null) : null,
             'auto_attach' => (bool) $row['auto_attach'],
         ], fn ($value) => $value !== null)])->all();
-    }
-
-    /**
-     * The same defaults from the Project defaults form's values, saved or
-     * not, for previewing what a new project would get.
-     *
-     * @param  array<string, mixed>  $values  as DefaultsController hands them to the form
-     * @return array{blueprint: string, package_sets: list<string>, skill_sets: list<string>, packages: array<string, list<array<string, mixed>>>, tools: array<string, bool>, settings: array{git: bool, ai: bool, hooks: list<string>, ide: string, scaffold: array<string, bool|string>, agents: list<string>, quarto: array<string, array<string, mixed>>}, language: ?string, workflows: array<string, string>, rmarkdown: bool}
-     */
-    public static function fromValues(array $values): array
-    {
-        return [
-            'publish_destination' => $values['publish_destination'] ?? '',
-            'blueprint' => 'framework/'.($values['project_type'] ?? self::BLUEPRINT),
-            'language' => in_array($values['language'] ?? null, Project::LANGUAGES, true) ? $values['language'] : null,
-            'workflows' => self::chosenWorkflows($values['workflows'] ?? null),
-            'rmarkdown' => (bool) ($values['rmarkdown'] ?? false),
-            'package_sets' => array_values(array_filter((array) ($values['package_sets'] ?? []), 'is_string')),
-            'skill_sets' => array_values(array_filter((array) ($values['skill_sets'] ?? []), 'is_string')),
-            'packages' => self::packages((array) ($values['packages'] ?? [])),
-            'tools' => ['renv' => (bool) ($values['use_renv'] ?? false)] + array_map('boolval', Arr::except((array) ($values['tools'] ?? []), ['renv'])),
-            'settings' => [
-                'git' => (bool) ($values['use_git'] ?? true),
-                'ai' => (bool) ($values['ai_enabled'] ?? true),
-                'hooks' => array_keys(array_filter(Arr::only((array) ($values['hooks'] ?? []), self::HOOKS))),
-                'ide' => (string) ($values['ide'] ?? self::IDE),
-                'scaffold' => self::scaffold($values),
-                'agents' => self::agents($values['ai_agents'] ?? null),
-                'quarto' => self::quarto((array) ($values['quarto'] ?? [])),
-            ],
-        ];
     }
 }

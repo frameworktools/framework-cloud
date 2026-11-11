@@ -36,13 +36,16 @@ class PiecesController extends Controller
         $pieces = Facet::visibleTo($user)->where('kind', $kind)->with('owner', 'latestVersion')
             ->orderByRaw('user_id is not null')->orderBy('position')->orderBy('name')->get()
             ->filter(fn (Facet $f) => ! $language || ! $f->language || in_array($language, $f->language, true))
-            ->map(fn (Facet $f) => $this->piece($f))
+            ->map(fn (Facet $f) => $this->piece($f, is_string($language) ? $language : null))
             ->values();
 
         return response()->json([str($kind)->plural()->value() => $pieces]);
     }
 
-    /** GET /api/v1/defaults: what the user's new projects start with. */
+    /**
+     * GET /api/v1/defaults: what the user's new projects start with, read
+     * from their default blueprints, in the shape older packages expect.
+     */
     public function defaults(Request $request): JsonResponse
     {
         $user = $this->user($request);
@@ -263,20 +266,28 @@ class PiecesController extends Controller
             'tools.*' => ['boolean'],
             'package_sets' => ['nullable', 'array'],
             'package_sets.*' => ['string', 'max:200'],
+            'package_overrides' => ['nullable', 'array'],
+            'package_overrides.*' => ['boolean'],
+            'package_auto_attach' => ['nullable', 'array'],
+            'package_auto_attach.*' => ['boolean'],
             'skill_sets' => ['nullable', 'array'],
             'skill_sets.*' => ['string', 'max:200'],
+            'excluded_skills' => ['nullable', 'array'],
+            'excluded_skills.*' => ['string', 'max:200'],
             'skills' => ['nullable', 'array'],
             'skills.*' => ['string', 'max:200'],
             'settings' => ['nullable', 'array'],
             'settings.sensitive' => ['boolean'],
             'settings.git' => ['boolean'],
+            'settings.hooks' => ['nullable', 'array'],
+            'settings.hooks.*' => ['in:'.implode(',', ProjectDefaults::HOOKS)],
             'settings.ai' => ['nullable'],
         ]);
     }
 
-    private function piece(Facet $facet): array
+    private function piece(Facet $facet, ?string $language = null): array
     {
-        $layer = $facet->latestVersion?->layer ?? [];
+        $layer = $facet->latestVersion?->catalogLayer($language) ?? [];
 
         return array_filter([
             'key' => $facet->handle,

@@ -1,0 +1,17 @@
+{
+  "id": "reports",
+  "name": "Reports",
+  "description": "Analysis report structure and Framework Cloud publication.",
+  "category": "reports",
+  "language": [
+    "r",
+    "python",
+    "stata"
+  ],
+  "layer": {
+    "skills": {
+      "report-structure": {},
+      "framework-reports": {}
+    }
+  }
+}

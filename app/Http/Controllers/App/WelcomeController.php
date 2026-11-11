@@ -5,6 +5,7 @@ namespace App\Http\Controllers\App;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Settings\DefaultsController;
 use App\Models\Blueprint;
+use App\Support\DefaultsConversion;
 use App\Support\ProjectDefaults;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,10 +15,10 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Guided setup: six questions that set real defaults every way of creating
- * a project honors (the Project defaults pages, the New project page, R,
- * Python, and fw). It starts after sign-up, can be skipped, and can be run
- * again from Project defaults.
+ * Guided setup: six questions whose answers become the default blueprint
+ * for the chosen language, which every way of creating a project honors
+ * (the New project page, R, Python, fw, and agents). It starts after
+ * sign-up and can be skipped.
  */
 class WelcomeController extends Controller
 {
@@ -108,6 +109,10 @@ class WelcomeController extends Controller
             'project_defaults' => ['language' => $validated['language'], 'ai_other' => (bool) ($validated['other_agents'] ?? false), 'hooks' => $hooks] + ($user->project_defaults ?? []),
             'setup_completed_at' => now(),
         ])->save();
+
+        // The answers become the language's default blueprint: Framework's
+        // when they match it, else the person's own
+        DefaultsConversion::applyGuidedSetup($user->fresh(), $validated['language']);
 
         return redirect()->route('dashboard')->with('status', 'setup-complete');
     }

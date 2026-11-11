@@ -9,14 +9,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /**
  * A skill in the shared library: a SKILL.md, plus optional files beside it,
  * that an AI assistant loads when its description matches the task. System
- * skills mirror the ones shipped with the framework R package, so facets
- * reference them as {package: true} rather than copying their text.
+ * skills include package bundles and Cloud-only instructions. Released
+ * package keys use {package: true}; other skills travel as versioned content.
  */
 class Skill extends Model
 {
@@ -84,16 +85,21 @@ class Skill extends Model
         return ! $this->language || in_array($language, $this->language, true);
     }
 
+    // Keep new keys inline until released clients ship them.
+    public const INLINE_PACKAGE_SKILLS = ['framework-cache', 'framework-databases', 'framework-publishing'];
+
     /**
-     * The entry this skill contributes to a layer's skills map. System skills
-     * point at the package's copy; everything else travels as a copy of its
-     * current version.
+     * A released package bundle is referenced by key for its language.
+     * Other skills carry their versioned content, bundle, and sync metadata.
      *
      * @return array<string, mixed>
      */
     public function layerEntry(?string $language = null): array
     {
-        if ($this->isSystem()) {
+        // Cloud-only skills travel inline. A package reference is valid only
+        // for a bundle shipped in the requested language.
+        $registry = File::json(database_path('seeders/masters/skill-bundles.json'));
+        if ($this->isSystem() && ! in_array($this->key, self::INLINE_PACKAGE_SKILLS, true) && isset($registry[$this->key][$language ?? 'r'])) {
             return ['package' => true];
         }
 

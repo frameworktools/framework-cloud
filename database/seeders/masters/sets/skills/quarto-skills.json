@@ -1,0 +1,15 @@
+{
+  "id": "quarto-skills",
+  "name": "Quarto",
+  "description": "Executable documents, references, and rendering.",
+  "category": "quarto",
+  "language": [
+    "r",
+    "python"
+  ],
+  "layer": {
+    "skills": {
+      "quarto-documents": {}
+    }
+  }
+}

@@ -58,7 +58,7 @@ class Library
             'name' => $facet->name,
             'kind' => $facet->kind,
             'category' => $facet->category,
-            'summary' => LayerSummary::of($version->layer),
+            'summary' => LayerSummary::of($version->catalogLayer()),
         ];
     }
 
@@ -84,7 +84,7 @@ class Library
             'editable' => $facet->isEditableBy($user),
             'version' => $latest?->version,
             'version_id' => $latest?->id,
-            'summary' => $latest ? LayerSummary::of($latest->layer) : [],
+            'summary' => $latest ? LayerSummary::of($latest->catalogLayer()) : [],
             'source_url' => $facet->source_url,
         ];
     }

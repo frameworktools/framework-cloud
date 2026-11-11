@@ -65,7 +65,7 @@ class ResearchWorkspaceTest extends TestCase
             ->where('nav', function ($nav) {
                 $links = collect($nav)->keyBy('label');
 
-                return $links->has('Default settings') && ! $links->has('Your artifacts')
+                return $links->has('Settings') && ! $links->has('Your artifacts')
                     && collect(['Artifacts', 'Collections', 'Reports'])->every(fn ($label) => $links[$label]['section'] === 'Your research');
             }));
     }

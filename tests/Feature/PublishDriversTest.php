@@ -6,9 +6,13 @@ use App\Models\Document;
 use App\Models\Project;
 use App\Models\User;
 use App\Support\ArtifactPublisher;
+use App\Support\DefaultsConversion;
+use App\Support\DefaultsPreview;
 use App\Support\Layer;
 use App\Support\ProjectDefaults;
 use App\Support\PublishingQuota;
+use App\Support\Resolver;
+use Database\Seeders\BlueprintSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -102,12 +106,18 @@ class PublishDriversTest extends TestCase
         $this->assertSame([], Layer::problems($bad, 'setting'));
     }
 
-    public function test_publishing_defaults_become_a_project_layer(): void
+    public function test_a_publishing_default_becomes_part_of_the_default_blueprint(): void
     {
+        $this->seed(BlueprintSeeder::class);
+        // The destination saved before blueprints held everything moves into the converted blueprint
         $user = User::factory()->create(['project_defaults' => ['publish_destination' => 'github']]);
-        $layer = ProjectDefaults::personalLayer(ProjectDefaults::for($user), 'python');
+        DefaultsConversion::convert($user);
+        $user = $user->fresh();
+        $layer = ProjectDefaults::blueprint($user, 'r')->latestVersion->layer;
         $this->assertSame(['default' => 'github', 'destinations' => ['github' => ['driver' => 'github']]], $layer['publish']);
-        $this->assertSame([], Layer::problems($layer, 'setting'));
-        $this->actingAs($user)->get('/settings/publishing')->assertInertia(fn (Assert $page) => $page->where('values.publish_destination', 'github'));
+        $this->assertSame([], Layer::problems($layer, 'blueprint'));
+        $this->assertSame('github', ProjectDefaults::for($user)['publish_destination']);
+        $spec = DefaultsPreview::merge((new Resolver($user))->resolve(['name' => 'Survey'])['envelope']['layers']);
+        $this->assertSame('github', $spec['publish']['default']);
     }
 }

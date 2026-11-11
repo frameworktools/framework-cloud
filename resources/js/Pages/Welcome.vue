@@ -89,7 +89,7 @@ const steps = computed(() => [
     ]),
     { key: 'git', title: 'Git version control' },
     { key: 'agents', title: 'Coding agents' },
-    { key: 'review', title: 'Default settings' },
+    { key: 'review', title: 'Default blueprint' },
 ]);
 const index = ref(restored?.index ?? 0);
 const step = computed(() => steps.value[Math.min(index.value, steps.value.length - 1)]);
@@ -233,14 +233,14 @@ const note = 'text-sm text-slate-600 dark:text-slate-400';
 </script>
 
 <template>
-    <Head title="Default settings" />
+    <Head title="Guided setup" />
 
     <AppLayout bleed>
         <div :class="[pageClass, 'flex flex-col gap-8']">
             <div>
                 <p class="text-sm text-slate-500 dark:text-slate-400">{{ step.key === 'review' ? 'Review' : `Step ${index + 1} of ${steps.length - 1}` }}</p>
                 <h1 class="mt-1 text-2xl font-semibold text-slate-900 dark:text-white">{{ step.title }}</h1>
-                <p v-if="index === 0" :class="note" class="mt-2">Your answers set the defaults for new projects. You can change them later in Default settings.</p>
+                <p v-if="index === 0" :class="note" class="mt-2">Your answers become the default blueprint for new projects in your language. You can change it later in Settings.</p>
             </div>
 
             <!-- One question at a time -->

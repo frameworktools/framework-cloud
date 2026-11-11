@@ -72,7 +72,7 @@ const menuFor = (item) => [
             <PageHeader title="Dashboard" description="Recent research and projects.">
                 <template #actions><UiButton href="/projects/create"><PlusIcon aria-hidden="true" />New project</UiButton></template>
             </PageHeader>
-            <UiCallout v-if="page.props.flash.status === 'setup-complete'" variant="success">Default settings saved.</UiCallout>
+            <UiCallout v-if="page.props.flash.status === 'setup-complete'" variant="success">Default blueprint saved.</UiCallout>
             <nav aria-label="Research overview" class="flex flex-wrap gap-x-8 gap-y-4 border-b border-slate-800/10 pb-5 dark:border-white/15">
                 <Link v-for="destination in destinations" :key="destination.key" :href="destination.href" class="flex items-baseline gap-2 text-sm text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white">
                     {{ destination.label }}<span class="font-mono text-base font-medium text-slate-900 dark:text-white">{{ counts[destination.key] }}</span>

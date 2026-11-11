@@ -33,7 +33,7 @@ class SkillReadingTest extends TestCase
         $this->assertStringContainsString('fw.scaffold()', $workflow->latestVersion->contentFor('python'));
         $this->assertStringNotContainsString('fw.scaffold()', $workflow->latestVersion->contentFor('r'));
         // The Python text is framework-py's own copy
-        $this->assertSame(file_get_contents(database_path('seeders/masters/skills/python/framework-workflow.md')), $workflow->latestVersion->contentFor('python'));
+        $this->assertSame(base64_decode(collect(json_decode(file_get_contents(database_path('seeders/masters/skill-bundles.json')), true)['framework-workflow']['python']['bundle'])->firstWhere('path', 'SKILL.md')['content']), $workflow->latestVersion->contentFor('python'));
         // People read a short summary; agents read the description
         $this->assertSame('Quick, accurate ggplot2 figures for understanding data.', $this->system('ggplot2-exploring')->summary);
         $this->assertNull(Skill::frontmatter("---\nname: x\ndescription: Use when.\n---\n", 'content')['summary']);
@@ -85,7 +85,7 @@ class SkillReadingTest extends TestCase
         $this->actingAs($user)->get('/skill-sets')->assertInertia(fn (Assert $page) => $page
             ->component('Pieces/SkillSets')
             ->where('language', 'python')
-            ->where('sets.0.skills', fn ($skills) => collect($skills)->pluck('name')->contains('Reading and saving data'))
+            ->where('sets.0.skills', fn ($skills) => collect($skills)->pluck('name')->contains('Framework: reading and saving data'))
             // Each language's description is its own
             ->where('sets.0.skills', fn ($skills) => str_contains(collect($skills)->firstWhere('key', 'framework-workflow')['descriptions']['python'], 'Python'))
             ->where('sets.0.skills.0.language', ['r', 'python'])
@@ -106,5 +106,22 @@ class SkillReadingTest extends TestCase
         $this->assertStringContainsString('# Tables', DefaultsPreview::merge($r['envelope']['layers'])['skills']['tables']['content']);
         // Framework's skills travel as the package's own copy, which is the language's text
         $this->assertSame(['package' => true], $this->system('framework-data')->layerEntry('python'));
+    }
+
+    public function test_cloud_only_system_skills_travel_inline_in_every_language(): void
+    {
+        $user = User::factory()->create();
+        foreach (['r', 'python', 'stata'] as $language) {
+            $resolved = (new Resolver($user))->resolve([
+                'name' => 'Writing', 'language' => $language, 'skills' => ['framework/writing'],
+            ]);
+            $entry = DefaultsPreview::merge($resolved['envelope']['layers'])['skills']['writing'];
+            $this->assertArrayNotHasKey('package', $entry);
+            $this->assertStringContainsString('name: writing', $entry['content']);
+            $this->assertSame('framework:writing', $entry['sync']['skill_id']);
+            $this->assertSame($language, $entry['sync']['variant']);
+            $this->assertSame($entry['content'], base64_decode(collect($entry['bundle'])->firstWhere('path', 'SKILL.md')['content']));
+        }
+        $this->assertSame(['package' => true], $this->system('framework-stata')->layerEntry('stata'));
     }
 }

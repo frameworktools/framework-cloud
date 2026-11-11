@@ -137,13 +137,13 @@ class ProjectLanguageTest extends TestCase
         $project->update(['language' => 'r']);
         $this->assertSame($envelope, ProjectLayers::for($project->fresh()));
 
-        // R projects keep the folders, and the owner's editor files and agents sit in their own layer
+        // R projects keep the folders, and Framework's scaffold settings, editor files, and agents sit in their own layer
         $project->update(['resolved' => null]);
         $layers = ProjectLayers::for($project->fresh())['layers'];
         $layer = end($layers)['layer'];
         $this->assertSame(['language' => 'r'], Arr::except($layer, ['tools']));
         $this->assertSame([
-            'scaffold' => ['ide' => 'positron', 'seed_on_scaffold' => true, 'seed' => '123', 'set_theme_on_scaffold' => false, 'ggplot_theme' => 'theme_minimal', 'source_all_functions' => true],
+            'scaffold' => ['ide' => 'vscode', 'seed_on_scaffold' => true, 'seed' => '123', 'set_theme_on_scaffold' => false, 'ggplot_theme' => 'theme_minimal', 'source_all_functions' => true],
             'ai' => ['assistants' => ['claude' => false, 'codex' => false, 'copilot' => false]],
         ], collect($layers)->firstWhere('kind', 'settings')['layer']);
         // With the spec's tools key on, every R tool is named on or off, and the workflow's are on

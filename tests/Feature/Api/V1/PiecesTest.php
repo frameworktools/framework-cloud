@@ -2,9 +2,11 @@
 
 namespace Tests\Feature\Api\V1;
 
+use App\Models\Blueprint;
 use App\Models\Facet;
 use App\Models\User;
 use App\Support\Layer;
+use App\Support\ProjectDefaults;
 use Database\Seeders\BlueprintSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -48,14 +50,14 @@ class PiecesTest extends TestCase
             ->assertJsonPath('skill_sets.1.skills', ['ggplot2-exploring', 'ggplot2-publishing'])
             ->assertJsonPath('skill_sets.1.packages', ['ggplot2']);
         $this->withToken($token)->getJson('/api/v1/package-sets')->assertOk()->assertJsonPath('package_sets.0.key', 'framework/tidy-core')->assertJsonPath('package_sets.1.key', 'framework/tidyverse-analysis')->assertJsonPath('package_sets.3.key', 'framework/python-data-analysis');
-        $this->withToken($token)->getJson('/api/v1/skills')->assertOk()->assertJsonCount(12, 'skills');
+        $this->withToken($token)->getJson('/api/v1/skills')->assertOk()->assertJsonCount(26, 'skills');
 
         $this->withToken($token)->getJson('/api/v1/blueprints')->assertOk()
             ->assertJsonPath('blueprints.0.structure', 'framework/project')
             ->assertJsonPath('blueprints.0.tools', ['uv'])
             ->assertJsonPath('blueprints.0.workflows', ['quarto', 'jupyter', 'scripts'])
             ->assertJsonPath('blueprints.2.workflows', ['quarto'])
-            ->assertJsonPath('blueprints.0.skill_sets', ['framework/framework', 'framework/ggplot2']);
+            ->assertJsonPath('blueprints.0.skill_sets', ['framework/framework', 'framework/visualization', 'framework/writing']);
     }
 
     public function test_resolving_a_blueprint_unchanged_matches_a_project_made_from_it(): void
@@ -66,8 +68,8 @@ class PiecesTest extends TestCase
             ->assertOk()->json();
 
         $this->assertSame([], Layer::envelopeProblems($envelope));
-        // Structure, pieces, the workflow and its tool, the blueprint, your defaults, and the project
-        $this->assertSame(['framework/project', 'framework/framework', 'framework/ggplot2', 'framework/workflow-quarto', 'framework/quarto', 'framework/project', 'your defaults', 'survey'], array_column($envelope['layers'], 'key'));
+        // Structure, pieces, the workflow and its tool, Framework's settings, the blueprint, and the project
+        $this->assertSame(['framework/project', 'framework/framework', 'framework/framework-r', 'framework/visualization', 'framework/visualization-r', 'framework/writing', 'framework/writing-r', 'framework/workflow-quarto', 'framework/quarto', 'framework/git', 'framework/git-r', 'framework/quarto-skills', 'framework/quarto-skills-r', 'framework defaults', 'framework/project', 'survey choices', 'survey'], array_column($envelope['layers'], 'key'));
         $this->assertSame(['key' => 'framework/project', 'version' => 1], $envelope['source']['blueprint']);
     }
 
@@ -262,8 +264,9 @@ class PiecesTest extends TestCase
             ->assertUnprocessable()->assertJsonValidationErrors('name');
     }
 
-    public function test_without_a_blueprint_the_users_defaults_apply(): void
+    public function test_without_a_blueprint_the_default_blueprint_applies(): void
     {
+        // Account defaults from before blueprints held everything no longer apply
         $user = User::factory()->create(['project_defaults' => [
             'package_sets' => ['framework/tidyverse-analysis'],
             'tools' => ['targets' => true],
@@ -271,27 +274,38 @@ class PiecesTest extends TestCase
         ]]);
         $token = $this->token($user);
 
-        $this->withToken($token)->getJson('/api/v1/defaults')->assertOk()
+        // The same shape as always, read from the default blueprints
+        $defaults = $this->withToken($token)->getJson('/api/v1/defaults')->assertOk()
             ->assertJsonPath('blueprint', 'framework/project')
-            ->assertJsonPath('package_sets', ['framework/tidyverse-analysis'])
-            ->assertJsonPath('settings.hooks', ['data_security']);
+            ->assertJsonPath('blueprints', ['r' => 'framework/project', 'python' => 'framework/project', 'stata' => 'framework/project'])
+            ->assertJsonPath('package_sets', [])
+            ->assertJsonPath('settings.hooks', [])
+            ->assertJsonPath('workflows', ['r' => 'quarto', 'python' => 'jupyter', 'stata' => 'scripts'])
+            ->json();
+        $this->assertSame(['publish_destination', 'blueprint', 'blueprints', 'language', 'workflows', 'rmarkdown', 'package_sets', 'skill_sets', 'packages', 'tools', 'settings'], array_keys($defaults));
+        $this->assertSame(['git', 'ai', 'hooks', 'ide', 'scaffold', 'agents', 'quarto'], array_keys($defaults['settings']));
+        $this->assertContains('dplyr', array_column($defaults['packages']['r'], 'name'));
 
         $envelope = $this->withToken($token)->postJson('/api/v1/resolve', ['name' => 'Survey'])->assertOk()->json();
         $keys = array_column($envelope['layers'], 'key');
         $this->assertSame('framework/project', $keys[0]);
-        $this->assertContains('framework/tidyverse-analysis', $keys);
-        $this->assertContains('framework/targets', $keys);
-        $this->assertTrue(collect($envelope['layers'])->firstWhere('kind', 'settings')['layer']['git']['hooks']['data_security']);
+        $this->assertNotContains('framework/tidyverse-analysis', $keys);
+        $this->assertNotContains('framework/targets', $keys);
+        $this->assertArrayHasKey('source', $envelope);
 
-        // Your pieces and settings come along with a chosen blueprint too
-        $layers = $this->withToken($token)->postJson('/api/v1/resolve', ['blueprint' => 'framework/course'])->json('layers');
-        $this->assertContains('framework/tidyverse-analysis', array_column($layers, 'key'));
-        $this->assertTrue(collect($layers)->firstWhere('kind', 'settings')['layer']['git']['hooks']['data_security']);
-
-        // Defaults equal to Framework's own leave a blueprint unchanged
-        $plain = User::factory()->create();
+        // A personal default blueprint brings its own sets, and the defaults describe it
+        $this->withToken($token)->postJson('/api/v1/blueprints', [
+            'name' => 'Survey work', 'language' => 'r', 'structure' => 'framework/project', 'package_sets' => ['framework/tidyverse-analysis'], 'settings' => ['hooks' => ['data_security']],
+        ])->assertCreated();
+        ProjectDefaults::setBlueprint($user, 'r', Blueprint::where('user_id', $user->id)->sole());
         $this->app['auth']->forgetGuards();
-        $this->assertArrayHasKey('source', $this->withToken($this->token($plain))->postJson('/api/v1/resolve', ['name' => 'X'])->json());
+        $this->withToken($token)->getJson('/api/v1/defaults')
+            ->assertJsonPath('blueprint', Blueprint::where('user_id', $user->id)->sole()->handle)
+            ->assertJsonPath('package_sets', ['framework/tidyverse-analysis'])
+            ->assertJsonPath('settings.hooks', ['data_security']);
+        $layers = $this->withToken($token)->postJson('/api/v1/resolve', ['name' => 'Survey'])->json('layers');
+        $this->assertContains('framework/tidyverse-analysis', array_column($layers, 'key'));
+        $this->assertTrue(collect($layers)->firstWhere('kind', 'blueprint')['layer']['git']['hooks']['data_security']);
     }
 
     public function test_with_the_spec_tools_key_on_layers_name_their_tools_and_layout(): void
@@ -341,7 +355,7 @@ class PiecesTest extends TestCase
 
         $bare = array_column($this->withToken($token)->postJson('/api/v1/resolve', ['name' => 'S', 'blueprint' => 'framework/bare', 'language' => 'python'])->json('layers'), 'key');
         // Python's workflow is Jupyter, which brings its kernel and Quarto for rendering
-        $this->assertSame(['framework/bare', 'framework/uv', 'framework/workflow-jupyter', 'framework/jupyter', 'framework/jupyter-python', 'framework/quarto', 'framework/bare', 'your defaults', 's'], $bare);
+        $this->assertSame(['framework/bare', 'framework/uv', 'framework/workflow-jupyter', 'framework/jupyter', 'framework/jupyter-python', 'framework/quarto', 'framework/git', 'framework/git-python', 'framework defaults', 'framework/bare', 's'], $bare);
     }
 
     public function test_sets_for_another_language_are_left_out(): void
@@ -391,16 +405,17 @@ class PiecesTest extends TestCase
         $this->withToken($project->issuePullToken())->getJson('/api/v1/tools')->assertForbidden();
     }
 
-    public function test_default_git_hooks_go_into_new_projects_that_use_git(): void
+    public function test_git_hooks_come_from_the_blueprint_and_the_project_choices(): void
     {
         $user = User::factory()->create(['project_defaults' => ['hooks' => ['data_security' => true, 'check_sensitive_dirs' => false]]]);
         $token = $this->token($user);
 
-        $layers = collect($this->withToken($token)->postJson('/api/v1/resolve', ['name' => 'S', 'blueprint' => 'framework/project'])->assertOk()->json('layers'));
-        $this->assertSame(['data_security' => true], $layers->firstWhere('kind', 'settings')['layer']['git']['hooks']);
-
-        $layers = collect($this->withToken($token)->postJson('/api/v1/resolve', ['name' => 'S', 'blueprint' => 'framework/project', 'settings' => ['git' => false]])->json('layers'));
-        $this->assertArrayNotHasKey('hooks', $layers->firstWhere('kind', 'settings')['layer']['git'] ?? []);
+        // The old account hooks don't apply
+        $spec = fn (array $choices) => collect($this->withToken($token)->postJson('/api/v1/resolve', ['name' => 'S', 'blueprint' => 'framework/project'] + $choices)->assertOk()->json('layers'))
+            ->reduce(fn (array $hooks, array $entry) => array_replace($hooks, $entry['layer']['git']['hooks'] ?? []), []);
+        $this->assertSame([], array_filter($spec([])));
+        $this->assertSame(['data_security' => true], array_filter($spec(['settings' => ['hooks' => ['data_security']]])));
+        $this->assertSame([], array_filter($spec(['settings' => ['git' => false, 'hooks' => ['data_security']]])));
     }
 
     public function test_skills_filter_by_language(): void

@@ -1,0 +1,67 @@
+{
+  "cleaning-data": [
+    "r",
+    "python",
+    "stata"
+  ],
+  "checking-data": [
+    "r",
+    "python",
+    "stata"
+  ],
+  "regression-models": [
+    "r",
+    "python",
+    "stata"
+  ],
+  "model-results": [
+    "r",
+    "python",
+    "stata"
+  ],
+  "matplotlib-publishing": [
+    "python"
+  ],
+  "stata-graphs-publishing": [
+    "stata"
+  ],
+  "report-structure": [
+    "r",
+    "python",
+    "stata"
+  ],
+  "quarto-documents": [
+    "r",
+    "python"
+  ],
+  "jupyter-notebooks": [
+    "r",
+    "python"
+  ],
+  "git-workflow": [
+    "r",
+    "python",
+    "stata"
+  ],
+  "identifiable-data": [
+    "r",
+    "python",
+    "stata"
+  ],
+  "matplotlib-exploring": [
+    "python"
+  ],
+  "stata-graphs": [
+    "stata"
+  ],
+  "framework-reports": [
+    "r",
+    "python",
+    "stata"
+  ],
+  "writing": [
+    "r",
+    "python",
+    "stata"
+  ]
+}
