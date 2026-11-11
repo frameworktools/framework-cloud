@@ -1,12 +1,12 @@
 ---
-name: analysis-writing
+name: writing
 description: Use when writing prose about a data analysis - results paragraphs, methods sections, notebook narrative, figure and table captions, report summaries, abstracts, or messages that explain findings. Covers reporting estimates with their uncertainty, matching claims to the design, naming variables and samples plainly, and the banned patterns that make analytic writing sound performed.
 metadata:
-  title: Writing up analyses
+  title: Writing
   summary: Plain, exact prose for results, methods, captions, and notebook narrative.
 ---
 
-# Writing up analyses
+# Writing
 
 Analytic writing tells a reader what was done, what was found, and how sure
 the analysis can be. Write plain declarative sentences and let the numbers

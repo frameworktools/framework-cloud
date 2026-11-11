@@ -75,7 +75,7 @@ class LibraryTest extends TestCase
         $this->assertSame(['stata'], Skill::whereNull('user_id')->where('key', 'stata-graphs')->value('language'));
         // The reports skill uses the API, so it is for every language
         $this->assertSame(['r', 'python', 'stata'], Skill::whereNull('user_id')->where('key', 'framework-reports')->value('language'));
-        $this->assertSame(['r', 'python', 'stata'], Skill::whereNull('user_id')->where('key', 'analysis-writing')->value('language'));
+        $this->assertSame(['r', 'python', 'stata'], Skill::whereNull('user_id')->where('key', 'writing')->value('language'));
         $this->assertSame(9, Blueprint::systemTypes()->count());
 
         $versions = FacetVersion::count() + BlueprintVersion::count() + SkillVersion::count();

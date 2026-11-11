@@ -129,7 +129,7 @@ class BlueprintSeeder extends Seeder
     private const SINGLE_LANGUAGE_SKILLS = ['matplotlib-exploring' => 'python', 'stata-graphs' => 'stata'];
 
     /** Skills that work the same in every language, such as the reports API one. */
-    private const EVERY_LANGUAGE_SKILLS = ['framework-reports', 'analysis-writing'];
+    private const EVERY_LANGUAGE_SKILLS = ['framework-reports', 'writing'];
 
     private function seedSkills(string $dir): void
     {
