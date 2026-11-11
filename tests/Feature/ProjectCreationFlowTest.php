@@ -64,6 +64,28 @@ class ProjectCreationFlowTest extends TestCase
         $this->assertFalse($choices['git']['hooks']['check_notebook_outputs']);
     }
 
+    public function test_a_project_and_a_blueprint_can_use_scripts_with_no_notebooks(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $scripts = ['workflow' => 'scripts', 'notebook_format' => null, 'tools' => ['renv' => false]] + $this->choices();
+
+        $this->actingAs($user)->postJson('/projects/preview', $scripts)->assertOk();
+        $this->actingAs($user)->post('/projects', $scripts + ['name' => 'Pipeline'])->assertSessionHasNoErrors();
+        $layers = collect(ProjectLayers::for($user->projects()->sole())['layers']);
+        $this->assertTrue($layers->contains('key', 'framework/workflow-scripts'));
+        // No Quarto at all: no documents, manuscript, or slides
+        $tools = $layers->last()['layer']['tools'];
+        $this->assertFalse($tools['quarto'] || $tools['quarto_manuscript'] || $tools['quarto_slides']);
+
+        $this->actingAs($user)->post('/blueprints', [
+            'name' => 'Script pipeline', 'visibility' => 'private', 'language' => 'python', 'workflow' => 'scripts', 'notebook_format' => null,
+            'structure' => 'framework/project', 'tools' => [], 'package_sets' => [], 'skill_sets' => [], 'skills' => [],
+            'settings' => ['sensitive' => false, 'ai' => true, 'git' => true],
+        ])->assertSessionHasNoErrors();
+        $version = Blueprint::where('user_id', $user->id)->sole()->latestVersion;
+        $this->assertSame(['scripts'], $version->compatibility()['workflows']);
+    }
+
     public function test_the_page_seeds_each_blueprints_settings(): void
     {
         $user = User::factory()->create();

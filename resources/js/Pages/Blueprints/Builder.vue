@@ -34,7 +34,7 @@ const form = useForm({
     description: props.blueprint?.description ?? '',
     visibility: props.blueprint?.visibility ?? 'private',
     language: initialLanguage,
-    notebook_format: props.start?.notebook_format ?? (initialWorkflow === 'jupyter' ? 'jupyter' : defaultFormat(initialLanguage)),
+    notebook_format: props.start?.notebook_format ?? (initialWorkflow === 'jupyter' ? 'jupyter' : initialWorkflow === 'scripts' && initialLanguage !== 'stata' ? 'scripts' : defaultFormat(initialLanguage)),
     agents: [...(props.start?.agents ?? props.agents ?? ['other'])],
     structure: props.start?.structure ?? 'framework/project',
     tools: { ...(props.start?.tools ?? {}), targets: false },
@@ -64,17 +64,24 @@ const save = () => {
         const target = errorSection(errors);
         if (target !== activeSection.value) router.get(sectionUrl(target), {}, { preserveState: true });
     } };
-    form.transform(data => ({ ...data, workflow: workflow.value, notebook_format: data.language === 'stata' ? null : data.notebook_format }));
+    form.transform(data => ({ ...data, workflow: workflow.value, notebook_format: sentFormat(data) }));
     return editing.value ? form.put(`/blueprints/${props.blueprint.id}`, options) : form.post('/blueprints', options);
 };
 const saved = computed(() => page.props.flash.status === 'blueprint-saved');
 
-const workflow = computed(() => form.language === 'stata' ? 'scripts' : form.notebook_format === 'jupyter' ? 'jupyter' : 'quarto');
+const workflow = computed(() => form.language === 'stata' || form.notebook_format === 'scripts' ? 'scripts' : form.notebook_format === 'jupyter' ? 'jupyter' : 'quarto');
+// Scripts is a workflow, not a notebook format, so the request sends no format for it
+const sentFormat = data => (data.language === 'stata' || data.notebook_format === 'scripts' ? null : data.notebook_format);
 const notebookOptions = computed(() => [
     { value: 'quarto', label: 'Quarto', description: 'Documents in .qmd files.' },
     ...(form.language === 'r' ? [{ value: 'rmarkdown', label: 'R Markdown', description: 'Documents in .Rmd files, rendered with Quarto.' }] : []),
     { value: 'jupyter', label: 'Jupyter', description: `Notebooks in .ipynb files with ${form.language === 'r' ? 'IRkernel' : 'ipykernel'}.` },
+    { value: 'scripts', label: 'Scripts', description: `Plain ${form.language === 'r' ? '.R' : '.py'} files. No notebooks.` },
 ]);
+// Scripts leave out Quarto's manuscript and slides
+watch(() => form.notebook_format, format => {
+    if (format === 'scripts') for (const key of ['quarto_manuscript', 'quarto_slides']) form.tools[key] = false;
+});
 // The Jupyter notebook format brings Jupyter, so it can't be turned off
 const requiredTools = computed(() => (form.language !== 'stata' && form.notebook_format === 'jupyter' ? { jupyter: 'The Jupyter notebook format includes it' } : {}));
 const notebookTools = computed(() => props.catalog.tools.filter(tool => ['quarto_manuscript', 'quarto_slides'].includes(tool.key)));
@@ -104,7 +111,7 @@ watch(() => form.language, (language) => {
 // The files and folders a project would get, for one language and workflow it supports
 const page = usePage();
 const previewKey = computed(() => JSON.stringify({
-    language: form.language, agents: form.agents, workflow: workflow.value, notebook_format: form.language === 'stata' ? null : form.notebook_format, structure: form.structure, tools: form.tools,
+    language: form.language, agents: form.agents, workflow: workflow.value, notebook_format: sentFormat(form), structure: form.structure, tools: form.tools,
     package_sets: form.package_sets, package_overrides: form.package_overrides, package_auto_attach: form.package_auto_attach, skill_sets: form.skill_sets, skills: form.skills, excluded_skills: form.excluded_skills, settings: form.settings, extra_yaml: form.extra_yaml, ide: form.ide,
 }));
 const preview = ref(null);
@@ -155,7 +162,8 @@ const sectionUrl = section => {
     url.hash = '';
     return url.pathname + url.search;
 };
-const navigation = computed(() => items.map(item => ({
+// Scripts have no Quarto documents, so no Quarto settings
+const navigation = computed(() => items.filter(item => item.anchor !== 'quarto' || workflow.value !== 'scripts').map(item => ({
     label: item.label, href: sectionUrl(item.anchor), preserveState: true, preserveScroll: false, exact: true,
     current: activeSection.value === item.anchor,
 })));
@@ -182,7 +190,7 @@ const navigation = computed(() => items.map(item => ({
                 <p v-if="form.language === 'stata'" class="text-sm text-slate-500 dark:text-slate-400">Stata projects use .do scripts. No notebook setup is needed.</p>
                 <template v-else>
                     <UiRadioCards v-model="form.notebook_format" name="blueprint-notebook" legend="Notebook format" hide-legend :options="notebookOptions" />
-                    <UiSwitch v-for="tool in notebookTools" :key="tool.key" v-model="form.tools[tool.key]" :label="tool.name" :description="tool.description" />
+                    <UiSwitch v-for="tool in notebookTools" v-show="form.notebook_format !== 'scripts'" :key="tool.key" v-model="form.tools[tool.key]" :label="tool.name" :description="tool.description" />
                 </template>
                 <p v-if="form.errors.workflow || form.errors.workflows || form.errors.notebook_format" class="text-xs text-red-600 dark:text-red-400">{{ form.errors.workflow || form.errors.workflows || form.errors.notebook_format }}</p>
             </UiPanel>

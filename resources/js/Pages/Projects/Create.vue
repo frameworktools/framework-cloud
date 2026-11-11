@@ -32,7 +32,8 @@ const githubReady = computed(() => props.github.enabled && props.github.login &&
 const sections = SECTIONS.filter((section) => !['name', 'basics', 'language'].includes(section.key));
 // Sections this page draws itself; the shared editor draws the rest
 const editorDraws = (key) => !PAGE_SECTIONS.includes(key);
-const tabs = [{ key: 'basics', label: 'Basics' }, ...sections];
+// Scripts have no Quarto documents, so no Quarto tab
+const tabs = computed(() => [{ key: 'basics', label: 'Basics' }, ...sections.filter((section) => section.key !== 'quarto' || form.workflow !== 'scripts')]);
 
 // Blueprints and languages
 const allLanguages = ['r', 'python', 'stata'];
@@ -162,10 +163,16 @@ const notebookOptions = computed(() => [
     { value: 'quarto', label: 'Quarto', description: 'Documents in .qmd files.' },
     ...(form.language === 'r' ? [{ value: 'rmarkdown', label: 'R Markdown', description: 'Documents in .Rmd files, rendered with Quarto.' }] : []),
     { value: 'jupyter', label: 'Jupyter', description: `Notebooks in .ipynb files with ${form.language === 'r' ? 'IRkernel' : 'ipykernel'}.` },
+    { value: 'scripts', label: 'Scripts', description: `Plain ${form.language === 'r' ? '.R' : '.py'} files. No notebooks.` },
 ]);
+// Scripts is a workflow with no notebook format, and leaves out Quarto's manuscript and slides
 const notebookFormat = computed({
-    get: () => form.notebook_format ?? '',
-    set: (format) => { form.notebook_format = format; form.workflow = format === 'jupyter' ? 'jupyter' : 'quarto'; },
+    get: () => (form.workflow === 'scripts' ? 'scripts' : form.notebook_format ?? ''),
+    set: (format) => {
+        form.workflow = format === 'scripts' ? 'scripts' : format === 'jupyter' ? 'jupyter' : 'quarto';
+        form.notebook_format = format === 'scripts' ? null : format;
+        if (format === 'scripts') for (const key of ['quarto_manuscript', 'quarto_slides']) form.tools[key] = false;
+    },
 });
 const notebookTools = computed(() => props.catalog.tools.filter((tool) => ['quarto_manuscript', 'quarto_slides'].includes(tool.key)));
 const environmentTool = computed(() => props.catalog.tools.find((tool) => tool.key === ({ r: 'renv', python: 'uv' })[form.language]));
@@ -311,7 +318,7 @@ const newBlueprint = (data) => ({
 
 // Steps and tabs, each with its own URL
 const stage = computed(() => (['start', 'project', 'review'].includes(props.stage) ? props.stage : 'start'));
-const tab = computed(() => (tabs.some((t) => t.key === props.tab) ? props.tab : 'basics'));
+const tab = computed(() => (tabs.value.some((t) => t.key === props.tab) ? props.tab : 'basics'));
 const urlFor = (to, toTab = null) => {
     const url = new URL(page.url, window.location.origin);
     url.searchParams.set('stage', to);
@@ -327,23 +334,23 @@ const go = (to, toTab = null) => router.get(urlFor(to, toTab), {}, { preserveSta
 const navigation = computed(() => [
     { label: 'Start', href: urlFor('start'), preserveState: true, preserveScroll: false, current: stage.value === 'start' },
     { label: 'Project', href: urlFor('project', 'basics'), preserveState: true, preserveScroll: false, current: false, quiet: true },
-    ...tabs.map((t) => ({ label: t.label, href: urlFor('project', t.key), preserveState: true, preserveScroll: false, indent: true, current: stage.value === 'project' && tab.value === t.key })),
+    ...tabs.value.map((t) => ({ label: t.label, href: urlFor('project', t.key), preserveState: true, preserveScroll: false, indent: true, current: stage.value === 'project' && tab.value === t.key })),
     { label: 'Review', href: urlFor('review'), preserveState: true, preserveScroll: false, current: stage.value === 'review' },
 ]);
 const next = () => {
     if (stage.value === 'start') return go('project', 'basics');
     if (stage.value === 'project') {
-        const at = tabs.findIndex((t) => t.key === tab.value);
-        return at < tabs.length - 1 ? go('project', tabs[at + 1].key) : go('review');
+        const at = tabs.value.findIndex((t) => t.key === tab.value);
+        return at < tabs.value.length - 1 ? go('project', tabs.value[at + 1].key) : go('review');
     }
     return create();
 };
 const back = () => {
-    if (stage.value === 'review') return go('project', tabs.at(-1).key);
-    const at = tabs.findIndex((t) => t.key === tab.value);
-    return at > 0 ? go('project', tabs[at - 1].key) : go('start');
+    if (stage.value === 'review') return go('project', tabs.value.at(-1).key);
+    const at = tabs.value.findIndex((t) => t.key === tab.value);
+    return at > 0 ? go('project', tabs.value[at - 1].key) : go('start');
 };
-const nextLabel = computed(() => (stage.value === 'review' ? submitLabel.value : stage.value === 'project' && tab.value === tabs.at(-1).key ? 'Review' : 'Continue'));
+const nextLabel = computed(() => (stage.value === 'review' ? submitLabel.value : stage.value === 'project' && tab.value === tabs.value.at(-1).key ? 'Review' : 'Continue'));
 
 // A validation error opens the step and tab with the field
 const errorPlace = (field) => {
@@ -352,7 +359,7 @@ const errorPlace = (field) => {
     if (['destination', 'github', 'new_blueprint'].includes(top)) return ['review'];
     if (['name', 'description', 'extra_yaml'].includes(top)) return ['project', 'basics'];
     const target = errorSection(field);
-    return target && tabs.some((t) => t.key === target) ? ['project', target] : ['review'];
+    return target && tabs.value.some((t) => t.key === target) ? ['project', target] : ['review'];
 };
 const create = () => form
     .transform((data) => ({
@@ -465,10 +472,9 @@ const submitDisabled = computed(() => form.processing || (stage.value === 'revie
                 <template v-else>
                     <UiPanel v-if="tab === 'notebooks' && !editorDraws('notebooks')" flush title="Notebook format" class="max-w-2xl">
                         <p v-if="stata" class="text-sm text-slate-500 dark:text-slate-400">Stata projects use .do scripts. No notebook setup is needed.</p>
-                        <p v-else-if="form.workflow === 'scripts'" class="text-sm text-slate-500 dark:text-slate-400">This project uses scripts only, as the blueprint sets it up.</p>
                         <template v-else>
                             <UiRadioCards v-model="notebookFormat" name="project-notebook" legend="Notebook format" hide-legend :options="notebookOptions" />
-                            <UiSwitch v-for="t in notebookTools" :key="t.key" v-model="form.tools[t.key]" :label="t.name" :description="t.description" />
+                            <UiSwitch v-for="t in notebookTools" v-show="form.workflow !== 'scripts'" :key="t.key" v-model="form.tools[t.key]" :label="t.name" :description="t.description" />
                         </template>
                         <p v-if="form.errors.workflow || form.errors.notebook_format" class="text-xs text-red-600 dark:text-red-400">{{ form.errors.workflow || form.errors.notebook_format }}</p>
                     </UiPanel>
