@@ -163,7 +163,6 @@ const notebookOptions = computed(() => [
     { value: 'quarto', label: 'Quarto', description: 'Documents in .qmd files.' },
     ...(form.language === 'r' ? [{ value: 'rmarkdown', label: 'R Markdown', description: 'Documents in .Rmd files, rendered with Quarto.' }] : []),
     { value: 'jupyter', label: 'Jupyter', description: `Notebooks in .ipynb files with ${form.language === 'r' ? 'IRkernel' : 'ipykernel'}.` },
-    { value: 'scripts', label: 'Scripts', description: `Plain ${form.language === 'r' ? '.R' : '.py'} files. No notebooks.` },
 ]);
 // Scripts is a workflow with no notebook format, and leaves out Quarto's manuscript and slides
 const notebookFormat = computed({
@@ -175,6 +174,13 @@ const notebookFormat = computed({
     },
 });
 const notebookTools = computed(() => props.catalog.tools.filter((tool) => ['quarto_manuscript', 'quarto_slides'].includes(tool.key)));
+// Without notebooks a project has plain scripts; turning them back on restores the last format
+const lastFormat = ref(null);
+watch(() => form.notebook_format, (format) => { if (format) lastFormat.value = format; }, { immediate: true });
+const useNotebooks = computed({
+    get: () => form.workflow !== 'scripts',
+    set: (on) => { notebookFormat.value = on ? (lastFormat.value ?? (form.language === 'python' ? 'jupyter' : 'quarto')) : 'scripts'; },
+});
 const environmentTool = computed(() => props.catalog.tools.find((tool) => tool.key === ({ r: 'renv', python: 'uv' })[form.language]));
 const hooks = [
     { key: 'data_security', label: 'Secret detection', description: 'Stops commits that contain passwords, keys, or other secrets.' },
@@ -473,8 +479,9 @@ const submitDisabled = computed(() => form.processing || (stage.value === 'revie
                     <UiPanel v-if="tab === 'notebooks' && !editorDraws('notebooks')" flush title="Notebook format" class="max-w-2xl">
                         <p v-if="stata" class="text-sm text-slate-500 dark:text-slate-400">Stata projects use .do scripts. No notebook setup is needed.</p>
                         <template v-else>
-                            <UiRadioCards v-model="notebookFormat" name="project-notebook" legend="Notebook format" hide-legend :options="notebookOptions" />
-                            <UiSwitch v-for="t in notebookTools" v-show="form.workflow !== 'scripts'" :key="t.key" v-model="form.tools[t.key]" :label="t.name" :description="t.description" />
+                            <UiSwitch v-model="useNotebooks" label="Use notebooks" :description="`Off: plain ${form.language === 'r' ? '.R' : '.py'} scripts, with no notebooks or Quarto.`" />
+                            <UiRadioCards v-if="useNotebooks" v-model="notebookFormat" name="project-notebook" legend="Notebook format" hide-legend :options="notebookOptions" />
+                            <UiSwitch v-for="t in notebookTools" v-show="useNotebooks" :key="t.key" v-model="form.tools[t.key]" :label="t.name" :description="t.description" />
                         </template>
                         <p v-if="form.errors.workflow || form.errors.notebook_format" class="text-xs text-red-600 dark:text-red-400">{{ form.errors.workflow || form.errors.notebook_format }}</p>
                     </UiPanel>

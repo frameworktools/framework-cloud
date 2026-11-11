@@ -76,8 +76,14 @@ const notebookOptions = computed(() => [
     { value: 'quarto', label: 'Quarto', description: 'Documents in .qmd files.' },
     ...(form.language === 'r' ? [{ value: 'rmarkdown', label: 'R Markdown', description: 'Documents in .Rmd files, rendered with Quarto.' }] : []),
     { value: 'jupyter', label: 'Jupyter', description: `Notebooks in .ipynb files with ${form.language === 'r' ? 'IRkernel' : 'ipykernel'}.` },
-    { value: 'scripts', label: 'Scripts', description: `Plain ${form.language === 'r' ? '.R' : '.py'} files. No notebooks.` },
 ]);
+// Without notebooks a project has plain scripts; turning them back on restores the last format
+const lastFormat = ref(form.notebook_format === 'scripts' ? null : form.notebook_format);
+watch(() => form.notebook_format, format => { if (format && format !== 'scripts') lastFormat.value = format; });
+const useNotebooks = computed({
+    get: () => form.notebook_format !== 'scripts',
+    set: on => { form.notebook_format = on ? (lastFormat.value ?? defaultFormat(form.language)) : 'scripts'; },
+});
 // Scripts leave out Quarto's manuscript and slides
 watch(() => form.notebook_format, format => {
     if (format === 'scripts') for (const key of ['quarto_manuscript', 'quarto_slides']) form.tools[key] = false;
@@ -189,8 +195,11 @@ const navigation = computed(() => items.filter(item => item.anchor !== 'quarto' 
             <UiPanel v-if="activeSection === 'notebooks'" flush title="Notebook format" class="max-w-2xl">
                 <p v-if="form.language === 'stata'" class="text-sm text-slate-500 dark:text-slate-400">Stata projects use .do scripts. No notebook setup is needed.</p>
                 <template v-else>
-                    <UiRadioCards v-model="form.notebook_format" name="blueprint-notebook" legend="Notebook format" hide-legend :options="notebookOptions" />
-                    <UiSwitch v-for="tool in notebookTools" v-show="form.notebook_format !== 'scripts'" :key="tool.key" v-model="form.tools[tool.key]" :label="tool.name" :description="tool.description" />
+                    <UiSwitch v-model="useNotebooks" label="Use notebooks" :description="`Off: plain ${form.language === 'r' ? '.R' : '.py'} scripts, with no notebooks or Quarto.`" />
+                    <template v-if="useNotebooks">
+                        <UiRadioCards v-model="form.notebook_format" name="blueprint-notebook" legend="Notebook format" hide-legend :options="notebookOptions" />
+                        <UiSwitch v-for="tool in notebookTools" :key="tool.key" v-model="form.tools[tool.key]" :label="tool.name" :description="tool.description" />
+                    </template>
                 </template>
                 <p v-if="form.errors.workflow || form.errors.workflows || form.errors.notebook_format" class="text-xs text-red-600 dark:text-red-400">{{ form.errors.workflow || form.errors.workflows || form.errors.notebook_format }}</p>
             </UiPanel>
