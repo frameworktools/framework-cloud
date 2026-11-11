@@ -53,8 +53,9 @@ import UiSelect from '@/Components/UiSelect.vue';
 import UiToggle from '@/Components/UiToggle.vue';
 import SettingGroup from '@/Components/SettingGroup.vue';
 import SettingRow from '@/Components/SettingRow.vue';
+import ThemeSwatch from '@/Components/ThemeSwatch.vue';
 import { typeFits } from '@/library.js';
-import { editorOptions, editorsOf, highlightLabel, ideOf, themeLabel } from '@/project-settings.js';
+import { editorOptions, editorsOf, highlightLabel, htmlThemeColors, ideOf, slideThemeColors, themeLabel } from '@/project-settings.js';
 
 // The pieces of a project, chosen one by one: a structure, tools, package
 // sets, skills, and settings. Edits the given form's fields in place.
@@ -248,9 +249,12 @@ const choiceClass = (on) => on
                 <p class="text-sm text-slate-500 dark:text-slate-400">Notebooks and documents rendered to HTML.</p>
                 <SettingGroup title="Appearance">
                     <SettingRow v-slot="{ id, describedby }" label="Theme" description="Colors and fonts for the page." more="Quarto's HTML themes come from Bootswatch." :example="{ href: 'https://bootswatch.com/', label: 'See the themes' }">
-                        <select :id="id" v-model="form.quarto.html.theme" :aria-describedby="describedby" :class="rowSelect">
-                            <option v-for="t in quartoChoices['html.theme']" :key="t" :value="t">{{ themeLabel(t) }}</option>
-                        </select>
+                        <span class="flex items-center gap-2">
+                            <ThemeSwatch :colors="htmlThemeColors[form.quarto.html.theme]" />
+                            <select :id="id" v-model="form.quarto.html.theme" :aria-describedby="describedby" :class="rowSelect">
+                                <option v-for="t in quartoChoices['html.theme']" :key="t" :value="t">{{ themeLabel(t) }}</option>
+                            </select>
+                        </span>
                     </SettingRow>
                     <SettingRow v-slot="{ id, describedby }" label="Syntax highlighting" description="Colors for code." more="The styles come from Pandoc, which Quarto uses to highlight code." :example="{ href: 'https://www.garrickadenbuie.com/blog/pandoc-syntax-highlighting-examples/', label: 'See each style' }">
                         <select :id="id" v-model="form.quarto.html.highlight_style" :aria-describedby="describedby" :class="rowSelect">
@@ -285,9 +289,12 @@ const choiceClass = (on) => on
                 <p class="text-sm text-slate-500 dark:text-slate-400">Presentations rendered with RevealJS.</p>
                 <SettingGroup title="Appearance">
                     <SettingRow v-slot="{ id, describedby }" label="Theme" description="Colors and fonts for the slides." more="Quarto's slide themes are the reveal.js themes." :example="{ href: 'https://revealjs.com/themes/', label: 'See the themes' }">
-                        <select :id="id" v-model="form.quarto.revealjs.theme" :aria-describedby="describedby" :class="rowSelect">
-                            <option v-for="t in quartoChoices['revealjs.theme']" :key="t" :value="t">{{ themeLabel(t) }}</option>
-                        </select>
+                        <span class="flex items-center gap-2">
+                            <ThemeSwatch :colors="slideThemeColors[form.quarto.revealjs.theme]" />
+                            <select :id="id" v-model="form.quarto.revealjs.theme" :aria-describedby="describedby" :class="rowSelect">
+                                <option v-for="t in quartoChoices['revealjs.theme']" :key="t" :value="t">{{ themeLabel(t) }}</option>
+                            </select>
+                        </span>
                     </SettingRow>
                     <SettingRow v-slot="{ id, describedby }" label="Syntax highlighting" description="Colors for code." more="The styles come from Pandoc, which Quarto uses to highlight code." :example="{ href: 'https://www.garrickadenbuie.com/blog/pandoc-syntax-highlighting-examples/', label: 'See each style' }">
                         <select :id="id" v-model="form.quarto.revealjs.highlight_style" :aria-describedby="describedby" :class="rowSelect">
