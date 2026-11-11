@@ -19,7 +19,7 @@ const props = defineProps({
 const view = ref('read');
 const back = computed(() => `/${props.from}?language=${props.language}`);
 const backLabel = computed(() => (props.from === 'skill-sets' ? 'Skill sets' : 'Skills'));
-const switchTo = (language) => router.get(`/skills/${props.skill.id}`, { language, from: props.from }, { preserveScroll: true, replace: true });
+const switchTo = (language) => router.get(`/skills/${props.skill.id}`, { language, from: props.from }, { preserveScroll: true, preserveState: true, replace: true });
 
 const copied = ref(false);
 const copy = async () => {
@@ -48,6 +48,16 @@ const pill = (on) => on
                 <ArrowLeftIcon class="size-4" />{{ backLabel }}
             </Link>
 
+            <!-- A skill with its own text per language shows the one a project in that language gets; the description below follows it -->
+            <div v-if="variants.length > 1" class="flex flex-wrap items-center gap-x-4 gap-y-2">
+                <div role="radiogroup" aria-label="Language" class="inline-flex gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-900">
+                    <button v-for="l in variants" :key="l" type="button" role="radio" :aria-checked="language === l" class="rounded-md px-3 py-1 text-sm font-medium transition" :class="pill(language === l)" @click="switchTo(l)">
+                        {{ languageNames[l] }}
+                    </button>
+                </div>
+                <span class="text-xs text-slate-500 dark:text-slate-400">{{ languageNames[language] }} project instructions</span>
+            </div>
+
             <header class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div class="min-w-0 max-w-[70ch]">
                     <h1 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{{ skill.name }}</h1>
@@ -75,13 +85,6 @@ const pill = (on) => on
                         {{ v === 'read' ? 'Read' : 'Source' }}
                     </button>
                 </div>
-                <!-- A skill with its own text per language shows the one a project in that language gets -->
-                <div v-if="variants.length > 1" role="radiogroup" aria-label="Language" class="inline-flex gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-900">
-                    <button v-for="l in variants" :key="l" type="button" role="radio" :aria-checked="language === l" class="rounded-md px-3 py-1 text-sm font-medium transition" :class="pill(language === l)" @click="switchTo(l)">
-                        {{ languageNames[l] }}
-                    </button>
-                </div>
-                <span v-if="variants.length > 1" class="text-xs text-slate-500 dark:text-slate-400">{{ languageNames[language] }} project instructions</span>
                 <button type="button" class="ml-auto inline-flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white" @click="copy">
                     <component :is="copied ? CheckIcon : ClipboardDocumentIcon" class="size-4" />{{ copied ? 'Copied' : 'Copy source' }}
                 </button>
