@@ -26,6 +26,7 @@ class SkillTags
         'matplotlib-exploring' => ['visualization', 'exploration'],
         'stata-graphs' => ['visualization', 'exploration'],
         'framework-reports' => ['framework', 'publishing'],
+        'analysis-writing' => ['prose', 'publication'],
     ];
 
     public static function seed(): void

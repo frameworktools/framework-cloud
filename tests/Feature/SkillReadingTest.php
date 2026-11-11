@@ -81,7 +81,7 @@ class SkillReadingTest extends TestCase
     {
         $user = User::factory()->create(['email_verified_at' => now(), 'project_defaults' => ['language' => 'python']]);
 
-        $this->actingAs($user)->get('/skills')->assertInertia(fn (Assert $page) => $page->where('language', 'python')->where('skills.0.language', ['r', 'python']));
+        $this->actingAs($user)->get('/skills')->assertInertia(fn (Assert $page) => $page->where('language', 'python')->where('skills', fn ($skills) => collect($skills)->firstWhere('key', 'framework-data')['language'] === ['r', 'python']));
         $this->actingAs($user)->get('/skill-sets')->assertInertia(fn (Assert $page) => $page
             ->component('Pieces/SkillSets')
             ->where('language', 'python')
