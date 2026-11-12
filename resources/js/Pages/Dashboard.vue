@@ -63,8 +63,8 @@ packageVersion("framework")`;
 const signInInfo = 'Opens a browser to approve this computer. It stays signed in. Scripts and jobs that can\'t wait for a browser use a token.';
 const highlighting = { r: 'r', python: 'python', stata: 'stata', fw: 'bash' };
 const installs = [
-    { key: 'latest', label: 'Latest (recommended)', cmd: githubInstall, info: 'Installs the newest Framework from GitHub. Adds remotes and httr2 first if they are missing. Restart R after updating.' },
-    { key: 'cran', label: 'CRAN', cmd: cranInstall, info: 'Installs the CRAN release, with httr2 for signing in. CRAN can lag behind GitHub.' },
+    { key: 'latest', label: 'Latest (recommended)', cmd: githubInstall, info: 'We recommend Latest. It installs the newest Framework from GitHub. We release to CRAN at most every two weeks or so, out of respect for the CRAN maintainers\' time, so CRAN can lag behind. Adds remotes and httr2 first if they are missing. Restart R after updating.' },
+    { key: 'cran', label: 'CRAN', cmd: cranInstall, info: 'Installs the CRAN release, with httr2 for signing in. We release to CRAN at most every two weeks or so, out of respect for the CRAN maintainers\' time, so it can lag behind Latest from GitHub.' },
 ];
 const installFrom = ref('latest');
 // Quick commands open or closed, remembered in this browser
