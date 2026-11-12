@@ -213,13 +213,12 @@ class ProjectDefaults
     public const PROJECTS_DIR_HEADER = 'Framework-Projects-Dir';
 
     /**
-     * A path as a header value: UTF-8, with % and every byte outside
-     * printable ASCII percent-encoded, so ~/code stays ~/code. Clients
-     * percent-decode it.
+     * A path as a header value: percent-encoded UTF-8, with / and ~ kept
+     * readable, so ~/code stays ~/code. Clients percent-decode it.
      */
     public static function headerValue(string $dir): string
     {
-        return (string) preg_replace_callback('/[^\x20-\x24\x26-\x7E]/', fn (array $m) => sprintf('%%%02X', ord($m[0])), $dir);
+        return str_replace('%2F', '/', rawurlencode($dir));
     }
 
     /** Save the projects folder in the synced settings. Null or blank removes it. */

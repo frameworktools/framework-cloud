@@ -58,20 +58,26 @@ class ProjectLayersTest extends TestCase
         $token = $this->project($owner)->issuePullToken();
 
         // Unset: no header
-        $this->withToken($token)->getJson('/api/v1/projects/pull')->assertOk()->assertHeaderMissing('Framework-Projects-Dir');
+        $before = $this->withToken($token)->getJson('/api/v1/projects/pull')->assertOk()->assertHeaderMissing('Framework-Projects-Dir')->json();
 
         ProjectDefaults::setProjectsDir($owner, '~/code');
         $response = $this->withToken($token)->getJson('/api/v1/projects/pull')->assertOk()->assertHeader('Framework-Projects-Dir', '~/code');
-        // Not in the body: layers.v1 allows no extra keys, and the body becomes .framework/layers.json
-        $this->assertArrayNotHasKey('projects_dir', $response->json());
+        // The envelope is unchanged: layers.v1 allows no extra keys, and the body becomes .framework/layers.json
+        $this->assertSame($before, $response->json());
         $this->assertStringNotContainsString('~/code', $response->getContent());
         $this->assertSame([], Layer::envelopeProblems($response->json()));
 
-        // Non-ASCII and % are percent-encoded UTF-8
+        // Percent-encoded UTF-8, with / and ~ readable
         ProjectDefaults::setProjectsDir($owner, '~/Études 100%');
         $header = $this->withToken($token)->getJson('/api/v1/projects/pull')->headers->get('Framework-Projects-Dir');
-        $this->assertSame('~/%C3%89tudes 100%25', $header);
+        $this->assertSame('~/%C3%89tudes%20100%25', $header);
         $this->assertSame('~/Études 100%', rawurldecode($header));
+        ProjectDefaults::setProjectsDir($owner, 'C:\\Users\\ada\\code');
+        $this->withToken($token)->getJson('/api/v1/projects/pull')->assertHeader('Framework-Projects-Dir', 'C%3A%5CUsers%5Cada%5Ccode');
+
+        // Removing it removes the header
+        ProjectDefaults::setProjectsDir($owner, null);
+        $this->withToken($token)->getJson('/api/v1/projects/pull')->assertHeaderMissing('Framework-Projects-Dir');
     }
 
     public function test_pull_refuses_a_user_token(): void
