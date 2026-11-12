@@ -39,7 +39,7 @@ const clients = [
     { value: 'r', label: 'R' },
     { value: 'python', label: 'Python' },
     { value: 'stata', label: 'Stata' },
-    { value: 'fw', label: 'Terminal' },
+    { value: 'fw', label: 'CLI' },
 ];
 const signIn = computed(() => ({
     r: { cmd: `framework::cloud_login(${named.value ? `url = "${server.value}"` : ''})` },
@@ -62,10 +62,48 @@ for (pkg in c("framework", "httr2")) {
 packageVersion("framework")`;
 const signInInfo = 'Opens a browser to approve this computer. It stays signed in. Scripts and jobs that can\'t wait for a browser use a token.';
 const highlighting = { r: 'r', python: 'python', stata: 'stata', fw: 'bash' };
-const installs = [
-    { key: 'latest', label: 'Latest (recommended)', cmd: githubInstall, info: 'We recommend Latest. It installs the newest Framework from GitHub. We release to CRAN at most every two weeks or so, out of respect for the CRAN maintainers\' time, so CRAN can lag behind. Adds remotes and httr2 first if they are missing. Restart R after updating.' },
-    { key: 'cran', label: 'CRAN', cmd: cranInstall, info: 'Installs the CRAN release, with httr2 for signing in. We release to CRAN at most every two weeks or so, out of respect for the CRAN maintainers\' time, so it can lag behind Latest from GitHub.' },
-];
+const lag = 'We release to CRAN at most every two weeks or so, out of respect for the CRAN maintainers\' time';
+const scaffoldNote = 'starts with scaffold(), which loads the project\'s packages and functions.';
+// Each client's install choices (pills when there are several), its sign-in,
+// and what it can create. Commands carry their own language for highlighting.
+const quick = computed(() => ({
+    r: {
+        installs: [
+            { key: 'latest', label: 'Latest (recommended)', cmd: githubInstall, language: 'r', info: `We recommend Latest. It installs the newest Framework from GitHub. ${lag}, so CRAN can lag behind. Adds remotes and httr2 first if they are missing. Restart R after updating.` },
+            { key: 'cran', label: 'CRAN', cmd: cranInstall, language: 'r', info: `Installs the CRAN release, with httr2 for signing in. ${lag}, so it can lag behind Latest from GitHub.` },
+        ],
+        create: { title: 'Create resources in a project', note: 'Run these inside a project. They fill in your defaults.', commands: [
+            { label: 'New notebook', cmd: 'framework::make_notebook("analysis")', language: 'r', info: `Fills in your defaults: the project's notebook format, notebooks folder, and author. The notebook ${scaffoldNote}` },
+            { label: 'New script', cmd: 'framework::make_script("clean-data")', language: 'r', info: `Fills in your defaults: the project's scripts folder and author. The script ${scaffoldNote}` },
+        ] },
+    },
+    python: {
+        installs: [
+            { key: 'latest', label: 'Latest (recommended)', cmd: 'pip install --upgrade "framework-py @ git+https://github.com/frameworktools/framework-py"', language: 'bash', info: 'We recommend Latest. It installs the newest framework-py from GitHub. PyPI releases come less often and can lag behind. Run it in a terminal, or use uv add with the same requirement.' },
+            { key: 'pypi', label: 'PyPI', cmd: 'pip install --upgrade framework-py', language: 'bash', info: 'Installs the PyPI release. It can lag behind Latest from GitHub. Run it in a terminal, or use uv add framework-py.' },
+        ],
+        create: { title: 'Create resources in a project', note: 'Run these inside a project. They fill in your defaults.', commands: [
+            { label: 'New notebook', cmd: 'import framework\nframework.make_notebook("analysis")', language: 'python', info: `Fills in your defaults: the project's notebook format, notebooks folder, and author. The notebook ${scaffoldNote}` },
+            { label: 'New script', cmd: 'import framework\nframework.make_script("clean_data")', language: 'python', info: `Fills in your defaults: the project's scripts folder and author. The script ${scaffoldNote}` },
+        ] },
+    },
+    stata: {
+        installs: [
+            { key: 'github', label: 'GitHub', cmd: 'net install framework, from("https://raw.githubusercontent.com/frameworktools/framework-stata/main") replace', language: 'stata', info: 'Installs the Framework commands for Stata 14 or newer from GitHub. Run it again to update. Signing in needs curl, which ships with macOS, Linux, and Windows 10 or later.' },
+        ],
+        create: { title: 'Create a project', note: 'Stata projects are made with the fw command-line tool.', commands: [
+            { label: 'New Stata project', cmd: 'fw new my-study --lang stata', language: 'bash', info: 'Run it in a terminal. It asks where to create the project folder. Install fw from the CLI tab.' },
+        ] },
+    },
+    fw: {
+        installs: [
+            { key: 'brew', label: 'Homebrew', cmd: 'brew install frameworktools/tap/fw', language: 'bash', info: 'Installs fw on macOS with Homebrew. On Linux, clusters, and Windows, download it from the framework-cli releases on GitHub and put it on your PATH.', link: { href: 'https://github.com/frameworktools/framework-cli/releases', label: 'Releases' } },
+        ],
+        create: { title: 'Create a project', note: 'fw makes R, Python, and Stata projects.', commands: [
+            { label: 'New project', cmd: 'fw new my-study', language: 'bash', info: 'Asks for the language and blueprint if you don\'t give them, then where to create the project folder.' },
+        ] },
+    },
+}[client.value]));
 const installFrom = ref('latest');
 // Quick commands open or closed, remembered in this browser
 const quickKey = 'fw.dashboard.quickCommandsCollapsed';
@@ -74,11 +112,7 @@ const toggleQuick = () => {
     quickCollapsed.value = !quickCollapsed.value;
     localStorage.setItem(quickKey, quickCollapsed.value ? '1' : '0');
 };
-const install = computed(() => installs.find((i) => i.key === installFrom.value));
-const createCommands = [
-    { label: 'New notebook', cmd: 'framework::make_notebook("analysis")', info: 'Fills in your defaults: the project\'s notebook format, notebooks folder, and author. The notebook starts with scaffold(), which loads the project\'s packages and functions.' },
-    { label: 'New script', cmd: 'framework::make_script("clean-data")', info: 'Fills in your defaults: the project\'s scripts folder and author. The script starts with scaffold(), which loads the project\'s packages and functions.' },
-];
+const install = computed(() => quick.value.installs.find((i) => i.key === installFrom.value) ?? quick.value.installs[0]);
 const pill = (on) => (on
     ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200 dark:bg-slate-800 dark:text-white dark:ring-slate-700'
     : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white');
@@ -120,16 +154,16 @@ const menuFor = (item) => [
                 <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Run these on your computer.</p>
                 <UiTabs v-model="client" :tabs="clients" label="Client" class="mt-3 max-w-2xl" />
                 <div class="mt-4 flex flex-col gap-6">
-                    <div v-if="client === 'r'" class="min-w-0">
+                    <div class="min-w-0">
                         <h3 class="mb-2 flex items-center gap-1.5 text-sm font-medium text-slate-800 dark:text-slate-200">
                             Install
-                            <InfoPopover :label="`installing from ${install.label}`">{{ install.info }}</InfoPopover>
+                            <InfoPopover :label="`installing from ${install.label}`">{{ install.info }}<template v-if="install.link"> <UiLink :href="install.link.href" external>{{ install.link.label }}</UiLink></template></InfoPopover>
                         </h3>
-                        <div role="radiogroup" aria-label="Install from" class="mb-2 inline-flex gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-900">
-                            <button v-for="option in installs" :key="option.key" type="button" role="radio" :aria-checked="installFrom === option.key"
+                        <div v-if="quick.installs.length > 1" role="radiogroup" aria-label="Install from" class="mb-2 inline-flex gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-900">
+                            <button v-for="option in quick.installs" :key="option.key" type="button" role="radio" :aria-checked="installFrom === option.key"
                                 class="rounded-md px-2.5 py-0.5 text-xs font-medium transition" :class="pill(installFrom === option.key)" @click="installFrom = option.key">{{ option.label }}</button>
                         </div>
-                        <CopyBlock :value="install.cmd" :label="`install from ${install.label}`" language="r" />
+                        <CopyBlock :value="install.cmd" :label="`install from ${install.label}`" :language="install.language" />
                     </div>
                     <div class="min-w-0">
                         <h3 class="mb-2 flex items-center gap-1.5 text-sm font-medium text-slate-800 dark:text-slate-200">
@@ -138,16 +172,16 @@ const menuFor = (item) => [
                         </h3>
                         <CopyBlock :value="signIn.cmd" label="sign in" :language="highlighting[client]" />
                     </div>
-                    <div v-if="client === 'r'" class="min-w-0">
-                        <h3 class="text-sm font-medium text-slate-800 dark:text-slate-200">Create resources in a project</h3>
-                        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Run these inside a project. They fill in your defaults.</p>
+                    <div class="min-w-0">
+                        <h3 class="text-sm font-medium text-slate-800 dark:text-slate-200">{{ quick.create.title }}</h3>
+                        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ quick.create.note }}</p>
                         <div class="mt-3 grid gap-x-6 gap-y-5 lg:grid-cols-2">
-                            <div v-for="command in createCommands" :key="command.label" class="min-w-0">
+                            <div v-for="command in quick.create.commands" :key="`${client}-${command.label}`" class="min-w-0">
                                 <h4 class="mb-2 flex items-center gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-300">
                                     {{ command.label }}
                                     <InfoPopover :label="command.label">{{ command.info }}</InfoPopover>
                                 </h4>
-                                <CopyBlock :value="command.cmd" :label="command.label.toLowerCase()" language="r" />
+                                <CopyBlock :value="command.cmd" :label="command.label.toLowerCase()" :language="command.language" />
                             </div>
                         </div>
                     </div>
