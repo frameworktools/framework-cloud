@@ -78,6 +78,12 @@ const quick = computed(() => ({
             { label: 'New notebook', cmd: 'framework::make_notebook("analysis")', language: 'r', info: `Fills in your defaults: the project's notebook format, notebooks folder, and author. The notebook ${scaffoldNote}` },
             { label: 'New script', cmd: 'framework::make_script("clean-data")', language: 'r', info: `Fills in your defaults: the project's scripts folder and author. The script ${scaffoldNote}` },
         ] },
+        sync: { title: 'Sync with Framework Cloud', note: null, commands: [
+            { label: 'Pull setup', cmd: 'framework::pull_setup()', language: 'r', info: 'Brings the project up to date with its setup on Framework Cloud: packages and skills. It lists the changes and asks before applying them. Local edits are kept unless you ask to overwrite them.' },
+            { label: 'Push setup', cmd: 'framework::push_setup()', language: 'r', info: 'Sends this project\'s package list to Framework Cloud. It lists the changes and warns before replacing the setup there. If Cloud changed since your last pull, pull first.' },
+            { label: 'Pull skills', cmd: 'framework::pull_skills()', language: 'r', info: 'Updates the project\'s AI skills to their latest versions and adds any new ones. Skills you edited are kept.' },
+            { label: 'Push skills', cmd: 'framework::push_skills()', language: 'r', info: 'Sends skills you edited back to Framework Cloud as new versions. It warns first, because the new version replaces the skill wherever it\'s attached.' },
+        ] },
     },
     python: {
         installs: [
@@ -88,6 +94,12 @@ const quick = computed(() => ({
             { label: 'New notebook', cmd: 'import framework\nframework.make_notebook("analysis")', language: 'python', info: `Fills in your defaults: the project's notebook format, notebooks folder, and author. The notebook ${scaffoldNote}` },
             { label: 'New script', cmd: 'import framework\nframework.make_script("clean_data")', language: 'python', info: `Fills in your defaults: the project's scripts folder and author. The script ${scaffoldNote}` },
         ] },
+        sync: { title: 'Sync with Framework Cloud', note: null, commands: [
+            { label: 'Pull setup', cmd: 'import framework\nframework.pull_setup()', language: 'python', info: 'Brings the project up to date with its setup on Framework Cloud: packages and skills. It lists the changes and asks before applying them. Local edits are kept unless you ask to overwrite them.' },
+            { label: 'Push setup', cmd: 'import framework\nframework.push_setup()', language: 'python', info: 'Sends this project\'s package list to Framework Cloud. It lists the changes and warns before replacing the setup there. If Cloud changed since your last pull, pull first.' },
+            { label: 'Pull skills', cmd: 'framework.pull_skills()', language: 'python', info: 'Updates the project\'s AI skills to their latest versions and adds any new ones. Skills you edited are kept.' },
+            { label: 'Push skills', cmd: 'framework.push_skills()', language: 'python', info: 'Sends skills you edited back to Framework Cloud as new versions. It warns first, because the new version replaces the skill wherever it\'s attached.' },
+        ] },
     },
     stata: {
         installs: [
@@ -96,6 +108,10 @@ const quick = computed(() => ({
         create: { title: 'Create a project', note: 'Stata projects are made with the fw command-line tool.', commands: [
             { label: 'New Stata project', cmd: 'fw new my-study --lang stata', language: 'bash', info: 'Run it in a terminal. It asks where to create the project folder. Install fw from the CLI tab.' },
         ] },
+        sync: { title: 'Sync with Framework Cloud', note: 'Run these with fw in a terminal, inside the project folder.', commands: [
+            { label: 'Pull skills', cmd: 'fw skills pull', language: 'bash', info: 'Updates the project\'s AI skills to their latest versions and adds any new ones. Skills you edited are kept.' },
+            { label: 'Push skills', cmd: 'fw skills push', language: 'bash', info: 'Sends skills you edited back to Framework Cloud as new versions. It warns first, because the new version replaces the skill wherever it\'s attached.' },
+        ] },
     },
     fw: {
         installs: [
@@ -103,6 +119,12 @@ const quick = computed(() => ({
         ],
         create: { title: 'Create a project', note: 'fw makes R, Python, and Stata projects.', commands: [
             { label: 'New project', cmd: 'fw new my-study', language: 'bash', info: 'Asks for the language and blueprint if you don\'t give them, then where to create the project folder.' },
+        ] },
+        sync: { title: 'Sync with Framework Cloud', note: 'Run these inside the project folder.', commands: [
+            { label: 'Pull setup', cmd: 'fw setup pull', language: 'bash', info: 'Brings the project up to date with its setup on Framework Cloud: packages and skills. It lists the changes and asks before applying them. Local edits are kept unless you ask to overwrite them.' },
+            { label: 'Push setup', cmd: 'fw setup push', language: 'bash', info: 'Sends this project\'s package list to Framework Cloud. It lists the changes and warns before replacing the setup there. If Cloud changed since your last pull, pull first. Stata projects have no packages to push.' },
+            { label: 'Pull skills', cmd: 'fw skills pull', language: 'bash', info: 'Updates the project\'s AI skills to their latest versions and adds any new ones. Skills you edited are kept.' },
+            { label: 'Push skills', cmd: 'fw skills push', language: 'bash', info: 'Sends skills you edited back to Framework Cloud as new versions. It warns first, because the new version replaces the skill wherever it\'s attached.' },
         ] },
     },
 }[client.value]));
@@ -191,11 +213,11 @@ const menuFor = (item) => [
                         </h3>
                         <CopyBlock :value="signIn.cmd" label="sign in" :language="highlighting[client]" />
                     </div>
-                    <div class="min-w-0">
-                        <h3 class="text-sm font-medium text-slate-800 dark:text-slate-200">{{ quick.create.title }}</h3>
-                        <p v-if="quick.create.note" class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ quick.create.note }}</p>
+                    <div v-for="group in [quick.create, quick.sync]" :key="`${client}-${group.title}`" class="min-w-0">
+                        <h3 class="text-sm font-medium text-slate-800 dark:text-slate-200">{{ group.title }}</h3>
+                        <p v-if="group.note" class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ group.note }}</p>
                         <div class="mt-3 grid gap-x-6 gap-y-5 lg:grid-cols-2">
-                            <div v-for="command in quick.create.commands" :key="`${client}-${command.label}`" class="min-w-0">
+                            <div v-for="command in group.commands" :key="`${client}-${command.label}`" class="min-w-0">
                                 <h4 class="mb-2 flex items-center gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-300">
                                     {{ command.label }}
                                     <InfoPopover :label="command.label">{{ command.info }}</InfoPopover>
