@@ -42,3 +42,7 @@ The final action publishes the private default blueprint and clears the progress
 Regression checks cover refresh, session replacement, intermediate validation failure, account isolation, final cleanup, and exact blueprint field restoration. A browser test resumed the profile and language steps after refresh and restored the blueprint name, notebook choice, and current section in a new browser context. No page errors occurred.
 
 The author form now shows one empty affiliation row automatically. Entirely empty rows are ignored when saving; partially completed affiliations still require an institution name. Validation and normalization apply in both onboarding and Personal data. The focused onboarding, blueprint builder, and account settings run passed 36 tests with 831 assertions. The browser pass verified the empty row, continued without filling it, and resumed progress in fresh browser contexts.
+
+## Dark secondary buttons
+
+Secondary ghost buttons now use a slate-900 background, sky-200 text, and a slate-800 hover background in dark mode. This gives Remove, Add affiliation, Back, and Skip setup a visible surface. Light mode keeps its existing appearance. The frontend build passed. Browser checks confirmed the rendered background and text colors for all four controls, and light, dark, and mobile screenshots were inspected without page errors or horizontal overflow.
