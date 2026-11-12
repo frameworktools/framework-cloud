@@ -72,7 +72,7 @@ class Library
             'handle' => $facet->handle,
             'kind' => $facet->kind,
             'name' => $facet->name,
-            'description' => $facet->description,
+            'description' => $facet->isSystem() && $facet->kind === 'package_set' && $facet->key === 'tidyverse-analysis' ? 'The tidyverse packages most analyses use.' : $facet->description,
             'requirements' => $facet->requirements,
             'category' => $facet->category,
             'question' => $facet->question,

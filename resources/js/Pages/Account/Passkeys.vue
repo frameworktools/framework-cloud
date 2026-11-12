@@ -90,7 +90,7 @@ const remove = async (id) => {
         <div v-if="supported" class="flex flex-col gap-3">
             <p v-if="error" class="text-sm text-red-600 dark:text-red-400">{{ error }}</p>
             <div class="flex items-end gap-3">
-                <div class="w-56"><UiInput v-model="name" label="Name (optional)" placeholder="e.g. MacBook Touch ID" /></div>
+                <div class="w-56"><UiInput v-model="name" label="Name (optional)" placeholder="MacBook Touch ID" /></div>
                 <UiButton :disabled="busy" @click="addPasskey">
                     {{ busy ? 'Waiting for your device…' : 'Add a passkey' }}
                 </UiButton>

@@ -14,17 +14,19 @@ import UiSwitch from '@/Components/UiSwitch.vue';
  */
 const props = defineProps({
     language: { type: String, required: true }, // r | python
+    attachment: { type: Boolean, default: true },
     presets: { type: Array, default: () => [] }, // package sets that fit this language
 });
 const rows = defineModel({ type: Array, default: () => [] });
 
+const manual = computed(() => props.language === 'stata');
 const r = computed(() => props.language === 'r');
 const sources = computed(() => (r.value
     ? [{ value: 'cran', label: 'CRAN' }, { value: 'github', label: 'GitHub' }, { value: 'bioc', label: 'Bioconductor' }]
     : [{ value: 'pypi', label: 'PyPI' }, { value: 'github', label: 'GitHub' }]));
 
 // New packages are installed but not attached until the person turns it on
-const blank = () => ({ name: '', source: r.value ? 'cran' : 'pypi', auto_attach: false, version: null, repo: null });
+const blank = () => ({ name: '', source: manual.value ? 'manual' : r.value ? 'cran' : 'pypi', auto_attach: false, version: null, repo: null });
 const update = (i, patch) => {
     rows.value = rows.value.map((row, j) => (j === i ? { ...row, ...patch } : row));
 };
@@ -79,11 +81,11 @@ const field = 'w-full rounded-md border border-slate-300 bg-white px-3 py-2 text
             </div>
         </details>
 
-        <div class="divide-y divide-slate-200 rounded-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-700">
+        <div class="divide-y divide-slate-800/10 dark:divide-white/15">
             <!-- Column labels, for the rows below -->
-            <div class="hidden gap-3 px-4 py-2 text-xs font-medium text-slate-500 dark:text-slate-400 sm:grid" :class="r ? 'grid-cols-[1fr_9rem_7rem_2rem]' : 'grid-cols-[1fr_9rem_7rem_2rem]'">
+            <div v-if="!manual" class="hidden gap-3 py-2 text-xs font-medium text-slate-500 dark:text-slate-400 sm:grid grid-cols-[minmax(0,1fr)_9rem_9rem_2rem]">
                 <span>Package</span><span>Source</span>
-                <span v-if="r" class="flex items-center gap-1">
+                <span v-if="r && attachment" class="flex items-center gap-1">
                     Auto-attach
                     <!-- A popover on hover or focus -->
                     <span class="group/info relative">
@@ -98,24 +100,21 @@ const field = 'w-full rounded-md border border-slate-300 bg-white px-3 py-2 text
                 </span>
                 <span v-else>Version</span><span class="sr-only">Remove</span>
             </div>
-            <div v-for="(row, i) in rows" :key="i" class="grid items-center gap-3 px-4 py-2.5 sm:grid-cols-[1fr_9rem_7rem_2rem]">
-                <input
-                    v-if="row.source === 'github'" :value="row.repo ?? ''" type="text" placeholder="owner/repo" spellcheck="false" aria-label="Repository"
-                    :class="[field, 'font-mono']" @input="setRepo(i, $event.target.value.trim())"
-                >
+            <div v-for="(row, i) in rows" :key="i" class="grid items-center gap-3 py-3" :class="manual ? 'grid-cols-[minmax(0,1fr)_2rem]' : 'sm:grid-cols-[minmax(0,1fr)_9rem_9rem_2rem]'">
+                <input v-if="manual" :value="row.name" type="text" placeholder="Package name" spellcheck="false" aria-label="Package name" :class="[field, 'font-mono']" @input="update(i, { name: $event.target.value.trim() })">
                 <PackageNameInput
-                    v-else :source="row.source" :model-value="row.name" aria-label="Package"
-                    :placeholder="{ cran: 'Search CRAN…', bioc: 'Search Bioconductor…', pypi: 'Name on PyPI' }[row.source]"
-                    @update:model-value="(name) => update(i, { name })"
+                    v-else :source="row.source" :language="language" :model-value="row.source === 'github' ? row.repo ?? '' : row.name" aria-label="Package"
+                    :placeholder="{ cran: 'Search CRAN…', bioc: 'Search Bioconductor…', pypi: 'Name on PyPI', github: 'Search GitHub or owner/repo…' }[row.source]"
+                    @update:model-value="(name) => row.source === 'github' ? setRepo(i, name) : update(i, { name })"
                 />
-                <select :value="row.source" aria-label="Source" :class="field" @change="setSource(i, $event.target.value)">
+                <select v-if="!manual" :value="row.source" aria-label="Source" :class="field" @change="setSource(i, $event.target.value)">
                     <option v-for="s in sources" :key="s.value" :value="s.value">{{ s.label }}</option>
                 </select>
-                <div v-if="r" class="[&>label]:w-fit" :title="'Call library() when scaffold() runs'">
+                <div v-if="r && attachment" class="[&>label]:w-fit" :title="'Call library() when scaffold() runs'">
                     <UiSwitch :model-value="row.auto_attach" :sr-label="`Auto-attach ${row.name || 'this package'}`" @update:model-value="(on) => update(i, { auto_attach: on })" />
                 </div>
                 <input
-                    v-else :value="row.version ?? ''" type="text" placeholder="any" spellcheck="false" aria-label="Version"
+                    v-else-if="!manual" :value="row.version ?? ''" type="text" placeholder="Any version" spellcheck="false" aria-label="Version"
                     :class="[field, 'font-mono']" @input="update(i, { version: $event.target.value.trim() || null })"
                 >
                 <button
@@ -124,10 +123,10 @@ const field = 'w-full rounded-md border border-slate-300 bg-white px-3 py-2 text
                     @click="remove(i)"
                 ><XMarkIcon class="size-5" /></button>
             </div>
-            <p v-if="!rows.length" class="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">{{ r ? 'No default R packages. Add a package to get started.' : 'No default Python packages. Add a package to get started.' }}</p>
+            <p v-if="!rows.length" class="py-3 text-sm text-slate-500 dark:text-slate-400">No packages. Add a package to start.</p>
         </div>
         <div><UiButton size="sm" variant="outline" @click="add">Add package</UiButton></div>
-        <p v-if="r" class="text-sm text-slate-500 dark:text-slate-400">Auto-attach calls <code class="font-mono text-xs">library()</code> when <code class="font-mono text-xs">scaffold()</code> runs.</p>
+        <p v-if="r && attachment" class="text-sm text-slate-500 dark:text-slate-400">Auto-attach calls <code class="font-mono text-xs">library()</code> when <code class="font-mono text-xs">scaffold()</code> runs.</p>
 
     </div>
 </template>

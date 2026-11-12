@@ -540,7 +540,7 @@ class ProjectDefaults
             'source' => $row['source'],
             'version' => $row['version'] ?? null,
             'repo' => $row['source'] === 'github' ? ($row['repo'] ?? null) : null,
-            'auto_attach' => (bool) $row['auto_attach'],
+            'auto_attach' => (bool) ($row['auto_attach'] ?? false),
         ], fn ($value) => $value !== null)])->all();
     }
 }

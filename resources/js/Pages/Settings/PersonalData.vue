@@ -3,10 +3,8 @@ import { computed } from 'vue';
 import { useForm, usePage } from '@inertiajs/vue3';
 import SettingsLayout from '@/Layouts/SettingsLayout.vue';
 import UiButton from '@/Components/UiButton.vue';
-import UiInput from '@/Components/UiInput.vue';
+import AuthorFields from '@/Components/AuthorFields.vue';
 import UiPanel from '@/Components/UiPanel.vue';
-import UiSelect from '@/Components/UiSelect.vue';
-import { countryOptions } from '@/countries.js';
 
 const props = defineProps({ author: Object });
 
@@ -15,15 +13,6 @@ const saved = computed(() => page.props.flash.status === 'author-updated');
 
 const form = useForm({ ...props.author, affiliations: props.author.affiliations.map((a) => ({ ...a })) });
 const save = () => form.patch('/settings/personal-data', { preserveScroll: true });
-
-const MAX = 5;
-const blank = () => ({ name: '', department: '', city: '', country: '' });
-const add = () => form.affiliations.push(blank());
-const remove = (index) => form.affiliations.splice(index, 1);
-const move = (index, by) => {
-    const [row] = form.affiliations.splice(index, 1);
-    form.affiliations.splice(index + by, 0, row);
-};
 
 // How Quarto front matter will show it
 const yaml = computed(() => {
@@ -55,39 +44,7 @@ const yaml = computed(() => {
         :dirty="form.isDirty"
     >
         <form id="settings-form" class="flex flex-col gap-8" @submit.prevent="save">
-            <UiPanel title="Author details">
-                <UiInput v-model="form.name" label="Name" description="Name for bylines." required :error="form.errors.name" />
-                <UiInput v-model="form.email" label="Public email" type="email" description="Shown on your work and in new projects' author settings. Your sign-in email stays private unless you enter it here." :error="form.errors.email" />
-                <div class="grid gap-4 sm:grid-cols-2">
-                    <UiInput v-model="form.url" label="Website" type="url" placeholder="https://" :error="form.errors.url" />
-                    <UiInput v-model="form.orcid" label="ORCID iD" placeholder="0000-0002-1825-0097" :error="form.errors.orcid" />
-                </div>
-            </UiPanel>
-
-            <UiPanel title="Affiliations" description="The first one is your main affiliation.">
-                <div
-                    v-for="(affiliation, index) in form.affiliations" :key="index"
-                    class="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
-                >
-                    <div class="flex items-center justify-between gap-2">
-                        <span class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ index === 0 ? 'Main' : `Affiliation ${index + 1}` }}</span>
-                        <div class="flex gap-1">
-                            <UiButton v-if="index > 0" variant="ghost" size="sm" @click="move(index, -1)">Move up</UiButton>
-                            <UiButton variant="ghost" size="sm" @click="remove(index)">Remove</UiButton>
-                        </div>
-                    </div>
-                    <UiInput v-model="affiliation.name" label="Institution" placeholder="e.g. Example University" :error="form.errors[`affiliations.${index}.name`]" />
-                    <UiInput v-model="affiliation.department" label="Department (optional)" />
-                    <div class="grid gap-4 sm:grid-cols-2">
-                        <UiInput v-model="affiliation.city" label="City (optional)" />
-                        <UiSelect v-model="affiliation.country" label="Country (optional)" :options="countryOptions(affiliation.country)" />
-                    </div>
-                </div>
-
-                <div>
-                    <UiButton v-if="form.affiliations.length < MAX" variant="outline" size="sm" @click="add">Add affiliation</UiButton>
-                </div>
-            </UiPanel>
+            <AuthorFields :form="form" />
 
             <UiPanel title="Quarto front matter" description="Author metadata for new notebooks.">
                 <pre class="overflow-x-auto rounded-lg border border-slate-200 bg-white p-4 font-mono text-xs leading-5 text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">{{ yaml }}</pre>

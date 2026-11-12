@@ -464,13 +464,13 @@ const submitDisabled = computed(() => form.processing || (stage.value === 'revie
 
                 <UiPanel v-if="tab === 'basics'" flush id="name" title="Basics" class="max-w-2xl scroll-mt-6">
                     <div>
-                        <UiInput v-model="form.name" label="Project name" placeholder="e.g. NHANES Study" required :error="form.errors.name" />
+                        <UiInput v-model="form.name" label="Project name" placeholder="NHANES study" required :error="form.errors.name" />
                         <p v-if="slug" class="mt-1.5 text-xs text-slate-500 dark:text-slate-400">Folder name: <span class="font-mono">{{ slug }}</span></p>
                     </div>
-                    <UiTextarea v-model="form.description" label="Description (optional)" :rows="3" :error="form.errors.description" />
+                    <UiTextarea v-model="form.description" label="Description (optional)" placeholder="Study purpose, data, and planned analysis" :rows="3" :error="form.errors.description" />
                     <UiTextarea
                         v-if="form.extra_yaml || form.errors.extra_yaml" v-model="form.extra_yaml" code :rows="6"
-                        label="Extra settings (YAML)" description="Settings from the blueprint beyond its choices, applied on top of them."
+                        label="Extra settings (YAML)" :placeholder="'scaffold:\n  seed: 123'" description="Settings from the blueprint beyond its choices, applied on top of them."
                         :error="form.errors.extra_yaml"
                     />
                 </UiPanel>
@@ -525,6 +525,10 @@ const submitDisabled = computed(() => form.processing || (stage.value === 'revie
 
             <!-- Review: what the project gets, where it goes, and creating it -->
             <template v-else>
+                <UiCallout v-if="current?.missing_render_directory" variant="warning" heading="Quarto render directory" class="max-w-3xl">
+                    <p>The render directory <code class="font-mono">{{ current.missing_render_directory }}/</code> will not be created during project setup. Add it to the project structure if you need it before rendering.</p>
+                    <div><UiButton size="sm" variant="ghost" @click="go('project', 'structure')">Review project structure</UiButton></div>
+                </UiCallout>
                 <UiPanel id="summary" title="Summary" flush class="max-w-3xl scroll-mt-6">
                     <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-6 gap-y-2 text-sm">
                         <dt class="text-slate-500 dark:text-slate-400">Name</dt>
@@ -617,7 +621,7 @@ const submitDisabled = computed(() => form.processing || (stage.value === 'revie
 
                 <UiPanel id="save-blueprint" title="Blueprint copy" flush class="max-w-2xl scroll-mt-6">
                     <UiSwitch v-model="form.save_blueprint" label="Save as blueprint" description="Also saves these choices as a private blueprint for later projects." />
-                    <UiInput v-if="form.save_blueprint" v-model="blueprintName" label="Blueprint name" placeholder="e.g. Survey analysis" :error="form.errors['new_blueprint.name']" />
+                    <UiInput v-if="form.save_blueprint" v-model="blueprintName" label="Blueprint name" placeholder="Survey analysis" :error="form.errors['new_blueprint.name']" />
                     <p v-if="blueprintError && !form.errors['new_blueprint.name']" class="text-sm text-red-600 dark:text-red-400">{{ blueprintError }}</p>
                 </UiPanel>
 

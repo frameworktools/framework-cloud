@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { onBeforeUnmount, ref, watch } from 'vue';
 
 /**
  * A package name with suggestions, as in the Framework GUI: CRAN and
@@ -9,6 +9,7 @@ import { ref, watch } from 'vue';
 defineOptions({ inheritAttrs: false });
 
 const props = defineProps({
+    language: String,
     source: { type: String, required: true }, // cran | bioc | pypi
     placeholder: String,
     id: String,
@@ -20,9 +21,12 @@ const highlight = ref(-1);
 const searching = ref(false);
 let timer = null;
 let typed = false;
+let request = 0;
 
 watch(model, (value) => {
     clearTimeout(timer);
+    request++;
+    searching.value = false;
     // Only look up what the person typed, not a name a suggestion filled in
     if (!typed || (value ?? '').length < 2) {
         results.value = [];
@@ -31,16 +35,27 @@ watch(model, (value) => {
     timer = setTimeout(() => search(value), 300);
 });
 
+watch(() => [props.source, props.language], () => {
+    clearTimeout(timer);
+    request++;
+    results.value = [];
+    searching.value = false;
+});
+onBeforeUnmount(() => { clearTimeout(timer); request++; });
+
 const search = async (query) => {
+    const current = ++request;
     searching.value = true;
     try {
-        const response = await fetch(`/packages/search?source=${props.source}&q=${encodeURIComponent(query)}`, { headers: { Accept: 'application/json' } });
-        results.value = response.ok ? (await response.json()).packages : [];
+        const response = await fetch(`/packages/search?source=${props.source}&q=${encodeURIComponent(query)}${props.language ? `&language=${props.language}` : ''}`, { headers: { Accept: 'application/json' } });
+        const packages = response.ok ? (await response.json()).packages : [];
+        if (current !== request) return;
+        results.value = packages;
         highlight.value = results.value.length ? 0 : -1;
     } catch {
-        results.value = [];
+        if (current === request) results.value = [];
     } finally {
-        searching.value = false;
+        if (current === request) searching.value = false;
     }
 };
 
@@ -70,7 +85,7 @@ const onKeydown = (event) => {
 };
 // A suggestion's mousedown runs first, so closing on blur doesn't eat the click
 const onBlur = () => setTimeout(() => (results.value = []), 150);
-const sourceNames = { cran: 'CRAN', bioc: 'Bioconductor', pypi: 'PyPI' };
+const sourceNames = { cran: 'CRAN', bioc: 'Bioconductor', pypi: 'PyPI', github: 'GitHub' };
 </script>
 
 <template>
@@ -93,7 +108,7 @@ const sourceNames = { cran: 'CRAN', bioc: 'Bioconductor', pypi: 'PyPI' };
                     <span class="block font-mono text-sm text-slate-900 dark:text-white">{{ pkg.name }}</span>
                     <span v-if="pkg.title" class="block truncate text-xs text-slate-500 dark:text-slate-400">{{ pkg.title }}</span>
                 </span>
-                <span class="shrink-0 text-xs text-slate-400">{{ sourceNames[pkg.source] }} · v{{ pkg.version }}</span>
+                <span class="shrink-0 text-xs text-slate-400">{{ sourceNames[pkg.source] }}<template v-if="pkg.version"> · v{{ pkg.version }}</template></span>
             </li>
         </ul>
     </div>

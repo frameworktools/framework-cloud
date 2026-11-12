@@ -23,11 +23,15 @@ class PackageIndex
      *
      * @return list<array{name: string, version: string, title: ?string, source: string}>
      */
-    public static function search(string $source, string $query): array
+    public static function search(string $source, string $query, ?string $language = null): array
     {
         $query = trim($query);
         if (mb_strlen($query) < 2) {
             return [];
+        }
+
+        if ($source === 'github') {
+            return self::github($query, $language);
         }
 
         if ($source === 'pypi') {
@@ -45,6 +49,31 @@ class PackageIndex
         usort($matches, fn ($a, $b) => $a['rank'] <=> $b['rank']);
 
         return array_map(fn ($m) => array_diff_key($m, ['rank' => true]), array_slice($matches, 0, 20));
+    }
+
+    private static function github(string $query, ?string $language): array
+    {
+        return Cache::remember('package-index:github:'.hash('sha256', $query.':'.$language), now()->addMinutes(5), function () use ($query, $language) {
+            try {
+                $client = Http::acceptJson()->withHeaders(['User-Agent' => 'Framework-Cloud'])->timeout(10);
+                if (preg_match('#^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$#', $query)) {
+                    $response = $client->get('https://api.github.com/repos/'.$query);
+                    $items = $response->successful() ? [$response->json()] : [];
+                } else {
+                    $response = $client->get('https://api.github.com/search/repositories', [
+                        'q' => $query.($language ? ' language:'.($language === 'r' ? 'R' : 'Python') : ''),
+                        'per_page' => 10,
+                    ]);
+                    $items = $response->successful() ? $response->json('items', []) : [];
+                }
+
+                return collect($items)->filter(fn ($item) => ! empty($item['full_name']))->map(fn ($item) => [
+                    'name' => $item['full_name'], 'version' => '', 'title' => $item['description'] ?? null, 'source' => 'github',
+                ])->all();
+            } catch (Throwable) {
+                return [];
+            }
+        }) ?: [];
     }
 
     /** @return array<string, string> package name => version */

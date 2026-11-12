@@ -12,7 +12,7 @@ class FacetVersion extends Model
 
     protected function casts(): array
     {
-        return ['layer' => 'array', 'language_layers' => 'array'];
+        return ['layer' => 'array', 'language_layers' => 'array', 'manual_packages' => 'array'];
     }
 
     /** The effective layer for a catalog language, or all language members for discovery. */

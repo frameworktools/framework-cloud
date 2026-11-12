@@ -5,122 +5,141 @@ namespace App\Http\Controllers\App;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Settings\DefaultsController;
 use App\Models\Blueprint;
-use App\Support\DefaultsConversion;
+use App\Models\BlueprintVersion;
+use App\Models\Project;
+use App\Support\AuthorProfile;
+use App\Support\BlueprintInput;
+use App\Support\Catalog;
+use App\Support\Library;
 use App\Support\ProjectDefaults;
+use App\Support\ProjectLayers;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
-/**
- * Guided setup: six questions whose answers become the default blueprint
- * for the chosen language, which every way of creating a project honors
- * (the New project page, R, Python, fw, and agents). It starts after
- * sign-up and can be skipped.
- */
+/** Introduction and author details, followed by the shared blueprint editor. */
 class WelcomeController extends Controller
 {
+    private const DRAFT = 'onboarding';
+
     public function show(Request $request): Response
     {
-        $user = $request->user();
-        $setting = $user->globalSettings();
-        $doc = $setting->document;
+        $draft = $request->session()->get(self::DRAFT, []);
+        if ($draft && ($draft['user_id'] ?? null) !== $request->user()->id) {
+            $request->session()->forget(self::DRAFT);
+            $draft = [];
+        }
 
         return Inertia::render('Welcome', [
             'blueprints' => DefaultsController::blueprintList(),
-            'values' => DefaultsController::values($user),
-            'again' => (bool) $user->setup_completed_at,
-            // What the account has actually saved: setup starts from these, and
-            // recommends only where nothing was saved
-            'saved' => [
-                'any' => $setting->revision > 0 || (bool) $user->setup_completed_at,
-                'language' => isset($user->project_defaults['language']),
-                'workflows' => array_keys(ProjectDefaults::chosenWorkflows(Arr::get($doc, 'defaults.workflows'))),
-            ],
+            'author' => $draft['author'] ?? AuthorProfile::for($request->user()),
+            'accountEmail' => $request->user()->email,
+            'language' => $draft['language'] ?? ProjectDefaults::language($request->user()),
+            'blueprintId' => $draft['blueprint_id'] ?? null,
+            'again' => (bool) $request->user()->setup_completed_at,
         ]);
     }
 
+    /** Keep the introduction's draft in this session until the blueprint is saved. */
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'language' => ['required', 'in:r,python,stata'],
-            'project_type' => ['required', 'string'],
-            // R Markdown is R's Quarto workflow writing .Rmd notebooks
-            'workflow' => ['required', 'in:'.implode(',', [...ProjectDefaults::WORKFLOW_KEYS, 'rmarkdown'])],
-            'editors' => ['array'],
-            'editors.*' => ['in:rstudio,vscode'],
-            'git' => ['required', 'boolean'],
-            'ai' => ['required', 'boolean'],
-            'agents' => ['array'],
-            'agents.*' => ['in:'.implode(',', ProjectDefaults::AGENTS)],
-            'other_agents' => ['boolean'],
+        $data = $request->validate(AuthorProfile::rules() + [
+            'language' => ['required', Rule::in(Project::LANGUAGES)],
+            'blueprint_id' => ['required', 'integer'],
+        ], AuthorProfile::messages());
+        $blueprint = Blueprint::systemTypes()->with(Library::BLUEPRINT_WITH)->find($data['blueprint_id']);
+        if (! $blueprint || ! ProjectDefaults::fits($blueprint, $data['language'])) {
+            throw ValidationException::withMessages(['blueprint_id' => 'Choose a starting blueprint for this language.']);
+        }
+        $request->session()->put(self::DRAFT, [
+            'author' => array_intersect_key($data, AuthorProfile::rules()),
+            'user_id' => $request->user()->id, 'language' => $data['language'], 'blueprint_id' => $blueprint->id,
+            'version_id' => $blueprint->latestVersion->id, 'id' => (string) Str::uuid(),
         ]);
 
-        // The blueprint must take the language and workflow
-        $version = Blueprint::systemTypes()->where('key', $validated['project_type'])->with('latestVersion')->first()?->latestVersion
-            ?? throw ValidationException::withMessages(['project_type' => 'Choose one of the project types.']);
-        $compatibility = $version->compatibility();
-        $rmarkdown = $validated['workflow'] === 'rmarkdown';
-        if ($rmarkdown && $validated['language'] !== 'r') {
-            throw ValidationException::withMessages(['workflow' => 'R Markdown is for R projects.']);
-        }
-        $validated['workflow'] = $rmarkdown ? 'quarto' : $validated['workflow'];
-        if ($compatibility['languages'] && ! in_array($validated['language'], $compatibility['languages'], true)) {
-            throw ValidationException::withMessages(['project_type' => 'That project type isn\'t available for this language.']);
-        }
-        if (! ProjectDefaults::workflowFits($validated['workflow'], $validated['language'])
-            || ($compatibility['workflows'] && ! in_array($validated['workflow'], $compatibility['workflows'], true))) {
-            throw ValidationException::withMessages(['workflow' => 'That workflow isn\'t available for this project type and language.']);
-        }
+        return to_route('welcome.blueprint');
+    }
 
+    public function blueprint(Request $request): Response|RedirectResponse
+    {
+        $draft = $request->session()->get(self::DRAFT);
+        if (! $draft || ($draft['user_id'] ?? null) !== $request->user()->id) {
+            return to_route('welcome');
+        }
         $user = $request->user();
-        $setting = $user->globalSettings();
-        $doc = $setting->document;
-        $editors = $validated['editors'] ?? [];
-        $workflows = ProjectDefaults::workflows(Arr::get($doc, 'defaults.workflows'));
-        $workflows[$validated['language']] = $validated['workflow'];
+        $source = BlueprintVersion::with(['blueprint.owner', 'base.facet.owner', 'facetVersions.facet.owner'])->find($draft['version_id']);
+        if (! $source || ! $source->blueprint->isVisibleTo($user)) {
+            $request->session()->forget(self::DRAFT);
 
-        Arr::set($doc, 'defaults.project_type', $validated['project_type']);
-        Arr::set($doc, 'defaults.workflows', $workflows);
-        // Setup answers R's workflow only when R is the language; otherwise R's R Markdown choice stays
-        $keepRmarkdown = $validated['language'] === 'r' ? $rmarkdown : Arr::get($doc, 'defaults.notebook_format') === 'rmarkdown';
-        Arr::set($doc, 'defaults.notebook_format', ProjectDefaults::notebookFormat($workflows['r'], 'r', $keepRmarkdown) ?? 'quarto');
-        Arr::set($doc, 'defaults.ide', match (true) {
-            in_array('rstudio', $editors, true) && in_array('vscode', $editors, true) => 'both',
-            in_array('rstudio', $editors, true) => 'rstudio',
-            in_array('vscode', $editors, true) => 'vscode',
-            default => 'none',
-        });
-        Arr::set($doc, 'defaults.use_git', (bool) $validated['git']);
-        Arr::set($doc, 'ai.enabled', (bool) $validated['ai']);
-        Arr::set($doc, 'ai.assistants', $validated['ai'] ? ProjectDefaults::agents($validated['agents'] ?? []) : ProjectDefaults::agents(Arr::get($doc, 'ai.assistants')));
-        $setting->replaceDocument($doc, client: ['device' => 'web', 'app' => 'framework.pub']);
-
-        // A privacy-sensitive setup with Git turns on secret detection and the
-        // private folder check, unless hooks were already chosen
-        $hooks = $user->project_defaults['hooks'] ?? [];
-        if ($validated['project_type'] === 'project_sensitive' && $validated['git'] && ! array_filter($hooks)) {
-            $hooks = ['data_security' => true, 'check_sensitive_dirs' => true];
+            return to_route('welcome');
         }
+        $language = $draft['language'];
+        $supported = $source->compatibility()['workflows'] ?: ProjectDefaults::WORKFLOW_KEYS;
+        $workflow = collect([$source->default_workflow[$language] ?? null, ProjectDefaults::WORKFLOWS[$language], ...$supported])->first(fn ($w) => in_array($w, $supported, true) && ProjectDefaults::workflowFits($w, $language));
+        // Narrow a multi-language starter in memory before populating the editor.
+        $source->languages = [$language];
+        $source->workflows = [$workflow];
+        $source->default_workflow = [$language => $workflow];
+        $source->setRelation('facetVersions', $source->facetVersions->filter(fn ($v) => ProjectLayers::fits($v, $language)));
+        $start = BlueprintInput::start($source, Catalog::choices($source, $user), $user);
+        $start['language'] = $language;
+        $start['notebook_format'] = $language === 'stata' ? null : ($workflow === 'scripts' ? 'scripts' : ($start['notebook_format'] ?? $workflow));
+        $tabs = ['name', 'notebooks', 'quarto', 'jupyter', 'structure', 'environment', 'packages', 'scaffold', 'editor', 'ai', 'skills', 'git', 'publishing', 'review'];
 
-        $user->forceFill([
-            'project_defaults' => ['language' => $validated['language'], 'ai_other' => (bool) ($validated['other_agents'] ?? false), 'hooks' => $hooks] + ($user->project_defaults ?? []),
-            'setup_completed_at' => now(),
-        ])->save();
+        return Inertia::render('Blueprints/Builder', [
+            'blueprint' => null, 'start' => $start, 'catalog' => Catalog::for($user),
+            'agents' => $start['agents'], 'ggplotThemes' => ProjectDefaults::GGPLOT_THEMES,
+            'quartoChoices' => ProjectDefaults::QUARTO_CHOICES,
+            'section' => in_array($request->query('tab'), $tabs, true) ? $request->query('tab') : 'name',
+            'onboarding' => ['draftId' => $draft['id'], 'language' => $language, 'source' => $source->blueprint->name, 'name' => 'My '.Project::LANGUAGE_NAMES[$language].' blueprint'],
+        ]);
+    }
 
-        // The answers become the language's default blueprint: Framework's
-        // when they match it, else the person's own
-        DefaultsConversion::applyGuidedSetup($user->fresh(), $validated['language']);
+    public function complete(Request $request): RedirectResponse
+    {
+        $draft = $request->session()->get(self::DRAFT);
+        if (! $draft || ($draft['user_id'] ?? null) !== $request->user()->id) {
+            return to_route('welcome');
+        }
+        if ($request->input('language') !== $draft['language']) {
+            throw ValidationException::withMessages(['language' => 'Return to setup to change the default language.']);
+        }
+        // Onboarding always creates a private, single-language blueprint.
+        $request->merge(['visibility' => 'private', 'languages' => [$draft['language']]]);
+        [$meta, $base, $pieces, $layer, $notes, $compatibility] = BlueprintInput::validated($request);
+        $user = $request->user();
+        DB::transaction(function () use ($user, $draft, $meta, $base, $pieces, $layer, $notes, $compatibility) {
+            $blueprint = Blueprint::create($meta + ['user_id' => $user->id, 'key' => Library::uniqueKey(Blueprint::query(), $meta['name'], $user->id), 'is_system' => false, 'forked_from_id' => $draft['version_id']]);
+            $blueprint->publish($base, $pieces, $layer, $notes, $compatibility);
+            AuthorProfile::save($user, $draft['author']);
+            ProjectDefaults::save($user, $draft['language'], [$draft['language'] => $blueprint]);
+            $user->forceFill(['setup_completed_at' => now()])->save();
+        });
+        $request->session()->forget(self::DRAFT);
 
-        return redirect()->route('dashboard')->with('status', 'setup-complete');
+        return to_route('welcome.ready')->with('status', 'setup-complete');
+    }
+
+    public function ready(Request $request): Response|RedirectResponse
+    {
+        if (! $request->user()->setup_completed_at) {
+            return to_route('welcome');
+        }
+        $language = ProjectDefaults::language($request->user());
+
+        return Inertia::render('WelcomeReady', ['language' => $language, 'blueprint' => Library::blueprint(ProjectDefaults::blueprint($request->user(), $language), $request->user())]);
     }
 
     public function skip(Request $request): RedirectResponse
     {
+        $request->session()->forget(self::DRAFT);
         $request->user()->forceFill(['setup_completed_at' => $request->user()->setup_completed_at ?? now()])->save();
 
-        return redirect()->route('dashboard');
+        return to_route('dashboard');
     }
 }

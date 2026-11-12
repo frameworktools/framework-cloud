@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Blueprint;
+use App\Models\Facet;
 use App\Models\User;
 use App\Support\DefaultsPreview;
 use App\Support\Resolver;
@@ -276,6 +277,14 @@ class BlueprintBuilderTest extends TestCase
     {
         $user = User::factory()->create(['email_verified_at' => now()]);
         $user->forceFill(['project_defaults' => ['packages' => ['r' => [['name' => 'dplyr', 'source' => 'cran', 'auto_attach' => true]]]]])->save();
+        // Old package-set versions may still contain attachment preferences.
+        $legacy = Facet::whereNull('user_id')->where('key', 'tidy-core')->firstOrFail()->latestVersion;
+        $legacyLayer = $legacy->layer;
+        foreach ($legacyLayer['packages']['default_packages'] as &$entry) {
+            $entry['auto_attach'] = true;
+        }
+        unset($entry);
+        $legacy->update(['layer' => $legacyLayer]);
         $choices = $this->choices([
             'package_sets' => ['framework/tidy-core'],
             'package_overrides' => ['lme4' => true],
@@ -287,7 +296,7 @@ class BlueprintBuilderTest extends TestCase
         $packages = DefaultsPreview::merge($resolved['envelope']['layers'])['packages']['default_packages'];
         $this->assertFalse($packages['dplyr']['auto_attach']);
         $this->assertSame('cran', $packages['dplyr']['source']);
-        $this->assertTrue($packages['tidyr']['auto_attach']);
+        $this->assertFalse($packages['tidyr']['auto_attach']);
         $this->assertTrue($packages['lme4']['auto_attach']);
         $this->get("/blueprints/{$blueprint->id}/edit?tab=packages")->assertInertia(fn ($page) => $page
             ->where('start.package_auto_attach.dplyr', false)->where('start.package_auto_attach.lme4', true)

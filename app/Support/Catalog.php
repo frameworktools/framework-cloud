@@ -33,7 +33,7 @@ class Catalog
             'id' => $f->id,
             'key' => $f->handle,
             'name' => $f->name,
-            'description' => $f->description,
+            'description' => $f->isSystem() && $f->kind === 'package_set' && $f->key === 'tidyverse-analysis' ? 'The tidyverse packages most analyses use.' : $f->description,
             'language' => $f->language,
             'requires' => $f->requires ?? [],
             'system' => $f->isSystem(),
@@ -50,9 +50,9 @@ class Catalog
             // Package names too, so the builder can count what stacked sets install
             'package_sets' => $pieces->where('kind', 'package_set')->values()
                 ->map(fn (Facet $f) => $piece($f) + [
-                    'packages' => array_keys($f->latestVersion?->layer['packages']['default_packages'] ?? []),
-                    'package_members' => collect(Project::LANGUAGES)->mapWithKeys(fn ($language) => [$language => array_keys($f->latestVersion?->catalogLayer($language)['packages']['default_packages'] ?? [])]),
-                    'package_entries' => collect(Project::LANGUAGES)->mapWithKeys(fn ($language) => [$language => $f->latestVersion?->catalogLayer($language)['packages']['default_packages'] ?? []]),
+                    'packages' => $f->latestVersion?->manual_packages ?: array_keys($f->latestVersion?->layer['packages']['default_packages'] ?? []),
+                    'package_members' => collect(Project::LANGUAGES)->mapWithKeys(fn ($language) => [$language => $language === 'stata' ? ($f->latestVersion?->manual_packages ?? []) : array_keys(PackageSetLayer::installOnly($f->latestVersion?->catalogLayer($language) ?? [])['packages']['default_packages'] ?? [])]),
+                    'package_entries' => collect(Project::LANGUAGES)->mapWithKeys(fn ($language) => [$language => $language === 'stata' ? array_fill_keys($f->latestVersion?->manual_packages ?? [], ['source' => 'manual']) : PackageSetLayer::installOnly($f->latestVersion?->catalogLayer($language) ?? [])['packages']['default_packages'] ?? []]),
                     'tags' => PackageCategories::setTags($f->key, $f->category),
                 ]),
             'skill_sets' => $pieces->where('kind', 'skill_set')->values()->map(fn (Facet $f) => $piece($f) + [
@@ -75,7 +75,7 @@ class Catalog
         $packages = [];
         foreach ($pieces->where('kind', 'package_set') as $piece) {
             foreach ($piece->language ?: Project::LANGUAGES as $language) {
-                foreach ($piece->latestVersion?->catalogLayer($language)['packages']['default_packages'] ?? [] as $name => $definition) {
+                foreach (PackageSetLayer::installOnly($piece->latestVersion?->catalogLayer($language) ?? [])['packages']['default_packages'] ?? [] as $name => $definition) {
                     if (! is_array($definition)) {
                         continue;
                     }

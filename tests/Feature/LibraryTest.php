@@ -154,8 +154,8 @@ class LibraryTest extends TestCase
             ->assertSessionHasNoErrors();
         $set = Facet::where('user_id', $user->id)->where('kind', 'package_set')->firstOrFail();
         $this->assertSame(['r'], $set->language);
-        $this->assertSame(['source' => 'cran', 'auto_attach' => true], $set->latestVersion->layer['packages']['default_packages']['survey']);
-        $this->assertSame(['source' => 'github', 'repo' => 'tidyverse/dbplyr', 'auto_attach' => true], $set->latestVersion->layer['packages']['default_packages']['dbplyr']);
+        $this->assertSame(['source' => 'cran', 'auto_attach' => false], $set->latestVersion->layer['packages']['default_packages']['survey']);
+        $this->assertSame(['source' => 'github', 'repo' => 'tidyverse/dbplyr', 'auto_attach' => false], $set->latestVersion->layer['packages']['default_packages']['dbplyr']);
         $this->actingAs($user)->get("/package-sets/{$set->id}/edit")->assertInertia(fn (Assert $page) => $page->where('values.packages', "srvyr\nsurvey\ntidyverse/dbplyr"));
 
         $this->actingAs($user)->post('/package-sets', ['name' => 'Python', 'visibility' => 'private', 'language' => 'python', 'packages' => 'pandas'])->assertSessionHasNoErrors();

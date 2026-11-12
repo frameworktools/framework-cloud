@@ -33,13 +33,13 @@ const save = tag => {
             <UiTable label="Curated skill tags" class="mt-6">
                 <thead><tr><th>Tag</th><th class="actions"><span class="sr-only">Actions</span></th></tr></thead>
                 <tbody><tr v-for="tag in tags" :key="tag.id">
-                    <td><label :for="`tag-${tag.id}`" class="sr-only">{{ tag.name }}</label><input :id="`tag-${tag.id}`" v-model="names[tag.id]" :class="inputClass" maxlength="60" @keydown.enter.prevent="save(tag)" /><p v-if="errors[tag.id]" class="mt-1 whitespace-normal text-xs text-red-600">{{ errors[tag.id] }}</p></td>
+                    <td><label :for="`tag-${tag.id}`" class="sr-only">{{ tag.name }}</label><input :id="`tag-${tag.id}`" v-model="names[tag.id]" placeholder="Tag name" :class="inputClass" maxlength="60" @keydown.enter.prevent="save(tag)" /><p v-if="errors[tag.id]" class="mt-1 whitespace-normal text-xs text-red-600">{{ errors[tag.id] }}</p></td>
                     <td class="actions"><UiButton variant="ghost" size="sm" :disabled="saving[tag.id] || names[tag.id] === tag.name" @click="save(tag)">Save</UiButton></td>
                 </tr></tbody>
             </UiTable>
             <form class="mt-8 flex flex-col gap-4 border-t border-slate-800/10 pt-6 dark:border-white/15" @submit.prevent="form.post('/admin/skill-tags', { preserveScroll: true, onSuccess: () => form.reset() })">
                 <h2 class="text-base font-medium text-slate-900 dark:text-white">New tag</h2>
-                <UiInput v-model="form.name" label="Name" :error="form.errors.name ?? form.errors.key" maxlength="60" />
+                <UiInput v-model="form.name" label="Name" placeholder="Data validation" :error="form.errors.name ?? form.errors.key" maxlength="60" />
                 <UiButton type="submit" class="self-start" :disabled="form.processing">Add tag</UiButton>
             </form>
         </div>

@@ -179,7 +179,8 @@ const choiceClass = (on) => on
     <UiPanel v-if="visible('packages')" :flush="flush" id="packages" title="Packages" class="scroll-mt-6">
         <SetChoices v-model="form.package_sets" :sets="catalog.package_sets" :tags="catalog.package_set_tags" :language="form.language" label="Package sets" />
         <UiSeparator />
-        <PackagePicker v-model="form.package_overrides" v-model:auto-attach="form.package_auto_attach" :selected-sets="form.package_sets" :packages="catalog.packages" :sets="catalog.package_sets" :categories="catalog.package_categories" :language="form.language" />
+        <PackagePicker v-if="form.language !== 'stata'" v-model="form.package_overrides" v-model:auto-attach="form.package_auto_attach" :selected-sets="form.package_sets" :packages="catalog.packages" :sets="catalog.package_sets" :categories="catalog.package_categories" :language="form.language" />
+        <p v-if="form.language === 'stata'" class="text-sm text-slate-500 dark:text-slate-400">Stata package names are recorded in .framework/packages/. Install them manually.</p>
         <p v-if="stacked.sets > 1" class="text-sm text-slate-700 dark:text-slate-300">
             {{ stacked.packages }} packages from {{ stacked.sets }} sets<template v-if="stacked.shared">, with {{ stacked.shared }} in more than one set</template>.
         </p>
@@ -221,7 +222,7 @@ const choiceClass = (on) => on
         <p v-if="form.language === 'stata'" class="text-sm text-slate-500 dark:text-slate-400">Stata projects don't run scaffold().</p>
         <div v-else class="flex max-w-xl flex-col gap-5">
             <UiSwitch v-model="form.scaffold.seed_on_scaffold" label="Set a random seed" description="Random results repeat from run to run." />
-            <UiInput v-if="form.scaffold.seed_on_scaffold" v-model="form.scaffold.seed" class="-mt-2 max-w-40" label="Seed" :error="form.errors['scaffold.seed']" />
+            <UiInput v-if="form.scaffold.seed_on_scaffold" v-model="form.scaffold.seed" class="-mt-2 max-w-40" label="Seed" placeholder="123" :error="form.errors['scaffold.seed']" />
             <template v-if="form.language === 'r'">
                 <UiSwitch v-model="form.scaffold.set_theme_on_scaffold" label="Set a ggplot2 theme" description="Every plot starts from the same theme." />
                 <UiSelect v-if="form.scaffold.set_theme_on_scaffold" v-model="form.scaffold.ggplot_theme" class="-mt-2 max-w-48" label="Theme" :options="ggplotThemes.map((t) => ({ value: t, label: t }))" :error="form.errors['scaffold.ggplot_theme']" />

@@ -135,6 +135,11 @@ class ProjectLayers
     {
         $facet = $version->facet;
         $layer = self::pieceLayer($facet, $version->layer);
+        if ($language === 'stata' && $facet->kind === 'package_set' && $version->manual_packages) {
+            $layer['files']['.framework/packages/stata-'.$facet->id.'.txt'] = [
+                'content' => implode("\n", $version->manual_packages)."\n",
+            ];
+        }
         // R's released schema takes jupyter as a notebook format from the
         // framework commit that adds workflows; until then R picks the format
         // from the tools
@@ -165,6 +170,9 @@ class ProjectLayers
     {
         // Editor files and agents are the person's, never a piece's
         $layer = Trust::withoutPersonal($layer);
+        if ($facet->kind === 'package_set') {
+            $layer = PackageSetLayer::installOnly($layer);
+        }
 
         if (! config('framework.spec_tools')) {
             return $layer;

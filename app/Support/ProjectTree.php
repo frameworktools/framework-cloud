@@ -29,7 +29,11 @@ class ProjectTree
     public static function for(array $spec, string $language, array $tools, bool $sensitive): array
     {
         $entries = [];
-        $add = function (string $path, string $type, ?string $note = null, ?string $when = null, bool $later = false) use (&$entries) {
+        $explicitFolders = array_column(array_filter((array) ($spec['extra_directories'] ?? []), 'is_array'), 'path');
+        $add = function (string $path, string $type, ?string $note = null, ?string $when = null, bool $later = false) use (&$entries, $explicitFolders) {
+            if (in_array($path, $explicitFolders, true)) {
+                $type = 'dir';
+            }
             $path = trim($path, '/');
             if ($path !== '' && $path !== '.' && ! isset($entries[$path])) {
                 $entries[$path] = ['path' => $path, 'type' => $type, 'note' => $note, 'when' => $when, 'later' => $later];

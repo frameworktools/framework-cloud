@@ -13,12 +13,26 @@ You can sign up with a personal email address. The address you sign in with
 stays private. The email shown on your work comes from your profile, which
 you set in the next step. See [Signing in](signing-in.md).
 
-## 2. Author profile
+## 2. Guided setup
 
-Open **Account > Profile** and enter your name, the email you want shown on
-your work, your ORCID iD, your website, and up to five affiliations. Framework
-writes these into the author block of every new notebook, report, and slide
-deck.
+Setup introduces blueprints, projects, and published results. Enter your author
+name, an optional public email, and up to five affiliations. Website and ORCID
+fields are optional. Your sign-in email stays separate. These details are used
+in new projects, notebooks, reports, and slides. Edit them later in **Settings >
+Personal data**.
+
+Choose your default language, then a starting blueprint. Customize its notebook
+format, project structure, packages, environment, editor files, AI agents,
+skills, Git, and publishing settings. Stata shows the settings that apply to
+.do scripts.
+
+Review the choices and select **Finish setup**. Framework saves a private,
+single-language blueprint and makes it your default. New projects start from
+it and can be adjusted individually. Other languages keep their existing
+defaults. Setup saves nothing until this final step. **Skip setup** opens the
+dashboard without saving the draft.
+
+You can then create a project or connect your computer.
 
 ## 3. R and Python connections
 

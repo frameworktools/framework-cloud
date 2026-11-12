@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\Blueprint;
 use App\Models\User;
 use App\Support\ProjectDefaults;
+use App\Support\ProjectLayers;
 use App\Support\Resolver;
 use Database\Seeders\BlueprintSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -25,138 +27,110 @@ class WelcomeTest extends TestCase
         return User::factory()->create(['setup_completed_at' => null]);
     }
 
-    public function test_a_new_account_starts_with_guided_setup_once(): void
+    private function details(string $language = 'r', string $type = 'project'): array
+    {
+        return ['name' => 'Ada Researcher', 'email' => 'ada@example.org', 'orcid' => '0000-0002-1825-0097', 'url' => 'https://example.org', 'affiliations' => [['name' => 'Example University', 'department' => 'Statistics', 'city' => 'Boston', 'country' => 'United States']], 'language' => $language, 'blueprint_id' => Blueprint::whereNull('user_id')->where('key', $type)->sole()->id];
+    }
+
+    private function choices(string $language): array
+    {
+        return ['name' => 'My research setup', 'visibility' => 'public', 'language' => $language, 'workflow' => $language === 'stata' ? 'scripts' : 'jupyter', 'notebook_format' => $language === 'stata' ? null : 'jupyter', 'structure' => 'framework/project_sensitive', 'agents' => ['claude', 'codex'], 'tools' => $language === 'python' ? ['uv' => true] : [], 'package_sets' => [], 'skill_sets' => ['framework/framework'], 'skills' => [], 'settings' => ['git' => true, 'hooks' => ['data_security', 'check_sensitive_dirs']], 'ide' => $language === 'r' ? 'rstudio' : 'vscode'];
+    }
+
+    public function test_a_new_account_gets_an_introduction_and_private_author_email(): void
     {
         $user = $this->newcomer();
-
         $this->actingAs($user)->get('/projects')->assertRedirect('/welcome');
-        $this->actingAs($user)->get('/welcome')->assertInertia(fn (Assert $page) => $page
-            ->component('Welcome')
-            ->where('again', false)
-            ->where('values.workflows.python', 'jupyter')
-            ->where('blueprints.0.key', 'project'));
-
-        $this->actingAs($user)->post('/welcome/skip')->assertRedirect('/dashboard');
-        $this->assertNotNull($user->fresh()->setup_completed_at);
-        $this->actingAs($user)->get('/projects')->assertOk();
+        $this->get('/welcome')->assertInertia(fn (Assert $page) => $page->component('Welcome')->where('again', false)->where('author.name', $user->name)->where('author.email', '')->where('accountEmail', $user->email)->where('blueprints.0.key', 'project'));
+        $this->get('/welcome/blueprint')->assertRedirect('/welcome');
+        $this->get('/welcome/ready')->assertRedirect('/welcome');
     }
 
-    public function test_the_answers_become_defaults_every_creation_path_uses(): void
+    public function test_details_are_a_session_draft_until_the_private_blueprint_is_saved(): void
+    {
+        foreach (['r', 'python', 'stata'] as $language) {
+            $user = $this->newcomer();
+            $this->actingAs($user)->post('/welcome', $this->details($language))->assertSessionHasNoErrors()->assertRedirect('/welcome/blueprint');
+            $this->assertNull($user->fresh()->setup_completed_at);
+            $this->assertSame(0, Blueprint::where('user_id', $user->id)->count());
+            $this->get('/welcome/blueprint')->assertInertia(fn (Assert $page) => $page->component('Blueprints/Builder')->where('onboarding.language', $language)->where('start.language', $language)->where('onboarding.source', 'Standard'));
+            $this->post('/welcome/complete', $this->choices($language))->assertSessionHasNoErrors()->assertRedirect('/welcome/ready');
+            $user->refresh();
+            $blueprint = Blueprint::where('user_id', $user->id)->sole();
+            $this->assertSame('private', $blueprint->visibility);
+            $this->assertSame($language, $blueprint->language);
+            $this->assertSame($blueprint->id, ProjectDefaults::blueprint($user, $language)->id);
+            $this->assertSame($language, ProjectDefaults::language($user));
+            $this->assertNotNull($user->setup_completed_at);
+            $author = $user->globalSettings()->document['author'];
+            $this->assertSame('Ada Researcher', $author['name']);
+            $this->assertSame('ada@example.org', $author['email']);
+            $this->assertSame('Example University', $author['affiliation']);
+            $this->assertSame('Statistics', $author['affiliations'][0]['department']);
+            $resolved = (new Resolver($user))->resolve(['name' => 'Survey']);
+            $this->assertSame($language, $resolved['language']);
+            $this->assertSame($language === 'stata' ? 'scripts' : 'jupyter', $resolved['workflow']);
+            $this->assertSame('project_sensitive', $resolved['structure']->facet->key);
+            $envelope = ProjectLayers::envelope($user, 'Survey', [], null);
+            $this->assertSame('ada@example.org', $envelope['author']['email']);
+            $this->get('/welcome/ready')->assertInertia(fn (Assert $page) => $page->component('WelcomeReady')->where('language', $language)->where('blueprint.id', $blueprint->id));
+            // A repeated submit cannot create a second default blueprint.
+            $this->post('/welcome/complete', $this->choices($language))->assertRedirect('/welcome');
+            $this->assertSame(1, Blueprint::where('user_id', $user->id)->count());
+        }
+    }
+
+    public function test_invalid_details_and_incompatible_starters_do_not_save(): void
     {
         $user = $this->newcomer();
-
-        $this->actingAs($user)->post('/welcome', [
-            'language' => 'python', 'project_type' => 'project_sensitive', 'workflow' => 'scripts',
-            'editors' => ['vscode'], 'git' => false, 'ai' => true, 'agents' => ['claude', 'codex'],
-        ])->assertRedirect('/dashboard');
-
-        $user->refresh();
-        $doc = $user->globalSettings()->document;
-        $this->assertNotNull($user->setup_completed_at);
-        $this->assertSame('python', $user->project_defaults['language']);
-        $this->assertSame('project_sensitive', $doc['defaults']['project_type']);
-        $this->assertSame(['r' => 'quarto', 'python' => 'scripts', 'stata' => 'scripts'], $doc['defaults']['workflows']);
-        $this->assertSame('vscode', $doc['defaults']['ide']);
-        $this->assertFalse($doc['defaults']['use_git']);
-        $this->assertSame(['claude', 'codex'], $doc['ai']['assistants']);
-
-        // They become the Python default blueprint: R, Python, fw, and agents get it
-        $this->assertSame('My defaults (Python)', ProjectDefaults::blueprint($user, 'python')->name);
-        $this->assertSame('python', $user->blueprint_defaults['language']);
-        $resolved = (new Resolver($user))->resolve(['name' => 'Survey']);
-        $this->assertSame('python', $resolved['language']);
-        $this->assertSame('scripts', $resolved['workflow']);
-        $this->assertSame('project_sensitive', $resolved['structure']->facet->key);
-
-        // Running it again shows the saved answers
-        $this->actingAs($user)->get('/welcome')->assertInertia(fn (Assert $page) => $page->where('again', true)->where('values.language', 'python'));
-    }
-
-    public function test_a_privacy_sensitive_setup_with_git_turns_on_the_safety_hooks(): void
-    {
-        $answers = ['language' => 'python', 'workflow' => 'jupyter', 'editors' => [], 'ai' => false, 'agents' => []];
-
-        $user = User::factory()->create(['email_verified_at' => now()]);
-        $this->actingAs($user)->post('/welcome', $answers + ['project_type' => 'project_sensitive', 'git' => true])->assertSessionHasNoErrors();
-        $this->assertSame(['data_security' => true, 'check_sensitive_dirs' => true], $user->fresh()->project_defaults['hooks']);
-        $this->assertSame(['data_security', 'check_sensitive_dirs'], ProjectDefaults::for($user->fresh())['settings']['hooks']);
-
-        // Without Git, or with another structure, nothing is turned on
-        $plain = User::factory()->create(['email_verified_at' => now()]);
-        $this->actingAs($plain)->post('/welcome', $answers + ['project_type' => 'project', 'git' => true])->assertSessionHasNoErrors();
-        $this->assertSame([], $plain->fresh()->project_defaults['hooks']);
-        $noGit = User::factory()->create(['email_verified_at' => now()]);
-        $this->actingAs($noGit)->post('/welcome', $answers + ['project_type' => 'project_sensitive', 'git' => false])->assertSessionHasNoErrors();
-        $this->assertSame([], $noGit->fresh()->project_defaults['hooks']);
-    }
-
-    public function test_answers_the_project_type_cant_take_are_refused(): void
-    {
-        $user = $this->newcomer();
-        $answers = ['editors' => [], 'git' => true, 'ai' => false, 'agents' => []];
-
-        // Course is built on Quarto
-        $this->actingAs($user)->post('/welcome', $answers + ['language' => 'r', 'project_type' => 'course', 'workflow' => 'jupyter'])->assertSessionHasErrors('workflow');
-        // Course has no Stata
-        $this->actingAs($user)->post('/welcome', $answers + ['language' => 'stata', 'project_type' => 'course', 'workflow' => 'scripts'])->assertSessionHasErrors('project_type');
-        // Stata has only Scripts only
-        $this->actingAs($user)->post('/welcome', $answers + ['language' => 'stata', 'project_type' => 'project', 'workflow' => 'quarto'])->assertSessionHasErrors('workflow');
+        $this->actingAs($user)->post('/welcome', array_replace($this->details(), ['email' => 'bad', 'orcid' => 'bad', 'affiliations' => [['name' => '']]]))->assertSessionHasErrors(['email', 'orcid', 'affiliations.0.name']);
+        $this->post('/welcome', $this->details('stata', 'course'))->assertSessionHasErrors('blueprint_id');
+        $other = Blueprint::create(['name' => 'Other account', 'key' => 'other', 'user_id' => User::factory()->create()->id, 'visibility' => 'private', 'is_system' => false]);
+        $this->post('/welcome', array_replace($this->details(), ['blueprint_id' => $other->id]))->assertSessionHasErrors('blueprint_id');
         $this->assertNull($user->fresh()->setup_completed_at);
+        $this->assertSame(0, Blueprint::where('user_id', $user->id)->count());
     }
 
-    public function test_r_markdown_is_an_answer_and_setup_starts_from_what_was_saved(): void
+    public function test_blueprint_errors_preserve_the_draft_and_do_not_complete_onboarding(): void
     {
         $user = $this->newcomer();
-        $this->actingAs($user)->get('/welcome')->assertInertia(fn (Assert $page) => $page
-            ->where('saved.any', false)->where('saved.language', false)->where('saved.workflows', []));
-
-        $answers = ['project_type' => 'project', 'editors' => ['vscode'], 'git' => true, 'ai' => false, 'agents' => []];
-        $this->actingAs($user)->post('/welcome', $answers + ['language' => 'r', 'workflow' => 'rmarkdown'])->assertSessionHasNoErrors();
-        $doc = $user->fresh()->globalSettings()->document;
-        $this->assertSame('quarto', $doc['defaults']['workflows']['r']);
-        $this->assertSame('rmarkdown', $doc['defaults']['notebook_format']);
-        $this->assertSame('vscode', $doc['defaults']['ide']);
-
-        // Rerunning starts from the saved answers, editors included
-        $this->actingAs($user)->get('/welcome')->assertInertia(fn (Assert $page) => $page
-            ->where('saved.any', true)->where('saved.language', true)->where('saved.workflows', ['r', 'python', 'stata'])
-            ->where('values.ide', 'vscode')->where('values.rmarkdown', true));
-
-        // A Python answer leaves R's R Markdown alone
-        $this->actingAs($user)->post('/welcome', $answers + ['language' => 'python', 'workflow' => 'jupyter'])->assertSessionHasNoErrors();
-        $this->assertSame('rmarkdown', $user->fresh()->globalSettings()->document['defaults']['notebook_format']);
-
-        // R Markdown is R's alone
-        $this->actingAs($user)->post('/welcome', $answers + ['language' => 'python', 'workflow' => 'rmarkdown'])->assertSessionHasErrors('workflow');
+        $this->actingAs($user)->post('/welcome', $this->details());
+        $this->post('/welcome/complete', array_replace($this->choices('r'), ['name' => '']))->assertSessionHasErrors('name');
+        $this->post('/welcome/complete', $this->choices('python'))->assertSessionHasErrors('language');
+        $this->get('/welcome')->assertInertia(fn (Assert $page) => $page->where('author.email', 'ada@example.org')->where('author.affiliations.0.name', 'Example University'));
+        $this->assertNull($user->fresh()->setup_completed_at);
+        $this->assertSame(0, Blueprint::where('user_id', $user->id)->count());
     }
 
-    public function test_skipping_saves_nothing_but_the_skip(): void
+    public function test_skipping_discards_the_draft_without_saving_author_details_or_a_blueprint(): void
     {
         $user = $this->newcomer();
-        $before = $user->globalSettings()->document;
-
-        $this->actingAs($user)->post('/welcome/skip')->assertRedirect('/dashboard');
-
-        $this->assertSame($before, $user->fresh()->globalSettings()->document);
-        $this->assertNull($user->fresh()->project_defaults['language'] ?? null);
+        $this->actingAs($user)->post('/welcome', $this->details());
+        $this->post('/welcome/skip')->assertRedirect('/dashboard');
+        $this->assertNotNull($user->fresh()->setup_completed_at);
+        $this->assertSame(0, Blueprint::where('user_id', $user->id)->count());
+        $this->assertNotSame('ada@example.org', $user->globalSettings()->document['author']['email'] ?? '');
+        $this->get('/welcome/blueprint')->assertRedirect('/welcome');
     }
 
-    public function test_other_agents_is_its_own_answer_and_none_keeps_the_saved_agents(): void
+    public function test_every_starter_populates_a_valid_single_language_blueprint(): void
     {
-        $user = $this->newcomer();
-        $answers = ['language' => 'r', 'project_type' => 'project', 'workflow' => 'quarto', 'editors' => [], 'git' => true];
-
-        $this->actingAs($user)->post('/welcome', $answers + ['ai' => true, 'agents' => ['claude'], 'other_agents' => true])->assertSessionHasNoErrors();
-        $this->assertTrue($user->fresh()->project_defaults['ai_other']);
-        $this->assertSame(['claude'], $user->fresh()->globalSettings()->document['ai']['assistants']);
-        // They become the R default blueprint's agents
-        $this->assertSame(['claude', 'other'], ProjectDefaults::agentDefaults(ProjectDefaults::blueprint($user->fresh(), 'r')->latestVersion));
-        $this->assertSame(['claude'], ProjectDefaults::for($user->fresh())['settings']['agents']);
-
-        // None turns setup off and keeps which agents were saved
-        $this->actingAs($user)->post('/welcome', $answers + ['ai' => false, 'agents' => [], 'other_agents' => false])->assertSessionHasNoErrors();
-        $doc = $user->fresh()->globalSettings()->document;
-        $this->assertFalse($doc['ai']['enabled']);
-        $this->assertSame(['claude'], $doc['ai']['assistants']);
+        foreach (Blueprint::systemTypes()->with('latestVersion')->get() as $source) {
+            foreach ($source->latestVersion->compatibility()['languages'] as $language) {
+                if (! ProjectDefaults::fits($source, $language)) {
+                    continue;
+                }
+                $user = $this->newcomer();
+                $this->actingAs($user)->post('/welcome', $this->details($language, $source->key))->assertSessionHasNoErrors();
+                $response = $this->get('/welcome/blueprint')->assertOk();
+                $start = json_decode(json_encode($response->getOriginalContent()->getData()['page']['props']['start']), true);
+                $workflow = ((array) $start['default_workflow'])[$language];
+                $format = $language === 'stata' || $start['notebook_format'] === 'scripts' ? null : $start['notebook_format'];
+                $this->post('/welcome/complete', array_replace($start, ['name' => 'Starter test', 'visibility' => 'private', 'workflow' => $workflow, 'notebook_format' => $format]))->assertSessionHasNoErrors()->assertRedirect('/welcome/ready');
+                $saved = ProjectDefaults::blueprint($user->fresh(), $language);
+                $this->assertSame([$language], $saved->latestVersion->compatibility()['languages']);
+                $this->assertSame($source->latestVersion->base_version_id, $saved->latestVersion->base_version_id);
+            }
+        }
     }
 }

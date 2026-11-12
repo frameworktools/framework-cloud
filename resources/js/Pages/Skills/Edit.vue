@@ -1,4 +1,5 @@
 <script setup>
+import UiRadioCards from '@/Components/UiRadioCards.vue';
 import { ask } from '@/confirm.js';
 import { computed } from 'vue';
 import { router, useForm, usePage } from '@inertiajs/vue3';
@@ -91,12 +92,15 @@ const destroy = async () => {
         <form id="skill-form" class="mt-8 flex flex-col gap-8" @submit.prevent="save">
             <UiPanel id="content" class="scroll-mt-6">
                 <UiSelect v-if="skill?.language?.length > 1" v-model="form.variant" label="Content language" :options="skill.language.map(value => ({ value, label: value === 'r' ? 'R' : value === 'python' ? 'Python' : 'Stata' }))" @update:model-value="value => router.get(`/skills/${skill.id}/edit`, { language: value })" />
-                <UiTextarea v-model="form.content" code :rows="24" label="SKILL.md" :error="form.errors.content" />
+                <UiTextarea v-model="form.content" code :rows="24" label="SKILL.md" :placeholder="'---\nname: data-cleaning\ndescription: Clean and validate analysis data.\n---\n\nInstructions for the task.'" :error="form.errors.content" />
             </UiPanel>
 
             <UiPanel v-if="!readOnly" id="details" title="Details" class="scroll-mt-6">
                 <UiSelect v-if="!skill?.is_system && !(skill?.language?.length > 1)" v-model="form.language" label="Language" :options="languageOptions" :error="form.errors.language" />
-                <UiSelect v-model="form.visibility" label="Visibility" :options="visibilityOptions" :error="form.errors.visibility" />
+                <div>
+                    <UiRadioCards v-model="form.visibility" name="visibility" legend="Visibility" :options="visibilityOptions" stacked />
+                    <p v-if="form.errors.visibility" role="alert" class="mt-2 text-sm text-red-600 dark:text-red-400">{{ form.errors.visibility }}</p>
+                </div>
                 <fieldset class="flex flex-col gap-3">
                     <legend class="mb-2 text-sm font-medium text-slate-800 dark:text-white">Tags</legend>
                     <div class="flex flex-wrap gap-x-6 gap-y-3">
@@ -107,7 +111,7 @@ const destroy = async () => {
                     <p class="text-xs text-slate-500 dark:text-slate-400">Curated tags. Select all that apply.</p>
                     <p v-if="form.errors.tags || Object.keys(form.errors).some(key => key.startsWith('tags.'))" class="text-sm text-red-600">Select tags from the curated list.</p>
                 </fieldset>
-                <UiInput v-if="skill" v-model="form.notes" label="Version notes (optional)" :error="form.errors.notes" />
+                <UiInput v-if="skill" v-model="form.notes" label="Version notes (optional)" placeholder="Summarize changes in this version" :error="form.errors.notes" />
                 <p v-if="skill?.source_url" class="text-sm text-slate-500 dark:text-slate-400">
                     Imported from <a :href="skill.source_url" class="underline">{{ skill.source_url }}</a>
                 </p>

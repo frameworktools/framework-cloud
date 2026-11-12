@@ -1,4 +1,5 @@
 <script setup>
+import UiRadioCards from '@/Components/UiRadioCards.vue';
 import ShareQr from '@/Components/ShareQr.vue';
 import { ask } from '@/confirm.js';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
@@ -275,9 +276,7 @@ onBeforeUnmount(() => { clearInterval(clock); clearTimeout(timer); window.remove
                 <aside class="min-w-0 space-y-8 lg:sticky lg:top-20 lg:self-start">
                     <form aria-labelledby="sharing-title" class="space-y-4" @submit.prevent="saveSharing">
                         <h2 id="sharing-title" class="text-base font-medium text-slate-900 dark:text-white">Sharing</h2>
-                        <label class="block text-sm font-medium text-slate-800 dark:text-slate-200">Reader access
-                            <select v-model="sharing.visibility" :class="fieldClass"><option value="private">Private, only you</option><option value="unlisted">Anyone with the link</option><option value="public">Public</option></select>
-                        </label>
+                        <UiRadioCards v-model="sharing.visibility" name="reader-access" legend="Reader access" stacked :options="[{ value: 'private', label: 'Private, only you' }, { value: 'unlisted', label: 'Anyone with the link' }, { value: 'public', label: 'Public' }]" />
                         <p class="-mt-2 text-xs text-slate-500 dark:text-slate-400">{{ visibilityText[sharing.visibility] }} Artifacts keep their own passwords.</p>
                         <p v-if="sharing.errors.visibility" class="-mt-2 text-xs text-red-700 dark:text-red-400">{{ sharing.errors.visibility }}</p>
 

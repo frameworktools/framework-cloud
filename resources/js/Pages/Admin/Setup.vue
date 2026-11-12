@@ -185,11 +185,11 @@ const pill = (ready) => (ready
                 >
                     <div class="grid gap-4 sm:grid-cols-2">
                         <CredentialField v-model="forms.github.github__app_slug" :field="field('github.app_slug')" placeholder="framework-cloud-example" :error="forms.github.errors.github__app_slug" />
-                        <CredentialField v-model="forms.github.github__app_id" :field="field('github.app_id')" :error="forms.github.errors.github__app_id" />
+                        <CredentialField v-model="forms.github.github__app_id" :field="field('github.app_id')" placeholder="123456" :error="forms.github.errors.github__app_id" />
                         <CredentialField v-model="forms.github.github__client_id" :field="field('github.client_id')" placeholder="Iv23li..." :error="forms.github.errors.github__client_id" />
-                        <CredentialField v-model="forms.github.github__client_secret" :field="field('github.client_secret')" :error="forms.github.errors.github__client_secret" />
+                        <CredentialField v-model="forms.github.github__client_secret" :field="field('github.client_secret')" placeholder="Paste the GitHub client secret" :error="forms.github.errors.github__client_secret" />
                     </div>
-                    <CredentialField v-model="forms.github.github__webhook_secret" :field="field('github.webhook_secret')" :error="forms.github.errors.github__webhook_secret" />
+                    <CredentialField v-model="forms.github.github__webhook_secret" :field="field('github.webhook_secret')" placeholder="Paste the webhook secret" :error="forms.github.errors.github__webhook_secret" />
                     <CredentialField v-model="forms.github.github__private_key" :field="field('github.private_key')" multiline placeholder="-----BEGIN RSA PRIVATE KEY-----" :error="forms.github.errors.github__private_key" />
 
                     <dl class="grid gap-x-3 gap-y-1 text-xs sm:grid-cols-[auto_1fr]">
@@ -238,8 +238,8 @@ const pill = (ready) => (ready
                         placeholder="https://<account>.r2.cloudflarestorage.com (blank for Amazon S3)" :error="forms.storage.errors.storage__endpoint"
                     />
                     <div class="grid gap-4 sm:grid-cols-2">
-                        <CredentialField v-model="forms.storage.storage__key" :field="field('storage.key')" :error="forms.storage.errors.storage__key" />
-                        <CredentialField v-model="forms.storage.storage__secret" :field="field('storage.secret')" :error="forms.storage.errors.storage__secret" />
+                        <CredentialField v-model="forms.storage.storage__key" :field="field('storage.key')" placeholder="Access key ID" :error="forms.storage.errors.storage__key" />
+                        <CredentialField v-model="forms.storage.storage__secret" :field="field('storage.secret')" placeholder="Paste the secret access key" :error="forms.storage.errors.storage__secret" />
                     </div>
                     <CredentialField
                         v-model="forms.storage.storage__public_url" :field="field('storage.public_url')"
@@ -287,12 +287,12 @@ const pill = (ready) => (ready
                     <div v-if="mailer === 'smtp'" class="grid gap-4 sm:grid-cols-2">
                         <CredentialField v-model="forms.mail.mail__smtp_host" :field="field('mail.smtp_host')" placeholder="smtp.postmarkapp.com" :error="forms.mail.errors.mail__smtp_host" />
                         <CredentialField v-model="forms.mail.mail__smtp_port" :field="field('mail.smtp_port')" placeholder="587" :error="forms.mail.errors.mail__smtp_port" />
-                        <CredentialField v-model="forms.mail.mail__smtp_username" :field="field('mail.smtp_username')" :error="forms.mail.errors.mail__smtp_username" />
-                        <CredentialField v-model="forms.mail.mail__smtp_password" :field="field('mail.smtp_password')" :error="forms.mail.errors.mail__smtp_password" />
+                        <CredentialField v-model="forms.mail.mail__smtp_username" :field="field('mail.smtp_username')" placeholder="Username from your mail provider" :error="forms.mail.errors.mail__smtp_username" />
+                        <CredentialField v-model="forms.mail.mail__smtp_password" :field="field('mail.smtp_password')" placeholder="Password from your mail provider" :error="forms.mail.errors.mail__smtp_password" />
                     </div>
                     <div v-if="mailer === 'ses'" class="grid gap-4 sm:grid-cols-2">
-                        <CredentialField v-model="forms.mail.mail__ses_key" :field="field('mail.ses_key')" :error="forms.mail.errors.mail__ses_key" />
-                        <CredentialField v-model="forms.mail.mail__ses_secret" :field="field('mail.ses_secret')" :error="forms.mail.errors.mail__ses_secret" />
+                        <CredentialField v-model="forms.mail.mail__ses_key" :field="field('mail.ses_key')" placeholder="AWS access key ID" :error="forms.mail.errors.mail__ses_key" />
+                        <CredentialField v-model="forms.mail.mail__ses_secret" :field="field('mail.ses_secret')" placeholder="Paste the AWS secret access key" :error="forms.mail.errors.mail__ses_secret" />
                         <CredentialField v-model="forms.mail.mail__ses_region" :field="field('mail.ses_region')" placeholder="us-east-1" :error="forms.mail.errors.mail__ses_region" />
                     </div>
                 </form>

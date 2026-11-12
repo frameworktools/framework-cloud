@@ -13,10 +13,11 @@ class PackageSearchController extends Controller
     public function __invoke(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'source' => ['required', 'in:cran,bioc,pypi'],
+            'source' => ['required', 'in:cran,bioc,pypi,github'],
             'q' => ['required', 'string', 'max:100'],
+            'language' => ['nullable', 'in:r,python'],
         ]);
 
-        return response()->json(['packages' => PackageIndex::search($validated['source'], $validated['q'])]);
+        return response()->json(['packages' => PackageIndex::search($validated['source'], $validated['q'], $validated['language'] ?? null)]);
     }
 }

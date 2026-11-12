@@ -24,7 +24,7 @@ const send = () => form.post('/forgot-password');
 
         <form class="flex flex-col gap-4" @submit.prevent="send">
             <UiInput
-                v-model="form.email" label="Email address" type="email" autocomplete="email" required autofocus
+                v-model="form.email" label="Email address" type="email" placeholder="you@example.org" autocomplete="email" required autofocus
                 :error="form.errors.email"
             />
             <UiButton type="submit" class="w-full" :disabled="form.processing">Email me a reset link</UiButton>

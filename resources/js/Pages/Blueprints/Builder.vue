@@ -6,7 +6,6 @@ import PageHeader from '@/Components/PageHeader.vue';
 import UiPanel from '@/Components/UiPanel.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiInput from '@/Components/UiInput.vue';
-import UiSelect from '@/Components/UiSelect.vue';
 import UiTextarea from '@/Components/UiTextarea.vue';
 import UiRadioCards from '@/Components/UiRadioCards.vue';
 import UiSwitch from '@/Components/UiSwitch.vue';
@@ -15,6 +14,7 @@ import ProjectTreeView from '@/Components/ProjectTreeView.vue';
 import { languageOptions, fitsLanguage, typeFits, visibilityOptions } from '@/library.js';
 
 const props = defineProps({
+    onboarding: Object,
     blueprint: Object, // null when creating
     start: Object, // choices to begin from: the version being edited, or ?from=
     catalog: Object,
@@ -29,8 +29,8 @@ const initialLanguage = props.start?.language ?? props.blueprint?.language ?? 'r
 const defaultFormat = language => ({ r: 'quarto', python: 'jupyter', stata: 'script' })[language];
 const initialWorkflow = props.start?.default_workflow?.[initialLanguage] ?? props.start?.workflows?.[0];
 
-const form = useForm({
-    name: props.blueprint?.name ?? '',
+const initialData = {
+    name: props.blueprint?.name ?? props.onboarding?.name ?? '',
     description: props.blueprint?.description ?? '',
     visibility: props.blueprint?.visibility ?? 'private',
     language: initialLanguage,
@@ -52,7 +52,20 @@ const form = useForm({
     publish_destination: props.start?.publish_destination ?? '',
     extra_yaml: props.start?.extra_yaml ?? '',
     notes: '',
-});
+};
+const draftKey = props.onboarding ? `welcome-blueprint:${props.onboarding.draftId}` : null;
+if (draftKey) {
+    try {
+        const draft = JSON.parse(sessionStorage.getItem(draftKey) ?? 'null');
+        if (draft?.language === initialLanguage) {
+            for (const key of Object.keys(initialData)) if (Object.hasOwn(draft, key)) initialData[key] = draft[key];
+        }
+    } catch { /* A blocked or expired browser draft starts from the selected blueprint. */ }
+}
+const form = useForm(initialData);
+if (draftKey) watch(() => form.data(), data => {
+    try { sessionStorage.setItem(draftKey, JSON.stringify(data)); } catch { /* Setup still works when browser storage is unavailable. */ }
+}, { deep: true, flush: 'sync' });
 const showAdvanced = ref(!!props.start?.extra_yaml);
 
 const errorSection = errors => {
@@ -60,11 +73,13 @@ const errorSection = errors => {
     return ({ agents: 'ai', language: 'language', structure: 'structure', languages: 'language', workflow: 'notebooks', workflows: 'notebooks', notebook_format: 'notebooks', tools: 'environment', package_sets: 'packages', package_overrides: 'packages', package_auto_attach: 'packages', skills: 'skills', excluded_skills: 'skills', skill_sets: 'skills', settings: 'git', scaffold: 'scaffold', quarto: 'quarto', ide: 'editor', publish_destination: 'publishing' })[field] ?? 'name';
 };
 const save = () => {
-    const options = { preserveScroll: true, preserveState: true, onError: errors => {
+    if (props.onboarding && activeSection.value !== 'review') { nextSection(); return; }
+    const options = { preserveScroll: true, preserveState: true, onSuccess: () => { if (draftKey) { try { sessionStorage.removeItem(draftKey); } catch { /* Browser storage may be unavailable. */ } } }, onError: errors => {
         const target = errorSection(errors);
         if (target !== activeSection.value) router.get(sectionUrl(target), {}, { preserveState: true });
     } };
     form.transform(data => ({ ...data, workflow: workflow.value, notebook_format: sentFormat(data) }));
+    if (props.onboarding) return form.post('/welcome/complete', options);
     return editing.value ? form.put(`/blueprints/${props.blueprint.id}`, options) : form.post('/blueprints', options);
 };
 const saved = computed(() => page.props.flash.status === 'blueprint-saved');
@@ -160,6 +175,7 @@ const items = [
     { label: 'AI Skills', anchor: 'skills' },
     { label: 'Git', anchor: 'git' },
     { label: 'Publishing', anchor: 'publishing' },
+    ...(props.onboarding ? [{ label: 'Review', anchor: 'review' }] : []),
 ];
 const activeSection = computed(() => props.section ?? 'name');
 const sectionUrl = section => {
@@ -169,21 +185,34 @@ const sectionUrl = section => {
     return url.pathname + url.search;
 };
 // Scripts have no Quarto documents, so no Quarto settings
-const navigation = computed(() => items.filter(item => item.anchor !== 'quarto' || workflow.value !== 'scripts').map(item => ({
+const navigation = computed(() => items.filter(item => {
+    if (!props.onboarding) return item.anchor !== 'quarto' || workflow.value !== 'scripts';
+    if (item.anchor === 'language') return false;
+    if (form.language === 'stata' && ['notebooks', 'quarto', 'jupyter', 'environment', 'scaffold', 'editor'].includes(item.anchor)) return false;
+    if (item.anchor === 'quarto') return workflow.value === 'quarto';
+    if (item.anchor === 'jupyter') return workflow.value === 'jupyter';
+    return true;
+}).map(item => ({
     label: item.label, href: sectionUrl(item.anchor), preserveState: true, preserveScroll: false, exact: true,
     current: activeSection.value === item.anchor,
 })));
 
+const nextSection = () => {
+    const index = navigation.value.findIndex(item => item.current);
+    const next = navigation.value[index + 1];
+    if (next) router.get(next.href, {}, { preserveState: true, preserveScroll: false });
+};
+const previousSection = computed(() => navigation.value[navigation.value.findIndex(item => item.current) - 1]);
 </script>
 
 <template>
-    <Head :title="editing ? `Edit ${blueprint.name}` : 'New Blueprint'" />
+    <Head :title="onboarding ? 'Your default blueprint' : editing ? `Edit ${blueprint.name}` : 'New Blueprint'" />
 
-    <SectionLayout heading="Blueprint" :items="navigation" :dirty="form.isDirty" wide>
-        <PageHeader :title="editing ? `Edit ${blueprint.name}` : 'New Blueprint'">
+    <SectionLayout :heading="onboarding ? 'Setup · Blueprint' : 'Blueprint'" :back="onboarding ? { label: 'Setup details', href: '/welcome' } : null" :items="navigation" :dirty="form.isDirty" wide>
+        <PageHeader :title="onboarding ? 'Your default blueprint' : editing ? `Edit ${blueprint.name}` : 'New Blueprint'">
             <template #description>
-                A blueprint defines a reusable project setup.
-                Each save creates a version. Existing projects keep their original version.
+                <template v-if="onboarding">Start from {{ onboarding.source }} for {{ { r: 'R', python: 'Python', stata: 'Stata' }[form.language] }}. Review the choices in order or jump to a section. Finish setup saves your private blueprint and makes it the default for this language.</template>
+                <template v-else>A blueprint defines a reusable project setup. Each save creates a version. Existing projects keep their original version.</template>
             </template>
         </PageHeader>
 
@@ -237,10 +266,13 @@ const navigation = computed(() => items.filter(item => item.anchor !== 'quarto' 
             </ChoicesEditor>
 
             <UiPanel v-if="activeSection === 'name'" flush id="name" title="Basics" class="max-w-2xl scroll-mt-6">
-                <UiInput v-model="form.name" label="Name" placeholder="e.g. R01 secondary analysis" required :error="form.errors.name" />
-                <UiTextarea v-model="form.description" label="Description" :rows="2" :error="form.errors.description" />
-                <UiSelect v-model="form.visibility" label="Visibility" :options="visibilityOptions" :error="form.errors.visibility" />
-                <UiInput v-if="editing" v-model="form.notes" label="Version notes (optional)" placeholder="Shown in the version history" :error="form.errors.notes" />
+                <UiInput v-model="form.name" label="Name" placeholder="Survey analysis" required :error="form.errors.name" />
+                <UiTextarea v-model="form.description" label="Description" placeholder="Project setup and intended use" :rows="2" :error="form.errors.description" />
+                <div v-if="!onboarding">
+                    <UiRadioCards v-model="form.visibility" name="visibility" legend="Visibility" :options="visibilityOptions" stacked />
+                    <p v-if="form.errors.visibility" role="alert" class="mt-2 text-sm text-red-600 dark:text-red-400">{{ form.errors.visibility }}</p>
+                </div>
+                <UiInput v-if="editing" v-model="form.notes" label="Version notes (optional)" placeholder="Summarize changes in this version" :error="form.errors.notes" />
 
                 <div>
                     <button type="button" class="text-sm text-slate-600 hover:underline dark:text-slate-400" @click="showAdvanced = !showAdvanced">
@@ -249,16 +281,33 @@ const navigation = computed(() => items.filter(item => item.anchor !== 'quarto' 
                 </div>
                 <UiTextarea
                     v-if="showAdvanced" v-model="form.extra_yaml" code :rows="8"
-                    label="Extra settings (YAML)"
+                    label="Extra settings (YAML)" :placeholder="'scaffold:\n  seed: 123'"
                     description="Anything else for settings.yml, such as scaffold options or connections. Applied on top of the pieces above."
                     :error="form.errors.extra_yaml"
                 />
             </UiPanel>
+            <UiPanel v-if="onboarding && activeSection === 'review'" flush title="Review" description="These choices become your default for new projects. Each project can be adjusted before creation.">
+                <dl class="grid max-w-2xl grid-cols-[auto_1fr] gap-x-8 gap-y-3 text-sm">
+                    <dt class="text-slate-500">Blueprint</dt><dd>{{ form.name }}</dd>
+                    <dt class="text-slate-500">Language</dt><dd>{{ { r: 'R', python: 'Python', stata: 'Stata' }[form.language] }}</dd>
+                    <dt class="text-slate-500">Notebook format</dt><dd>{{ form.language === 'stata' || form.notebook_format === 'scripts' ? 'Scripts' : { quarto: 'Quarto', rmarkdown: 'R Markdown', jupyter: 'Jupyter' }[form.notebook_format] }}</dd>
+                    <dt class="text-slate-500">Package sets</dt><dd>{{ form.package_sets.length }}</dd>
+                    <dt class="text-slate-500">AI skill sets</dt><dd>{{ form.skill_sets.length }}</dd>
+                    <dt class="text-slate-500">Git</dt><dd>{{ form.settings.git ? 'On' : 'Off' }}</dd>
+                    <dt class="text-slate-500">Visibility</dt><dd>Private</dd>
+                </dl>
+                <p v-if="shown?.problem" role="alert" class="text-sm text-red-600">{{ shown.problem }}</p>
+                <ProjectTreeView v-else-if="shown?.tree" :entries="shown.tree" />
+            </UiPanel>
+            <div v-if="onboarding" class="flex justify-between gap-3 border-t border-slate-800/10 pt-6 dark:border-white/15">
+                <UiButton v-if="previousSection" variant="ghost" @click="router.get(previousSection.href, {}, { preserveState: true })">Back</UiButton><span v-else />
+                <UiButton type="submit" :disabled="form.processing || !form.structure">{{ activeSection === 'review' ? 'Finish setup' : 'Continue' }}</UiButton>
+            </div>
         </form>
 
         <template #actions>
             <UiButton save-shortcut type="submit" form="blueprint-form" class="w-full" :disabled="form.processing || !form.structure">
-                {{ editing ? 'Save new version' : 'Create Blueprint' }}
+                {{ onboarding ? (activeSection === 'review' ? 'Finish setup' : 'Continue') : editing ? 'Save new version' : 'Create Blueprint' }}
             </UiButton>
             <p v-if="saved && !form.isDirty" role="status" class="text-center text-sm text-emerald-700 dark:text-emerald-400">Saved.</p>
         </template>

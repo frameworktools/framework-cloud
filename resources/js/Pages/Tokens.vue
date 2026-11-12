@@ -48,7 +48,7 @@ const revoke = async (id) => {
 
             <UiPanel title="New token" description="A device name, such as work-laptop.">
                 <form class="flex flex-wrap items-end gap-3" @submit.prevent="create">
-                    <div class="w-full max-w-xs"><UiInput v-model="form.name" label="Token name" placeholder="e.g. work-laptop" :error="form.errors.name" /></div>
+                    <div class="w-full max-w-xs"><UiInput v-model="form.name" label="Token name" placeholder="work-laptop" :error="form.errors.name" /></div>
                     <UiButton type="submit" :disabled="form.processing">Create token</UiButton>
                 </form>
             </UiPanel>

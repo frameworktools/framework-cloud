@@ -50,6 +50,23 @@ class ResolvedSelections
         // The name names files such as the .Rproj, as creation does
         $spec = ['name' => $resolved['envelope']['name']] + DefaultsPreview::merge($resolved['envelope']['layers']);
 
+        $tree = ProjectTree::for($spec, $language, $on, (bool) ($spec['security']['sensitive'] ?? false));
+        $missingRenderDirectory = null;
+        $renderDirectory = $spec['quarto']['render_dir'] ?? null;
+        if ($language !== 'stata' && in_array('quarto', $on, true) && is_string($renderDirectory)) {
+            $target = rtrim(preg_replace('#^(\./)+#', '', $renderDirectory), '/');
+            if ($target !== '' && $target !== '.') {
+                // A created child also creates its parent. Ignore folders deferred until use.
+                $created = collect($tree)->filter(fn ($entry) => ! $entry['later'])
+                    ->filter(fn ($entry) => $entry['type'] === 'dir' || str_contains($entry['path'], '/'))
+                    ->map(fn ($entry) => $entry['type'] === 'dir' ? $entry['path'] : dirname($entry['path']))
+                    ->merge(collect($spec['extra_directories'] ?? [])->pluck('path')->filter(fn ($path) => is_string($path)));
+                if (! $created->contains(fn ($path) => $path === $target || str_starts_with($path, $target.'/'))) {
+                    $missingRenderDirectory = $target;
+                }
+            }
+        }
+
         $named = array_keys(array_filter((array) ($spec['ai']['assistants'] ?? [])));
         $aiOn = (bool) ($spec['ai']['enabled'] ?? true);
 
@@ -59,7 +76,8 @@ class ResolvedSelections
         return [
             'language' => $language,
             // The files and folders creation writes, and where documents render
-            'tree' => ProjectTree::for($spec, $language, $on, (bool) ($spec['security']['sensitive'] ?? false)),
+            'tree' => $tree,
+            'missing_render_directory' => $missingRenderDirectory,
             'render_dirs' => collect((array) ($spec['render_dirs'] ?? []))
                 ->map(fn ($target, $key) => ['from' => $spec['directories'][$key] ?? $key, 'to' => $target])->values()->all(),
             // Agents as the shared selector shows them; other agents is the blueprint's answer

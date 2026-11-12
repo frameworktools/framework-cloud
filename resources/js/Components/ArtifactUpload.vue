@@ -1,4 +1,5 @@
 <script setup>
+import UiRadioCards from '@/Components/UiRadioCards.vue';
 import { computed, ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import UiButton from '@/Components/UiButton.vue';
@@ -42,18 +43,13 @@ const fieldClass = 'w-full rounded-md border border-slate-300 bg-white px-3 py-2
             </label>
             <label class="flex items-center gap-2 text-sm"><input v-model="bundle" type="checkbox">HTML ZIP bundle</label>
             <UiInput v-if="bundle" v-model="form.entrypoint" label="ZIP entry page" placeholder="index.html" required />
-            <div class="grid gap-4 sm:grid-cols-2">
+            <div class="flex flex-col gap-6">
                 <UiInput v-model="form.title" label="Title" placeholder="Main findings" />
                 <UiInput v-model="form.slug" label="Artifact name" placeholder="main-findings" description="Leave blank to use the filename. Reuse this name to add a version." />
             </div>
-            <UiInput v-model="form.description" label="Description" placeholder="Artifact description" />
-            <div class="grid gap-4 sm:grid-cols-2">
-                <label class="flex flex-col gap-1.5 text-sm font-medium">Sharing
-                    <select v-model="form.visibility" :class="fieldClass">
-                        <option value="private">Private, only you</option><option value="unlisted">Anyone with the link</option>
-                        <option value="public">Public, with a readable link</option>
-                    </select>
-                </label>
+            <UiInput v-model="form.description" label="Description" placeholder="Data, methods, and context for this result" />
+            <div class="flex flex-col gap-6">
+                <UiRadioCards v-model="form.visibility" name="upload-visibility" legend="Sharing" stacked :options="[{ value: 'private', label: 'Private, only you' }, { value: 'unlisted', label: 'Anyone with the link' }, { value: 'public', label: 'Public, with a readable link' }]" />
                 <UiInput v-model="form.password" type="password" label="Password (optional)" autocomplete="new-password" description="At least 8 characters. Readers need it to open the artifact and its files." />
             </div>
             <p class="text-xs text-slate-500 dark:text-slate-400">A new version keeps the current password when this field is blank.</p>

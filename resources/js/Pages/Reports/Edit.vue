@@ -1,4 +1,5 @@
 <script setup>
+import UiRadioCards from '@/Components/UiRadioCards.vue';
 import ShareQr from '@/Components/ShareQr.vue';
 import { ask } from '@/confirm.js';
 import { pageClass } from '@/ui.js';
@@ -324,13 +325,11 @@ const controlClass = 'inline-flex size-7 items-center justify-center rounded-md 
 
                     <section aria-labelledby="sharing-title" class="space-y-4 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
                         <h2 id="sharing-title" class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Sharing</h2>
-                        <label class="block text-sm font-medium text-slate-800 dark:text-slate-200">Reader access
-                            <select v-model="form.visibility" :class="fieldClass"><option value="private">Private, only you</option><option value="unlisted">Anyone with the link</option><option value="public">Public</option></select>
-                        </label>
+                        <UiRadioCards v-model="form.visibility" name="reader-access" legend="Reader access" stacked :options="[{ value: 'private', label: 'Private, only you' }, { value: 'unlisted', label: 'Anyone with the link' }, { value: 'public', label: 'Public' }]" />
                         <p class="-mt-2 text-xs text-slate-500 dark:text-slate-400">{{ visibilityText[form.visibility] }} The change applies to every published version.</p>
                         <UiInput v-model="form.password" type="password" :label="report.password_protected ? 'New password' : 'Password (optional)'" autocomplete="new-password" description="At least 8 characters. Readers enter it to open the report." :error="form.errors.password" />
                         <label v-if="report.password_protected" class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300"><input v-model="form.remove_password" type="checkbox" class="rounded border-slate-300">Remove the password</label>
-                        <UiInput v-model="form.slug" label="Short name" description="Used in the report’s address." :error="form.errors.slug" />
+                        <UiInput v-model="form.slug" label="Short name" placeholder="study-findings" description="Used in the report’s address." :error="form.errors.slug" />
                     </section>
 
                     <ShareQr :share="report.share" unavailable="It's private, so it has no QR code. Choose Anyone with the link or Public in Sharing and save." />

@@ -35,12 +35,12 @@ const destroy = () => deleteForm.delete('/account/account', { preserveScroll: tr
     <AccountLayout heading="Account" subheading="Your name, sign-in email, and public page.">
         <UiPanel title="Details">
         <form id="account-form" class="flex flex-col gap-4" @submit.prevent="save">
-            <UiInput v-model="form.name" label="Name" required :error="form.errors.name" />
-            <UiInput v-model="form.email" label="Sign-in email" type="email" required description="Private address for sign-in and account messages." :error="form.errors.email" />
+            <UiInput v-model="form.name" label="Name" placeholder="Full name" required :error="form.errors.name" />
+            <UiInput v-model="form.email" label="Sign-in email" type="email" placeholder="you@example.org" required description="Private address for sign-in and account messages." :error="form.errors.email" />
             <UiInput
                 v-model="form.handle"
                 label="Handle"
-                placeholder="e.g. erik"
+                placeholder="jane-smith"
                 :description="`Your public profile lives at ${host}/@${form.handle || 'handle'}. Treat it as permanent once shared.`"
                 :error="form.errors.handle"
             />
@@ -67,7 +67,7 @@ const destroy = () => deleteForm.delete('/account/account', { preserveScroll: tr
                 Your projects, artifacts, collections, reports, settings, and tokens
                 are deleted for good. Type your account email to confirm.
             </p>
-            <UiInput v-model="deleteForm.confirm_email" label="Account email" type="email" :error="deleteForm.errors.confirm_email" />
+            <UiInput v-model="deleteForm.confirm_email" label="Account email" type="email" placeholder="Your sign-in email address" :error="deleteForm.errors.confirm_email" />
             <div class="flex justify-end gap-2">
                 <UiButton variant="outline" @click="showDelete = false">Cancel</UiButton>
                 <UiButton variant="danger" :disabled="deleteForm.processing" @click="destroy">Delete account</UiButton>

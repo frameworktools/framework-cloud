@@ -9,8 +9,11 @@ use App\Models\Skill;
 use App\Support\GitignoreTemplate;
 use App\Support\Layer;
 use App\Support\Library;
+use App\Support\PackageCategories;
+use App\Support\PackageSetLayer;
 use App\Support\ProjectDefaults;
 use App\Support\SkillTags;
+use App\Support\StructureLayout;
 use App\Support\StructurePreview;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -44,8 +47,10 @@ class FacetsController extends Controller
             return Inertia::render('Pieces/PackageSets', [
                 'sets' => $pieces->map(fn (Facet $f) => Library::facet($f, $user) + [
                     'packages' => self::setPackages($f),
+                    'tags' => PackageCategories::setTags($f->key, $f->category),
                 ]),
-                'language' => ($language = ProjectDefaults::chosenLanguage($user) ?? 'r') === 'python' ? 'python' : 'r',
+                'language' => $request->query('language', ProjectDefaults::chosenLanguage($user) ?? 'r'),
+                'categories' => PackageCategories::setTagOptions(),
             ]);
         }
 
@@ -96,14 +101,14 @@ class FacetsController extends Controller
     public function store(Request $request, string $kind): RedirectResponse
     {
         $user = $request->user();
-        [$meta, $layer, $notes] = $this->validated($request, $kind);
+        [$meta, $layer, $notes, $manualPackages] = $this->validated($request, $kind);
 
         $facet = Facet::create($meta + [
             'user_id' => $user->id,
             'kind' => $kind,
             'key' => Library::uniqueKey(Facet::query(), $meta['name'], $user->id),
         ]);
-        $facet->publishVersion(['layer' => $layer, 'notes' => $notes]);
+        $facet->publishVersion(['layer' => $layer, 'manual_packages' => $manualPackages, 'notes' => $notes]);
 
         return to_route(self::PATHS[$kind].'.edit', $facet)->with('status', 'facet-saved');
     }
@@ -119,7 +124,7 @@ class FacetsController extends Controller
     {
         abort_unless($facet->kind === $kind && $facet->isEditableBy($request->user()), 403);
 
-        [$meta, $layer, $notes] = $this->validated($request, $kind);
+        [$meta, $layer, $notes, $manualPackages] = $this->validated($request, $kind);
         $variant = $request->input('variant');
         $languageLayers = $facet->latestVersion->language_layers;
         if ($kind === 'skill_set' && $languageLayers) {
@@ -132,9 +137,9 @@ class FacetsController extends Controller
             $meta['language'] = $facet->language;
         }
 
-        DB::transaction(function () use ($facet, $meta, $layer, $notes, $languageLayers) {
+        DB::transaction(function () use ($facet, $meta, $layer, $notes, $languageLayers, $manualPackages) {
             $facet->update($meta);
-            $facet->publishVersion(['layer' => $layer, 'language_layers' => $languageLayers, 'notes' => $notes]);
+            $facet->publishVersion(['layer' => $layer, 'language_layers' => $languageLayers, 'manual_packages' => $manualPackages, 'notes' => $notes]);
         });
 
         return back()->with('status', 'facet-saved');
@@ -143,19 +148,11 @@ class FacetsController extends Controller
     /**
      * A set's packages as rows of the defaults list.
      *
-     * @return list<array{name: string, source: string, auto_attach: bool, version: ?string, repo: ?string}>
+     * @return list<array{name: string, source: string, version: ?string, repo: ?string}>
      */
     private static function setPackages(Facet $facet): array
     {
-        return collect($facet->latestVersion?->layer['packages']['default_packages'] ?? [])
-            ->filter(fn ($spec) => is_array($spec))
-            ->map(fn (array $spec, $name) => [
-                'name' => (string) $name,
-                'source' => (string) ($spec['source'] ?? (($facet->language[0] ?? 'r') === 'python' ? 'pypi' : 'cran')),
-                'auto_attach' => (bool) ($spec['auto_attach'] ?? false),
-                'version' => $spec['version'] ?? null,
-                'repo' => $spec['repo'] ?? null,
-            ])->values()->all();
+        return $facet->latestVersion ? PackageSetLayer::rows($facet->latestVersion) : [];
     }
 
     public function fork(Request $request, Facet $facet, string $kind): RedirectResponse
@@ -176,7 +173,7 @@ class FacetsController extends Controller
             'visibility' => 'private',
             'forked_from_id' => $source->id,
         ]);
-        $copy->publishVersion(['layer' => $source->layer, 'language_layers' => $source->language_layers, 'notes' => "Copied from {$facet->handle} v{$source->version}"]);
+        $copy->publishVersion(['layer' => $source->layer, 'language_layers' => $source->language_layers, 'manual_packages' => $source->manual_packages, 'notes' => "Copied from {$facet->handle} v{$source->version}"]);
 
         return to_route(self::PATHS[$kind].'.edit', ['facet' => $copy, 'copy' => 1, 'language' => $request->input('language')])->with('status', 'facet-forked');
     }
@@ -215,17 +212,22 @@ class FacetsController extends Controller
             unset($settings['git']);
         }
 
+        $preferredLanguage = $request->query('language', SkillsController::preferredLanguage($user));
+        $preferredLanguage = in_array($preferredLanguage, Project::LANGUAGES, true) ? $preferredLanguage : SkillsController::preferredLanguage($user);
+
         return Inertia::render('Pieces/Edit', [
             'variant' => $variant,
             'kind' => $kind,
             'path' => self::PATHS[$kind],
-            'language' => $variant ?? ($kind === 'package_set' && SkillsController::preferredLanguage($user) === 'stata' ? 'r' : SkillsController::preferredLanguage($user)),
+            'language' => $variant ?? $preferredLanguage,
             'facet' => $facet ? Library::facet($facet->load('owner'), $user) + [
                 'language' => $facet->language,
                 'versions' => $facet->versions()->get(['id', 'version', 'notes', 'created_at']),
             ] : null,
             'values' => [
+                ...($kind === 'structure' ? StructureLayout::choices($layer) : []),
                 'settings_yaml' => Layer::toYaml($settings),
+                'package_rows' => $kind === 'package_set' && $facet ? self::setPackages($facet) : [],
                 'gitignore_content' => $layer['git']['gitignore_content'] ?? ($facet ? '' : GitignoreTemplate::for('project')),
                 'packages' => collect($layer['packages']['default_packages'] ?? [])->map(fn ($spec, $name) => ($spec['source'] ?? null) === 'github' && ! empty($spec['repo']) ? $spec['repo'] : $name)->sort(SORT_NATURAL | SORT_FLAG_CASE)->implode("\n"),
                 'files' => collect($layer['files'] ?? [])->map(fn ($file, $path) => [
@@ -257,11 +259,17 @@ class FacetsController extends Controller
             'description' => ['nullable', 'string', 'max:1000'],
             'visibility' => ['required', Rule::in(Facet::VISIBILITIES)],
             // A package set installs packages for one language, so it names it
-            'language' => $kind === 'package_set' ? ['required', Rule::in(['r', 'python'])] : ['nullable', Rule::in(Project::LANGUAGES)],
+            'language' => $kind === 'package_set' ? ['required', Rule::in(Project::LANGUAGES)] : ['nullable', Rule::in(Project::LANGUAGES)],
             'requirements' => ['nullable', 'string', 'max:1000'],
             'settings_yaml' => ['nullable', 'string'],
             'gitignore_content' => ['nullable', 'string', 'max:65536'],
             'packages' => ['nullable', 'string', 'max:5000'],
+            'package_rows' => ['sometimes', 'array', 'max:300'],
+            'package_rows.*.name' => ['required', 'string', 'max:100', 'regex:/^[A-Za-z][A-Za-z0-9._-]*$/', 'distinct:ignore_case'],
+            'package_rows.*.source' => ['required', Rule::in(['cran', 'bioc', 'github', 'pypi', 'manual'])],
+            'package_rows.*.repo' => ['nullable', 'string', 'max:200', 'regex:/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/'],
+            'package_rows.*.version' => ['nullable', 'string', 'max:100'],
+            'package_rows.*.ref' => ['nullable', 'string', 'max:200'],
             'files' => ['array'],
             'files.*.path' => ['required', 'string', 'max:255', 'distinct'],
             'files.*.content' => ['nullable', 'string'],
@@ -271,6 +279,12 @@ class FacetsController extends Controller
             'skills.*.skill_id' => ['nullable', 'integer'],
             'skills.*.entry' => ['nullable', 'array'],
             'notes' => ['nullable', 'string', 'max:500'],
+            'folders' => ['sometimes', 'array', 'max:500'],
+            'folders.*.path' => ['required', 'string', 'max:255'],
+            'folders.*.original_path' => ['nullable', 'string', 'max:255'],
+            'framework_locations' => ['sometimes', 'array'],
+            'framework_locations.functions' => ['nullable', 'string', 'max:255'],
+            'framework_locations.cache' => ['nullable', 'string', 'max:255'],
         ]);
 
         $layer = [];
@@ -282,6 +296,9 @@ class FacetsController extends Controller
             }
             if (array_intersect_key($layer, ['files' => 1, 'skills' => 1, 'packages' => 1])) {
                 throw ValidationException::withMessages(['settings_yaml' => 'A project structure holds folders, settings, and files. Put packages in a package set and skills in a skill set.']);
+            }
+            if (array_key_exists('folders', $data)) {
+                $layer = StructureLayout::apply($layer, $data['folders'], $data['framework_locations'] ?? []);
             }
 
             if (array_key_exists('gitignore_content', $data)) {
@@ -303,12 +320,37 @@ class FacetsController extends Controller
             }
         }
 
-        if (in_array($kind, ['package_set', 'skill_set'], true) && ($packages = $this->packages($data['packages'] ?? '', $data['language'] ?? 'r'))) {
+        $manualPackages = null;
+        if ($kind === 'package_set' && array_key_exists('package_rows', $data)) {
+            $language = $data['language'];
+            $allowedSources = match ($language) {
+                'r' => ['cran', 'bioc', 'github'], 'python' => ['pypi', 'github'], 'stata' => ['manual'],
+            };
+            foreach ($data['package_rows'] as $i => $row) {
+                if (! in_array($row['source'], $allowedSources, true) || ($row['source'] === 'github' && empty($row['repo']))) {
+                    throw ValidationException::withMessages(["package_rows.{$i}.source" => 'Choose a valid source and repository for this language.']);
+                }
+            }
+            if ($language === 'stata') {
+                $manualPackages = array_column($data['package_rows'], 'name');
+            } else {
+                $layer['packages']['default_packages'] = ProjectDefaults::packageLayer($data['package_rows']);
+                foreach ($data['package_rows'] as $row) {
+                    if ($row['source'] === 'github' && filled($row['ref'] ?? null)) {
+                        $layer['packages']['default_packages'][$row['name']]['ref'] = $row['ref'];
+                    }
+                }
+            }
+        } elseif ($kind === 'package_set' && ($data['language'] ?? '') === 'stata') {
+            $manualPackages = array_keys($this->packages($data['packages'] ?? '', 'r'));
+        } elseif (in_array($kind, ['package_set', 'skill_set'], true) && ($packages = $this->packages($data['packages'] ?? '', $data['language'] ?? 'r'))) {
             $layer['packages'] = ['default_packages' => $packages];
         }
-
-        if ($kind === 'package_set' && empty($layer['packages'])) {
-            throw ValidationException::withMessages(['packages' => 'List at least one package.']);
+        if ($kind === 'package_set') {
+            $layer = PackageSetLayer::installOnly($layer);
+            if (empty($layer['packages']['default_packages']) && empty($manualPackages)) {
+                throw ValidationException::withMessages([array_key_exists('package_rows', $data) ? 'package_rows' : 'packages' => 'Add at least one package.']);
+            }
         }
 
         if ($problems = Layer::problems($layer, $kind)) {
@@ -320,7 +362,7 @@ class FacetsController extends Controller
             'language' => $kind === 'structure' || blank($data['language'] ?? null) ? null : [$data['language']],
         ];
 
-        return [$meta, $layer, $data['notes'] ?? null];
+        return [$meta, $layer, $data['notes'] ?? null, $manualPackages];
     }
 
     /**

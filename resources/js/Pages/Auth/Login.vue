@@ -182,7 +182,7 @@ const dividerText = 'text-xs font-medium tracking-wide text-slate-500 uppercase 
                                 v-model="passwordForm.password"
                                 type="password"
                                 name="password"
-                                placeholder="••••••••"
+                                placeholder="Enter your password"
                                 autocomplete="current-password"
                                 :required="step === 'password'"
                                 :aria-invalid="passwordError ? 'true' : undefined"

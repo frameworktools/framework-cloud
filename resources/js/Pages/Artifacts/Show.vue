@@ -1,4 +1,5 @@
 <script setup>
+import UiRadioCards from '@/Components/UiRadioCards.vue';
 import ShareQr from '@/Components/ShareQr.vue';
 import { ask } from '@/confirm.js';
 import { pageClass } from '@/ui.js';
@@ -235,9 +236,10 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public', privat
 
                 <!-- Sharing -->
                 <form v-else-if="tab === 'sharing' && !external" class="max-w-xl space-y-6 pt-6" @submit.prevent="saveSharing">
-                    <UiSelect v-model="sharing.visibility" label="Reader access" :error="sharing.errors.visibility"
-                        description="Private artifacts need your sign-in. Anyone with the link can open the others. Public artifacts also get a readable address."
+                    <UiRadioCards v-model="sharing.visibility" name="artifact-reader-access" legend="Reader access" stacked
                         :options="[{ value: 'private', label: 'Private, only you' }, { value: 'unlisted', label: 'Anyone with the link' }, { value: 'public', label: 'Public, with a readable link' }]" />
+                    <p class="text-sm text-slate-500 dark:text-slate-400">Private artifacts need your sign-in. Anyone with the link can open the others. Public artifacts also get a readable address.</p>
+                    <p v-if="sharing.errors.visibility" role="alert" class="text-sm text-red-600 dark:text-red-400">{{ sharing.errors.visibility }}</p>
                     <UiSeparator />
                     <section aria-label="Links" class="space-y-3">
                         <h2 class="text-sm font-medium text-slate-900 dark:text-white">Links</h2>
@@ -284,8 +286,8 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public', privat
                 <div v-else class="max-w-2xl space-y-8 pt-8">
                     <form class="space-y-6" @submit.prevent="saveDetails">
                         <UiSection title="Details" description="Readers see the title and description on the artifact’s page." />
-                        <UiInput v-model="details.title" label="Title" required :error="details.errors.title" />
-                        <UiTextarea v-model="details.description" label="Description" optional :rows="3" placeholder="Artifact description" :error="details.errors.description" />
+                        <UiInput v-model="details.title" label="Title" placeholder="Main findings" required :error="details.errors.title" />
+                        <UiTextarea v-model="details.description" label="Description" optional :rows="3" placeholder="Data, methods, and context for this result" :error="details.errors.description" />
                         <div class="flex items-center gap-3">
                             <UiButton type="submit" :disabled="details.processing">Save</UiButton>
                             <span v-if="details.recentlySuccessful" class="text-sm text-emerald-700 dark:text-emerald-400">Saved</span>

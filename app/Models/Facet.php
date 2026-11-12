@@ -52,7 +52,7 @@ class Facet extends Model
 
     protected function versionContent(): array
     {
-        return ['layer', 'language_layers'];
+        return ['layer', 'language_layers', 'manual_packages'];
     }
 
     protected function casts(): array

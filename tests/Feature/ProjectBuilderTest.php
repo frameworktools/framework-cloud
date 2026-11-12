@@ -26,6 +26,23 @@ class ProjectBuilderTest extends TestCase
         return Blueprint::whereNull('user_id')->where('key', $key)->firstOrFail();
     }
 
+    public function test_preview_warns_about_a_render_directory_not_created_during_setup(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $choices = ['blueprint_id' => $this->blueprint('project')->id, 'language' => 'r', 'customized' => true,
+            'structure' => 'framework/project', 'tools' => ['quarto' => true]];
+        $this->postJson('/projects/preview', $choices + ['extra_yaml' => "quarto:\n  render_dir: results/rendered"])
+            ->assertOk()->assertJsonPath('missing_render_directory', 'results/rendered');
+        $this->postJson('/projects/preview', $choices + ['extra_yaml' => "quarto:\n  render_dir: ."])
+            ->assertOk()->assertJsonPath('missing_render_directory', null);
+        $this->postJson('/projects/preview', $choices + ['extra_yaml' => "quarto:\n  render_dir: results/rendered\nextra_directories:\n  renders:\n    label: Rendered documents\n    path: results/rendered"])
+            ->assertOk()->assertJsonPath('missing_render_directory', null);
+        $this->postJson('/projects/preview', $choices + ['extra_yaml' => "quarto:\n  render_dir: results\nextra_directories:\n  renders:\n    label: Rendered documents\n    path: results/rendered"])
+            ->assertOk()->assertJsonPath('missing_render_directory', null);
+        $this->postJson('/projects/preview', array_replace($choices, ['workflow' => 'scripts', 'tools' => ['quarto' => false], 'extra_yaml' => "quarto:\n  render_dir: results/rendered"]))
+            ->assertOk()->assertJsonPath('missing_render_directory', null);
+    }
+
     public function test_the_preview_shows_a_named_blueprint_alone_and_marks_required_tools(): void
     {
         // Account defaults from before blueprints held everything don't come along

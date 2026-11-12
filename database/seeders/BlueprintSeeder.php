@@ -8,6 +8,7 @@ use App\Models\Facet;
 use App\Models\Skill;
 use App\Models\SkillTag;
 use App\Support\GitignoreTemplate;
+use App\Support\PackageSetLayer;
 use App\Support\SkillTags;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Arr;
@@ -216,7 +217,7 @@ class BlueprintSeeder extends Seeder
             $facet = Facet::updateOrCreate(['user_id' => null, 'key' => $key], [
                 'kind' => $kind,
                 'name' => $definition['name'],
-                'description' => $definition['description'] ?? null,
+                'description' => $kind === 'package_set' && $key === 'tidyverse-analysis' ? 'The tidyverse packages most analyses use.' : ($definition['description'] ?? null),
                 'requirements' => $definition['requirements'] ?? null,
                 'category' => $definition['category'] ?? null,
                 'language' => $definition['language'] ?? null,
@@ -226,7 +227,7 @@ class BlueprintSeeder extends Seeder
                 'position' => $position++,
             ]);
 
-            $facet->publishVersion(['layer' => $definition['layer'], 'language_layers' => ($definition['language_layers'] ?? []) ?: null]);
+            $facet->publishVersion(['layer' => $kind === 'package_set' ? PackageSetLayer::installOnly($definition['layer']) : $definition['layer'], 'language_layers' => ($definition['language_layers'] ?? []) ?: null]);
         }
     }
 

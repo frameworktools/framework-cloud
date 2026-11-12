@@ -10,7 +10,7 @@ export const pieceCopy = {
     package_set: {
         title: 'Package sets',
         noun: 'package set',
-        description: 'Packages to start R and Python projects with. Sets stack: add several to your defaults or a blueprint, and a package in more than one installs once.',
+        description: 'Packages that belong together. Add sets to a blueprint, then refine its package list.',
         empty: "No custom package sets.",
     },
     skill_set: {

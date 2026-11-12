@@ -48,7 +48,7 @@ class StructurePreview
 
         return [
             'tree' => $entries,
-            'folders' => count(array_filter($directories, fn (string $path) => ! ProjectTree::isFile($path))),
+            'folders' => count(StructureLayout::choices($layer)['folders']),
             // Each source folder and where its documents render
             'renders' => $renders,
             // Where any other Quarto document renders; "." is next to its source
