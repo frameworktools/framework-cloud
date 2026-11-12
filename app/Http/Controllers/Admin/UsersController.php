@@ -18,7 +18,7 @@ class UsersController extends Controller
     {
         // Last activity from the session table, when sessions are kept in the database
         $lastActive = config('session.driver') === 'database'
-            ? DB::table(config('session.table', 'sessions'))->whereNotNull('user_id')->groupBy('user_id')->pluck(DB::raw('max(last_activity)'), 'user_id')
+            ? DB::table(config('session.table', 'sessions'))->whereNotNull('user_id')->groupBy('user_id')->selectRaw('user_id, max(last_activity) as last_active')->pluck('last_active', 'user_id')
             : collect();
 
         $users = User::query()

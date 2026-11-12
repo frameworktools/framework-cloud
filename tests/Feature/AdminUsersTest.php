@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -27,6 +29,20 @@ class AdminUsersTest extends TestCase
             ->where('summary.verified', 1));
         // The link is in the admin's sidebar
         $this->actingAs($admin)->get('/dashboard')->assertInertia(fn (Assert $page) => $page->where('nav', fn ($nav) => collect($nav)->contains('href', '/admin/users')));
+    }
+
+    public function test_last_activity_comes_from_database_sessions(): void
+    {
+        config(['session.driver' => 'database']);
+        $admin = User::factory()->create(['email_verified_at' => now(), 'is_admin' => true]);
+        $seen = now()->subHours(3)->startOfSecond();
+        DB::table('sessions')->insert([
+            ['id' => 'a', 'user_id' => $admin->id, 'ip_address' => null, 'user_agent' => null, 'payload' => '', 'last_activity' => $seen->copy()->subDay()->timestamp],
+            ['id' => 'b', 'user_id' => $admin->id, 'ip_address' => null, 'user_agent' => null, 'payload' => '', 'last_activity' => $seen->timestamp],
+        ]);
+
+        $this->actingAs($admin)->get('/admin/users')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('users.0.last_active', fn ($value) => $value !== null && Carbon::parse($value)->timestamp >= $seen->timestamp));
     }
 
     public function test_other_people_cannot_see_the_list(): void
