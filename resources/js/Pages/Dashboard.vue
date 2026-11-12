@@ -50,17 +50,20 @@ const signIn = computed(() => ({
     fw: { cmd: `fw login${named.value ? ` --url ${server.value}` : ''}` },
 }[client.value]));
 // R installs from GitHub, which CRAN can lag behind. Both installs work on a
-// fresh machine: they set a CRAN mirror and add what they need first.
+// fresh machine and update an existing install: they set a CRAN mirror, add
+// any missing helpers, then always install framework.
 const mirror = 'options(repos = c(CRAN = "https://cloud.r-project.org"))';
 const githubInstall = `${mirror}
-if (!requireNamespace("remotes", quietly = TRUE)) install.packages("remotes")
-if (!requireNamespace("httr2", quietly = TRUE)) install.packages("httr2")
+for (pkg in c("remotes", "httr2")) {
+  if (!requireNamespace(pkg, quietly = TRUE)) install.packages(pkg)
+}
 remotes::install_github("frameworktools/framework", upgrade = "never")
 packageVersion("framework")`;
 const cranInstall = `${mirror}
-for (pkg in c("framework", "httr2")) {
+for (pkg in c("httr2")) {
   if (!requireNamespace(pkg, quietly = TRUE)) install.packages(pkg)
 }
+install.packages("framework")
 packageVersion("framework")`;
 const signInInfo = 'Opens a browser to approve this computer. It stays signed in. Scripts and jobs that can\'t wait for a browser use a token.';
 const highlighting = { r: 'r', python: 'python', stata: 'stata', fw: 'bash' };
