@@ -15,7 +15,7 @@
 <section id="cloud" class="py-14 sm:py-20">
     <div class="mx-auto max-w-2xl text-center">
         <h2 class="text-3xl font-semibold tracking-tight">Four ways to start a Framework project</h2>
-        <p class="mt-4 leading-relaxed text-slate-600 dark:text-slate-400">Create a project with the R or Python package, or from the command line. Framework Cloud can also put the project on GitHub or give you a ZIP, with no package needed.</p>
+        <p class="mt-4 leading-relaxed text-slate-600 dark:text-slate-400">Set up a project in Framework Cloud: pick a blueprint, adjust it, and see every file before it's made. Then put it on GitHub, download a ZIP, or create it with the R or Python package or the command line.</p>
     </div>
     <div class="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         @foreach ($cards as [$icon, $title, $body, $command])
