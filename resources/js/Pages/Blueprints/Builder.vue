@@ -296,7 +296,7 @@ const previousSection = computed(() => navigation.value[navigation.value.findInd
                 <p v-else-if="form.settings.git" class="text-sm text-slate-500 dark:text-slate-400">Commit hooks are available for R and Python projects.</p>
                 <p v-if="form.errors.settings" class="text-xs text-red-600 dark:text-red-400">{{ form.errors.settings }}</p>
             </UiPanel>
-            <ChoicesEditor :form="form" :catalog="catalog" :section="activeSection" :required="requiredTools" :ggplot-themes="ggplotThemes" :quarto-choices="quartoChoices" agent-picker flush>
+            <ChoicesEditor :form="form" :catalog="catalog" :apply-on-load="!blueprint" :section="activeSection" :required="requiredTools" :ggplot-themes="ggplotThemes" :quarto-choices="quartoChoices" agent-picker flush>
                 <!-- The files and folders a project gets from these choices, with nobody's defaults -->
                 <template #structure-preview>
                     <div class="flex flex-col gap-3 border-t border-slate-800/10 pt-6 dark:border-white/15">

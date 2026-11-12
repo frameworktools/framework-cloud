@@ -681,7 +681,7 @@ const submitDisabled = computed(() => form.processing || (stage.value === 'revie
                         <p v-if="form.errors.settings" class="text-xs text-red-600 dark:text-red-400">{{ form.errors.settings }}</p>
                     </UiPanel>
 
-                    <ChoicesEditor :form="form" :catalog="catalog" :section="tab" :languages="[form.language]" :required="requiredTools" :ggplot-themes="ggplotThemes" :quarto-choices="quartoChoices" agent-picker flush>
+                    <ChoicesEditor :form="form" :catalog="catalog" :apply-on-load="!editing" :section="tab" :languages="[form.language]" :required="requiredTools" :ggplot-themes="ggplotThemes" :quarto-choices="quartoChoices" agent-picker flush>
                         <!-- The files and folders this project gets, as the choices stand -->
                         <template #structure-preview>
                             <div class="flex flex-col gap-3 border-t border-slate-800/10 pt-6 dark:border-white/15" :class="current ? '' : 'opacity-60'">

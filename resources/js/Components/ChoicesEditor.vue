@@ -84,12 +84,14 @@ const props = defineProps({
     // The choices the Scaffold and Quarto sections offer, from ProjectDefaults
     ggplotThemes: { type: Array, default: () => [] },
     quartoChoices: { type: Object, default: () => ({}) },
+    // A saved blueprint or project opens as saved: its skills change only when a choice does
+    applyOnLoad: { type: Boolean, default: true },
 });
 
 const f = props.form;
 // Quarto, Jupyter, Git, and sensitive structures select their skills, which stay removable
 watch(() => JSON.stringify([f.language, f.notebook_format, f.workflow, f.settings?.git, f.structure, f.agents?.includes('none'), f.settings?.ai]),
-    () => applyContextSkills(f, props.catalog), { immediate: true });
+    () => applyContextSkills(f, props.catalog), { immediate: props.applyOnLoad });
 const visible = section => !props.section || props.section === section;
 // The settings sections appear only when asked for, so forms without their fields keep working
 const extra = section => (props.section ? props.section === section : props.extras.includes(section));
