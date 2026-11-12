@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\SetupController;
+use App\Http\Controllers\Admin\UsersController;
 use App\Http\Controllers\App\AgentsController;
 use App\Http\Controllers\App\BlueprintsController;
 use App\Http\Controllers\App\CollectionsController;
@@ -317,6 +318,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('admin/skill-tags', [SkillTagsController::class, 'index']);
         Route::post('admin/skill-tags', [SkillTagsController::class, 'store']);
         Route::put('admin/skill-tags/{tag}', [SkillTagsController::class, 'update']);
+        Route::get('admin/users', [UsersController::class, 'index'])->name('admin.users');
         Route::get('admin/setup', [SetupController::class, 'show'])->name('admin.setup');
         Route::get('admin/setup/github/callback', [SetupController::class, 'githubCallback'])->name('admin.setup.github.callback');
         Route::post('admin/setup/storage/test', [SetupController::class, 'testStorage'])->middleware('throttle:10,1');

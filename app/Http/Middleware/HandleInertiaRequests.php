@@ -59,6 +59,7 @@ class HandleInertiaRequests extends Middleware
                 $user instanceof User && Agents::enabled() ? ['label' => McpConnection::active()->where('user_id', $user->id)->exists() ? 'Connected agents' : 'Connect your agent', 'href' => '/agents', 'section' => 'Agents'] : null,
                 ['label' => 'Account', 'href' => '/account/account', 'section' => 'You', 'match' => ['/account', '/tokens']],
                 $user instanceof User ? ['label' => 'Trash', 'href' => '/trash', 'section' => 'You'] : null,
+                $user?->is_admin ? ['label' => 'Users', 'href' => '/admin/users', 'section' => 'You'] : null,
                 $user?->is_admin ? ['label' => 'Server administration', 'href' => '/admin/setup', 'section' => 'You'] : null,
                 // The guide is a plain page outside the app, so it opens as a normal link
                 ['label' => 'Help & documentation', 'href' => '/docs', 'section' => 'You', 'external' => true],

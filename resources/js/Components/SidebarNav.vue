@@ -1,8 +1,8 @@
 <script setup>
 import { computed } from 'vue';
 import { usePage } from '@inertiajs/vue3';
-import { HomeIcon, FolderIcon, AdjustmentsHorizontalIcon, PhotoIcon, Square3Stack3DIcon, DocumentTextIcon, Square2StackIcon, FolderOpenIcon, CubeIcon, SparklesIcon, RectangleStackIcon, UserCircleIcon, QuestionMarkCircleIcon, ServerStackIcon, LinkIcon, TrashIcon } from '@heroicons/vue/24/outline';
-const icons = { '/agents': LinkIcon, '/trash': TrashIcon, '/settings': AdjustmentsHorizontalIcon, '/published': PhotoIcon, '/collections': Square3Stack3DIcon, '/reports': DocumentTextIcon, '/blueprints': Square2StackIcon, '/structures': FolderOpenIcon, '/package-sets': CubeIcon, '/skills': SparklesIcon, '/skill-sets': RectangleStackIcon, '/account': UserCircleIcon, '/docs': QuestionMarkCircleIcon, '/admin': ServerStackIcon };
+import { HomeIcon, FolderIcon, AdjustmentsHorizontalIcon, PhotoIcon, Square3Stack3DIcon, DocumentTextIcon, Square2StackIcon, FolderOpenIcon, CubeIcon, SparklesIcon, RectangleStackIcon, UserCircleIcon, QuestionMarkCircleIcon, ServerStackIcon, LinkIcon, TrashIcon, UsersIcon } from '@heroicons/vue/24/outline';
+const icons = { '/admin/users': UsersIcon, '/agents': LinkIcon, '/trash': TrashIcon, '/settings': AdjustmentsHorizontalIcon, '/published': PhotoIcon, '/collections': Square3Stack3DIcon, '/reports': DocumentTextIcon, '/blueprints': Square2StackIcon, '/structures': FolderOpenIcon, '/package-sets': CubeIcon, '/skills': SparklesIcon, '/skill-sets': RectangleStackIcon, '/account': UserCircleIcon, '/docs': QuestionMarkCircleIcon, '/admin': ServerStackIcon };
 const icon = item => icons[Object.keys(icons).find(prefix => item.href === prefix || item.href.startsWith(prefix + '/'))] ?? FolderIcon;
 
 const page = usePage();
