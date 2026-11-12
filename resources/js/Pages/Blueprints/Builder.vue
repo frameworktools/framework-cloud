@@ -31,7 +31,7 @@ const initialWorkflow = props.start?.default_workflow?.[initialLanguage] ?? prop
 
 const initialData = {
     name: props.blueprint?.name ?? props.onboarding?.name ?? '',
-    description: props.blueprint?.description ?? '',
+    description: props.blueprint?.description ?? props.onboarding?.description ?? '',
     visibility: props.blueprint?.visibility ?? 'private',
     language: initialLanguage,
     notebook_format: props.start?.notebook_format ?? (initialWorkflow === 'jupyter' ? 'jupyter' : initialWorkflow === 'scripts' && initialLanguage !== 'stata' ? 'scripts' : defaultFormat(initialLanguage)),
@@ -72,8 +72,8 @@ const errorSection = errors => {
     const field = Object.keys(errors)[0]?.split('.')[0];
     return ({ agents: 'ai', language: 'language', structure: 'structure', languages: 'language', workflow: 'notebooks', workflows: 'notebooks', notebook_format: 'notebooks', tools: 'environment', package_sets: 'packages', package_overrides: 'packages', package_auto_attach: 'packages', skills: 'skills', excluded_skills: 'skills', skill_sets: 'skills', settings: 'git', scaffold: 'scaffold', quarto: 'quarto', ide: 'editor', publish_destination: 'publishing' })[field] ?? 'name';
 };
-const save = () => {
-    if (props.onboarding && activeSection.value !== 'review') { nextSection(); return; }
+const save = async () => {
+    if (props.onboarding && activeSection.value !== 'review') { await nextSection(); return; }
     const options = { preserveScroll: true, preserveState: true, onSuccess: () => { if (draftKey) { try { sessionStorage.removeItem(draftKey); } catch { /* Browser storage may be unavailable. */ } } }, onError: errors => {
         const target = errorSection(errors);
         if (target !== activeSection.value) router.get(sectionUrl(target), {}, { preserveState: true });
@@ -193,14 +193,47 @@ const navigation = computed(() => items.filter(item => {
     if (item.anchor === 'jupyter') return workflow.value === 'jupyter';
     return true;
 }).map(item => ({
-    label: item.label, href: sectionUrl(item.anchor), preserveState: true, preserveScroll: false, exact: true,
+    section: item.anchor, label: item.label, href: sectionUrl(item.anchor), preserveState: true, preserveScroll: false, exact: true,
     current: activeSection.value === item.anchor,
+    onClick: props.onboarding ? event => { event.preventDefault(); navigateSection(item.anchor); } : null,
 })));
 
-const nextSection = () => {
+const progressSaving = ref(false);
+const progressStatus = ref(props.onboarding?.saved ? 'Saved' : '');
+if (props.onboarding) watch(() => form.data(), () => { progressStatus.value = 'Unsaved changes'; }, { deep: true });
+const persistProgress = async section => {
+    if (progressSaving.value) return false;
+    progressSaving.value = true;
+    form.clearErrors();
+    try {
+        const response = await fetch('/welcome/progress', {
+            method: 'PATCH', headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': page.props.csrf },
+            body: JSON.stringify({ ...form.data(), workflow: workflow.value, notebook_format: sentFormat(form), stage: 'builder', section }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            const errors = Object.fromEntries(Object.entries(data.errors ?? { progress: ['Changes could not be saved. Try again.'] }).map(([key, messages]) => [key, messages[0]]));
+            form.setError(errors);
+            const target = errorSection(errors);
+            if (target !== activeSection.value) router.get(sectionUrl(target), {}, { preserveState: true });
+            return false;
+        }
+        progressStatus.value = 'Saved';
+        return true;
+    } catch { form.setError('progress', 'Changes could not be saved. Try again.'); return false; }
+    finally { progressSaving.value = false; }
+};
+const navigateSection = async section => {
+    if (await persistProgress(section)) router.get(sectionUrl(section), {}, { preserveState: true, preserveScroll: false });
+};
+const nextSection = async () => {
     const index = navigation.value.findIndex(item => item.current);
     const next = navigation.value[index + 1];
-    if (next) router.get(next.href, {}, { preserveState: true, preserveScroll: false });
+    if (next) await navigateSection(new URL(next.href, window.location.origin).searchParams.get('tab'));
+};
+const backToDetails = async event => {
+    event.preventDefault();
+    if (await persistProgress(activeSection.value)) router.get('/welcome?details=1');
 };
 const previousSection = computed(() => navigation.value[navigation.value.findIndex(item => item.current) - 1]);
 </script>
@@ -208,7 +241,7 @@ const previousSection = computed(() => navigation.value[navigation.value.findInd
 <template>
     <Head :title="onboarding ? 'Your default blueprint' : editing ? `Edit ${blueprint.name}` : 'New Blueprint'" />
 
-    <SectionLayout :heading="onboarding ? 'Setup · Blueprint' : 'Blueprint'" :back="onboarding ? { label: 'Setup details', href: '/welcome' } : null" :items="navigation" :dirty="form.isDirty" wide>
+    <SectionLayout :heading="onboarding ? 'Setup · Blueprint' : 'Blueprint'" :back="onboarding ? { label: 'Setup details', href: '/welcome?details=1', onClick: backToDetails } : null" :items="navigation" :dirty="form.isDirty" wide>
         <PageHeader :title="onboarding ? 'Your default blueprint' : editing ? `Edit ${blueprint.name}` : 'New Blueprint'">
             <template #description>
                 <template v-if="onboarding">Start from {{ onboarding.source }} for {{ { r: 'R', python: 'Python', stata: 'Stata' }[form.language] }}. Review the choices in order or jump to a section. Finish setup saves your private blueprint and makes it the default for this language.</template>
@@ -299,14 +332,16 @@ const previousSection = computed(() => navigation.value[navigation.value.findInd
                 <p v-if="shown?.problem" role="alert" class="text-sm text-red-600">{{ shown.problem }}</p>
                 <ProjectTreeView v-else-if="shown?.tree" :entries="shown.tree" />
             </UiPanel>
+            <p v-if="onboarding && form.errors.progress" role="alert" class="text-sm text-red-600">{{ form.errors.progress }}</p>
+            <p v-else-if="onboarding && progressStatus" role="status" class="text-sm text-slate-500">{{ progressSaving ? 'Saving…' : progressStatus }}</p>
             <div v-if="onboarding" class="flex justify-between gap-3 border-t border-slate-800/10 pt-6 dark:border-white/15">
-                <UiButton v-if="previousSection" variant="ghost" @click="router.get(previousSection.href, {}, { preserveState: true })">Back</UiButton><span v-else />
-                <UiButton type="submit" :disabled="form.processing || !form.structure">{{ activeSection === 'review' ? 'Finish setup' : 'Continue' }}</UiButton>
+                <UiButton v-if="previousSection" variant="ghost" @click="navigateSection(previousSection.section)">Back</UiButton><span v-else />
+                <UiButton type="submit" :disabled="form.processing || progressSaving || !form.structure">{{ activeSection === 'review' ? 'Finish setup' : 'Continue' }}</UiButton>
             </div>
         </form>
 
         <template #actions>
-            <UiButton save-shortcut type="submit" form="blueprint-form" class="w-full" :disabled="form.processing || !form.structure">
+            <UiButton save-shortcut type="submit" form="blueprint-form" class="w-full" :disabled="form.processing || progressSaving || !form.structure">
                 {{ onboarding ? (activeSection === 'review' ? 'Finish setup' : 'Continue') : editing ? 'Save new version' : 'Create Blueprint' }}
             </UiButton>
             <p v-if="saved && !form.isDirty" role="status" class="text-center text-sm text-emerald-700 dark:text-emerald-400">Saved.</p>

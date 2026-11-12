@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
-import { router, useForm } from '@inertiajs/vue3';
+import { router, useForm, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import UiButton from '@/Components/UiButton.vue';
@@ -10,20 +10,38 @@ import AuthorFields from '@/Components/AuthorFields.vue';
 import BlueprintPreview from '@/Components/BlueprintPreview.vue';
 import { languageOptions } from '@/library.js';
 
-const props = defineProps({ blueprints: Array, author: Object, accountEmail: String, language: String, blueprintId: Number, again: Boolean });
+const props = defineProps({ blueprints: Array, author: Object, accountEmail: String, language: String, blueprintId: Number, again: Boolean, step: Number });
 const steps = ['Introduction', 'Your details', 'Default language', 'Starting blueprint'];
-const step = ref(0);
+const step = ref(props.step ?? 0);
+const saving = ref(false);
+const saveStatus = ref(props.step > 0 ? 'Saved' : '');
+const page = usePage();
 const form = useForm({ ...props.author, affiliations: props.author.affiliations.map(a => ({ ...a })), language: props.language ?? 'r', blueprint_id: String(props.blueprintId ?? props.blueprints.find(b => b.key === 'project')?.id ?? '') });
+watch(() => form.data(), () => { saveStatus.value = 'Unsaved changes'; }, { deep: true });
 const available = computed(() => props.blueprints.filter(b => b.languages.includes(form.language)));
 const selected = computed(() => available.value.find(b => String(b.id) === form.blueprint_id));
 const options = computed(() => available.value.map(b => ({ value: String(b.id), label: b.name, description: b.description })));
 watch(() => form.language, () => {
     if (!available.value.some(b => String(b.id) === form.blueprint_id)) form.blueprint_id = String(available.value.find(b => b.key === 'project')?.id ?? available.value[0]?.id ?? '');
 });
-const advance = () => {
-    if (step.value === 1 && !form.name.trim()) { form.setError('name', 'Enter your name.'); return; }
-    if (step.value < 3) { step.value++; return; }
-    form.post('/welcome', { onError: errors => { step.value = Object.keys(errors).some(k => !['blueprint_id', 'language'].includes(k)) ? 1 : errors.language ? 2 : 3; } });
+const advance = async () => {
+    if (step.value === 3) {
+        form.post('/welcome', { onError: errors => { step.value = Object.keys(errors).some(k => !['blueprint_id', 'language'].includes(k)) ? 1 : errors.language ? 2 : 3; } });
+        return;
+    }
+    saving.value = true;
+    form.clearErrors();
+    try {
+        const response = await fetch('/welcome/progress', {
+            method: 'PATCH', headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': page.props.csrf },
+            body: JSON.stringify({ ...form.data(), stage: ['introduction', 'profile', 'language'][step.value] }),
+        });
+        const data = await response.json();
+        if (!response.ok) { form.setError(Object.fromEntries(Object.entries(data.errors ?? { progress: ['Changes could not be saved. Try again.'] }).map(([key, messages]) => [key, messages[0]]))); return; }
+        saveStatus.value = 'Saved';
+        step.value++;
+    } catch { form.setError('progress', 'Changes could not be saved. Try again.'); }
+    finally { saving.value = false; }
 };
 const skip = () => router.post('/welcome/skip');
 </script>
@@ -70,10 +88,12 @@ const skip = () => router.post('/welcome/skip');
                         </div>
                     </div>
                 </template>
+                <p v-if="form.errors.progress" role="alert" class="text-sm text-red-600">{{ form.errors.progress }}</p>
+                <p v-else-if="saveStatus" role="status" class="text-sm text-slate-500">{{ saving ? 'Saving…' : saveStatus }}</p>
                 <UiSeparator />
                 <div class="flex flex-wrap items-center justify-between gap-3">
                     <div class="flex gap-2"><UiButton v-if="step > 0" variant="ghost" @click="step--">Back</UiButton><UiButton variant="ghost" @click="skip">Skip setup</UiButton></div>
-                    <UiButton type="submit" :disabled="form.processing">{{ step === 3 ? 'Customize blueprint' : 'Continue' }}</UiButton>
+                    <UiButton type="submit" :disabled="form.processing || saving">{{ step === 3 ? 'Customize blueprint' : 'Continue' }}</UiButton>
                 </div>
             </form>
         </div>

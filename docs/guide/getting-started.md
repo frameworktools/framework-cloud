@@ -29,8 +29,10 @@ skills, Git, and publishing settings. Stata shows the settings that apply to
 Review the choices and select **Finish setup**. Framework saves a private,
 single-language blueprint and makes it your default. New projects start from
 it and can be adjusted individually. Other languages keep their existing
-defaults. Setup saves nothing until this final step. **Skip setup** opens the
-dashboard without saving the draft.
+defaults. Each completed step saves to your account. Returning to setup resumes your
+progress, including blueprint edits and the current section. **Finish setup**
+creates the default blueprint. **Skip setup** opens the dashboard and keeps
+author details and language choices already saved.
 
 You can then create a project or connect your computer.
 

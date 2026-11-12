@@ -27,6 +27,7 @@ class AuthorController extends Controller
 
     public function update(Request $request): RedirectResponse
     {
+        AuthorProfile::prepare($request);
         $validated = $request->validate(AuthorProfile::rules(), AuthorProfile::messages());
         AuthorProfile::save($request->user(), $validated);
 

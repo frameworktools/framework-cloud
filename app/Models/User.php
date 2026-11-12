@@ -38,6 +38,7 @@ class User extends Authenticatable implements HasPasskeys, MustVerifyEmail
     protected $hidden = [
         'password',
         'remember_token',
+        'onboarding_progress',
     ];
 
     /**
@@ -57,6 +58,7 @@ class User extends Authenticatable implements HasPasskeys, MustVerifyEmail
             'can_publish' => 'boolean',
             'project_defaults' => 'array',
             'blueprint_defaults' => 'array',
+            'onboarding_progress' => 'array',
         ];
     }
 

@@ -83,7 +83,7 @@ class WelcomeTest extends TestCase
     public function test_invalid_details_and_incompatible_starters_do_not_save(): void
     {
         $user = $this->newcomer();
-        $this->actingAs($user)->post('/welcome', array_replace($this->details(), ['email' => 'bad', 'orcid' => 'bad', 'affiliations' => [['name' => '']]]))->assertSessionHasErrors(['email', 'orcid', 'affiliations.0.name']);
+        $this->actingAs($user)->post('/welcome', array_replace($this->details(), ['email' => 'bad', 'orcid' => 'bad', 'affiliations' => [['name' => '', 'department' => 'Statistics']]]))->assertSessionHasErrors(['email', 'orcid', 'affiliations.0.name']);
         $this->post('/welcome', $this->details('stata', 'course'))->assertSessionHasErrors('blueprint_id');
         $other = Blueprint::create(['name' => 'Other account', 'key' => 'other', 'user_id' => User::factory()->create()->id, 'visibility' => 'private', 'is_system' => false]);
         $this->post('/welcome', array_replace($this->details(), ['blueprint_id' => $other->id]))->assertSessionHasErrors('blueprint_id');
@@ -97,7 +97,7 @@ class WelcomeTest extends TestCase
         $this->actingAs($user)->post('/welcome', $this->details());
         $this->post('/welcome/complete', array_replace($this->choices('r'), ['name' => '']))->assertSessionHasErrors('name');
         $this->post('/welcome/complete', $this->choices('python'))->assertSessionHasErrors('language');
-        $this->get('/welcome')->assertInertia(fn (Assert $page) => $page->where('author.email', 'ada@example.org')->where('author.affiliations.0.name', 'Example University'));
+        $this->get('/welcome?details=1')->assertInertia(fn (Assert $page) => $page->where('author.email', 'ada@example.org')->where('author.affiliations.0.name', 'Example University'));
         $this->assertNull($user->fresh()->setup_completed_at);
         $this->assertSame(0, Blueprint::where('user_id', $user->id)->count());
     }
@@ -132,5 +132,50 @@ class WelcomeTest extends TestCase
                 $this->assertSame($source->latestVersion->base_version_id, $saved->latestVersion->base_version_id);
             }
         }
+    }
+
+    public function test_completed_steps_save_to_the_account_and_resume_without_the_original_session(): void
+    {
+        $user = $this->newcomer();
+        $this->actingAs($user)->patchJson('/welcome/progress', ['stage' => 'introduction'])->assertOk();
+        $this->get('/welcome')->assertInertia(fn (Assert $p) => $p->where('step', 1));
+        $this->patchJson('/welcome/progress', ['stage' => 'profile'] + $this->details())->assertOk();
+        $this->assertSame('ada@example.org', $user->fresh()->globalSettings()->document['author']['email']);
+        $this->patchJson('/welcome/progress', ['stage' => 'language', 'language' => 'python'])->assertOk();
+        $this->app['session']->flush();
+        $this->get('/welcome')->assertInertia(fn (Assert $p) => $p->where('step', 3)->where('language', 'python')->where('author.name', 'Ada Researcher'));
+        $this->assertSame('python', ProjectDefaults::language($user->fresh()));
+        $this->post('/welcome', $this->details('python'))->assertRedirect('/welcome/blueprint');
+        $this->patchJson('/welcome/progress', ['stage' => 'builder', 'section' => 'packages'] + $this->choices('python'))->assertOk();
+        $this->app['session']->flush();
+        $this->get('/welcome')->assertRedirect('/welcome/blueprint?tab=packages');
+        $this->get('/welcome/blueprint')->assertInertia(fn (Assert $p) => $p->where('section', 'packages')->where('onboarding.name', 'My research setup')->where('start.structure', 'framework/project_sensitive')->where('start.tools.uv', true));
+        $this->assertNull($user->fresh()->setup_completed_at);
+        $this->assertSame(0, Blueprint::where('user_id', $user->id)->count());
+        $this->post('/welcome/complete', $this->choices('python'))->assertRedirect('/welcome/ready');
+        $this->assertNull($user->fresh()->onboarding_progress);
+    }
+
+    public function test_invalid_intermediate_changes_do_not_replace_saved_progress(): void
+    {
+        $user = $this->newcomer();
+        $this->actingAs($user)->patchJson('/welcome/progress', ['stage' => 'profile'] + $this->details())->assertOk();
+        $this->patchJson('/welcome/progress', ['stage' => 'profile', 'name' => '', 'email' => 'bad'])->assertUnprocessable();
+        $this->assertSame('Ada Researcher', $user->fresh()->onboarding_progress['author']['name']);
+        $this->assertSame('ada@example.org', $user->globalSettings()->document['author']['email']);
+        $other = $this->newcomer();
+        $this->actingAs($other)->get('/welcome')->assertInertia(fn (Assert $p) => $p->where('step', 0)->where('author.name', $other->name));
+        $this->patchJson('/welcome/progress', ['stage' => 'builder', 'section' => 'name'] + $this->choices('r'))->assertStatus(409);
+    }
+
+    public function test_an_empty_affiliation_row_is_optional_on_intermediate_save_and_completion(): void
+    {
+        $user = $this->newcomer();
+        $details = array_replace($this->details(), ['affiliations' => [['name' => '', 'department' => '', 'city' => '', 'country' => '']]]);
+        $this->actingAs($user)->patchJson('/welcome/progress', ['stage' => 'profile'] + $details)->assertOk();
+        $this->assertSame([], $user->fresh()->globalSettings()->document['author']['affiliations']);
+        $this->post('/welcome', $details)->assertSessionHasNoErrors()->assertRedirect('/welcome/blueprint');
+        $this->post('/welcome/complete', $this->choices('r'))->assertSessionHasNoErrors()->assertRedirect('/welcome/ready');
+        $this->assertSame([], $user->fresh()->globalSettings()->document['author']['affiliations']);
     }
 }

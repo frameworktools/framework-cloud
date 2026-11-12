@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 
 /** Author metadata shared by onboarding and Personal data. */
@@ -19,6 +20,15 @@ class AuthorProfile
         }
 
         return ['name' => ($author['name'] ?? '') ?: $user->name, 'email' => $author['email'] ?? '', 'orcid' => $author['orcid'] ?? '', 'url' => $author['url'] ?? '', 'affiliations' => $affiliations];
+    }
+
+    /** Empty affiliation rows are optional; partially filled rows still need a name. */
+    public static function prepare(Request $request): void
+    {
+        $rows = $request->input('affiliations');
+        if (is_array($rows)) {
+            $request->merge(['affiliations' => array_values(array_filter($rows, fn ($row) => ! is_array($row) || collect(Arr::only($row, ['name', 'department', 'city', 'country']))->contains(fn ($value) => is_string($value) ? trim($value) !== '' : filled($value))))]);
+        }
     }
 
     public static function rules(): array

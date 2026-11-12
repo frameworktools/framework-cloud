@@ -143,6 +143,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('welcome', [WelcomeController::class, 'show'])->name('welcome');
     Route::post('welcome', [WelcomeController::class, 'store']);
     Route::get('welcome/blueprint', [WelcomeController::class, 'blueprint'])->name('welcome.blueprint');
+    Route::patch('welcome/progress', [WelcomeController::class, 'progress']);
     Route::post('welcome/complete', [WelcomeController::class, 'complete']);
     Route::get('welcome/ready', [WelcomeController::class, 'ready'])->name('welcome.ready');
     Route::post('welcome/skip', [WelcomeController::class, 'skip'])->name('welcome.skip');

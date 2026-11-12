@@ -31,3 +31,14 @@ The setup steps now have slash separators. Website and ORCID are visible fields 
 Starting blueprint uses the requested description and a wider layout. The selected starter's resolved notebook format, packages, AI skills, Git, sensitivity, and folder tree appear beside the choices on desktop and below them on mobile. Switching starters refreshes the preview. The existing preview component supplies a compact mode; its other displays keep their existing layout.
 
 Validation: 18 focused tests passed with 468 assertions. The production frontend build passed. Browser checks verified slash count, visible optional fields, preview updates for Presentation and Shiny, desktop column positions, mobile overflow, and no page errors or Vue warnings. Light, dark, and mobile screenshots were inspected.
+
+
+## Intermediate saves
+
+Completed setup steps now save to `users.onboarding_progress`. Author details and default language also save to their normal account settings when their steps are completed. Blueprint edits and the destination section save before Continue, Back, or section navigation. Returning to setup resumes the saved section. Session drafts from the prior implementation are imported on first use.
+
+The final action publishes the private default blueprint and clears the progress record. Skipping keeps author details and language already saved and discards the unfinished blueprint draft. The progress field is hidden from user serialization. Local browser storage still retains edits within a section until its next save.
+
+Regression checks cover refresh, session replacement, intermediate validation failure, account isolation, final cleanup, and exact blueprint field restoration. A browser test resumed the profile and language steps after refresh and restored the blueprint name, notebook choice, and current section in a new browser context. No page errors occurred.
+
+The author form now shows one empty affiliation row automatically. Entirely empty rows are ignored when saving; partially completed affiliations still require an institution name. Validation and normalization apply in both onboarding and Personal data. The focused onboarding, blueprint builder, and account settings run passed 36 tests with 831 assertions. The browser pass verified the empty row, continued without filling it, and resumed progress in fresh browser contexts.

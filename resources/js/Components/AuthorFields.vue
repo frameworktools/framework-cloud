@@ -1,4 +1,5 @@
 <script setup>
+import { watch } from 'vue';
 import UiInput from '@/Components/UiInput.vue';
 import UiSelect from '@/Components/UiSelect.vue';
 import UiButton from '@/Components/UiButton.vue';
@@ -6,8 +7,9 @@ import UiSection from '@/Components/UiSection.vue';
 import UiSeparator from '@/Components/UiSeparator.vue';
 import { countryOptions } from '@/countries.js';
 
-defineProps({ form: { type: Object, required: true } });
+const props = defineProps({ form: { type: Object, required: true } });
 const blank = () => ({ name: '', department: '', city: '', country: '' });
+watch(() => props.form.affiliations.length, length => { if (!length) props.form.affiliations.push(blank()); }, { immediate: true });
 </script>
 
 <template>
@@ -29,7 +31,7 @@ const blank = () => ({ name: '', department: '', city: '', country: '' });
                     <UiButton size="sm" variant="ghost" @click="form.affiliations.splice(index, 1)">Remove</UiButton>
                 </div>
             </div>
-            <UiInput v-model="affiliation.name" label="Institution" placeholder="Example University" required :error="form.errors[`affiliations.${index}.name`]" />
+            <UiInput v-model="affiliation.name" label="Institution" placeholder="Example University" :required="!!(affiliation.name || affiliation.department || affiliation.city || affiliation.country)" :error="form.errors[`affiliations.${index}.name`]" />
             <UiInput v-model="affiliation.department" label="Department (optional)" placeholder="Department of Epidemiology" :error="form.errors[`affiliations.${index}.department`]" />
             <div class="grid gap-6 sm:grid-cols-2">
                 <UiInput v-model="affiliation.city" label="City (optional)" placeholder="Boston" :error="form.errors[`affiliations.${index}.city`]" />
