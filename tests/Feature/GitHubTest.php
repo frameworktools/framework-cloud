@@ -249,15 +249,15 @@ class GitHubTest extends TestCase
         $envelope = ProjectLayers::for($project);
 
         $this->assertSame([], Layer::envelopeProblems($envelope));
-        // The structure, the skill sets with their R layers, Quarto and the workflow, Framework's settings, the blueprint, and the project
-        $this->assertSame(['base', 'facet', 'facet', 'facet', 'facet', 'facet', 'facet', 'facet', 'facet', 'settings', 'blueprint', 'project'], array_column($envelope['layers'], 'kind'));
+        // The structure, the packages older R clients drop, the skill sets with their R layers, Quarto and the workflow, Framework's settings, the blueprint, and the project
+        $this->assertSame(['base', 'settings', 'facet', 'facet', 'facet', 'facet', 'facet', 'facet', 'facet', 'facet', 'settings', 'blueprint', 'project'], array_column($envelope['layers'], 'kind'));
         $this->assertSame([
-            'framework/project',
+            'framework/project', 'framework package defaults',
             'framework/framework', 'framework/framework-r',
             'framework/visualization', 'framework/visualization-r',
             'framework/writing', 'framework/writing-r',
             'framework/quarto', 'framework/workflow-quarto',
-        ], array_slice(array_column($envelope['layers'], 'key'), 0, 9));
+        ], array_slice(array_column($envelope['layers'], 'key'), 0, 10));
         $this->assertSame('framework/project', $envelope['source']['blueprint']['key']);
         // The sign-in email stays private: only a public email the person entered goes in
         $this->assertSame(['name' => 'Ada Lovelace', 'email' => '', 'affiliation' => ''], $envelope['author']);

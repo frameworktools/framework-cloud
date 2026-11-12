@@ -41,7 +41,7 @@ const toggle = (skill, on) => {
     excludedSkills.value = excludedSkills.value.filter(key => key !== skill.key);
     model.value = model.value.filter(key => key !== skill.key);
     if (on && !included.value.has(skill.skill)) model.value = [...model.value, skill.key];
-    if (!on && included.value.has(skill.skill)) excludedSkills.value = [...excludedSkills.value, skill.key];
+    if (!on) excludedSkills.value = [...excludedSkills.value, skill.key];
 };
 const toggleAll = on => {
     const visible = rows.value;
@@ -49,7 +49,7 @@ const toggleAll = on => {
     const remaining = model.value.filter(key => !keys.has(key));
     model.value = on ? [...new Set([...remaining, ...visible.filter(skill => !included.value.has(skill.skill)).map(skill => skill.key)])] : remaining;
     const excluded = excludedSkills.value.filter(key => !keys.has(key));
-    excludedSkills.value = on ? excluded : [...new Set([...excluded, ...visible.filter(skill => included.value.has(skill.skill)).map(skill => skill.key)])];
+    excludedSkills.value = on ? excluded : [...new Set([...excluded, ...visible.map(skill => skill.key)])];
 };
 watch(() => [...selectedSets.value], (selected, previous) => {
     const added = props.sets.filter(set => selected.includes(set.key) && !previous.includes(set.key));

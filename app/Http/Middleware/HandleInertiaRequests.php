@@ -33,6 +33,7 @@ class HandleInertiaRequests extends Middleware
             ],
 
             'flash' => [
+                'project_created' => fn () => (bool) $request->session()->get('project_created', false),
                 'status' => $request->session()->get('status'),
                 'token' => $request->session()->get('token'),
                 'token_language' => $request->session()->get('token_language'),

@@ -54,6 +54,23 @@ class BlueprintBuilderTest extends TestCase
         $this->assertTrue($sensitive->json('sensitive'));
     }
 
+    public function test_the_sensitive_data_skill_follows_an_explicit_choice(): void
+    {
+        $user = User::factory()->create();
+        $skills = function (array $choices) use ($user) {
+            $resolved = (new Resolver($user))->resolve(['name' => 'Private analysis', 'language' => 'r', 'structure' => 'framework/project_sensitive'] + $choices);
+
+            return DefaultsPreview::merge($resolved['envelope']['layers'])['skills'] ?? [];
+        };
+
+        // The choices editor selects it for a sensitive structure, with or without sets
+        $this->assertNotEmpty($skills(['skill_sets' => [], 'skills' => ['framework/framework-sensitive-data']])['framework-sensitive-data'] ?? null);
+        $this->assertNotEmpty($skills(['skill_sets' => ['framework/framework'], 'skills' => ['framework/framework-sensitive-data']])['framework-sensitive-data'] ?? null);
+        // A removal holds even with Framework's skill sets
+        $this->assertEmpty($skills(['skill_sets' => ['framework/framework'], 'skills' => [], 'excluded_skills' => ['framework/framework-sensitive-data']])['framework-sensitive-data'] ?? null);
+        $this->assertEmpty($skills(['skill_sets' => [], 'skills' => [], 'excluded_skills' => ['framework/framework-sensitive-data']])['framework-sensitive-data'] ?? null);
+    }
+
     public function test_what_a_blueprint_supports_is_saved_checked_and_kept(): void
     {
         $user = User::factory()->create(['email_verified_at' => now()]);
@@ -181,6 +198,45 @@ class BlueprintBuilderTest extends TestCase
         $this->get("/blueprints/{$blueprint->id}/edit?tab=ai")->assertInertia(fn ($page) => $page
             ->where('start.excluded_skills', fn ($keys) => collect($keys)->contains('framework/framework-data'))
             ->where('start.skills', fn ($keys) => ! collect($keys)->contains('framework/framework-data')));
+    }
+
+    public function test_context_skills_and_their_removals_survive_save_and_reload(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $skills = function (string $handle) use ($user) {
+            $resolved = (new Resolver($user))->resolve(['name' => 'Survey', 'language' => 'r', 'blueprint' => $handle]);
+
+            return array_keys(array_filter(DefaultsPreview::merge($resolved['envelope']['layers'])['skills'] ?? []));
+        };
+
+        // The editor sends the Quarto and Git skills it selected for the choices
+        $this->actingAs($user)->post('/blueprints', $this->choices([
+            'workflow' => 'quarto', 'skills' => ['framework/quarto-documents', 'framework/git-workflow'],
+        ]))->assertSessionHasNoErrors();
+        $kept = Blueprint::where('user_id', $user->id)->sole();
+        $this->assertContains('quarto-documents', $skills($kept->handle));
+        $this->assertContains('git-workflow', $skills($kept->handle));
+        $this->get("/blueprints/{$kept->id}/edit?tab=ai")->assertInertia(fn ($page) => $page
+            ->where('start.skills', fn ($keys) => collect($keys)->contains('framework/quarto-documents') && collect($keys)->contains('framework/git-workflow')));
+
+        // Removing them saves exclusions, which reload as removed
+        $this->actingAs($user)->post('/blueprints', $this->choices([
+            'name' => 'No Git skill', 'workflow' => 'quarto', 'excluded_skills' => ['framework/git-workflow', 'framework/quarto-documents'],
+        ]))->assertSessionHasNoErrors();
+        $removed = Blueprint::where('user_id', $user->id)->where('name', 'No Git skill')->sole();
+        $this->assertNotContains('git-workflow', $skills($removed->handle));
+        $this->assertNotContains('quarto-documents', $skills($removed->handle));
+        $this->get("/blueprints/{$removed->id}/edit?tab=ai")->assertInertia(fn ($page) => $page
+            ->where('start.excluded_skills', fn ($keys) => collect($keys)->contains('framework/git-workflow') && collect($keys)->contains('framework/quarto-documents')));
+
+        // A sensitive structure's skill comes back as a single skill, so the editor shows it
+        $this->actingAs($user)->post('/blueprints', $this->choices([
+            'name' => 'Private', 'structure' => 'framework/project_sensitive', 'skills' => ['framework/framework-sensitive-data'],
+        ]))->assertSessionHasNoErrors();
+        $private = Blueprint::where('user_id', $user->id)->where('name', 'Private')->sole();
+        $this->assertContains('framework-sensitive-data', $skills($private->handle));
+        $this->get("/blueprints/{$private->id}/edit?tab=ai")->assertInertia(fn ($page) => $page
+            ->where('start.skills', fn ($keys) => collect($keys)->contains('framework/framework-sensitive-data')));
     }
 
     public function test_individual_package_choices_override_overlapping_sets_and_survive_reload(): void

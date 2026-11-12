@@ -164,7 +164,6 @@ class Catalog
 
         // Single skills by handle: Framework's by key, a user's own by their handle
         $skills = collect($layer['skills'] ?? [])->filter(fn ($entry) => $entry !== null)->keys()
-            ->reject(fn ($key) => $key === 'framework-sensitive-data')
             ->map(fn ($key) => Skill::visibleTo($user)->where('key', $key)->with('owner')->orderByRaw('user_id is not null')->first()?->handle)
             ->filter()->values()->all();
 

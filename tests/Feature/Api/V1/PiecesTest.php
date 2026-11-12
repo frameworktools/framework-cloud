@@ -69,7 +69,7 @@ class PiecesTest extends TestCase
 
         $this->assertSame([], Layer::envelopeProblems($envelope));
         // Structure, pieces, the workflow and its tool, Framework's settings, the blueprint, and the project
-        $this->assertSame(['framework/project', 'framework/framework', 'framework/framework-r', 'framework/visualization', 'framework/visualization-r', 'framework/writing', 'framework/writing-r', 'framework/workflow-quarto', 'framework/quarto', 'framework/git', 'framework/git-r', 'framework/quarto-skills', 'framework/quarto-skills-r', 'framework defaults', 'framework/project', 'survey choices', 'survey'], array_column($envelope['layers'], 'key'));
+        $this->assertSame(['framework/project', 'framework package defaults', 'framework/framework', 'framework/framework-r', 'framework/visualization', 'framework/visualization-r', 'framework/writing', 'framework/writing-r', 'framework/workflow-quarto', 'framework/quarto', 'framework/git', 'framework/git-r', 'framework/quarto-skills', 'framework/quarto-skills-r', 'framework defaults', 'framework/project', 'survey choices', 'survey'], array_column($envelope['layers'], 'key'));
         $this->assertSame(['key' => 'framework/project', 'version' => 1], $envelope['source']['blueprint']);
     }
 

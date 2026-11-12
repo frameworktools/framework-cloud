@@ -6,6 +6,7 @@ use App\Models\Blueprint;
 use App\Models\Project;
 use App\Models\User;
 use App\Support\Layer;
+use App\Support\ProjectDefaults;
 use App\Support\ProjectLayers;
 use Database\Seeders\BlueprintSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -145,7 +146,7 @@ class ProjectLanguageTest extends TestCase
         $this->assertSame([
             'scaffold' => ['ide' => 'vscode', 'seed_on_scaffold' => true, 'seed' => '123', 'set_theme_on_scaffold' => false, 'ggplot_theme' => 'theme_minimal', 'source_all_functions' => true],
             'ai' => ['assistants' => ['claude' => false, 'codex' => false, 'copilot' => false]],
-        ], collect($layers)->firstWhere('kind', 'settings')['layer']);
+        ], collect($layers)->firstWhere('key', ProjectDefaults::BASE_LAYER)['layer']);
         // With the spec's tools key on, every R tool is named on or off, and the workflow's are on
         $this->assertTrue($layer['tools']['quarto']);
         $this->assertArrayHasKey('renv', $layer['tools']);

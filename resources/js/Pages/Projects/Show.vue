@@ -19,6 +19,7 @@ import { ArrowTopRightOnSquareIcon, LockClosedIcon } from '@heroicons/vue/20/sol
 import { GlobeAltIcon, LinkIcon } from '@heroicons/vue/24/outline';
 import ArtifactUpload from '@/Components/ArtifactUpload.vue';
 import CodeChip from '@/Components/CodeChip.vue';
+import CopyBlock from '@/Components/CopyBlock.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import { ChevronRightIcon } from '@heroicons/vue/24/outline';
 import { clientUrl, usePythonServerArg, useServerArg, useServerFlag, useSetupCommand } from '@/cloud.js';
@@ -57,6 +58,18 @@ const serverArg = useServerArg();
 const pythonServerArg = usePythonServerArg();
 const serverFlag = useServerFlag();
 const setupCommand = useSetupCommand();
+// The language the flashed token was issued for, and where its command runs
+const tokenLanguage = computed(() => page.props.flash.token_language ?? props.project.language);
+const setupWhere = computed(() => ({
+    r: 'Paste it into the R console.',
+    python: 'Paste it into Python.',
+    stata: 'Run it in a terminal. Paste the token when asked.',
+}[tokenLanguage.value] ?? 'Paste it into the R console.'));
+// fw new (Stata) makes ./<name> without asking
+const setupFolder = computed(() => ({
+    r: 'It asks where to create the project folder. Press Enter for the current folder.',
+    python: 'It asks where to create the project folder.',
+}[tokenLanguage.value] ?? null));
 const pullToken = computed(() => (page.props.flash.status === 'project-token' ? page.props.flash.token : null));
 const githubError = computed(() => page.props.errors.github);
 
@@ -166,24 +179,32 @@ const artifactMenu = (doc) => [
 
             <UiCallout v-if="githubError && section === 'github'" variant="danger" heading="GitHub">{{ githubError }}</UiCallout>
 
-            <UiCallout v-if="pullToken && section === 'computers'" variant="success" heading="Project token. Copy it now; it won't be shown again.">
-                <code class="break-all font-mono text-sm">{{ pullToken }}</code>
-                <code class="break-all font-mono text-xs">{{ setupCommand(page.props.flash.token_language, pullToken) }}</code>
-                <p v-if="page.props.flash.token_language === 'stata'" class="text-sm">
-                    Paste the token when fw asks for it. If you have run <code class="font-mono text-xs">fw login</code>,
-                    <code class="font-mono text-xs">fw new --from {{ project.slug }}{{ serverFlag }}</code> needs no token.
-                </p>
-                <!-- Where the command connects, and whether this computer can reach it -->
-                <p class="text-sm">
-                    <template v-if="page.props.flash.token_language === 'python'">Python connects to the server you signed in to with <code class="font-mono text-xs">cloud_login()</code>, which should be {{ serverUrl }}.</template>
-                    <template v-else>The command connects to {{ serverUrl }}.</template>
-                    <template v-if="viewingElsewhere"> You're viewing this page at {{ viewingOrigin }}, so check that your computer can reach it.</template>
-                    <button v-if="reachable !== 'checking'" type="button" class="ml-1 text-sky-700 underline dark:text-sky-400" @click="checkServer">Check browser connection</button>
-                    <span v-else class="ml-1 text-slate-500 dark:text-slate-400">Checking…</span>
-                </p>
-                <p v-if="reachable === 'yes'" class="text-sm">This browser reached {{ serverUrl }}.</p>
-                <p v-else-if="reachable === 'no'" class="text-sm text-red-700 dark:text-red-300">This browser couldn't reach {{ serverUrl }}. Ask whoever runs this server to set FW_CLIENT_URL to an address your computer can reach.</p>
-            </UiCallout>
+            <UiCallout v-if="page.props.flash.project_created && section === 'computers'" variant="success"><span class="font-medium text-slate-900 dark:text-slate-100">Project created</span></UiCallout>
+            <section v-if="pullToken && section === 'computers'" aria-labelledby="project-token-heading" class="flex max-w-2xl min-w-0 flex-col gap-6">
+                <div>
+                    <h2 id="project-token-heading" class="text-base font-medium text-slate-900 dark:text-white">Project token</h2>
+                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Copy it now. It is shown only once.</p>
+                    <CopyBlock :value="pullToken" label="project token" kind="value" class="mt-3" />
+                </div>
+                <div>
+                    <h2 class="text-base font-medium text-slate-900 dark:text-white">Setup command</h2>
+                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ setupWhere }}</p>
+                    <CopyBlock :value="setupCommand(tokenLanguage, pullToken)" label="setup command" class="mt-3" />
+                    <p v-if="setupFolder" class="mt-2 text-sm text-slate-500 dark:text-slate-400">{{ setupFolder }}</p>
+                </div>
+                <details class="text-sm text-slate-500 dark:text-slate-400">
+                    <summary class="cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200">Connection details</summary>
+                    <div class="mt-3 flex flex-col gap-2">
+                        <p v-if="tokenLanguage === 'python'">Python connects to the server you signed in to with <code class="font-mono text-xs">cloud_login()</code>. That should be {{ serverUrl }}.</p>
+                        <p v-else>The command connects to {{ serverUrl }}.</p>
+                        <p v-if="viewingElsewhere">This page is open at {{ viewingOrigin }}. Check that your computer can reach the server.</p>
+                        <p v-if="tokenLanguage === 'stata'">After <code class="font-mono text-xs">fw login</code>, <code class="font-mono text-xs">fw new --from {{ project.slug }}{{ serverFlag }}</code> needs no token.</p>
+                        <UiButton variant="ghost" size="sm" class="self-start" :disabled="reachable === 'checking'" @click="checkServer">{{ reachable === 'checking' ? 'Checking…' : 'Check browser connection' }}</UiButton>
+                        <p v-if="reachable === 'yes'">This browser reached {{ serverUrl }}.</p>
+                        <p v-else-if="reachable === 'no'" class="text-red-700 dark:text-red-300">This browser could not reach {{ serverUrl }}. Ask whoever runs this server to set FW_CLIENT_URL to an address your computer can reach.</p>
+                    </div>
+                </details>
+            </section>
 
             <UiPanel v-if="section === 'overview'" title="Configuration">
                 <template #header>
@@ -386,11 +407,11 @@ const artifactMenu = (doc) => [
                 <p v-if="!canPublish" class="text-sm text-slate-500 dark:text-slate-400">Hosting artifacts on Framework Cloud is part of a paid plan. You can also publish to your own bucket or GitHub Pages.</p>
             </UiSection>
 
-            <UiPanel v-if="section === 'computers'" title="Computers & tokens" description="A project token lets a computer set this project up and pull its settings.">
+            <UiPanel v-if="section === 'computers'" flush title="Computers & tokens" description="A project token lets a computer set this project up and pull its settings.">
                 <template #header>
                     <UiButton variant="outline" size="sm" @click="issueToken">Get token</UiButton>
                 </template>
-                <div class="text-sm">
+                <div v-if="!pullToken" class="text-sm">
                     <CodeChip v-if="project.language === 'r'">framework::setup("&lt;project-token&gt;"{{ serverArg }})</CodeChip>
                     <CodeChip v-else-if="project.language === 'python'">framework.new(key="&lt;project-token&gt;"{{ pythonServerArg }})</CodeChip>
                     <span v-else class="flex flex-wrap items-center gap-2 text-slate-600 dark:text-slate-400">
@@ -399,7 +420,7 @@ const artifactMenu = (doc) => [
                         <CodeChip>fw new --from {{ project.slug }}{{ serverFlag }}</CodeChip>
                     </span>
                 </div>
-                <p v-if="downloads" class="text-sm text-slate-600 dark:text-slate-400">
+                <p v-if="downloads && !pullToken" class="text-sm text-slate-600 dark:text-slate-400">
                     Downloaded the project as a zip? Get a token, open the folder's <span class="font-mono text-xs">.env</span> file,
                     remove the <span class="font-mono text-xs">#</span> in front of <span class="font-mono text-xs">FW_PROJECT_TOKEN=</span>, and paste the token after the
                     <span class="font-mono text-xs">=</span>. If you use fw, run <CodeChip>fw project link --from {{ project.slug }}{{ serverFlag }}</CodeChip> in the folder instead.

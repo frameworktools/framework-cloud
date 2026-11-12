@@ -439,13 +439,13 @@ class Resolver
                 $this->pieces->put($layer->facet_id, $layer);
             }
             // With Framework's skill sets only: a project that names just its own
-            // skills (no sets) chose them itself, so gets no Framework skill unasked
+            // skills (no sets) chose them itself, so gets no Framework skill unasked.
+            // A layer that names the skill, to add it or to remove it, decides.
             $usesSkillSets = $this->pieces->contains(fn (FacetVersion $v) => $v->facet->kind === 'skill_set');
-            if ($value('ai.enabled', true) !== false && $usesSkillSets) {
-                $project['skills']['framework-sensitive-data'] = ['package' => true];
-            } elseif ($value('ai.enabled', true) !== false && ! $usesSkillSets && ! array_key_exists('framework-sensitive-data', $project['skills'] ?? [])) {
+            $named = collect([$this->settings, $project, $requires])->contains(fn (array $layer) => Arr::has($layer, 'skills.framework-sensitive-data'));
+            if ($value('ai.enabled', true) !== false && ! $named) {
                 // The sensitive_data piece brings the skill too; null removes it when layers merge
-                $project['skills']['framework-sensitive-data'] = null;
+                $project['skills']['framework-sensitive-data'] = $usesSkillSets ? ['package' => true] : null;
             }
         }
 

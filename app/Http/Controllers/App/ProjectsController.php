@@ -352,6 +352,7 @@ class ProjectsController extends Controller
             'token' => $project->issuePullToken(),
             'token_language' => $project->language,
             'status' => 'project-token',
+            'project_created' => true,
         ]);
     }
 
@@ -389,8 +390,13 @@ class ProjectsController extends Controller
             'skills' => ['nullable', 'array'],
             'skills.*' => ['string', 'max:200'],
             'settings' => ['nullable', 'array'],
+            // As store() validates them, so the preview resolves what creating would
+            'settings.sensitive' => ['boolean'],
+            'settings.git' => ['boolean'],
             'settings.ai' => ['nullable'],
+            'settings.ai.enabled' => ['sometimes', 'boolean'],
             'settings.ai.assistants' => ['sometimes', 'array'],
+            'settings.ai.assistants.*' => ['boolean'],
             ...self::settingRules(),
         ]);
         $blueprint = Blueprint::with('owner', 'latestVersion.facetVersions.facet')->find($validated['blueprint_id']);

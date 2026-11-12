@@ -1,4 +1,5 @@
 <script setup>
+import { ChevronRightIcon } from '@heroicons/vue/20/solid';
 import { computed, ref, watch } from 'vue';
 import { router, useForm, usePage } from '@inertiajs/vue3';
 import SectionLayout from '@/Layouts/SectionLayout.vue';
@@ -70,7 +71,6 @@ const form = useForm(initialData);
 if (draftKey) watch(() => form.data(), data => {
     try { sessionStorage.setItem(draftKey, JSON.stringify(data)); } catch { /* Setup still works when browser storage is unavailable. */ }
 }, { deep: true, flush: 'sync' });
-const showAdvanced = ref(!!props.start?.extra_yaml);
 
 const errorSection = errors => {
     const field = Object.keys(errors)[0]?.split('.')[0];
@@ -311,17 +311,16 @@ const previousSection = computed(() => navigation.value[navigation.value.findInd
                 </div>
                 <UiInput v-if="editing" v-model="form.notes" label="Version notes (optional)" placeholder="Summarize changes in this version" :error="form.errors.notes" />
 
-                <div>
-                    <button type="button" class="text-sm text-slate-600 hover:underline dark:text-slate-400" @click="showAdvanced = !showAdvanced">
-                        {{ showAdvanced ? 'Hide' : 'Show' }} extra settings
-                    </button>
-                </div>
-                <UiTextarea
-                    v-if="showAdvanced" v-model="form.extra_yaml" code :rows="8"
-                    label="Extra settings (YAML)" :placeholder="'scaffold:\n  seed: 123'"
-                    description="Anything else for settings.yml, such as scaffold options or connections. Applied on top of the pieces above."
-                    :error="form.errors.extra_yaml"
-                />
+                <details class="group" :open="!!form.errors.extra_yaml">
+                    <summary class="flex cursor-pointer list-none items-center gap-1 text-sm font-medium text-slate-800 dark:text-slate-200 [&::-webkit-details-marker]:hidden">
+                        <ChevronRightIcon class="-ml-1 size-4 shrink-0 text-slate-400 transition-transform group-open:rotate-90" />Extra settings (YAML)
+                    </summary>
+                    <UiTextarea class="mt-4" v-model="form.extra_yaml" code :rows="8"
+                        aria-label="Extra settings (YAML)" :placeholder="'scaffold:\n  seed: 123'"
+                        description="Anything else for settings.yml, such as scaffold options or connections. Applied on top of the pieces above."
+                        :error="form.errors.extra_yaml"
+                    />
+                </details>
             </UiPanel>
             <UiPanel v-if="onboarding && activeSection === 'review'" flush title="Review" description="These choices become your default for new projects. Each project can be adjusted before creation.">
                 <dl class="grid max-w-2xl grid-cols-[auto_1fr] gap-x-8 gap-y-3 text-sm">

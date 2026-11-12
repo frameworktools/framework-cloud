@@ -64,6 +64,19 @@ class ProjectCreationFlowTest extends TestCase
         $this->assertFalse($choices['git']['hooks']['check_notebook_outputs']);
     }
 
+    public function test_the_preview_resolves_git_sensitivity_and_agents_as_creating_would(): void
+    {
+        $user = User::factory()->create();
+        $choices = $this->choices();
+        $choices['structure'] = 'framework/project_sensitive';
+        $choices['settings'] = ['sensitive' => true, 'git' => false, 'hooks' => [], 'ai' => ['enabled' => false, 'assistants' => []]];
+
+        $this->actingAs($user)->postJson('/projects/preview', $choices)->assertOk()
+            ->assertJsonPath('settings.git', false)
+            ->assertJsonPath('settings.sensitive', true)
+            ->assertJsonPath('agents.enabled', false);
+    }
+
     public function test_a_project_and_a_blueprint_can_use_scripts_with_no_notebooks(): void
     {
         $user = User::factory()->create(['email_verified_at' => now()]);

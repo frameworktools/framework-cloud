@@ -1,5 +1,7 @@
 <script setup>
+import { ChevronRightIcon } from '@heroicons/vue/20/solid';
 import { computed, ref, watch } from 'vue';
+import { applyContextSkills } from '@/context-skills.js';
 import { router, useForm, usePage } from '@inertiajs/vue3';
 import SectionLayout from '@/Layouts/SectionLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
@@ -16,7 +18,8 @@ import UiRadioCards from '@/Components/UiRadioCards.vue';
 import ChoicesEditor, { errorSection, PAGE_SECTIONS, SECTIONS } from '@/Components/ChoicesEditor.vue';
 import ProjectTreeView from '@/Components/ProjectTreeView.vue';
 import UiModal from '@/Components/UiModal.vue';
-import { agentSummary, fromChoices, NAMED } from '@/agents.js';
+import { agentNames, agentSummary, fromChoices, NAMED } from '@/agents.js';
+import { editorOptions, editorsOf } from '@/project-settings.js';
 import { fitsLanguage, group, groups, languageOptions, typeFits } from '@/library.js';
 
 const props = defineProps({
@@ -87,6 +90,10 @@ const stata = computed(() => form.language === 'stata');
 const defaultFormat = (workflow, language, rmarkdown) => (language === 'stata' || workflow === 'scripts' ? null : workflow === 'jupyter' ? 'jupyter' : rmarkdown && language === 'r' ? 'rmarkdown' : 'quarto');
 const choiceKey = () => JSON.stringify([form.workflow, form.notebook_format, form.agents, form.structure, form.tools, form.package_sets, form.package_overrides, form.package_auto_attach, form.skill_sets, form.skills, form.excluded_skills, form.settings.git, form.settings.hooks, form.scaffold, form.quarto, form.ide, form.publish_destination, form.extra_yaml]);
 const filled = ref(null);
+const baseline = ref({});
+const contextSkills = ref(false);
+const choiceFields = ['workflow', 'notebook_format', 'agents', 'structure', 'tools', 'package_sets', 'package_overrides', 'package_auto_attach', 'skill_sets', 'skills', 'excluded_skills', 'settings', 'scaffold', 'quarto', 'ide', 'publish_destination', 'extra_yaml'];
+const snapshot = () => Object.fromEntries(choiceFields.map(key => [key, form[key]]));
 const fill = (b) => {
     const c = b?.choices ?? {};
     const language = form.language;
@@ -120,6 +127,12 @@ const fill = (b) => {
     form.ide = language !== 'r' && ['rstudio', 'both'].includes(c.ide) ? 'vscode' : (c.ide ?? 'vscode');
     form.publish_destination = c.publish_destination ?? '';
     form.extra_yaml = c.extra_yaml ?? '';
+    const named = JSON.stringify(form.skills);
+    applyContextSkills(form, props.catalog, { reset: true });
+    // Framework's blueprints add these skills on the server. Others are sent as choices.
+    contextSkills.value = !b?.is_system && JSON.stringify(form.skills) !== named;
+    baseline.value = JSON.parse(JSON.stringify(snapshot()));
+    form.save_blueprint = false;
     filled.value = choiceKey();
 };
 fill(blueprint.value);
@@ -197,10 +210,12 @@ const agentSettings = (choices) => {
     return { enabled, assistants: Object.fromEntries(NAMED.map((a) => [a, agents.includes(a)])) };
 };
 const requiredTools = computed(() => Object.fromEntries(Object.entries(resolved.value?.tools ?? {}).filter(([, t]) => t.required).map(([key, t]) => [key, t.required])));
-// Only tools for the project's language, and none turned off that the workflow needs
+// Only tools for the project's language, and none turned off that the workflow needs.
+// The workflows' own requirements (as seeded) apply before the server has answered for a new one.
+const workflowRequires = { quarto: ['quarto'], jupyter: ['jupyter', 'quarto'] };
 const toolChoices = (data) => (data.language === 'stata' ? {} : Object.fromEntries(Object.entries(data.tools).filter(([key, on]) => {
     const tool = props.catalog.tools.find((t) => t.key === key);
-    return fitsLanguage(tool?.language, data.language) && (on || !requiredTools.value[key]);
+    return fitsLanguage(tool?.language, data.language) && (on || (!requiredTools.value[key] && !workflowRequires[data.workflow]?.includes(key)));
 })));
 // Scaffold, Quarto, editor files, and publishing, for the languages that read them
 const settingChoices = (data) => ({
@@ -212,7 +227,7 @@ const choicePayload = (data) => ({
     language: data.language,
     workflow: data.workflow || undefined,
     name: data.name || undefined,
-    ...(edited.value ? {
+    ...(edited.value || contextSkills.value ? {
         customized: true,
         structure: data.structure,
         notebook_format: data.notebook_format || undefined,
@@ -339,12 +354,17 @@ const urlFor = (to, toTab = null) => {
 const go = (to, toTab = null) => router.get(urlFor(to, toTab), {}, { preserveState: true, preserveScroll: false });
 const navigation = computed(() => [
     { label: 'Start', href: urlFor('start'), preserveState: true, preserveScroll: false, current: stage.value === 'start' },
-    { label: 'Project', href: urlFor('project', 'basics'), preserveState: true, preserveScroll: false, current: false, quiet: true },
+    { label: 'Project', href: urlFor('project'), preserveState: true, preserveScroll: false, current: false, quiet: true },
     ...tabs.value.map((t) => ({ label: t.label, href: urlFor('project', t.key), preserveState: true, preserveScroll: false, indent: true, current: stage.value === 'project' && tab.value === t.key })),
     { label: 'Review', href: urlFor('review'), preserveState: true, preserveScroll: false, current: stage.value === 'review' },
 ]);
+// Your own blueprint already holds your choices, so Continue goes straight to Review
+const ownBlueprint = computed(() => !!blueprint.value && group(blueprint.value) === 'mine');
+// Review asks for the name when Basics was skipped or left it empty
+const nameOnReview = ref(false);
+watch(stage, (value) => { if (value === 'review' && (ownBlueprint.value || !form.name.trim())) nameOnReview.value = true; }, { immediate: true });
 const next = () => {
-    if (stage.value === 'start') return go('project', 'basics');
+    if (stage.value === 'start') return ownBlueprint.value ? go('review') : go('project', 'basics');
     if (stage.value === 'project') {
         const at = tabs.value.findIndex((t) => t.key === tab.value);
         return at < tabs.value.length - 1 ? go('project', tabs.value[at + 1].key) : go('review');
@@ -363,7 +383,8 @@ const errorPlace = (field) => {
     const top = field.split('.')[0];
     if (['blueprint_id', 'language'].includes(top)) return ['start'];
     if (['destination', 'github', 'new_blueprint'].includes(top)) return ['review'];
-    if (['name', 'description', 'extra_yaml'].includes(top)) return ['project', 'basics'];
+    if (['name', 'description'].includes(top)) return nameOnReview.value ? ['review'] : ['project', 'basics'];
+    if (top === 'extra_yaml') return ['project', 'basics'];
     const target = errorSection(field);
     return target && tabs.value.some((t) => t.key === target) ? ['project', target] : ['review'];
 };
@@ -386,6 +407,61 @@ const create = () => form
             if (to !== stage.value || (toTab ?? null) !== (to === 'project' ? tab.value : null)) go(to, toTab);
         },
     });
+// What differs from the blueprint the project started from, one line per setting
+const settingChanges = computed(() => {
+    const before = baseline.value;
+    const after = JSON.parse(JSON.stringify(snapshot()));
+    const name = (list, key) => props.catalog[list]?.find((item) => item.key === key)?.name ?? key;
+    const added = (a, b) => (b ?? []).filter((key) => !(a ?? []).includes(key));
+    const delta = (a, b, label = (key) => key) => [...added(a, b).map((key) => `+${label(key)}`), ...added(b, a).map((key) => `−${label(key)}`)].join(', ');
+    const on = (map) => Object.keys(map ?? {}).filter((key) => map[key]);
+    const format = (c) => (c.workflow === 'scripts' || !c.notebook_format ? 'Scripts' : ({ quarto: 'Quarto', rmarkdown: 'R Markdown', jupyter: 'Jupyter' })[c.notebook_format] ?? c.notebook_format);
+    // Packages: an override on adds a package and an override off removes one
+    const packageDelta = () => {
+        const keys = [...new Set([...Object.keys(before.package_overrides ?? {}), ...Object.keys(after.package_overrides ?? {})])];
+        return keys.filter((key) => before.package_overrides?.[key] !== after.package_overrides?.[key])
+            .map((key) => ((after.package_overrides?.[key] ?? !before.package_overrides?.[key]) ? `+${key}` : `−${key}`)).join(', ');
+    };
+    // Skills as the picker shows them: single skills and set members, less exclusions
+    const skills = (c) => props.catalog.skills.filter((skill) => fitsLanguage(skill.language, form.language)
+        && !(c.excluded_skills ?? []).includes(skill.key)
+        && ((c.skills ?? []).includes(skill.key) || props.catalog.skill_sets.some((set) => (c.skill_sets ?? []).includes(set.key) && set.members?.[form.language]?.includes(skill.skill))))
+        .map((skill) => skill.key);
+    const hookName = (key) => hooks.find((hook) => hook.key === key)?.label ?? key;
+    const editor = (ide) => editorsOf(ide).map((key) => editorOptions.find((o) => o.value === key)?.label ?? key).join(' and ') || 'None';
+    const publishing = (value) => ({ '': 'Automatic', cloud: 'Framework Cloud', github: 'GitHub Pages' })[value ?? ''] ?? value;
+    const blank = (value) => value === undefined || value === null || value === '';
+    const paths = (a, b, prefix = '') => [...new Set([...Object.keys(a ?? {}), ...Object.keys(b ?? {})])].flatMap((key) => {
+        const [x, y] = [a?.[key], b?.[key]];
+        if ((x && typeof x === 'object' && !Array.isArray(x)) || (y && typeof y === 'object' && !Array.isArray(y))) return paths(x, y, `${prefix}${key} `);
+        if ((blank(x) && blank(y)) || JSON.stringify(x) === JSON.stringify(y)) return [];
+        return [`${prefix}${key.replaceAll('_', ' ')}: ${blank(x) ? 'default' : x} → ${blank(y) ? 'default' : y}`];
+    });
+    const nested = (a, b) => paths(a, b).join('; ');
+    const swap = (a, b) => (a === b ? '' : `${a} → ${b}`);
+    return [
+        ['Notebook format', swap(format(before), format(after))],
+        ['Structure', swap(name('structures', before.structure), name('structures', after.structure))],
+        ['Tools', delta(on(before.tools), on(after.tools), (key) => name('tools', key))],
+        ['Package sets', delta(before.package_sets, after.package_sets, (key) => name('package_sets', key))],
+        ['Packages', packageDelta()],
+        ['Auto-attach', [...new Set([...Object.keys(before.package_auto_attach ?? {}), ...Object.keys(after.package_auto_attach ?? {})])]
+            .filter((key) => before.package_auto_attach?.[key] !== after.package_auto_attach?.[key])
+            .map((key) => `${key} ${({ true: 'on', false: 'off' })[after.package_auto_attach?.[key]] ?? 'as the package set has it'}`).join(', ')],
+        ['Agents', delta(before.agents, after.agents, (key) => agentNames[key] ?? key)],
+        ['Skill sets', delta(before.skill_sets, after.skill_sets, (key) => name('skill_sets', key))],
+        ['Skills', delta(skills(before), skills(after), (key) => name('skills', key))],
+        ['Git', swap(before.settings.git ? 'On' : 'Off', after.settings.git ? 'On' : 'Off')],
+        ['Git hooks', delta(before.settings.hooks, after.settings.hooks, hookName)],
+        ['Scaffold', nested(before.scaffold, after.scaffold)],
+        ['Quarto', nested(before.quarto, after.quarto)],
+        ['Editor', swap(editor(before.ide), editor(after.ide))],
+        ['Publishing', swap(publishing(before.publish_destination), publishing(after.publish_destination))],
+        ['Extra settings', (before.extra_yaml ?? '').trim() === (after.extra_yaml ?? '').trim() ? '' : 'Changed'],
+    ].filter(([, detail]) => detail).map(([label, detail]) => ({ label, detail }));
+});
+// Nothing changed leaves nothing new to save
+watch(() => settingChanges.value.length, (count) => { if (!count) form.save_blueprint = false; });
 const blueprintError = computed(() => Object.entries(form.errors).find(([key]) => key.startsWith('new_blueprint.'))?.[1]);
 const submitDisabled = computed(() => form.processing || (stage.value === 'review' && onGitHub.value && (!githubReady.value || (sensitive.value && !form.github.private))));
 </script>
@@ -468,11 +544,15 @@ const submitDisabled = computed(() => form.processing || (stage.value === 'revie
                         <p v-if="slug" class="mt-1.5 text-xs text-slate-500 dark:text-slate-400">Folder name: <span class="font-mono">{{ slug }}</span></p>
                     </div>
                     <UiTextarea v-model="form.description" label="Description (optional)" placeholder="Study purpose, data, and planned analysis" :rows="3" :error="form.errors.description" />
-                    <UiTextarea
-                        v-if="form.extra_yaml || form.errors.extra_yaml" v-model="form.extra_yaml" code :rows="6"
-                        label="Extra settings (YAML)" :placeholder="'scaffold:\n  seed: 123'" description="Settings from the blueprint beyond its choices, applied on top of them."
-                        :error="form.errors.extra_yaml"
-                    />
+                    <details class="group" :open="!!form.errors.extra_yaml">
+                        <summary class="flex cursor-pointer list-none items-center gap-1 text-sm font-medium text-slate-800 dark:text-slate-200 [&::-webkit-details-marker]:hidden">
+                            <ChevronRightIcon class="-ml-1 size-4 shrink-0 text-slate-400 transition-transform group-open:rotate-90" />Extra settings (YAML)
+                        </summary>
+                        <UiTextarea class="mt-4" v-model="form.extra_yaml" code :rows="6"
+                            aria-label="Extra settings (YAML)" :placeholder="'scaffold:\n  seed: 123'" description="Settings from the blueprint beyond its choices, applied on top of them."
+                            :error="form.errors.extra_yaml"
+                        />
+                    </details>
                 </UiPanel>
 
                 <template v-else>
@@ -525,6 +605,20 @@ const submitDisabled = computed(() => form.processing || (stage.value === 'revie
 
             <!-- Review: what the project gets, where it goes, and creating it -->
             <template v-else>
+                <template v-if="nameOnReview">
+                    <UiPanel id="name" flush title="Project details" class="max-w-2xl scroll-mt-6">
+                        <div>
+                            <UiInput v-model="form.name" label="Project name" placeholder="NHANES study" required :error="form.errors.name" />
+                            <p v-if="slug" class="mt-1.5 text-xs text-slate-500 dark:text-slate-400">Folder name: <span class="font-mono">{{ slug }}</span></p>
+                        </div>
+                        <UiTextarea v-model="form.description" label="Description (optional)" placeholder="Study purpose, data, and planned analysis" :rows="2" :error="form.errors.description" />
+                        <p class="text-sm text-slate-500 dark:text-slate-400">
+                            From {{ blueprint?.name }}.
+                            <UiButton variant="subtle" size="xs" class="ml-1" @click="go('project', tabs[1]?.key ?? 'basics')">Adjust choices</UiButton>
+                        </p>
+                    </UiPanel>
+                    <UiSeparator />
+                </template>
                 <UiCallout v-if="current?.missing_render_directory" variant="warning" heading="Quarto render directory" class="max-w-3xl">
                     <p>The render directory <code class="font-mono">{{ current.missing_render_directory }}/</code> will not be created during project setup. Add it to the project structure if you need it before rendering.</p>
                     <div><UiButton size="sm" variant="ghost" @click="go('project', 'structure')">Review project structure</UiButton></div>
@@ -620,7 +714,20 @@ const submitDisabled = computed(() => form.processing || (stage.value === 'revie
                 <UiSeparator />
 
                 <UiPanel id="save-blueprint" title="Blueprint copy" flush class="max-w-2xl scroll-mt-6">
-                    <UiSwitch v-model="form.save_blueprint" label="Save as blueprint" description="Also saves these choices as a private blueprint for later projects." />
+                    <div v-if="settingChanges.length" class="flex flex-col gap-2">
+                        <h3 class="text-sm font-medium text-slate-800 dark:text-slate-200">Changes from {{ blueprint?.name }}</h3>
+                        <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-6 gap-y-2 text-sm">
+                            <template v-for="change in settingChanges" :key="change.label">
+                                <dt class="text-slate-500 dark:text-slate-400">{{ change.label }}</dt>
+                                <dd class="break-words">{{ change.detail }}</dd>
+                            </template>
+                        </dl>
+                    </div>
+                    <p v-else class="text-sm text-slate-500 dark:text-slate-400">No changes from {{ blueprint?.name }}.</p>
+                    <UiSwitch
+                        v-model="form.save_blueprint" :disabled="!settingChanges.length" label="Save as blueprint"
+                        :description="settingChanges.length ? 'Saves these choices as a private blueprint for later projects.' : 'Change a choice to save a new blueprint.'"
+                    />
                     <UiInput v-if="form.save_blueprint" v-model="blueprintName" label="Blueprint name" placeholder="Survey analysis" :error="form.errors['new_blueprint.name']" />
                     <p v-if="blueprintError && !form.errors['new_blueprint.name']" class="text-sm text-red-600 dark:text-red-400">{{ blueprintError }}</p>
                 </UiPanel>

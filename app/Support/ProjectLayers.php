@@ -221,11 +221,13 @@ class ProjectLayers
 
         // Older R clients include these in their own defaults. Remove them
         // beneath the chosen layers so explicit package selections still win.
+        // The project's language: the last layer that sets one
         $language = collect($layers)->pluck('layer.language')->filter()->last();
         if ($language === 'r') {
-            array_unshift($layers, ['kind' => 'settings', 'key' => 'framework package defaults', 'layer' => [
+            // Just above the base structure, which stays first, and beneath every chosen layer
+            array_splice($layers, min(1, count($layers)), 0, [['kind' => 'settings', 'key' => 'framework package defaults', 'layer' => [
                 'packages' => ['default_packages' => ['glue' => null, 'here' => null, 'lme4' => null]],
-            ]]);
+            ]]]);
         }
 
         $envelope = [

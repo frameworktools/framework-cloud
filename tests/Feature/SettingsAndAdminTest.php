@@ -351,6 +351,6 @@ class SettingsAndAdminTest extends TestCase
     /** Framework's settings layer in an envelope's layers. */
     private function base(array $layers): array
     {
-        return collect($layers)->firstWhere('kind', 'settings')['layer'] ?? [];
+        return collect($layers)->firstWhere('key', ProjectDefaults::BASE_LAYER)['layer'] ?? [];
     }
 }
