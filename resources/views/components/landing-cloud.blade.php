@@ -21,7 +21,7 @@
 <section id="cloud" class="py-14 sm:py-20">
     <div class="mx-auto max-w-2xl text-center">
         <h2 class="text-3xl font-semibold tracking-tight">Start a Framework project</h2>
-        <p class="mt-4 leading-relaxed text-slate-600 dark:text-slate-400">Set a project up in Framework Cloud, or create it on your computer with the R or Python package or the command line. Either way, its packages and AI skills stay in sync: change them in the app or in the project, then pull or push.</p>
+        <p class="mt-4 leading-relaxed text-slate-600 dark:text-slate-400">Set a project up in Framework Cloud or create it on your computer with the R or Python package or the command line.</p>
     </div>
     <div data-setup-tabs class="mt-8">
         <div role="tablist" aria-label="Where to start" class="mx-auto flex w-fit max-w-full gap-1 overflow-x-auto rounded-lg bg-slate-100 p-1 dark:bg-white/5">
