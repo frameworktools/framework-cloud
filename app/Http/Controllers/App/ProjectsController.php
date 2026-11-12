@@ -388,7 +388,7 @@ class ProjectsController extends Controller
             'package_overrides.*' => ['boolean'],
             'package_auto_attach' => ['nullable', 'array'],
             'package_auto_attach.*' => ['boolean'],
-            // Packages pushed with push_setup(); the resolver checks each entry
+            // Packages pushed with push_all(); the resolver checks each entry
             'package_definitions' => ['nullable', 'array'],
             'package_definitions.*' => ['nullable', 'array'],
             'skill_sets' => ['nullable', 'array'],

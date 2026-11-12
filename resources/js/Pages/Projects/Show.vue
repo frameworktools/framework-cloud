@@ -293,7 +293,7 @@ const artifactMenu = (doc) => [
                 </UiTable>
                 <p v-else class="text-sm text-slate-500 dark:text-slate-400">No data entries yet.</p>
                 <p class="mt-4 text-sm text-slate-500 dark:text-slate-400">
-                    Send a computer's entries with <code class="font-mono text-xs">push_data_registry()</code> or <code class="font-mono text-xs">fw data push</code>. Get them with <code class="font-mono text-xs">pull_data_registry()</code> or <code class="font-mono text-xs">fw data pull</code>.
+                    Send a computer's entries with <code class="font-mono text-xs">push_all()</code> or <code class="font-mono text-xs">fw push</code>. Get them with <code class="font-mono text-xs">pull_all()</code> or <code class="font-mono text-xs">fw pull</code>. <code class="font-mono text-xs">push_data_registry()</code> and <code class="font-mono text-xs">pull_data_registry()</code> sync the data registry alone.
                 </p>
             </UiPanel>
 

@@ -10,7 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
- * pull_setup() and push_setup(): a project's packages and skills. A project
+ * pull_all() and push_all(): a project's packages and skills. A project
  * token reaches its own project, as GET /projects/pull does; a user token
  * names one of the user's projects with ?project=<slug>.
  */
@@ -52,7 +52,7 @@ class ProjectSetupController extends Controller
         $revision = ProjectSetup::for($project)['revision'];
         if (($validated['base_revision'] ?? null) !== $revision && ! ($validated['force'] ?? false)) {
             return response()->json([
-                'message' => 'The project\'s setup changed on Framework Cloud since you last pulled. Pull first, or push with force.',
+                'message' => 'The project\'s packages changed on Framework Cloud since you last pulled. Pull first with pull_all() or fw pull, or push with force.',
                 'revision' => $revision,
             ], 409);
         }

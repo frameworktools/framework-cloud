@@ -17,7 +17,7 @@ use Illuminate\Testing\TestResponse;
 use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
-/** pull_setup() and push_setup(): a project's packages and skills over the API. */
+/** pull_all() and push_all(): a project's packages and skills over the API. */
 class ProjectSetupTest extends TestCase
 {
     use RefreshDatabase;
@@ -215,7 +215,7 @@ class ProjectSetupTest extends TestCase
         $this->push($token, ['base_revision' => $setup['revision'], 'packages' => $add('broom')])
             ->assertStatus(409)
             ->assertExactJson([
-                'message' => 'The project\'s setup changed on Framework Cloud since you last pulled. Pull first, or push with force.',
+                'message' => 'The project\'s packages changed on Framework Cloud since you last pulled. Pull first with pull_all() or fw pull, or push with force.',
                 'revision' => $current,
             ]);
         $this->push($token, ['base_revision' => $setup['revision'], 'packages' => $add('broom'), 'dry_run' => true])->assertStatus(409);

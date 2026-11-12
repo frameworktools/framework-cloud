@@ -96,7 +96,7 @@ class ToolCatalog
                 // The tool's own dry_run shows the request; preview is the endpoint's dry_run
                 'rename' => ['preview' => 'dry_run'],
                 'title' => 'Update a project\'s packages',
-                'description' => 'Set the project\'s package list: packages are added or changed, and missing ones removed only with remove. Changes this project only, never its blueprint or package sets, and offers Update on GitHub. Run it with preview first and get the user\'s go-ahead.',
+                'description' => 'Set the project\'s package list: packages are added or changed, and missing ones removed only with remove. Changes this project only, never its blueprint or package sets, and offers Update on GitHub. Computers get the change with pull_all() or fw pull. Run it with preview first and get the user\'s go-ahead.',
             ],
             'projects_data_show' => [
                 'level' => self::READ, 'method' => 'GET', 'path' => '/projects/data',
@@ -125,7 +125,7 @@ class ToolCatalog
                 ], 'required' => ['base_revision', 'entries']],
                 'rename' => ['preview' => 'dry_run'],
                 'title' => 'Update a project\'s data registry',
-                'description' => 'Set the project\'s data catalog: entries are added or changed, and missing ones removed only with remove. Definitions only: never upload data or hashes. Computers get the change with pull_data_registry() or fw data pull. Run it with preview first and get the user\'s go-ahead.',
+                'description' => 'Set the project\'s data catalog: entries are added or changed, and missing ones removed only with remove. Definitions only: never upload data or hashes. Computers get the change with pull_all() or fw pull. Run it with preview first and get the user\'s go-ahead.',
             ],
             'projects_scaffold' => [
                 'level' => self::FULL, 'method' => 'POST', 'path' => '/projects/{slug}/scaffold', 'path_params' => $project,

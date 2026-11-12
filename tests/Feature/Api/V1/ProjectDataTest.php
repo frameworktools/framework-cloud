@@ -135,7 +135,7 @@ class ProjectDataTest extends TestCase
         $this->push($token, ['base_revision' => $stale, 'entries' => []])
             ->assertStatus(409)
             ->assertJsonPath('revision', $current)
-            ->assertJsonPath('message', 'The project\'s data registry changed on Framework Cloud since you last pulled. Pull first, or push with force.');
+            ->assertJsonPath('message', 'The project\'s data registry changed on Framework Cloud since you last pulled. Pull first with pull_all() or fw pull, or push with force.');
 
         $this->push($token, ['base_revision' => $stale, 'entries' => [], 'remove' => true, 'force' => true])->assertOk()->assertJsonPath('applied', true);
         $this->assertSame([], $this->pulled($token)['entries']);

@@ -71,7 +71,7 @@ const form = useForm({
     package_sets: [],
     package_overrides: {},
     package_auto_attach: {},
-    // Packages from no package set, from the blueprint, the Packages tab, or push_setup()
+    // Packages from no package set, from the blueprint, the Packages tab, or push_all()
     package_definitions: {},
     skill_sets: [],
     skills: [],

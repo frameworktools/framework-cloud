@@ -86,7 +86,7 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::get('/projects', [ProjectsController::class, 'index']);
     Route::post('/projects', [ProjectsController::class, 'store'])->middleware('throttle:20,1');
     Route::get('/projects/pull', [ProjectLayersController::class, 'pull']);
-    // pull_setup() and push_setup(): packages and skills, with a project token or a user token and ?project=<slug>
+    // pull_all() and push_all(): packages and skills, with a project token or a user token and ?project=<slug>
     Route::get('/projects/setup', [ProjectSetupController::class, 'show']);
     Route::post('/projects/setup/packages', [ProjectSetupController::class, 'packages'])->middleware('throttle:30,1');
     // pull_data_registry() and push_data_registry(): the data catalog's definitions, never files or hashes

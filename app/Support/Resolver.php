@@ -297,7 +297,7 @@ class Resolver
         $settings = $choices['settings'] ?? [];
         $layer = [];
 
-        // Packages pushed for this project (push_setup()): exact entries, or null to remove.
+        // Packages pushed for this project (push_all()): exact entries, or null to remove.
         // Applied first, so the form's switches below still turn them off or change auto-attach.
         if (! empty($choices['package_definitions'])) {
             foreach ($choices['package_definitions'] as $name => $definition) {

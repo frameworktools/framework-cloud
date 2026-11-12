@@ -27,7 +27,7 @@ const toDefinition = (row) => {
 const toDefinitions = (list) => Object.fromEntries(list.filter((row) => row.name).map((row) => [row.name, JSON.parse(JSON.stringify(toDefinition(row)))]));
 
 // Rows keep blank names while they're typed; the form keeps only named ones.
-// A removal pushed with push_setup() (null) has no row and stays.
+// A removal pushed with push_all() (null) has no row and stays.
 const rows = ref(toRows(f.package_definitions));
 // Each watcher ignores the change the other makes, so a blank row being typed stays
 let syncing = false;

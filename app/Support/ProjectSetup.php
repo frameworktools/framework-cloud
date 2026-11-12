@@ -8,7 +8,7 @@ use App\Models\Skill;
 use Illuminate\Validation\ValidationException;
 
 /**
- * A project's setup as pull_setup() and push_setup() see it: its packages
+ * A project's setup as pull_all() and push_all() see it: its packages
  * and skills, as the layers it keeps merge, and a revision that changes
  * whenever they change.
  */

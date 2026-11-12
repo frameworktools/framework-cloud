@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 /**
- * pull_data_registry() and push_data_registry(): a project's data registry,
+ * pull_all() and push_all(), or pull_data_registry() and push_data_registry(): a project's data registry,
  * the catalog in its settings' data section. Definitions only: never data
  * files or their hashes. A project token reaches its own project; a user
  * token names one of the user's projects with ?project=<slug>.
@@ -56,7 +56,7 @@ class ProjectDataController extends Controller
         $revision = ProjectData::for($project)['revision'];
         if (($validated['base_revision'] ?? null) !== $revision && ! ($validated['force'] ?? false)) {
             return response()->json([
-                'message' => 'The project\'s data registry changed on Framework Cloud since you last pulled. Pull first, or push with force.',
+                'message' => 'The project\'s data registry changed on Framework Cloud since you last pulled. Pull first with pull_all() or fw pull, or push with force.',
                 'revision' => $revision,
             ], 409);
         }
