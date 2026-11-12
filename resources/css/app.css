@@ -10,6 +10,10 @@
 /* Dark scrollbars and form controls in dark mode */
 html.dark { color-scheme: dark; }
 
+/* Scroll bars everywhere: a thin rounded thumb on no track, as academic.page has them */
+* { scrollbar-width: thin; scrollbar-color: var(--color-slate-300) transparent; }
+.dark * { scrollbar-color: var(--color-slate-600) transparent; }
+
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
     /* One accent, as academic.page uses it: sky-700 fills buttons and marks the
