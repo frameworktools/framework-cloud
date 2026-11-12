@@ -353,4 +353,46 @@ class SettingsAndAdminTest extends TestCase
     {
         return collect($layers)->firstWhere('key', ProjectDefaults::BASE_LAYER)['layer'] ?? [];
     }
+
+    public function test_the_project_defaults_page_saves_the_projects_folder_in_the_synced_settings(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $standard = $this->system('project');
+        $blueprints = ['r' => $standard->id, 'python' => $standard->id, 'stata' => $standard->id];
+
+        $this->actingAs($user)->get('/settings/blueprint')
+            ->assertInertia(fn (Assert $page) => $page->component('Settings/DefaultBlueprint')->where('projectsDir', null));
+
+        $this->patch('/settings/blueprint', ['language' => 'r', 'blueprints' => $blueprints, 'projects_dir' => '  ~/code  '])
+            ->assertSessionHasNoErrors();
+        $setting = $user->fresh()->globalSettings();
+        $this->assertSame('~/code', $setting->document['defaults']['projects_dir']);
+        $this->assertSame(['device' => 'web', 'app' => 'framework.pub'], $setting->revisions()->latest('revision')->first()->client);
+        $this->get('/settings/blueprint')->assertInertia(fn (Assert $page) => $page->where('projectsDir', '~/code'));
+
+        // Leaving it out of the request keeps it; saving it blank removes it
+        $this->patch('/settings/blueprint', ['language' => 'r', 'blueprints' => $blueprints])->assertSessionHasNoErrors();
+        $this->assertSame('~/code', ProjectDefaults::projectsDir($user->fresh()));
+        $this->patch('/settings/blueprint', ['language' => 'r', 'blueprints' => $blueprints, 'projects_dir' => ''])->assertSessionHasNoErrors();
+        $this->assertArrayNotHasKey('projects_dir', $user->fresh()->globalSettings()->document['defaults']);
+        $this->assertNull(ProjectDefaults::projectsDir($user->fresh()));
+    }
+
+    public function test_the_projects_folder_must_be_a_full_path(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $standard = $this->system('project');
+        $blueprints = ['r' => $standard->id, 'python' => $standard->id, 'stata' => $standard->id];
+
+        foreach (['~', '~/code', '~/My Projects/2026', '/Users/ada/code', 'C:\\Users\\ada\\code', 'D:/work', '\\\\server\\share'] as $good) {
+            $this->actingAs($user)->patch('/settings/blueprint', ['language' => 'r', 'blueprints' => $blueprints, 'projects_dir' => $good])
+                ->assertSessionHasNoErrors();
+            $this->assertSame($good, ProjectDefaults::projectsDir($user->fresh()), $good);
+        }
+        foreach (['code', './code', '../code', '~ada/code', 'C:code', "~/code\nrm", '/'.str_repeat('a', 255), ['~/code']] as $bad) {
+            $this->actingAs($user)->patch('/settings/blueprint', ['language' => 'r', 'blueprints' => $blueprints, 'projects_dir' => $bad])
+                ->assertSessionHasErrors('projects_dir');
+        }
+        $this->assertSame('\\\\server\\share', ProjectDefaults::projectsDir($user->fresh()));
+    }
 }

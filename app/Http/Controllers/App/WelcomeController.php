@@ -40,6 +40,7 @@ class WelcomeController extends Controller
             'author' => $draft['author'] ?? AuthorProfile::for($request->user()),
             'accountEmail' => $request->user()->email,
             'language' => $draft['language'] ?? ProjectDefaults::language($request->user()),
+            'projectsDir' => ProjectDefaults::projectsDir($request->user()),
             'blueprintId' => $draft['blueprint_id'] ?? null,
             'again' => (bool) $request->user()->setup_completed_at,
             'step' => min(3, $draft['step'] ?? 0),
@@ -53,10 +54,14 @@ class WelcomeController extends Controller
         $data = $request->validate(AuthorProfile::rules() + [
             'language' => ['required', Rule::in(Project::LANGUAGES)],
             'blueprint_id' => ['required', 'integer'],
+            'projects_dir' => ProjectDefaults::projectsDirRules(),
         ], AuthorProfile::messages());
         $blueprint = Blueprint::systemTypes()->with(Library::BLUEPRINT_WITH)->find($data['blueprint_id']);
         if (! $blueprint || ! ProjectDefaults::fits($blueprint, $data['language'])) {
             throw ValidationException::withMessages(['blueprint_id' => 'Choose a starting blueprint for this language.']);
+        }
+        if ($request->exists('projects_dir')) {
+            ProjectDefaults::setProjectsDir($request->user(), $data['projects_dir'] ?? null);
         }
         $previous = $this->draft($request) ?? [];
         $same = ($previous['version_id'] ?? null) === $blueprint->latestVersion->id && ($previous['language'] ?? null) === $data['language'];
@@ -154,13 +159,19 @@ class WelcomeController extends Controller
             $draft['author'] = $author;
             $draft['step'] = 2;
         } elseif ($stage === 'language') {
-            $language = $request->validate(['language' => ['required', Rule::in(Project::LANGUAGES)]])['language'];
+            $language = $request->validate([
+                'language' => ['required', Rule::in(Project::LANGUAGES)],
+                'projects_dir' => ProjectDefaults::projectsDirRules(),
+            ])['language'];
             if (($draft['language'] ?? null) !== $language) {
                 unset($draft['builder'], $draft['version_id'], $draft['blueprint_id'], $draft['id'], $draft['section']);
             }
             $draft['language'] = $language;
             $draft['step'] = 3;
             ProjectDefaults::setLanguage($request->user(), $language);
+            if ($request->exists('projects_dir')) {
+                ProjectDefaults::setProjectsDir($request->user(), $request->input('projects_dir'));
+            }
         } else {
             abort_unless(isset($draft['version_id']), 409, 'Choose a starting blueprint first.');
             if ($request->input('language') !== $draft['language']) {

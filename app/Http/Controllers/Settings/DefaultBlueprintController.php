@@ -14,8 +14,9 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * The default blueprint for each language, and the default language. A new
- * project without a chosen blueprint uses its language's default.
+ * The default blueprint for each language, the default language, and the
+ * projects folder. A new project without a chosen blueprint uses its
+ * language's default.
  */
 class DefaultBlueprintController extends Controller
 {
@@ -31,6 +32,7 @@ class DefaultBlueprintController extends Controller
 
         return Inertia::render('Settings/DefaultBlueprint', [
             'language' => ProjectDefaults::language($user),
+            'projectsDir' => ProjectDefaults::projectsDir($user),
             'defaults' => collect(Project::LANGUAGES)->mapWithKeys(fn (string $l) => [$l => ProjectDefaults::blueprint($user, $l)->id])->all(),
             // Each blueprint with the languages it takes and its notebook workflow in each
             'blueprints' => $blueprints->map(fn (Blueprint $b) => [
@@ -53,6 +55,7 @@ class DefaultBlueprintController extends Controller
             'language' => ['required', Rule::in(Project::LANGUAGES)],
             'blueprints' => ['required', 'array'],
             'blueprints.*' => ['nullable', 'integer'],
+            'projects_dir' => ProjectDefaults::projectsDirRules(),
         ]);
 
         $chosen = [];
@@ -69,6 +72,9 @@ class DefaultBlueprintController extends Controller
         }
 
         ProjectDefaults::save($user, $validated['language'], $chosen);
+        if ($request->exists('projects_dir')) {
+            ProjectDefaults::setProjectsDir($user, $validated['projects_dir'] ?? null);
+        }
 
         return back()->with('status', 'defaults-updated');
     }

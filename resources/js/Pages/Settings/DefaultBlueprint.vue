@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { useForm, usePage } from '@inertiajs/vue3';
 import SettingsLayout from '@/Layouts/SettingsLayout.vue';
 import UiButton from '@/Components/UiButton.vue';
+import UiInput from '@/Components/UiInput.vue';
 import UiLink from '@/Components/UiLink.vue';
 import UiRadioCards from '@/Components/UiRadioCards.vue';
 import UiSection from '@/Components/UiSection.vue';
@@ -10,8 +11,8 @@ import UiSelect from '@/Components/UiSelect.vue';
 import UiSeparator from '@/Components/UiSeparator.vue';
 import { languageNames } from '@/library.js';
 
-// The default blueprint for each language, and the default language
-const props = defineProps({ language: String, defaults: Object, blueprints: Array });
+// The default language, the projects folder, and the default blueprint for each language
+const props = defineProps({ language: String, projectsDir: String, defaults: Object, blueprints: Array });
 
 const page = usePage();
 const saved = computed(() => page.props.flash.status === 'defaults-updated');
@@ -19,7 +20,7 @@ const saved = computed(() => page.props.flash.status === 'defaults-updated');
 const languages = ['r', 'python', 'stata'];
 const workflowNames = { quarto: 'Quarto', jupyter: 'Jupyter', scripts: 'Scripts only' };
 
-const form = useForm({ language: props.language, blueprints: { ...props.defaults } });
+const form = useForm({ language: props.language, projects_dir: props.projectsDir ?? '', blueprints: { ...props.defaults } });
 const save = () => form.patch('/settings/blueprint', { preserveScroll: true });
 
 const languageOptions = languages.map((l) => ({ value: l, label: languageNames[l] }));
@@ -36,16 +37,29 @@ const summary = (language) => {
 </script>
 
 <template>
-    <Head title="Default blueprint · Settings" />
+    <Head title="Project defaults · Settings" />
 
     <SettingsLayout
-        heading="Default blueprint"
-        subheading="New projects use the default blueprint for their language unless you choose another. The blueprint sets the structure, packages, agents, editor files, and Git."
+        heading="Project defaults"
+        subheading="Defaults for new projects. A new project uses the default blueprint for its language unless you choose another. The blueprint sets the structure, packages, agents, editor files, and Git."
         :dirty="form.isDirty"
     >
         <form id="settings-form" class="flex max-w-2xl flex-col gap-8" @submit.prevent="save">
             <UiSection title="Default language" description="For projects created without a language, such as from an agent.">
                 <UiRadioCards v-model="form.language" name="language" legend="Default language" hide-legend :options="languageOptions" columns="grid-cols-3" />
+            </UiSection>
+
+            <UiSeparator />
+
+            <UiSection title="Projects folder" description="Where new projects go on your computer. R, Python, and fw suggest it when you create a project. Leave blank to use the folder you're in.">
+                <UiInput
+                    v-model="form.projects_dir"
+                    label="Path"
+                    placeholder="~/code"
+                    autocomplete="off"
+                    optional
+                    :error="form.errors.projects_dir"
+                />
             </UiSection>
 
             <UiSeparator />

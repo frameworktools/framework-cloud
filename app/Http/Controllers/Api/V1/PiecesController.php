@@ -50,7 +50,8 @@ class PiecesController extends Controller
     {
         $user = $this->user($request);
 
-        return response()->json(ProjectDefaults::for($user))->header('Framework-Defaults-Revision', ProjectDefaults::revision($user));
+        // projects_dir is personal, not from a blueprint, so it stays out of the revision
+        return response()->json([...ProjectDefaults::for($user), 'projects_dir' => ProjectDefaults::projectsDir($user)])->header('Framework-Defaults-Revision', ProjectDefaults::revision($user));
     }
 
     /** GET /api/v1/skills: single skills, for --skill. */

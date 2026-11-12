@@ -200,4 +200,27 @@ class WelcomeTest extends TestCase
         $this->post('/welcome/complete', $this->choices('r'))->assertSessionHasNoErrors()->assertRedirect('/welcome/ready');
         $this->assertSame([], $user->fresh()->globalSettings()->document['author']['affiliations']);
     }
+
+    public function test_the_project_defaults_step_saves_an_optional_projects_folder(): void
+    {
+        $user = $this->newcomer();
+        $this->actingAs($user)->get('/welcome')->assertInertia(fn (Assert $p) => $p->where('projectsDir', null));
+
+        // Optional: blank saves nothing
+        $this->patchJson('/welcome/progress', ['stage' => 'language', 'language' => 'r', 'projects_dir' => ''])->assertOk();
+        $this->assertNull(ProjectDefaults::projectsDir($user->fresh()));
+
+        $this->patchJson('/welcome/progress', ['stage' => 'language', 'language' => 'r', 'projects_dir' => 'code'])
+            ->assertUnprocessable()->assertJsonValidationErrors('projects_dir');
+
+        $this->patchJson('/welcome/progress', ['stage' => 'language', 'language' => 'r', 'projects_dir' => '~/code'])->assertOk();
+        $this->assertSame('~/code', ProjectDefaults::projectsDir($user->fresh()));
+        $this->get('/welcome')->assertInertia(fn (Assert $p) => $p->where('projectsDir', '~/code'));
+
+        // The last step sends it again
+        $this->post('/welcome', $this->details() + ['projects_dir' => '~/research'])->assertRedirect('/welcome/blueprint');
+        $this->assertSame('~/research', ProjectDefaults::projectsDir($user->fresh()));
+        $this->post('/welcome', $this->details() + ['projects_dir' => 'research'])->assertSessionHasErrors('projects_dir');
+        $this->assertSame('~/research', ProjectDefaults::projectsDir($user->fresh()));
+    }
 }

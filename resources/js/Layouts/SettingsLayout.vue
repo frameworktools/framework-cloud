@@ -5,7 +5,7 @@ import PageHeader from '@/Components/PageHeader.vue';
 defineProps({ heading: String, subheading: String, dirty: Boolean });
 
 const items = [
-    { label: 'Default blueprint', href: '/settings/blueprint' },
+    { label: 'Project defaults', href: '/settings/blueprint' },
     { label: 'Personal data', href: '/settings/personal-data' },
 ];
 </script>

@@ -4,19 +4,20 @@ import { router, useForm, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import UiButton from '@/Components/UiButton.vue';
+import UiInput from '@/Components/UiInput.vue';
 import UiRadioCards from '@/Components/UiRadioCards.vue';
 import UiSeparator from '@/Components/UiSeparator.vue';
 import AuthorFields from '@/Components/AuthorFields.vue';
 import BlueprintPreview from '@/Components/BlueprintPreview.vue';
 import { languageOptions } from '@/library.js';
 
-const props = defineProps({ blueprints: Array, author: Object, accountEmail: String, language: String, blueprintId: Number, again: Boolean, step: Number });
-const steps = ['Introduction', 'Your details', 'Default language', 'Starting blueprint'];
+const props = defineProps({ blueprints: Array, author: Object, accountEmail: String, language: String, projectsDir: String, blueprintId: Number, again: Boolean, step: Number });
+const steps = ['Introduction', 'Your details', 'Project defaults', 'Starting blueprint'];
 const step = ref(props.step ?? 0);
 const saving = ref(false);
 const saveStatus = ref(props.step > 0 ? 'Saved' : '');
 const page = usePage();
-const form = useForm({ ...props.author, affiliations: props.author.affiliations.map(a => ({ ...a })), language: props.language ?? 'r', blueprint_id: String(props.blueprintId ?? props.blueprints.find(b => b.key === 'project')?.id ?? '') });
+const form = useForm({ ...props.author, affiliations: props.author.affiliations.map(a => ({ ...a })), language: props.language ?? 'r', projects_dir: props.projectsDir ?? '', blueprint_id: String(props.blueprintId ?? props.blueprints.find(b => b.key === 'project')?.id ?? '') });
 watch(() => form.data(), () => { saveStatus.value = 'Unsaved changes'; }, { deep: true });
 const available = computed(() => props.blueprints.filter(b => b.languages.includes(form.language)));
 const selected = computed(() => available.value.find(b => String(b.id) === form.blueprint_id));
@@ -26,7 +27,7 @@ watch(() => form.language, () => {
 });
 const advance = async () => {
     if (step.value === 3) {
-        form.post('/welcome', { onError: errors => { step.value = Object.keys(errors).some(k => !['blueprint_id', 'language'].includes(k)) ? 1 : errors.language ? 2 : 3; } });
+        form.post('/welcome', { onError: errors => { step.value = Object.keys(errors).some(k => !['blueprint_id', 'language', 'projects_dir'].includes(k)) ? 1 : errors.language || errors.projects_dir ? 2 : 3; } });
         return;
     }
     saving.value = true;
@@ -73,8 +74,17 @@ const skip = () => router.post('/welcome/skip');
                 </template>
                 <template v-else-if="step === 2">
                     <p class="text-sm text-slate-600 dark:text-slate-400">Choose the language you use most. Your default blueprint will use this language. You can add blueprints for other languages later.</p>
-                    <UiRadioCards v-model="form.language" name="setup-language" legend="Default language" hide-legend :options="languageOptions" stacked />
+                    <UiRadioCards v-model="form.language" name="setup-language" legend="Default language" :options="languageOptions" stacked />
                     <p v-if="form.errors.language" role="alert" class="text-sm text-red-600">{{ form.errors.language }}</p>
+                    <UiInput
+                        v-model="form.projects_dir"
+                        label="Projects folder"
+                        description="Where new projects go on your computer. R, Python, and fw suggest it when you create a project. Leave blank to use the folder you're in."
+                        placeholder="~/code"
+                        autocomplete="off"
+                        optional
+                        :error="form.errors.projects_dir"
+                    />
                 </template>
                 <template v-else>
                     <p class="text-sm text-slate-600 dark:text-slate-400">Choose a starting point for your typical project. You can always make more or edit this one later.</p>

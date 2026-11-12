@@ -282,7 +282,7 @@ class PiecesTest extends TestCase
             ->assertJsonPath('settings.hooks', [])
             ->assertJsonPath('workflows', ['r' => 'quarto', 'python' => 'jupyter', 'stata' => 'scripts'])
             ->json();
-        $this->assertSame(['publish_destination', 'blueprint', 'blueprints', 'language', 'workflows', 'rmarkdown', 'package_sets', 'skill_sets', 'packages', 'tools', 'settings'], array_keys($defaults));
+        $this->assertSame(['publish_destination', 'blueprint', 'blueprints', 'language', 'workflows', 'rmarkdown', 'package_sets', 'skill_sets', 'packages', 'tools', 'settings', 'projects_dir'], array_keys($defaults));
         $this->assertSame(['git', 'ai', 'hooks', 'ide', 'scaffold', 'agents', 'quarto'], array_keys($defaults['settings']));
         $this->assertContains('dplyr', array_column($defaults['packages']['r'], 'name'));
 
@@ -430,5 +430,32 @@ class PiecesTest extends TestCase
             $this->assertTrue(! $skill['language'] || in_array('python', $skill['language'], true), $skill['key']);
         }
         $this->assertNotContains('framework/framework-stata', $python->pluck('key'));
+    }
+
+    public function test_defaults_include_the_projects_folder_from_the_synced_settings(): void
+    {
+        $user = User::factory()->create();
+        $token = $this->token($user);
+
+        // Unset is null, and the other fields are unchanged
+        $this->withToken($token)->getJson('/api/v1/defaults')->assertOk()
+            ->assertJsonPath('projects_dir', null)
+            ->assertJsonPath('blueprint', 'framework/project');
+        $revision = ProjectDefaults::revision($user);
+
+        ProjectDefaults::setProjectsDir($user, '~/code');
+        $this->app['auth']->forgetGuards();
+        $this->withToken($token)->getJson('/api/v1/defaults')->assertOk()
+            ->assertJsonPath('projects_dir', '~/code')
+            ->assertHeader('Framework-Defaults-Revision', $revision);
+        $this->assertSame('~/code', $user->globalSettings()->document['defaults']['projects_dir']);
+
+        // A value synced from a package reads back the same way
+        $setting = $user->globalSettings();
+        $doc = $setting->document;
+        $doc['defaults']['projects_dir'] = '/srv/projects';
+        $this->withToken($token)->putJson('/api/v1/settings', ['document' => $doc, 'base_revision' => $setting->revision])->assertOk();
+        $this->app['auth']->forgetGuards();
+        $this->withToken($token)->getJson('/api/v1/defaults')->assertJsonPath('projects_dir', '/srv/projects');
     }
 }

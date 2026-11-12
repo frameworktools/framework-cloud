@@ -198,6 +198,55 @@ class ProjectDefaults
     }
 
     /**
+     * The folder new projects go in on the person's computer, such as
+     * ~/code, from defaults.projects_dir in the synced settings. Null when
+     * unset: the packages then ask, starting from the current folder.
+     */
+    public static function projectsDir(User $user): ?string
+    {
+        $dir = $user->exists ? Arr::get($user->globalSettings()->document, 'defaults.projects_dir') : null;
+
+        return is_string($dir) && trim($dir) !== '' ? trim($dir) : null;
+    }
+
+    /** Save the projects folder in the synced settings. Null or blank removes it. */
+    public static function setProjectsDir(User $user, ?string $dir): void
+    {
+        $dir = is_string($dir) && trim($dir) !== '' ? trim($dir) : null;
+        $setting = $user->globalSettings();
+        $doc = $setting->document;
+        if ($dir === null) {
+            Arr::forget($doc, 'defaults.projects_dir');
+        } else {
+            Arr::set($doc, 'defaults.projects_dir', $dir);
+        }
+        if ($doc !== $setting->document) {
+            $setting->replaceDocument($doc, client: ['device' => 'web', 'app' => 'framework.pub']);
+        }
+    }
+
+    /**
+     * Validation for the projects folder: blank, or a full path. That is ~,
+     * a path under ~, an absolute path, or a Windows drive or network path.
+     *
+     * @return list<mixed>
+     */
+    public static function projectsDirRules(): array
+    {
+        return ['nullable', 'string', 'max:255', function (string $attribute, mixed $value, \Closure $fail) {
+            if (! is_string($value)) {
+                return;
+            }
+            $value = trim($value);
+            if (preg_match('/[\x00-\x1F\x7F]/', $value)) {
+                $fail('The projects folder cannot contain line breaks or control characters.');
+            } elseif (! preg_match('#^(~|~[/\\\\].*|/.*|[A-Za-z]:[/\\\\].*|\\\\\\\\.+)$#s', $value)) {
+                $fail('Use a full path, such as ~/code or /Users/you/code.');
+            }
+        }];
+    }
+
+    /**
      * Save the default language and default blueprints by language.
      *
      * @param  array<string, Blueprint>  $blueprints
