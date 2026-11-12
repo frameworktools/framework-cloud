@@ -53,7 +53,7 @@ class WelcomeTest extends TestCase
             $this->actingAs($user)->post('/welcome', $this->details($language))->assertSessionHasNoErrors()->assertRedirect('/welcome/blueprint');
             $this->assertNull($user->fresh()->setup_completed_at);
             $this->assertSame(0, Blueprint::where('user_id', $user->id)->count());
-            $this->get('/welcome/blueprint')->assertInertia(fn (Assert $page) => $page->component('Blueprints/Builder')->where('onboarding.language', $language)->where('start.language', $language)->where('onboarding.source', 'Standard'));
+            $this->get('/welcome/blueprint')->assertInertia(fn (Assert $page) => $page->component('Blueprints/Builder')->where('onboarding.language', $language)->where('start.language', $language)->where('onboarding.source', 'Standard')->where('onboarding.name', 'Default Project'));
             $this->post('/welcome/complete', $this->choices($language))->assertSessionHasNoErrors()->assertRedirect('/welcome/ready');
             $user->refresh();
             $blueprint = Blueprint::where('user_id', $user->id)->sole();

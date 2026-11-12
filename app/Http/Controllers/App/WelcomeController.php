@@ -107,7 +107,7 @@ class WelcomeController extends Controller
             'agents' => $start['agents'], 'ggplotThemes' => ProjectDefaults::GGPLOT_THEMES,
             'quartoChoices' => ProjectDefaults::QUARTO_CHOICES,
             'section' => in_array($request->query('tab'), $tabs, true) ? $request->query('tab') : ($draft['section'] ?? 'name'),
-            'onboarding' => ['saved' => isset($draft['builder']), 'draftId' => $draft['id'], 'language' => $language, 'source' => $source->blueprint->name, 'name' => $draft['builder']['name'] ?? 'My '.Project::LANGUAGE_NAMES[$language].' blueprint', 'description' => $draft['builder']['description'] ?? ''],
+            'onboarding' => ['saved' => isset($draft['builder']), 'draftId' => $draft['id'], 'language' => $language, 'source' => $source->blueprint->name, 'name' => $draft['builder']['name'] ?? 'Default Project', 'description' => $draft['builder']['description'] ?? ''],
         ]);
     }
 
