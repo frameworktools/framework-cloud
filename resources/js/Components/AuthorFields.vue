@@ -14,16 +14,13 @@ const blank = () => ({ name: '', department: '', city: '', country: '' });
     <UiSection title="Author details" description="Used in new projects, notebooks, reports, and slides.">
         <UiInput v-model="form.name" label="Name" placeholder="Full name for bylines" autocomplete="name" required :error="form.errors.name" />
         <UiInput v-model="form.email" label="Public email (optional)" type="email" placeholder="you@example.org" description="Shown on your work. Your sign-in email stays private unless you enter it here." :error="form.errors.email" />
-        <details class="text-sm" :open="!!(form.errors.orcid || form.errors.url)">
-            <summary class="cursor-pointer font-medium text-slate-700 dark:text-slate-300">Website and ORCID (optional)</summary>
-            <div class="mt-4 grid gap-6 sm:grid-cols-2">
-                <UiInput v-model="form.url" label="Website" type="url" placeholder="https://example.org" :error="form.errors.url" />
-                <UiInput v-model="form.orcid" label="ORCID iD" placeholder="0000-0002-1825-0097" :error="form.errors.orcid" />
-            </div>
-        </details>
+        <div class="grid gap-6 sm:grid-cols-2">
+            <UiInput v-model="form.url" label="Website (optional)" type="url" placeholder="https://example.org" :error="form.errors.url" />
+            <UiInput v-model="form.orcid" label="ORCID iD (optional)" placeholder="0000-0002-1825-0097" :error="form.errors.orcid" />
+        </div>
     </UiSection>
     <UiSeparator />
-    <UiSection title="Affiliations" description="Optional. The first affiliation is your main one.">
+    <UiSection title="Affiliations" description="We can use this in notebooks/reports you publish.">
         <div v-for="(affiliation, index) in form.affiliations" :key="index" class="flex flex-col gap-4 border-b border-slate-800/10 pb-6 dark:border-white/15">
             <div class="flex items-center justify-between gap-3">
                 <h3 class="text-sm font-medium text-slate-800 dark:text-slate-200">{{ index === 0 ? 'Main affiliation' : `Affiliation ${index + 1}` }}</h3>

@@ -23,3 +23,11 @@ Erik's production account was reset again before implementation. It was already 
 ## Preview
 
 The checkout preview is https://framework-cloud.pequod.dev/welcome, discovered with `tunnels`.
+
+## Onboarding refinements
+
+The setup steps now have slash separators. Website and ORCID are visible fields with optional labels. The affiliation help text reads, “We can use this in notebooks/reports you publish.”
+
+Starting blueprint uses the requested description and a wider layout. The selected starter's resolved notebook format, packages, AI skills, Git, sensitivity, and folder tree appear beside the choices on desktop and below them on mobile. Switching starters refreshes the preview. The existing preview component supplies a compact mode; its other displays keep their existing layout.
+
+Validation: 18 focused tests passed with 468 assertions. The production frontend build passed. Browser checks verified slash count, visible optional fields, preview updates for Presentation and Shiny, desktop column positions, mobile overflow, and no page errors or Vue warnings. Light, dark, and mobile screenshots were inspected.

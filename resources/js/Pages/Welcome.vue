@@ -7,6 +7,7 @@ import UiButton from '@/Components/UiButton.vue';
 import UiRadioCards from '@/Components/UiRadioCards.vue';
 import UiSeparator from '@/Components/UiSeparator.vue';
 import AuthorFields from '@/Components/AuthorFields.vue';
+import BlueprintPreview from '@/Components/BlueprintPreview.vue';
 import { languageOptions } from '@/library.js';
 
 const props = defineProps({ blueprints: Array, author: Object, accountEmail: String, language: String, blueprintId: Number, again: Boolean });
@@ -14,6 +15,7 @@ const steps = ['Introduction', 'Your details', 'Default language', 'Starting blu
 const step = ref(0);
 const form = useForm({ ...props.author, affiliations: props.author.affiliations.map(a => ({ ...a })), language: props.language ?? 'r', blueprint_id: String(props.blueprintId ?? props.blueprints.find(b => b.key === 'project')?.id ?? '') });
 const available = computed(() => props.blueprints.filter(b => b.languages.includes(form.language)));
+const selected = computed(() => available.value.find(b => String(b.id) === form.blueprint_id));
 const options = computed(() => available.value.map(b => ({ value: String(b.id), label: b.name, description: b.description })));
 watch(() => form.language, () => {
     if (!available.value.some(b => String(b.id) === form.blueprint_id)) form.blueprint_id = String(available.value.find(b => b.key === 'project')?.id ?? available.value[0]?.id ?? '');
@@ -29,9 +31,12 @@ const skip = () => router.post('/welcome/skip');
 <template>
     <Head title="Getting started" />
     <AppLayout>
-        <div class="mx-auto w-full max-w-3xl px-6 py-10 sm:px-8">
-            <nav aria-label="Setup progress" class="mb-8 flex flex-wrap gap-x-5 gap-y-2 text-sm">
-                <button v-for="(label, index) in steps" :key="label" type="button" :disabled="index > step" :aria-current="index === step ? 'step' : undefined" :class="index === step ? 'font-semibold text-sky-700 dark:text-sky-400' : 'text-slate-500 disabled:opacity-50'" @click="step = index">{{ label }}</button>
+        <div class="mx-auto w-full px-6 py-10 sm:px-8" :class="step === 3 ? 'max-w-7xl' : 'max-w-3xl'">
+            <nav aria-label="Setup progress" class="mb-8 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
+                <template v-for="(label, index) in steps" :key="label">
+                    <span v-if="index" aria-hidden="true" class="text-slate-400 dark:text-slate-600">/</span>
+                    <button type="button" :disabled="index > step" :aria-current="index === step ? 'step' : undefined" :class="index === step ? 'font-semibold text-sky-700 dark:text-sky-400' : 'text-slate-500 disabled:opacity-50'" @click="step = index">{{ label }}</button>
+                </template>
             </nav>
             <PageHeader :title="step === 0 ? 'Welcome to Framework' : steps[step]" />
             <form class="mt-8 flex flex-col gap-6" @submit.prevent="advance">
@@ -54,9 +59,16 @@ const skip = () => router.post('/welcome/skip');
                     <p v-if="form.errors.language" role="alert" class="text-sm text-red-600">{{ form.errors.language }}</p>
                 </template>
                 <template v-else>
-                    <p class="text-sm text-slate-600 dark:text-slate-400">Choose a starting point for your private blueprint. Next, review its folders, notebook format, packages, AI skills, and other settings.</p>
-                    <UiRadioCards v-model="form.blueprint_id" name="setup-blueprint" legend="Starting blueprint" hide-legend :options="options" stacked />
-                    <p v-if="form.errors.blueprint_id" role="alert" class="text-sm text-red-600">{{ form.errors.blueprint_id }}</p>
+                    <p class="text-sm text-slate-600 dark:text-slate-400">Choose a starting point for your typical project. You can always make more or edit this one later.</p>
+                    <div class="grid min-w-0 items-start gap-8 lg:grid-cols-[minmax(18rem,0.9fr)_minmax(0,1.1fr)]">
+                        <div class="min-w-0 [&_fieldset>div]:max-w-none">
+                            <UiRadioCards v-model="form.blueprint_id" name="setup-blueprint" legend="Starting blueprint" hide-legend :options="options" stacked />
+                            <p v-if="form.errors.blueprint_id" role="alert" class="mt-3 text-sm text-red-600">{{ form.errors.blueprint_id }}</p>
+                        </div>
+                        <div class="min-w-0 border-t border-slate-800/10 pt-6 lg:border-t-0 lg:border-l lg:pl-8 lg:pt-0 dark:border-white/15">
+                            <BlueprintPreview v-if="selected" :key="`${selected.id}:${form.language}`" :blueprint="selected" :language="form.language" :source="{ url: `/blueprints/${selected.id}/preview`, body: { language: form.language } }" compact />
+                        </div>
+                    </div>
                 </template>
                 <UiSeparator />
                 <div class="flex flex-wrap items-center justify-between gap-3">

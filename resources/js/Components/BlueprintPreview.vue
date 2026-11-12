@@ -17,6 +17,7 @@ const props = defineProps({
     values: { type: Object, default: () => ({}) }, // guided setup's answers, for the workflow
     // Only the folder tree, without the summary beside it
     treeOnly: Boolean,
+    compact: Boolean,
     // Where to resolve it instead, as { url, body }: the Blueprints page's own preview
     source: Object,
 });
@@ -64,6 +65,27 @@ const link = 'text-sky-700 hover:underline dark:text-sky-400';
         <p v-else-if="!preview.available" class="text-sm text-slate-600 dark:text-slate-400">{{ preview.problem }}</p>
         <ProjectTreeView v-else :entries="preview.tree" />
     </div>
+    <section v-else-if="compact" aria-label="Starting blueprint preview" :aria-busy="loading" class="flex min-w-0 flex-col gap-6" :class="loading ? 'opacity-60' : ''">
+        <div>
+            <h2 class="text-base font-medium text-slate-900 dark:text-white">{{ blueprint.name }}</h2>
+            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ blueprint.description }}</p>
+        </div>
+        <p v-if="!preview" role="status" class="text-sm text-slate-500 dark:text-slate-400">Loading preview…</p>
+        <p v-else-if="!preview.available" role="alert" class="text-sm text-slate-600 dark:text-slate-400">{{ preview.problem }}</p>
+        <template v-else>
+            <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-6 gap-y-3 text-sm">
+                <dt class="text-slate-500 dark:text-slate-400">Notebook format</dt><dd class="text-slate-800 dark:text-slate-200">{{ { quarto: 'Quarto', jupyter: 'Jupyter', scripts: 'Scripts' }[preview.workflow] ?? preview.workflow }}</dd>
+                <dt class="text-slate-500 dark:text-slate-400">Packages</dt><dd class="text-slate-800 dark:text-slate-200">{{ preview.packages.map(p => p.name).join(', ') || 'None' }}</dd>
+                <dt class="text-slate-500 dark:text-slate-400">AI skills</dt><dd class="text-slate-800 dark:text-slate-200">{{ [...preview.skill_sets.map(s => s.name), ...preview.skills].join(', ') || 'None' }}</dd>
+                <dt class="text-slate-500 dark:text-slate-400">Git</dt><dd class="text-slate-800 dark:text-slate-200">{{ preview.settings.git.on ? 'On' : 'Off' }}</dd>
+                <dt class="text-slate-500 dark:text-slate-400">Sensitive data</dt><dd class="text-slate-800 dark:text-slate-200">{{ preview.settings.sensitive.on ? 'On' : 'Off' }}</dd>
+            </dl>
+            <div class="border-t border-slate-800/10 pt-6 dark:border-white/15">
+                <h3 class="mb-3 text-sm font-medium text-slate-900 dark:text-white">Project structure</h3>
+                <ProjectTreeView :entries="preview.tree" />
+            </div>
+        </template>
+    </section>
     <div v-else class="grid gap-x-8 gap-y-5 border-t border-slate-200 pt-4 xl:grid-cols-[minmax(0,1fr)_16rem] dark:border-slate-800">
         <!-- What the resolver set aside, such as a workflow the blueprint doesn't support -->
         <ul v-if="preview?.notices?.length" class="flex flex-col gap-1 text-sm text-amber-800 xl:col-span-2 dark:text-amber-300">
