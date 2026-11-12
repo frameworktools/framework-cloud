@@ -10,10 +10,10 @@ class GitignoreTemplate
         $common = "# Private data and credentials\n**/private/**\n**/*_private/**\n.env\n.env.*\n!.env.example\n.Renviron\n**/credentials/**\n**/secrets/**\n\n# Local records and caches\nframework.db\nframework.db-wal\nframework.db-shm\n.DS_Store\n";
 
         return $common.match ($type) {
-            'project_sensitive' => "\n# Sensitive project folders\n/inputs/private/\n/reference/private/\n/outputs/private/\n**/sensitive/**\n",
+            'project_sensitive' => "\n# Sensitive project folders\n/inputs/private/\n/reference/private/\n/outputs/private/\n**/sensitive/**\n\n# Run logs\n/logs/\n",
             'course' => "\n# Private course material\n/grades/\n/submissions/\n/student-data/\n",
             'presentation' => "\n# Presentation build cache\n.quarto/\n*_cache/\n",
-            'project' => "\n# Analysis scratch work\n/scratch/\n/cache/\n",
+            'project' => "\n# Analysis scratch work\n/scratch/\n/cache/\n\n# Run logs\n/logs/\n",
             'shiny', 'plumber' => "\n# Deployment records\nrsconnect/\n.Rproj.user/\n",
             'shiny_python', 'fastapi' => "\n# Python environments and caches\n.venv/\n__pycache__/\n.pytest_cache/\nrsconnect-python/\n",
             default => '',

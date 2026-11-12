@@ -54,6 +54,25 @@ fw.make_script("data-processing")  # scripts/data-processing.py
 fw.make_notebook("talk", stub="revealjs")
 ```
 
+## Run logs
+
+Write a log when it may help debug a later run. Long jobs, loops over many
+files or models, cluster jobs, and steps that fail intermittently qualify. Put
+logs in the project's `logs/` folder, which Git ignores. Create it if the
+project has none:
+
+```python
+import logging
+
+fw.path("logs").mkdir(exist_ok=True)
+logging.basicConfig(filename=fw.path("logs", "fit-models.log"), level=logging.INFO,
+                    format="%(asctime)s %(levelname)s %(message)s")
+logging.info("Fitting %d models", len(models))
+```
+
+Record start and end times, inputs, counts, warnings, and errors. Keep
+identifiable data, credentials, and secrets out of logs.
+
 ## Habits
 
 - Raw data is never modified. Write cleaned versions to the intermediate folder.

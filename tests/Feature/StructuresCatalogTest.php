@@ -32,6 +32,14 @@ class StructuresCatalogTest extends TestCase
             $this->assertSame('R only', $standard['scaffold.R']['when']);
             $this->assertSame('Python only', $standard['scaffold.py']['when']);
             $this->assertSame('with Quarto', $standard['_quarto.yml']['when']);
+            // Run logs get a folder that Git ignores
+            $this->assertSame('dir', $standard['logs']['type']);
+            $this->assertStringContainsString("/logs/\n", $structures->firstWhere('key', 'project')['gitignore_content']);
+            $this->assertStringContainsString("/logs/\n", $structures->firstWhere('key', 'project_sensitive')['gitignore_content']);
+            // Both languages make framework.db: Python with the project, R on the first scaffold()
+            $this->assertNull($standard['framework.db']['when']);
+            $this->assertFalse($standard['framework.db']['later']);
+            $this->assertStringContainsString('In R, it is made by the first scaffold()', $standard['framework.db']['note']);
             // Editor, agent, and Git files aren't the structure's
             $this->assertFalse($standard->has('AGENTS.md') || $standard->has('.git') || $standard->has('project.Rproj'));
 

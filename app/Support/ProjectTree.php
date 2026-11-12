@@ -121,9 +121,10 @@ class ProjectTree
                 $variables = array_keys(Connections::variables((array) ($spec['connections'] ?? [])));
                 $add('.env', 'file', 'secrets, kept out of git'.($variables ? '. Fill in '.implode(', ', $variables) : ''));
                 $add($language === 'r' ? 'scaffold.R' : 'scaffold.py', 'file');
-                if ($language === 'python') {
-                    $add('framework.db', 'file');
-                }
+                // Python makes framework.db with the project; R makes it on the first scaffold()
+                $language === 'r'
+                    ? $add('framework.db', 'file', 'made by the first scaffold()', later: true)
+                    : $add('framework.db', 'file');
             }
             if ($extras && $vscode) {
                 $add("{$slug}.code-workspace", 'file', null, 'named after the project');

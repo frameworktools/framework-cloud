@@ -17,7 +17,8 @@
         "outputs_models": "outputs/models",
         "outputs_reports": "outputs/reports",
         "cache": "outputs/cache",
-        "scratch": "scratch"
+        "scratch": "scratch",
+        "logs": "logs"
       },
       "render_dirs": {
         "notebooks": "outputs/notebooks",
@@ -59,7 +60,8 @@
         "outputs_private_reports": "outputs/private/reports",
         "outputs_public_reports": "outputs/public/reports",
         "cache": "outputs/private/cache",
-        "scratch": "scratch"
+        "scratch": "scratch",
+        "logs": "logs"
       },
       "render_dirs": {
         "notebooks": "outputs/private/notebooks",

@@ -34,6 +34,13 @@ class StructurePreview
                     ! $r->has($entry['path']) => 'Python only',
                     default => $entry['when'],
                 };
+                // Made with the project in one language and later in the other, such as framework.db
+                if ($r->has($entry['path']) && $python->has($entry['path']) && $r[$entry['path']]['later'] !== $python[$entry['path']]['later']) {
+                    $entry['later'] = false;
+                    $entry['note'] = $r[$entry['path']]['later']
+                        ? 'Python makes it with the project. In R, it is '.$r[$entry['path']]['note']
+                        : 'R makes it with the project. In Python, it is '.$python[$entry['path']]['note'];
+                }
 
                 return $entry;
             })->values()->all();

@@ -48,6 +48,18 @@ make_script("data-processing")        # Creates scripts/data-processing.R
 make_notebook("talk", stub = "revealjs")
 ```
 
+## Run logs
+
+Write a log when it may help debug a later run. Long jobs, loops over many files or models, cluster jobs, and steps that fail intermittently qualify. Put logs in the project's `logs/` folder, which Git ignores. Create it if the project has none:
+
+```r
+dir.create(project_path("logs"), showWarnings = FALSE)
+log_file <- project_path("logs", "fit-models.log")
+cat(format(Sys.time()), "Fitting", length(models), "models\n", file = log_file, append = TRUE)
+```
+
+Record start and end times, inputs, counts, warnings, and errors. Keep identifiable data, credentials, and secrets out of logs.
+
 ## Best Practices
 
 - Keep raw data immutable — never modify files in the raw inputs directory
