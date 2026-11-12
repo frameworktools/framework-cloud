@@ -58,6 +58,8 @@
         </main>
     </div>
 
+<x-code-copy />
+
 <script>
     // R or Python: every tab group on the page follows the last choice, and
     // this browser remembers it
