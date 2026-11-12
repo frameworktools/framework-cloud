@@ -5,7 +5,6 @@ import UiButton from '@/Components/UiButton.vue';
 import UiField from '@/Components/UiField.vue';
 import UiInput from '@/Components/UiInput.vue';
 import UiSelect from '@/Components/UiSelect.vue';
-import { inputClass } from '@/ui.js';
 import {
     bucketDrivers, changeDriver, connectionLanguages, databaseDrivers, driverNeeds, envRef, envVar, fields, newConnection, rename, suggested, variables,
 } from '@/connections.js';
@@ -70,15 +69,19 @@ const generalError = computed(() => f.errors.connections);
                     <div class="grid gap-4 sm:grid-cols-2">
                         <template v-for="field in driverOf(kind, row)?.fields ?? []" :key="field">
                             <UiField v-if="fields[field].secret" :id="`${uid}-${kind.key}-${i}-${field}`" :label="fields[field].label" :optional="fields[field].optional" :error="error(kind, i, field)">
-                                <div class="flex items-center gap-1 font-mono text-sm text-slate-500 dark:text-slate-400">
-                                    <span aria-hidden="true">env("</span>
+                                <!-- An input group: env(" and ") are fixed parts of the field, the name goes between -->
+                                <div
+                                    class="flex h-10 overflow-hidden rounded-lg border border-slate-200 border-b-slate-300/80 bg-white font-mono shadow-xs focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-sky-600 dark:border-white/10 dark:bg-white/5 dark:focus-within:outline-sky-500"
+                                    :class="error(kind, i, field) ? 'border-red-500 dark:border-red-500' : ''"
+                                >
+                                    <span class="flex shrink-0 items-center border-r border-slate-200 bg-slate-50 px-3 text-sm text-slate-500 select-none dark:border-white/10 dark:bg-white/5 dark:text-slate-400" aria-hidden="true">env("</span>
                                     <input
                                         :id="`${uid}-${kind.key}-${i}-${field}`" :value="secretName(row, field)" :placeholder="suggested(row.name, field)"
                                         autocomplete="off" spellcheck="false" :aria-invalid="error(kind, i, field) ? 'true' : undefined"
-                                        :class="inputClass" class="min-w-0 flex-1 font-mono"
+                                        class="min-w-0 flex-1 bg-transparent px-3 text-base text-slate-800 placeholder:text-slate-400 focus:outline-none sm:text-sm dark:text-slate-200 dark:placeholder:text-slate-500"
                                         @input="setSecret(row, field, $event.target.value)"
                                     >
-                                    <span aria-hidden="true">")</span>
+                                    <span class="flex shrink-0 items-center border-l border-slate-200 bg-slate-50 px-3 text-sm text-slate-500 select-none dark:border-white/10 dark:bg-white/5 dark:text-slate-400" aria-hidden="true">")</span>
                                 </div>
                             </UiField>
                             <UiInput
