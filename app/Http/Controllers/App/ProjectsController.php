@@ -4,6 +4,7 @@ namespace App\Http\Controllers\App;
 
 use App\Http\Controllers\Controller;
 use App\Jobs\ScaffoldOnGitHub;
+use App\Jobs\UpdateOnGitHub;
 use App\Models\Blueprint;
 use App\Models\BlueprintVersion;
 use App\Models\Collection;
@@ -219,6 +220,10 @@ class ProjectsController extends Controller
                 'run_url' => $p->scaffold_run_url,
                 'error' => $p->scaffold_error,
                 'pages_url' => $p->pages_url,
+                // Update on GitHub: offered once the setup changed after it last went to the repository
+                'update_available' => in_array($p->scaffold_status, ['done', null], true) && $p->setup_updated_at
+                    && (! $p->github_setup_applied_at || $p->github_setup_applied_at->lt($p->setup_updated_at)),
+                'update' => $p->github_update,
                 // Before the job creates the repository, and when creating it failed
             ] : (in_array($p->scaffold_status, ['pending', 'running', 'failed'], true) ? ['status' => $p->scaffold_status, 'error' => $p->scaffold_error] : null),
             'blueprint' => $p->blueprintVersion ? [
@@ -464,6 +469,7 @@ class ProjectsController extends Controller
         $project->update(Resolver::setupAttributes($validated['name'], $resolved) + [
             'description' => $validated['description'] ?? null,
             'choices' => self::storedChoices($validated),
+            'setup_updated_at' => now(),
         ]);
 
         return to_route('projects.show', $project->slug)->with('status', 'project-updated');
@@ -744,6 +750,39 @@ class ProjectsController extends Controller
 
         $project->update(['scaffold_status' => 'pending', 'scaffold_error' => null, 'scaffold_run_url' => null]);
         ScaffoldOnGitHub::dispatch($project, $target['org'], $target['name'], $target['private']);
+
+        return back();
+    }
+
+    /**
+     * POST /projects/{id}/github/update: propose Framework's regenerated
+     * files in a pull request, built on the queue. The app must be
+     * installed on the repository's owner.
+     */
+    public function updateGitHub(Request $request, int $project): RedirectResponse
+    {
+        $project = $request->user()->projects()->listed()->whereNotNull('github_repo')->findOrFail($project);
+
+        if (in_array($project->scaffold_status, ['pending', 'running', 'failed'], true)) {
+            return back()->withErrors(['github' => 'Finish creating the repository first.']);
+        }
+        if (in_array($project->github_update['status'] ?? null, ['pending', 'running'], true)) {
+            return back()->withErrors(['github' => 'An update is already under way.']);
+        }
+        if (! ProjectZip::enabled()) {
+            return back()->withErrors(['github' => 'This server is not set up to build project files.']);
+        }
+        $account = $request->user()->githubAccount;
+        if (! $account) {
+            return back()->withErrors(['github' => 'Connect GitHub in settings first.']);
+        }
+        $owner = Str::before($project->github_repo, '/');
+        if (! collect(Installations::for($account) ?? [])->contains(fn (array $o) => strcasecmp($o['login'], $owner) === 0)) {
+            return back()->withErrors(['github' => "Install the Framework app on {$owner} first."]);
+        }
+
+        $project->update(['github_update' => ['status' => 'pending']]);
+        UpdateOnGitHub::dispatch($project);
 
         return back();
     }

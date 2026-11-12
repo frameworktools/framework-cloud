@@ -151,6 +151,56 @@ class GitHub
         return ['sha' => $commit['sha'], 'url' => "https://github.com/{$repo}/commit/{$commit['sha']}", 'branch' => $branch, 'unchanged' => false];
     }
 
+    /**
+     * Every file in a branch with its blob sha, which equals
+     * Git::blobSha() of the file's bytes.
+     *
+     * @return array<string, string> path => blob sha
+     */
+    public function blobShas(string $repo, string $branch): array
+    {
+        $data = $this->get("/repos/{$repo}/git/trees/".rawurlencode($branch), ['recursive' => 1])->json();
+
+        return collect($data['tree'] ?? [])->where('type', 'blob')->mapWithKeys(fn (array $e) => [$e['path'] => $e['sha']])->all();
+    }
+
+    /** The newest commit on a branch that touched a path (a file or a folder), or null when none did. */
+    public function lastCommit(string $repo, string $path, string $branch): ?array
+    {
+        $commits = $this->get("/repos/{$repo}/commits", ['path' => $path, 'sha' => $branch, 'per_page' => 1])->json();
+
+        return $commits[0] ?? null;
+    }
+
+    /** The commit a branch points at. */
+    public function branchSha(string $repo, string $branch): string
+    {
+        return $this->get("/repos/{$repo}/git/ref/heads/".rawurlencode($branch))->json('object.sha');
+    }
+
+    public function createBranch(string $repo, string $branch, string $sha): void
+    {
+        $this->send('post', "/repos/{$repo}/git/refs", ['ref' => "refs/heads/{$branch}", 'sha' => $sha]);
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function openPullRequests(string $repo): array
+    {
+        return $this->get("/repos/{$repo}/pulls", ['state' => 'open', 'per_page' => 100])->json();
+    }
+
+    /** @return array<string, mixed> */
+    public function createPullRequest(string $repo, string $head, string $base, string $title, string $body): array
+    {
+        return $this->send('post', "/repos/{$repo}/pulls", ['title' => $title, 'head' => $head, 'base' => $base, 'body' => $body])->json();
+    }
+
+    /** @return array<string, mixed> */
+    public function updatePullRequest(string $repo, int $number, string $body): array
+    {
+        return $this->send('patch', "/repos/{$repo}/pulls/{$number}", ['body' => $body])->json();
+    }
+
     /** The commit the default branch points at. */
     public function headSha(string $repo): string
     {

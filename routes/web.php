@@ -190,6 +190,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->whereIn('section', array_slice(ProjectsController::SECTIONS, 1))->name('projects.section');
     Route::get('projects/{project}/download', [ProjectsController::class, 'download'])->whereNumber('project')->middleware('throttle:10,1')->name('projects.download');
     Route::post('projects/{project}/token', [ProjectsController::class, 'issueToken']);
+    // Collapsed sections, remembered on the account
+    Route::post('preferences/ui', \App\Http\Controllers\App\UiPreferencesController::class)->middleware('throttle:60,1');
     Route::delete('projects/{project}/tokens/{token}', [ProjectsController::class, 'revokeToken']);
     Route::delete('projects/{project}', [ProjectsController::class, 'destroy']);
     Route::put('projects/{project}/status', [ProjectsController::class, 'setStatus'])->whereNumber('project');
@@ -198,6 +200,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('share/{type}/{id}', [ShareController::class, 'open'])->whereIn('type', ['artifact', 'report', 'collection', 'blueprint', 'project'])->whereNumber('id')->middleware('throttle:30,1');
     Route::put('projects/{project}/public-download', [ProjectsController::class, 'setPublicDownload'])->whereNumber('project');
     Route::post('projects/{project}/scaffold', [ProjectsController::class, 'scaffold'])->whereNumber('project')->middleware('throttle:10,1');
+    Route::post('projects/{project}/github/update', [ProjectsController::class, 'updateGitHub'])->whereNumber('project')->middleware('throttle:10,1');
     Route::post('projects/{project}/scaffold/refresh', [ProjectsController::class, 'refreshScaffold']);
     Route::post('projects/{project}/scaffold/retry', [ProjectsController::class, 'retryScaffold']);
     Route::post('projects/{project}/pages', [ProjectsController::class, 'enablePages'])->middleware('throttle:10,1');

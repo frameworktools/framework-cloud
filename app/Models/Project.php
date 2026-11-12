@@ -92,6 +92,9 @@ class Project extends Model
             'payload' => 'array',
             'composition' => 'array',
             'choices' => 'array',
+            'github_update' => 'array',
+            'setup_updated_at' => 'datetime',
+            'github_setup_applied_at' => 'datetime',
             'github_private' => 'boolean',
             'is_home' => 'boolean',
             // spec stays raw JSON text so empty maps stay {}

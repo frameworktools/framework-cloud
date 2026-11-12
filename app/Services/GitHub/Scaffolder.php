@@ -116,6 +116,8 @@ class Scaffolder
                 'github_private' => $repo['private'],
                 'scaffold_status' => 'running',
                 'scaffold_error' => null,
+                // The repository starts from the current setup
+                'github_setup_applied_at' => now(),
             ]);
 
             // Layers first: the workflow commit is what starts the run

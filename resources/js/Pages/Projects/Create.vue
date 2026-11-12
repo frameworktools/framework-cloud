@@ -738,7 +738,7 @@ const submitDisabled = computed(() => form.processing || (stage.value === 'revie
                             </template>
                         </dl>
                         <p class="text-sm text-slate-600 dark:text-slate-400">New tokens, setup commands, and downloads use the saved setup. Folders already set up keep their files.</p>
-                        <p v-if="editing.github_repo" class="text-sm text-slate-600 dark:text-slate-400">{{ editing.github_repo }} keeps its current files. Framework does not change the repository.</p>
+                        <p v-if="editing.github_repo" class="text-sm text-slate-600 dark:text-slate-400">{{ editing.github_repo }} keeps its current files. After saving, Update on GitHub on the project page opens a pull request with Framework's regenerated settings files.</p>
                     </template>
                 </UiPanel>
 

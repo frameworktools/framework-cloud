@@ -3,7 +3,7 @@
 // the Create on GitHub form. Overview's GitHub box and the GitHub & Pages
 // section both use it.
 import { computed, ref, watch } from 'vue';
-import { router, useForm } from '@inertiajs/vue3';
+import { router, useForm, usePage } from '@inertiajs/vue3';
 import CodeChip from '@/Components/CodeChip.vue';
 import UiBadge from '@/Components/UiBadge.vue';
 import UiButton from '@/Components/UiButton.vue';
@@ -15,7 +15,8 @@ import { statusLabel, statusVariant } from '@/projects.js';
 
 // setup: the Create on GitHub form's needs, null when the project has a repository.
 // collapsed: show a button that opens the form instead of the form itself.
-const props = defineProps({ project: Object, setup: Object, collapsed: Boolean });
+// errors: show the page's GitHub error here (off where the page shows it itself)
+const props = defineProps({ project: Object, setup: Object, collapsed: Boolean, errors: { type: Boolean, default: true } });
 const emit = defineEmits(['open']);
 
 const github = computed(() => props.project.github);
@@ -32,6 +33,14 @@ const sensitive = computed(() => !!props.setup?.sensitive);
 watch(sensitive, (value) => { if (value) form.github.private = true; }, { immediate: true });
 const error = computed(() => form.errors['github.enabled'] ?? form.errors.github);
 const submit = () => form.post(`/projects/${props.project.id}/scaffold`, { preserveScroll: true });
+
+// Update on GitHub: Framework's own files, built from the current setup, in a pull request
+const page = usePage();
+const update = computed(() => github.value?.update ?? null);
+const updating = computed(() => ['pending', 'running'].includes(update.value?.status));
+const showUpdate = computed(() => !!github.value?.repo && (github.value.update_available || !!update.value?.status));
+const updateError = computed(() => (props.errors ? page.props.errors.github : null));
+const requestUpdate = () => router.post(`/projects/${props.project.id}/github/update`, {}, { preserveScroll: true });
 
 const open = ref(!props.collapsed);
 const show = () => { open.value = true; emit('open'); };
@@ -50,6 +59,27 @@ const show = () => { open.value = true; emit('open'); };
             </div>
             <p v-if="github.error" class="text-red-600 dark:text-red-400">{{ github.error }}</p>
             <div v-if="github.status === 'done'" class="min-w-0"><CodeChip>git clone {{ github.url }}.git</CodeChip></div>
+        </div>
+
+        <div v-if="showUpdate" class="flex flex-col gap-2 border-t border-slate-800/10 pt-4 dark:border-white/10">
+            <p class="text-slate-600 dark:text-slate-400">
+                <template v-if="github.update_available">The setup changed since it last went to the repository.</template>
+                Update on GitHub opens a pull request with Framework's settings files and skills, built from the current setup. Notebooks, scripts, and data stay as they are.
+            </p>
+            <div v-if="updating" class="flex items-center gap-2"><UiBadge variant="amber">Preparing pull request</UiBadge></div>
+            <p v-else-if="update?.status === 'done' && update.pr_url">
+                <UiBadge variant="green">Pull request open</UiBadge>
+                <UiLink :href="update.pr_url" external class="ml-2">Update Framework setup<template v-if="update.pr_number"> #{{ update.pr_number }}</template></UiLink>
+            </p>
+            <p v-else-if="update?.status === 'current'" class="text-slate-700 dark:text-slate-300">Already up to date.</p>
+            <p v-else-if="update?.status === 'failed'" class="text-red-600 dark:text-red-400">{{ update.error }}</p>
+            <p v-if="!updating && update?.skipped?.length" class="text-xs text-slate-500 dark:text-slate-400">
+                {{ update.skipped.length === 1 ? '1 file was left alone because it changed' : `${update.skipped.length} files were left alone because they changed` }} in the repository<template v-if="update.status === 'done'">. The pull request lists them</template>.
+            </p>
+            <p v-if="updateError" class="text-red-600 dark:text-red-400">{{ updateError }}</p>
+            <div v-if="!updating && (github.update_available || update?.status === 'failed')">
+                <UiButton variant="ghost" size="sm" @click="requestUpdate">Update on GitHub</UiButton>
+            </div>
         </div>
 
         <template v-if="canCreate">
