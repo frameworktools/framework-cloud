@@ -1,16 +1,19 @@
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { CheckIcon, ClipboardDocumentIcon } from '@heroicons/vue/24/outline';
+import { highlight } from '@/highlight.js';
 
 // A value or command to paste, with a Copy button. "value" sits on a light
 // tint (tokens, keys); "command" is code on the dark command surface and may
-// run over several lines.
+// run over several lines, highlighted when its language is given.
 const props = defineProps({
     value: { type: String, required: true },
     label: { type: String, required: true }, // names the copy button for screen readers
     kind: { type: String, default: 'command' }, // value | command
+    language: { type: String, default: null }, // r | python | bash | stata
 });
 
+const html = computed(() => (props.kind === 'command' ? highlight(props.value, props.language) : null));
 const copied = ref(false);
 async function copy() {
     await navigator.clipboard?.writeText(props.value);
@@ -20,8 +23,8 @@ async function copy() {
 </script>
 
 <template>
-    <div class="flex min-w-0 items-start gap-2 rounded-lg p-1 ps-3" :class="kind === 'value' ? 'bg-slate-800/5 dark:bg-white/10' : 'bg-[#0c1526]'">
-        <pre tabindex="0" class="min-w-0 flex-1 overflow-x-auto rounded py-1.5 font-mono focus-visible:outline-2 focus-visible:outline-sky-500" :class="kind === 'value' ? 'text-sm break-all whitespace-pre-wrap text-slate-900 dark:text-white' : 'text-xs leading-5 text-slate-100'"><code>{{ value }}</code></pre>
+    <div class="flex min-w-0 items-start gap-2 rounded-lg p-1 ps-3" :class="kind === 'value' ? 'bg-slate-800/5 dark:bg-white/10' : 'command bg-[#0c1526]'">
+        <pre tabindex="0" class="min-w-0 flex-1 overflow-x-auto rounded py-1.5 font-mono focus-visible:outline-2 focus-visible:outline-sky-500" :class="kind === 'value' ? 'text-sm break-all whitespace-pre-wrap text-slate-900 dark:text-white' : 'text-xs leading-5 text-slate-100'"><code v-if="html" v-html="html" /><code v-else>{{ value }}</code></pre>
         <button
             type="button"
             class="flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium"
@@ -33,3 +36,20 @@ async function copy() {
         </button>
     </div>
 </template>
+
+<style scoped>
+/* A quiet palette on the dark command surface */
+.command :deep(.hljs-keyword),
+.command :deep(.hljs-built_in),
+.command :deep(.hljs-literal) { color: #7dd3fc; }
+.command :deep(.hljs-string) { color: #86efac; }
+.command :deep(.hljs-number) { color: #fdba74; }
+.command :deep(.hljs-comment) { color: #64748b; font-style: italic; }
+.command :deep(.hljs-title),
+.command :deep(.hljs-title.function_) { color: #c4b5fd; }
+.command :deep(.hljs-operator),
+.command :deep(.hljs-punctuation) { color: #94a3b8; }
+.command :deep(.hljs-variable),
+.command :deep(.hljs-params),
+.command :deep(.hljs-attr) { color: #fcd34d; }
+</style>

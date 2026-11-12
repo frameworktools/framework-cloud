@@ -5,6 +5,7 @@ import { ask } from '@/confirm.js';
 import { computed, ref } from 'vue';
 import UiTabs from '@/Components/UiTabs.vue';
 import CopyBlock from '@/Components/CopyBlock.vue';
+import InfoPopover from '@/Components/InfoPopover.vue';
 import UiLink from '@/Components/UiLink.vue';
 import { DEFAULT_SERVER, clientUrl } from '@/cloud.js';
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -49,23 +50,25 @@ const signIn = computed(() => ({
 // R installs from GitHub, which CRAN can lag behind. Both installs work on a
 // fresh machine: they set a CRAN mirror and add what they need first.
 const mirror = 'options(repos = c(CRAN = "https://cloud.r-project.org"))';
-const githubInstall = computed(() => `${mirror}
+const githubInstall = `${mirror}
 if (!requireNamespace("remotes", quietly = TRUE)) install.packages("remotes")
 if (!requireNamespace("httr2", quietly = TRUE)) install.packages("httr2")
 remotes::install_github("frameworktools/framework", upgrade = "never")
-packageVersion("framework")
-${signIn.value.cmd}`);
-const cranInstall = computed(() => `${mirror}
+packageVersion("framework")`;
+const cranInstall = `${mirror}
 for (pkg in c("framework", "httr2")) {
   if (!requireNamespace(pkg, quietly = TRUE)) install.packages(pkg)
 }
-packageVersion("framework")
-${signIn.value.cmd}`);
+packageVersion("framework")`;
+const signInInfo = 'Opens a browser to approve this computer. It stays signed in. Scripts and jobs that can\'t wait for a browser use a token.';
+const highlighting = { r: 'r', python: 'python', stata: 'stata', fw: 'bash' };
 const quickCommands = computed(() => client.value === 'r' ? [
-    { label: 'Install and sign in', cmd: githubInstall.value },
-    { label: 'New notebook', cmd: 'framework::make_notebook("analysis")' },
-    { label: 'New script', cmd: 'framework::make_script("clean-data")' },
-] : [{ label: 'Sign in', cmd: signIn.value.cmd }]);
+    { label: 'Install latest (recommended)', cmd: githubInstall, info: 'Installs the newest Framework from GitHub. Adds remotes and httr2 first if they are missing. Restart R after updating.' },
+    { label: 'Install from CRAN', cmd: cranInstall, info: 'Installs the CRAN release, with httr2 for signing in. CRAN can lag behind GitHub.' },
+    { label: 'Sign in', cmd: signIn.value.cmd, info: signInInfo, tokens: true },
+    { label: 'New notebook', cmd: 'framework::make_notebook("analysis")', info: 'Run inside a project. Fills in your defaults: the project\'s notebook format, notebooks folder, and author. The notebook starts with scaffold(), which loads the project\'s packages and functions.' },
+    { label: 'New script', cmd: 'framework::make_script("clean-data")', info: 'Run inside a project. Fills in your defaults: the project\'s scripts folder and author. The script starts with scaffold(), which loads the project\'s packages and functions.' },
+] : [{ label: 'Sign in', cmd: signIn.value.cmd, info: signInInfo, tokens: true }]);
 const date = value => new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 
 const shareTarget = ref(null);
@@ -93,32 +96,22 @@ const menuFor = (item) => [
                     {{ destination.label }}<span class="font-mono text-base font-medium text-slate-900 dark:text-white">{{ counts[destination.key] }}</span>
                 </Link>
             </nav>
-            <section aria-labelledby="quick-commands-heading" class="max-w-2xl">
+            <section aria-labelledby="quick-commands-heading">
                 <h2 id="quick-commands-heading" class="text-base font-medium text-slate-900 dark:text-white">Quick commands</h2>
                 <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Run these on your computer.</p>
-                <UiTabs v-model="client" :tabs="clients" label="Client" class="mt-3" />
-                <div class="mt-4 flex flex-col gap-4">
-                    <div v-for="command in quickCommands" :key="`${client}-${command.label}`">
-                        <h3 class="mb-2 text-sm font-medium text-slate-800 dark:text-slate-200">{{ command.label }}</h3>
-                        <CopyBlock :value="command.cmd" :label="command.label.toLowerCase()" />
+                <UiTabs v-model="client" :tabs="clients" label="Client" class="mt-3 max-w-2xl" />
+                <div class="mt-4 grid gap-x-6 gap-y-5 lg:grid-cols-2">
+                    <div v-for="command in quickCommands" :key="`${client}-${command.label}`" class="min-w-0">
+                        <h3 class="mb-2 flex items-center gap-1.5 text-sm font-medium text-slate-800 dark:text-slate-200">
+                            {{ command.label }}
+                            <InfoPopover :label="command.label">
+                                {{ command.info }}
+                                <template v-if="command.tokens"> <UiLink href="/tokens">Create a token</UiLink>.</template>
+                            </InfoPopover>
+                        </h3>
+                        <CopyBlock :value="command.cmd" :label="command.label.toLowerCase()" :language="highlighting[client]" />
                     </div>
                 </div>
-                <details class="mt-4 text-sm text-slate-600 dark:text-slate-400">
-                    <summary class="cursor-pointer select-none font-medium text-slate-800 hover:text-slate-950 dark:text-slate-200 dark:hover:text-white">About these commands</summary>
-                    <div class="mt-3 flex flex-col gap-3">
-                        <template v-if="client === 'r'">
-                            <p>The install command adds remotes and httr2 if they are missing, then installs Framework from GitHub. CRAN can lag behind GitHub. Restart R after updating.</p>
-                            <p><code class="font-mono text-xs">cloud_login()</code> opens a browser to approve this computer. The computer stays signed in.</p>
-                            <p><code class="font-mono text-xs">make_notebook()</code> and <code class="font-mono text-xs">make_script()</code> run inside a project. They use its settings: the notebook format, the notebooks or scripts folder, and the author. The new file starts with <code class="font-mono text-xs">scaffold()</code>, which loads the project's packages and functions.</p>
-                            <div>
-                                <p>To install from CRAN instead:</p>
-                                <CopyBlock :value="cranInstall" label="CRAN install command" class="mt-2" />
-                            </div>
-                        </template>
-                        <p v-else>The command opens a browser to approve this computer. The computer stays signed in.</p>
-                        <p>For scripts and jobs that can't wait for a browser, <UiLink href="/tokens">create a token</UiLink>. More in the <UiLink href="/docs/getting-started" external>getting started guide</UiLink>.</p>
-                    </div>
-                </details>
             </section>
             <section>
                 <h2 class="mb-3 text-base font-medium text-slate-900 dark:text-white">Recent activity</h2>
