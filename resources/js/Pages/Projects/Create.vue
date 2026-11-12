@@ -651,7 +651,7 @@ const submitDisabled = computed(() => form.processing || (stage.value === 'revie
                         </template>
                         <p v-if="form.errors.workflow || form.errors.notebook_format" class="text-xs text-red-600 dark:text-red-400">{{ form.errors.workflow || form.errors.notebook_format }}</p>
                     </UiPanel>
-                    <UiPanel v-if="tab === 'environment' && !editorDraws('environment')" flush title="Environment reproducibility" class="max-w-2xl">
+                    <UiPanel v-if="tab === 'environment' && !editorDraws('environment')" flush title="Reproducibility" class="max-w-2xl">
                         <UiSwitch
                             v-if="environmentTool" v-model="form.tools[environmentTool.key]" :label="environmentTool.name"
                             :disabled="!!requiredTools[environmentTool.key]"

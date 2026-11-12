@@ -176,7 +176,7 @@ const items = [
     { label: 'Quarto', anchor: 'quarto' },
     { label: 'Jupyter', anchor: 'jupyter' },
     { label: 'Project structure', anchor: 'structure' },
-    { label: 'Environment reproducibility', anchor: 'environment' },
+    { label: 'Reproducibility', anchor: 'environment' },
     { label: 'Packages', anchor: 'packages' },
     { label: 'Scaffold', anchor: 'scaffold' },
     { label: 'Editor support', anchor: 'editor' },
@@ -275,7 +275,7 @@ const previousSection = computed(() => navigation.value[navigation.value.findInd
                 </template>
                 <p v-if="form.errors.workflow || form.errors.workflows || form.errors.notebook_format" class="text-xs text-red-600 dark:text-red-400">{{ form.errors.workflow || form.errors.workflows || form.errors.notebook_format }}</p>
             </UiPanel>
-            <UiPanel v-if="activeSection === 'environment'" flush title="Environment reproducibility" class="max-w-2xl">
+            <UiPanel v-if="activeSection === 'environment'" flush title="Reproducibility" class="max-w-2xl">
                 <UiSwitch v-if="environmentTool" v-model="form.tools[environmentTool.key]" :label="environmentTool.name" :description="environmentTool.description" />
                 <p v-else class="text-sm text-slate-500 dark:text-slate-400">Stata projects have no managed package environment.</p>
                 <p v-if="form.errors.tools" class="text-xs text-red-600 dark:text-red-400">{{ form.errors.tools }}</p>

@@ -8,7 +8,7 @@ export const SECTIONS = [
     { key: 'quarto', label: 'Quarto' },
     { key: 'jupyter', label: 'Jupyter' },
     { key: 'structure', label: 'Project structure' },
-    { key: 'environment', label: 'Environment reproducibility' },
+    { key: 'environment', label: 'Reproducibility' },
     { key: 'packages', label: 'Packages' },
     { key: 'scaffold', label: 'Scaffold' },
     { key: 'editor', label: 'Editor support' },
