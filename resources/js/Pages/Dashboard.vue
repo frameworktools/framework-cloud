@@ -14,7 +14,7 @@ import UiButton from '@/Components/UiButton.vue';
 import UiTable from '@/Components/UiTable.vue';
 import UiCallout from '@/Components/UiCallout.vue';
 import { router, usePage } from '@inertiajs/vue3';
-import { PlusIcon } from '@heroicons/vue/24/outline';
+import { ChevronDownIcon, PlusIcon } from '@heroicons/vue/24/outline';
 import { artifactKind } from '@/report-artifacts.js';
 import { languageNames } from '@/library.js';
 
@@ -67,6 +67,13 @@ const installs = [
     { key: 'cran', label: 'CRAN', cmd: cranInstall, info: 'Installs the CRAN release, with httr2 for signing in. CRAN can lag behind GitHub.' },
 ];
 const installFrom = ref('latest');
+// Quick commands open or closed, remembered in this browser
+const quickKey = 'fw.dashboard.quickCommandsCollapsed';
+const quickCollapsed = ref(localStorage.getItem(quickKey) === '1');
+const toggleQuick = () => {
+    quickCollapsed.value = !quickCollapsed.value;
+    localStorage.setItem(quickKey, quickCollapsed.value ? '1' : '0');
+};
 const install = computed(() => installs.find((i) => i.key === installFrom.value));
 const createCommands = [
     { label: 'New notebook', cmd: 'framework::make_notebook("analysis")', info: 'Fills in your defaults: the project\'s notebook format, notebooks folder, and author. The notebook starts with scaffold(), which loads the project\'s packages and functions.' },
@@ -103,7 +110,13 @@ const menuFor = (item) => [
                 </Link>
             </nav>
             <section aria-labelledby="quick-commands-heading">
-                <h2 id="quick-commands-heading" class="text-base font-medium text-slate-900 dark:text-white">Quick commands</h2>
+                <h2 id="quick-commands-heading" class="text-base font-medium text-slate-900 dark:text-white">
+                    <button type="button" class="flex items-center gap-1.5 rounded hover:text-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 dark:hover:text-slate-200" :aria-expanded="!quickCollapsed" aria-controls="quick-commands" @click="toggleQuick">
+                        Quick commands
+                        <ChevronDownIcon class="size-4 text-slate-400 transition-transform" :class="quickCollapsed ? '-rotate-90' : ''" aria-hidden="true" />
+                    </button>
+                </h2>
+                <div v-show="!quickCollapsed" id="quick-commands">
                 <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Run these on your computer.</p>
                 <UiTabs v-model="client" :tabs="clients" label="Client" class="mt-3 max-w-2xl" />
                 <div class="mt-4 flex flex-col gap-6">
@@ -138,6 +151,7 @@ const menuFor = (item) => [
                             </div>
                         </div>
                     </div>
+                </div>
                 </div>
             </section>
             <section>
