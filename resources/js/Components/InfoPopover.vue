@@ -33,7 +33,7 @@ onBeforeUnmount(() => { clearTimeout(timer); document.removeEventListener('point
             :aria-label="`About ${props.label}`" :aria-expanded="open" :aria-controls="id"
             @click="toggle"
         >
-            <InformationCircleIcon class="size-4" aria-hidden="true" />
+            <InformationCircleIcon class="size-[18px]" stroke-width="1.75" aria-hidden="true" />
         </button>
         <span
             v-if="open" :id="id" role="dialog" :aria-label="`About ${props.label}`"
