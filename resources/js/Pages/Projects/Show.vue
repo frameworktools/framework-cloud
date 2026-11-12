@@ -65,11 +65,8 @@ const setupWhere = computed(() => ({
     python: 'Paste it into Python.',
     stata: 'Run it in a terminal. Paste the token when asked.',
 }[tokenLanguage.value] ?? 'Paste it into the R console.'));
-// fw new (Stata) makes ./<name> without asking
-const setupFolder = computed(() => ({
-    r: 'It asks where to create the project folder. Press Enter for the current folder.',
-    python: 'It asks where to create the project folder.',
-}[tokenLanguage.value] ?? null));
+// R, Python, and fw (Stata) all ask before creating the folder
+const setupFolder = computed(() => 'It asks where to create the project folder. Press Enter for the current folder.');
 const pullToken = computed(() => (page.props.flash.status === 'project-token' ? page.props.flash.token : null));
 const githubError = computed(() => page.props.errors.github);
 
