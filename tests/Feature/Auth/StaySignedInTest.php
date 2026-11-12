@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\LoginToken;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
@@ -50,5 +51,14 @@ class StaySignedInTest extends TestCase
 
         $this->assertFalse(Auth::validate(['email' => $user->email, 'password' => '']));
         $this->assertFalse(Auth::validate(['email' => $user->email, 'password' => 'anything']));
+    }
+
+    public function test_signing_in_on_another_device_leaves_this_one_signed_in(): void
+    {
+        $user = User::factory()->create(['password' => null, 'remember_token' => 'first-device']);
+
+        $this->post('/auth/magic/'.LoginToken::issue($user))->assertRedirect();
+
+        $this->assertSame('first-device', $user->fresh()->remember_token);
     }
 }
