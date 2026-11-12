@@ -20,7 +20,8 @@ const variants = {
     primary: 'border border-black/10 bg-(--color-accent) text-(--color-accent-foreground) hover:bg-(--color-accent-hover) dark:border-0',
     outline: 'border border-slate-200 border-b-slate-300/80 bg-white text-slate-800 shadow-xs hover:bg-slate-50 dark:border-white/10 dark:bg-white/10 dark:text-white dark:hover:bg-white/15',
     filled: 'bg-slate-800/5 text-slate-800 hover:bg-slate-800/10 dark:bg-white/10 dark:text-white dark:hover:bg-white/20',
-    ghost: 'text-slate-800 hover:bg-slate-800/5 dark:bg-slate-900 dark:text-sky-200 dark:hover:bg-slate-800',
+    // Dark: a light blue tint that shows on any dark surface, cards included
+    ghost: 'text-slate-800 hover:bg-slate-800/5 dark:bg-sky-400/10 dark:text-sky-200 dark:ring-1 dark:ring-sky-300/15 dark:ring-inset dark:hover:bg-sky-400/20',
     subtle: 'text-slate-500 hover:bg-slate-800/5 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-white/15 dark:hover:text-white',
     danger: 'bg-red-600 text-white shadow-[inset_0_1px_--theme(--color-white/.15)] hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-500',
 };
