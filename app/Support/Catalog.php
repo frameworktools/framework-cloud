@@ -90,6 +90,17 @@ class Catalog
             }
         }
 
+        // Default packages must be selectable even when no curated set
+        // happens to contain them (for example, tibble).
+        foreach (ProjectDefaults::DEFAULT_PACKAGES as $language => $rows) {
+            foreach (ProjectDefaults::packageLayer(ProjectDefaults::packages([$language => $rows])[$language]) as $name => $definition) {
+                $packages[$language.':'.$name] ??= [
+                    'key' => $name, 'name' => $name, 'language' => $language,
+                    'definition' => $definition, 'categories' => ['analysis'], 'sets' => [],
+                ];
+            }
+        }
+
         return array_values($packages);
     }
 
@@ -144,6 +155,13 @@ class Catalog
         $compatibility = $version->compatibility();
         $language = count($compatibility['languages'] ?? []) === 1 ? $compatibility['languages'][0] : ($version->blueprint->language ?? 'r');
 
+        // The preview and R clients inherit these beneath the blueprint's
+        // own package choices. Show them in the editor so they can be refined.
+        $packageEntries = array_replace(
+            $language === 'r' ? ProjectDefaults::packageLayer(ProjectDefaults::packages(ProjectDefaults::DEFAULT_PACKAGES)['r']) : [],
+            $layer['packages']['default_packages'] ?? [],
+        );
+
         // Single skills by handle: Framework's by key, a user's own by their handle
         $skills = collect($layer['skills'] ?? [])->filter(fn ($entry) => $entry !== null)->keys()
             ->reject(fn ($key) => $key === 'framework-sensitive-data')
@@ -162,8 +180,8 @@ class Catalog
             'agents' => ProjectDefaults::agentDefaults($version) ?: (($layer['ai']['enabled'] ?? true) ? ['other'] : ['none']),
             'tools' => $pieces->filter(fn ($v) => $v->facet->kind === 'tool')->mapWithKeys(fn ($v) => [$v->facet->key => true])->all(),
             'package_sets' => $handles('package_set'),
-            'package_overrides' => self::packageOverrides($layer['packages']['default_packages'] ?? [], $pieces, $language),
-            'package_auto_attach' => $language === 'r' ? collect($layer['packages']['default_packages'] ?? [])->filter(fn ($entry) => is_array($entry) && array_key_exists('auto_attach', $entry))->map(fn ($entry) => (bool) $entry['auto_attach'])->all() : [],
+            'package_overrides' => self::packageOverrides($packageEntries, $pieces, $language),
+            'package_auto_attach' => $language === 'r' ? collect($packageEntries)->filter(fn ($entry) => is_array($entry) && array_key_exists('auto_attach', $entry))->map(fn ($entry) => (bool) $entry['auto_attach'])->all() : [],
             'skill_sets' => $handles('skill_set'),
             'skills' => $skills,
             'excluded_skills' => $excluded,

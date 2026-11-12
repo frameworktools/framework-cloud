@@ -300,7 +300,8 @@ class BlueprintBuilderTest extends TestCase
         $this->assertTrue($packages['lme4']['auto_attach']);
         $this->get("/blueprints/{$blueprint->id}/edit?tab=packages")->assertInertia(fn ($page) => $page
             ->where('start.package_auto_attach.dplyr', false)->where('start.package_auto_attach.lme4', true)
-            ->where('start.package_overrides', ['lme4' => true]));
+            ->where('start.package_overrides.lme4', true)->where('start.package_overrides.tibble', true)
+            ->missing('start.package_overrides.dplyr')->missing('start.package_overrides.tidyr'));
         $this->postJson('/projects/preview', ['blueprint_id' => $blueprint->id, 'language' => 'r'])->assertOk()
             ->assertJsonPath('package_auto_attach.dplyr', false)->assertJsonPath('package_auto_attach.lme4', true);
 

@@ -58,7 +58,11 @@ if (draftKey) {
     try {
         const draft = JSON.parse(sessionStorage.getItem(draftKey) ?? 'null');
         if (draft?.language === initialLanguage) {
-            for (const key of Object.keys(initialData)) if (Object.hasOwn(draft, key)) initialData[key] = draft[key];
+            for (const key of Object.keys(initialData)) if (Object.hasOwn(draft, key)) {
+                initialData[key] = ['package_overrides', 'package_auto_attach'].includes(key)
+                    ? { ...initialData[key], ...draft[key] }
+                    : draft[key];
+            }
         }
     } catch { /* A blocked or expired browser draft starts from the selected blueprint. */ }
 }

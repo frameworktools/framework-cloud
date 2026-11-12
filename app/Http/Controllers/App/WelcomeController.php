@@ -96,7 +96,11 @@ class WelcomeController extends Controller
         $start['language'] = $language;
         $start['notebook_format'] = $language === 'stata' ? null : ($workflow === 'scripts' ? 'scripts' : ($start['notebook_format'] ?? $workflow));
         if (isset($draft['builder'])) {
+            $packageOverrides = array_replace($start['package_overrides'], $draft['builder']['package_overrides'] ?? []);
+            $packageAutoAttach = array_replace($start['package_auto_attach'], $draft['builder']['package_auto_attach'] ?? []);
             $start = array_replace($start, $draft['builder']);
+            $start['package_overrides'] = $packageOverrides;
+            $start['package_auto_attach'] = $packageAutoAttach;
             $start['default_workflow'] = [$language => $draft['builder']['workflow']];
             $start['notebook_format'] = $draft['builder']['notebook_format'] ?? ($draft['builder']['workflow'] === 'scripts' ? 'scripts' : $draft['builder']['workflow']);
         }

@@ -46,6 +46,28 @@ class WelcomeTest extends TestCase
         $this->get('/welcome/ready')->assertRedirect('/welcome');
     }
 
+    public function test_standard_onboarding_carries_default_packages_into_the_editor_and_resumed_draft(): void
+    {
+        $user = $this->newcomer();
+        $this->actingAs($user)->post('/welcome', $this->details())->assertRedirect('/welcome/blueprint');
+        $defaults = ProjectDefaults::DEFAULT_PACKAGES['r'];
+        $assertPackages = function (Assert $page) use ($defaults) {
+            foreach ($defaults as $package) {
+                $page->where('start.package_overrides.'.$package['name'], true)
+                    ->where('start.package_auto_attach.'.$package['name'], $package['auto_attach']);
+            }
+
+            return $page->missing('start.package_overrides.glue')->missing('start.package_overrides.here')->missing('start.package_overrides.lme4');
+        };
+        $this->get('/welcome/blueprint?tab=packages')->assertInertia($assertPackages);
+        // Drafts saved before package inheritance was visible contain no overrides.
+        $this->patchJson('/welcome/progress', ['stage' => 'builder', 'section' => 'packages', 'package_overrides' => []] + $this->choices('r'))->assertOk();
+        $this->get('/welcome/blueprint')->assertInertia($assertPackages);
+        // An explicit removal and auto-attach change still win on resume.
+        $this->patchJson('/welcome/progress', ['stage' => 'builder', 'section' => 'packages', 'package_overrides' => ['dplyr' => false], 'package_auto_attach' => ['tidyr' => false]] + $this->choices('r'))->assertOk();
+        $this->get('/welcome/blueprint')->assertInertia(fn (Assert $page) => $page->where('start.package_overrides.dplyr', false)->where('start.package_overrides.ggplot2', true)->where('start.package_auto_attach.tidyr', false));
+    }
+
     public function test_details_are_a_session_draft_until_the_private_blueprint_is_saved(): void
     {
         foreach (['r', 'python', 'stata'] as $language) {

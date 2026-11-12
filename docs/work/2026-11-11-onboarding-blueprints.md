@@ -52,3 +52,9 @@ Secondary ghost buttons now use a slate-900 background, sky-200 text, and a slat
 Removed glue, here, and lme4 from the default R list. New R envelopes remove older client defaults beneath explicit selections, so package sets can still add them. Existing saved projects retain their envelopes.
 
 Validation: DefaultsConversionTest, WelcomeTest, BlueprintBuilderTest, and ProjectEndToEndMatrixTest passed (29 tests, 1,038 assertions).
+
+## Package selections in setup
+
+The Standard preview inherited R defaults while the editor only loaded explicit blueprint entries. Catalog choices now include default packages and auto-attach values. The selectable catalog also includes default packages absent from sets, including tibble. Saved server and browser drafts merge these defaults beneath explicit changes. Package removals retain false overrides so refresh cannot restore them.
+
+Validation: 38 focused tests passed (958 assertions). Browser setup showed all nine R defaults selected, preserved a removal across tab changes and refresh, and reported no page errors. Screenshots checked in light and dark mode at 1440px and dark mode at 390px. Frontend build passed.

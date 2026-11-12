@@ -40,14 +40,14 @@ const allSelected = computed(() => rows.value.length > 0 && rows.value.every(che
 const someSelected = computed(() => rows.value.some(checked));
 const toggle = (pkg, on) => {
     const next = { ...model.value };
-    if (on === inherited(pkg)) delete next[pkg.key];
+    if (on && inherited(pkg)) delete next[pkg.key];
     else next[pkg.key] = on;
     model.value = next;
 };
 const toggleAll = on => {
     const next = { ...model.value };
     for (const pkg of rows.value) {
-        if (on === inherited(pkg)) delete next[pkg.key];
+        if (on && inherited(pkg)) delete next[pkg.key];
         else next[pkg.key] = on;
     }
     model.value = next;
