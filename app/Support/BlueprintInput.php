@@ -46,6 +46,9 @@ class BlueprintInput
             'package_overrides.*' => ['boolean'],
             'package_auto_attach' => ['nullable', 'array'],
             'package_auto_attach.*' => ['boolean'],
+            // Packages from no package set, each with its source; the resolver checks each entry
+            'package_definitions' => ['nullable', 'array', 'max:200'],
+            'package_definitions.*' => ['nullable', 'array'],
             'skill_sets' => ['nullable', 'array'],
             'skill_sets.*' => ['string', 'max:200'],
             'excluded_skills' => ['nullable', 'array'],
@@ -80,7 +83,7 @@ class BlueprintInput
         unset($data['settings']['sensitive']);
 
         $resolved = (new Resolver($request->user(), withDefaults: false))->resolve(Arr::only($data, [
-            'name', 'language', 'workflow', 'notebook_format', 'structure', 'tools', 'package_sets', 'package_overrides', 'package_auto_attach', 'skill_sets', 'skills', 'excluded_skills', 'settings', 'extra_yaml', 'connections',
+            'name', 'language', 'workflow', 'notebook_format', 'structure', 'tools', 'package_sets', 'package_overrides', 'package_auto_attach', 'package_definitions', 'skill_sets', 'skills', 'excluded_skills', 'settings', 'extra_yaml', 'connections', 'templates',
         ]));
 
         return [
@@ -147,6 +150,8 @@ class BlueprintInput
             'package_overrides.*' => ['boolean'],
             'package_auto_attach' => ['nullable', 'array'],
             'package_auto_attach.*' => ['boolean'],
+            'package_definitions' => ['nullable', 'array', 'max:200'],
+            'package_definitions.*' => ['nullable', 'array'],
             'skill_sets' => ['nullable', 'array'],
             'excluded_skills' => ['nullable', 'array'],
             'excluded_skills.*' => ['string', 'max:200'],
@@ -157,6 +162,7 @@ class BlueprintInput
             'settings.hooks.*' => [Rule::in(ProjectDefaults::HOOKS)],
             'ide' => ['sometimes', 'nullable', Rule::in(self::IDE_CHOICES)],
             ...Connections::rules(),
+            ...Templates::rules(),
         ]);
 
         unset($data['settings']['sensitive']);
@@ -234,6 +240,7 @@ class BlueprintInput
             'ide' => ['sometimes', 'nullable', Rule::in(self::IDE_CHOICES)],
             'publish_destination' => ['sometimes', 'nullable', Rule::in(['', ...self::DESTINATIONS])],
             ...Connections::rules(),
+            ...Templates::rules(),
         ];
         foreach (ProjectDefaults::QUARTO as $format => $values) {
             foreach ($values as $key => $default) {
@@ -279,14 +286,34 @@ class BlueprintInput
             $layer['publish']['default'] = $destination;
             $layer['publish']['destinations'][$destination] = ['driver' => $destination];
         }
-        // Connections, and the .env variables they read
+        // Connections, and the .env variables they and the editor's own variables read
         if (is_array($data['connections'] ?? null)) {
             foreach (Connections::layer($data['connections'], $language) as $key => $value) {
                 $layer[$key] = array_replace_recursive(is_array($layer[$key] ?? null) ? $layer[$key] : [], $value);
             }
         }
+        // Notebook, script, and slide templates, as files in stubs/
+        if (is_array($data['templates'] ?? null) && ($files = Templates::files($data['templates'], $language, self::format($data)))) {
+            $layer['files'] = array_replace(is_array($layer['files'] ?? null) ? $layer['files'] : [], $files);
+        }
 
         return $layer;
+    }
+
+    /**
+     * The notebook format choices name: quarto, rmarkdown, jupyter, or null
+     * for scripts. A Quarto workflow without a format writes Quarto.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public static function format(array $data): ?string
+    {
+        $workflow = $data['workflow'] ?? null;
+        if ($workflow === 'scripts' || ($data['language'] ?? null) === 'stata') {
+            return null;
+        }
+
+        return $data['notebook_format'] ?? ($workflow === 'jupyter' ? 'jupyter' : 'quarto');
     }
 
     /** The destination a layer names in the editor's shape (default X with driver X), or null. */
@@ -310,6 +337,7 @@ class BlueprintInput
             unset($layer['publish']['default'], $layer['publish']['destinations'][$destination]);
         }
         [, $layer] = Connections::split($layer);
+        [, $layer] = Templates::split($layer);
         foreach (array_keys(ProjectDefaults::SCAFFOLD) as $key) {
             unset($layer['scaffold'][$key]);
         }
@@ -345,13 +373,14 @@ class BlueprintInput
             'ide' => self::ide($version?->ide) ?? self::ide($defaults['settings']['ide']) ?? ProjectDefaults::IDE,
             'publish_destination' => self::destination($layer) ?? (in_array($defaults['publish_destination'], self::DESTINATIONS, true) ? $defaults['publish_destination'] : ''),
             'connections' => Connections::split($layer)[0],
+            'templates' => Templates::split($layer)[0],
         ];
         if ($choices === null) {
             return $settings;
         }
 
         [$extra] = Layer::fromYaml((string) ($choices['extra_yaml'] ?? ''));
-        if (is_array($extra) && array_intersect(['scaffold', 'quarto', 'publish', 'connections', 'env'], array_keys($extra))) {
+        if (is_array($extra) && array_intersect(['scaffold', 'quarto', 'publish', 'connections', 'env', 'files'], array_keys($extra))) {
             $choices['extra_yaml'] = Layer::toYaml(self::withoutSettings($extra));
         }
 

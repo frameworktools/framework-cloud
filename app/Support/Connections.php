@@ -70,8 +70,14 @@ class Connections
     /** An editor with no connections. */
     public static function empty(): array
     {
-        return ['default_database' => '', 'default_storage_bucket' => '', 'databases' => [], 'storage_buckets' => []];
+        return ['default_database' => '', 'default_storage_bucket' => '', 'databases' => [], 'storage_buckets' => [], 'variables' => []];
     }
+
+    /** A .env variable name, as R and Python read them. */
+    private const VARIABLE = '/^[A-Za-z_][A-Za-z0-9_]*$/';
+
+    /** Names whose values are credentials, as Layer checks them. */
+    private const CREDENTIAL = '/(password|secret|token|access_key|api_key|private_key|credential)/i';
 
     /** @return array<string, list<mixed>> request rules for the editor's connections field */
     public static function rules(): array
@@ -86,12 +92,18 @@ class Connections
             'connections.storage_buckets' => ['nullable', 'array', 'max:20'],
             'connections.storage_buckets.*' => ['array'],
             'connections.storage_buckets.*.*' => ['nullable', 'max:300'],
+            // Other .env variables: a name and a value, which stays empty for secrets
+            'connections.variables' => ['nullable', 'array', 'max:50'],
+            'connections.variables.*' => ['array'],
+            'connections.variables.*.name' => ['nullable', 'string', 'max:100'],
+            'connections.variables.*.value' => ['nullable', 'string', 'max:500'],
         ];
     }
 
     /**
      * The editor's connections as layer keys: `connections` and the `env`
-     * variables they read. Empty when there are none.
+     * variables they read, with the editor's other variables. Empty when
+     * there are none.
      *
      * @param  array<string, mixed>  $input  the editor's connections field
      * @return array{connections?: array<string, mixed>, env?: array<string, string>}
@@ -102,8 +114,11 @@ class Connections
     {
         $databases = array_values(array_filter((array) ($input['databases'] ?? []), 'is_array'));
         $buckets = array_values(array_filter((array) ($input['storage_buckets'] ?? []), 'is_array'));
+        $variables = self::ownVariables((array) ($input['variables'] ?? []));
         if (! $databases && ! $buckets) {
-            return [];
+            ksort($variables);
+
+            return $variables ? ['env' => $variables] : [];
         }
         if (! in_array($language, self::LANGUAGES, true)) {
             throw ValidationException::withMessages(['connections' => (Project::LANGUAGE_NAMES[$language] ?? $language).' projects have no database or storage bucket connections.']);
@@ -175,11 +190,52 @@ class Connections
         }
 
         $layer = ['connections' => $connections];
-        if ($env = self::variables($connections)) {
+        if ($env = array_replace(self::variables($connections), $variables)) {
+            ksort($env);
             $layer['env'] = $env;
         }
 
         return $layer;
+    }
+
+    /**
+     * The editor's own .env variables, by name. Rows with neither a name nor
+     * a value are left out. A secret-looking name keeps an empty value: the
+     * value goes in the project's .env on each computer.
+     *
+     * @param  array<int, mixed>  $rows
+     * @return array<string, string>
+     *
+     * @throws ValidationException
+     */
+    private static function ownVariables(array $rows): array
+    {
+        $env = [];
+        $errors = [];
+        foreach (array_values($rows) as $i => $row) {
+            $name = trim((string) (is_array($row) ? ($row['name'] ?? '') : ''));
+            $value = (string) (is_array($row) ? ($row['value'] ?? '') : '');
+            if ($name === '' && trim($value) === '') {
+                continue;
+            }
+            $at = "connections.variables.{$i}";
+            if (! preg_match(self::VARIABLE, $name) || strlen($name) > 100) {
+                $errors["{$at}.name"] = 'Use letters, numbers, and underscores, starting with a letter or underscore, such as STUDY_YEAR.';
+            } elseif (array_key_exists($name, $env)) {
+                $errors["{$at}.name"] = "{$name} is listed twice.";
+            } elseif (preg_match(self::CREDENTIAL, $name) && trim($value) !== '') {
+                $errors["{$at}.value"] = "{$name} looks like a secret. Leave the value empty and fill it in the project's .env.";
+            } elseif (preg_match('/[\x00-\x1F]/', $value)) {
+                $errors["{$at}.value"] = 'A value must be on one line.';
+            } else {
+                $env[$name] = $value;
+            }
+        }
+        if ($errors) {
+            throw ValidationException::withMessages($errors);
+        }
+
+        return $env;
     }
 
     private static function valueProblem(string $field, string $value): ?string
@@ -272,10 +328,19 @@ class Connections
             }
         }
 
-        // The variables the editor's connections read come back when it saves them
+        // The variables the editor's connections read come back when it saves
+        // them. The rest, and any given another value, are the editor's own.
         $env = is_array($layer['env'] ?? null) ? $layer['env'] : [];
-        foreach (array_keys(self::variables($taken)) as $name) {
-            unset($env[$name]);
+        foreach (self::variables($taken) as $name => $default) {
+            if (array_key_exists($name, $env) && (string) $env[$name] === $default) {
+                unset($env[$name]);
+            }
+        }
+        foreach ($env as $name => $value) {
+            if (is_string($name) && preg_match(self::VARIABLE, $name) && (is_string($value) || is_int($value) || is_float($value))) {
+                $form['variables'][] = ['name' => $name, 'value' => (string) $value];
+                unset($env[$name]);
+            }
         }
 
         unset($layer['connections'], $layer['env']);

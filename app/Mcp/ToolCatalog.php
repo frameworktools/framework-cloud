@@ -357,6 +357,12 @@ class ToolCatalog
             'package_sets' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Package set keys.'],
             'package_overrides' => ['type' => 'object', 'additionalProperties' => ['type' => 'boolean'], 'description' => 'Individual package choices by name. True adds a catalog package; false removes it even when selected sets include it.'],
             'package_auto_attach' => ['type' => 'object', 'additionalProperties' => ['type' => 'boolean'], 'description' => 'R only: load selected packages with library() when scaffold() runs. Overrides each package set\'s auto_attach flag. Python and Stata have no auto-import equivalent.'],
+            'package_definitions' => ['type' => 'object', 'additionalProperties' => ['type' => 'object', 'properties' => [
+                'source' => ['type' => 'string', 'enum' => ['cran', 'bioc', 'github', 'pypi']],
+                'repo' => ['type' => 'string', 'description' => 'GitHub only: owner/name.'],
+                'version' => ['type' => 'string'],
+                'auto_attach' => ['type' => 'boolean', 'description' => 'R only.'],
+            ], 'required' => ['source', 'auto_attach']], 'description' => 'Packages from no package set, by name, each with its source, such as {"fixest": {"source": "cran", "auto_attach": false}}. R takes cran, bioc, and github; Python takes pypi and github.'],
             'skill_sets' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Skill set keys.'],
             'skills' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Skill keys, beyond those the skill sets add.'],
             'excluded_skills' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Skill keys to remove, including members of selected sets.'],
@@ -366,6 +372,11 @@ class ToolCatalog
                 'hooks' => ['type' => 'array', 'items' => ['type' => 'string', 'enum' => ProjectDefaults::HOOKS]],
                 'ai' => ['type' => 'boolean', 'description' => 'Agent files and skills for AI assistants.'],
             ]],
+            'templates' => ['type' => 'object', 'properties' => [
+                'notebook' => ['type' => 'string', 'description' => 'Quarto or R Markdown notebook template, for stubs/notebook-default.qmd or .Rmd.'],
+                'script' => ['type' => 'string', 'description' => 'Script template, for stubs/script-default.R or .py.'],
+                'slides' => ['type' => 'string', 'description' => 'RevealJS slides template, for stubs/notebook-revealjs.qmd.'],
+            ], 'description' => 'Files make_notebook(), make_script(), and make_revealjs() start from. Empty uses Framework\'s own. Templates keep {{ title }}, {{ date }}, {{ author }}, and similar placeholders. R and Python only.'],
             'extra_yaml' => ['type' => 'string', 'description' => 'More settings.yml settings, as YAML.'],
         ];
         if ($preview) {

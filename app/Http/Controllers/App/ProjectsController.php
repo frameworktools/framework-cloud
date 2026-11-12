@@ -33,6 +33,7 @@ use App\Support\ProjectLayers;
 use App\Support\ResolvedSelections;
 use App\Support\Resolver;
 use App\Support\Share;
+use App\Support\Templates;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -412,7 +413,7 @@ class ProjectsController extends Controller
     {
         return ['customized' => (bool) ($validated['customized'] ?? false)] + Arr::only($validated, [
             'workflow', 'notebook_format', 'structure', 'tools', 'package_sets', 'package_overrides', 'package_auto_attach', 'package_definitions', 'data_entries',
-            'skill_sets', 'skills', 'excluded_skills', 'settings', 'extra_yaml', 'scaffold', 'quarto', 'ide', 'publish_destination', 'connections',
+            'skill_sets', 'skills', 'excluded_skills', 'settings', 'extra_yaml', 'scaffold', 'quarto', 'ide', 'publish_destination', 'connections', 'templates',
         ]);
     }
 
@@ -562,6 +563,7 @@ class ProjectsController extends Controller
             'ide' => BlueprintInput::ide(ProjectDefaults::ide($version)) ?? ProjectDefaults::IDE,
             'publish_destination' => BlueprintInput::destination($layer) ?? '',
             'connections' => Connections::split($layer)[0],
+            'templates' => Templates::split($layer)[0],
             'extra_yaml' => is_array($extra) ? Layer::toYaml(BlueprintInput::withoutSettings($extra)) : $extraYaml,
         ];
     }
@@ -587,6 +589,7 @@ class ProjectsController extends Controller
             'ide' => ['sometimes', 'nullable', Rule::in(BlueprintInput::IDE_CHOICES)],
             'publish_destination' => ['sometimes', 'nullable', Rule::in(['', ...BlueprintInput::DESTINATIONS])],
             ...Connections::rules(),
+            ...Templates::rules(),
         ];
         foreach (ProjectDefaults::QUARTO as $format => $values) {
             foreach ($values as $key => $default) {
@@ -615,7 +618,7 @@ class ProjectsController extends Controller
     {
         // Pushed packages are the project's own, over the blueprint or the pieces chosen
         return ($validated['customized'] ?? false)
-            ? ['from' => $blueprint->handle] + Arr::only($validated, ['name', 'language', 'workflow', 'notebook_format', 'structure', 'tools', 'package_sets', 'package_overrides', 'package_auto_attach', 'package_definitions', 'data_entries', 'skill_sets', 'skills', 'excluded_skills', 'settings', 'extra_yaml', 'scaffold', 'quarto', 'ide', 'publish_destination', 'connections'])
+            ? ['from' => $blueprint->handle] + Arr::only($validated, ['name', 'language', 'workflow', 'notebook_format', 'structure', 'tools', 'package_sets', 'package_overrides', 'package_auto_attach', 'package_definitions', 'data_entries', 'skill_sets', 'skills', 'excluded_skills', 'settings', 'extra_yaml', 'scaffold', 'quarto', 'ide', 'publish_destination', 'connections', 'templates'])
             : ['blueprint' => $blueprint->handle] + Arr::only($validated, ['name', 'language', 'workflow', 'package_definitions', 'data_entries']);
     }
 

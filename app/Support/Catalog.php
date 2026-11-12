@@ -66,6 +66,8 @@ class Catalog
             'packages' => self::packagesFrom($pieces),
             'skills' => $skills
                 ->map(fn (Skill $s) => ['key' => $s->handle, 'skill' => $s->key, 'name' => $s->name, 'description' => $s->description, 'system' => $s->isSystem()] + Library::skill($s, $user)),
+            // Framework's notebook, script, and slide templates, for the Templates tab to start from
+            'templates' => Templates::defaults(),
         ];
     }
 
@@ -161,6 +163,10 @@ class Catalog
             $language === 'r' ? ProjectDefaults::packageLayer(ProjectDefaults::packages(ProjectDefaults::DEFAULT_PACKAGES)['r']) : [],
             $layer['packages']['default_packages'] ?? [],
         );
+        // Packages no visible set offers are the blueprint's own, each with its source
+        $available = self::packageOptions($user, $language);
+        $definitions = array_filter($packageEntries, fn ($entry, $name) => is_array($entry) && ! isset($available[$name]), ARRAY_FILTER_USE_BOTH);
+        $packageEntries = array_diff_key($packageEntries, $definitions);
 
         // Single skills by handle: Framework's by key, a user's own by their handle
         $skills = collect($layer['skills'] ?? [])->filter(fn ($entry) => $entry !== null)->keys()
@@ -181,6 +187,7 @@ class Catalog
             'package_sets' => $handles('package_set'),
             'package_overrides' => self::packageOverrides($packageEntries, $pieces, $language),
             'package_auto_attach' => $language === 'r' ? collect($packageEntries)->filter(fn ($entry) => is_array($entry) && array_key_exists('auto_attach', $entry))->map(fn ($entry) => (bool) $entry['auto_attach'])->all() : [],
+            'package_definitions' => $definitions,
             'skill_sets' => $handles('skill_set'),
             'skills' => $skills,
             'excluded_skills' => $excluded,

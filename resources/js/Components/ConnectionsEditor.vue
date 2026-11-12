@@ -43,11 +43,18 @@ const defaults = computed(() => ({
     storage_buckets: [{ value: '', label: 'Not set' }, ...f.connections.storage_buckets.filter((r) => r.name).map((r) => ({ value: r.name, label: r.name }))],
 }));
 const envNames = computed(() => variables(f.connections));
+
+// The project's other .env variables, such as a study year or an API's address
+const own = () => (f.connections.variables ??= []);
+const addVariable = () => { own().push({ name: '', value: '' }); };
+const removeVariable = (i) => { own().splice(i, 1); };
+const credential = /(password|secret|token|access_key|api_key|private_key|credential)/i;
+const variableError = (i, field) => f.errors[`connections.variables.${i}.${field}`];
 const generalError = computed(() => f.errors.connections);
 </script>
 
 <template>
-    <p v-if="!supported" class="text-sm text-slate-500 dark:text-slate-400">Stata projects have no database or storage bucket connections. Framework for Stata has no functions that read them.</p>
+    <p v-if="!supported" class="max-w-2xl text-sm text-slate-500 dark:text-slate-400">Stata projects have no database or storage bucket connections. Framework for Stata has no functions that read them.</p>
     <div v-else class="flex max-w-2xl flex-col gap-8">
         <p class="text-sm text-slate-500 dark:text-slate-400">
             Connections go in settings/connections.yml, or settings.yml in flat settings. A value can be literal or env("NAME"), which reads the project's .env. Passwords and keys are always env().
@@ -110,4 +117,25 @@ const generalError = computed(() => f.errors.connections);
         </div>
         <p v-if="generalError" class="text-sm text-red-600 dark:text-red-400">{{ generalError }}</p>
     </div>
+
+    <section class="mt-8 flex max-w-2xl flex-col gap-4">
+        <div class="flex items-start justify-between gap-3">
+            <div>
+                <h3 class="text-sm font-medium text-slate-900 dark:text-white">Environment variables</h3>
+                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Other variables for the project's .env and .env.example. Secrets keep an empty value here.</p>
+            </div>
+            <UiButton variant="ghost" size="sm" class="shrink-0" @click="addVariable"><PlusIcon class="-ml-1 mr-1 size-4" />Add variable</UiButton>
+        </div>
+        <p v-if="!(form.connections.variables ?? []).length" class="text-sm text-slate-500 dark:text-slate-400">No other variables.</p>
+        <div v-else class="flex flex-col divide-y divide-slate-800/10 border-y border-slate-800/10 dark:divide-white/15 dark:border-white/15">
+            <div v-for="(row, i) in form.connections.variables" :key="i" class="grid items-start gap-4 py-4 sm:grid-cols-[1fr_1fr_auto]">
+                <UiInput v-model="row.name" label="Name" placeholder="STUDY_YEAR" class="font-mono" :error="variableError(i, 'name')" />
+                <UiInput
+                    v-model="row.value" label="Value" optional
+                    :placeholder="credential.test(row.name ?? '') ? 'Set in .env on each computer' : '2024'" :error="variableError(i, 'value')"
+                />
+                <UiButton variant="subtle" size="md" square class="sm:mt-7" :aria-label="`Remove ${row.name || 'variable'}`" @click="removeVariable(i)"><TrashIcon class="size-4" /></UiButton>
+            </div>
+        </div>
+    </section>
 </template>

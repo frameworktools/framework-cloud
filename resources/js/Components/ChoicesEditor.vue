@@ -11,6 +11,7 @@ export const SECTIONS = [
     { key: 'environment', label: 'Reproducibility' },
     { key: 'packages', label: 'Packages' },
     { key: 'scaffold', label: 'Scaffold' },
+    { key: 'templates', label: 'Templates' },
     { key: 'editor', label: 'Editor support' },
     { key: 'ai', label: 'AI Agents' },
     { key: 'skills', label: 'AI Skills' },
@@ -28,8 +29,9 @@ export const errorSection = (field) => ({
     quarto: 'quarto',
     structure: 'structure',
     tools: 'environment',
-    package_sets: 'packages', package_overrides: 'packages', package_auto_attach: 'packages',
+    package_sets: 'packages', package_overrides: 'packages', package_auto_attach: 'packages', package_definitions: 'packages',
     scaffold: 'scaffold',
+    templates: 'templates',
     ide: 'editor',
     agents: 'ai',
     skills: 'skills', skill_sets: 'skills', excluded_skills: 'skills',
@@ -52,6 +54,8 @@ import UiSeparator from '@/Components/UiSeparator.vue';
 import UiSwitch from '@/Components/UiSwitch.vue';
 import LayerSummary from '@/Components/LayerSummary.vue';
 import ConnectionsEditor from '@/Components/ConnectionsEditor.vue';
+import OwnPackages from '@/Components/OwnPackages.vue';
+import TemplatesEditor from '@/Components/TemplatesEditor.vue';
 import UiInput from '@/Components/UiInput.vue';
 import UiSelect from '@/Components/UiSelect.vue';
 import UiToggle from '@/Components/UiToggle.vue';
@@ -73,9 +77,9 @@ const props = defineProps({
     // Sections on the page, split by separators, rather than cards
     flush: Boolean,
     section: { type: String, default: null },
-    // Settings sections shown when no section is given: scaffold, quarto,
-    // jupyter, editor, connections, and publishing. Each edits its own form field
-    // (scaffold, quarto, tools.jupyter, ide, connections, publish_destination).
+    // Settings sections shown when no section is given: scaffold, templates,
+    // quarto, jupyter, editor, connections, and publishing. Each edits its own form
+    // field (scaffold, templates, quarto, tools.jupyter, ide, connections, publish_destination).
     extras: { type: Array, default: () => [] },
     // The choices the Scaffold and Quarto sections offer, from ProjectDefaults
     ggplotThemes: { type: Array, default: () => [] },
@@ -192,6 +196,10 @@ const choiceClass = (on) => on
             {{ stacked.packages }} packages from {{ stacked.sets }} sets<template v-if="stacked.shared">, with {{ stacked.shared }} in more than one set</template>.
         </p>
         <p class="text-sm text-slate-500 dark:text-slate-400"><Link href="/package-sets/create" class="text-sky-700 hover:underline dark:text-sky-400">Make a package set</Link></p>
+        <template v-if="form.language !== 'stata' && form.package_definitions">
+            <UiSeparator />
+            <OwnPackages :form="form" :catalog="catalog" />
+        </template>
         <p v-if="form.errors.package_sets || form.errors.package_overrides || form.errors.package_auto_attach" class="text-xs text-red-600 dark:text-red-400">{{ form.errors.package_sets || form.errors.package_overrides || form.errors.package_auto_attach }}</p>
     </UiPanel>
 
@@ -236,6 +244,11 @@ const choiceClass = (on) => on
             </template>
             <UiSwitch v-model="form.scaffold.source_all_functions" label="Load your functions" description="Code in functions/ is ready in every notebook and script." />
         </div>
+    </UiPanel>
+
+    <UiSeparator v-if="flush && !section && extras.includes('templates')" />
+    <UiPanel v-if="extra('templates') && form.templates" :flush="flush" id="templates" title="Templates" class="scroll-mt-6" description="The files new notebooks, scripts, and slides start from.">
+        <TemplatesEditor :form="form" :catalog="catalog" />
     </UiPanel>
 
     <UiSeparator v-if="flush && !section && extras.includes('quarto')" />

@@ -59,8 +59,11 @@ export const envVar = (value) => envPattern.exec(String(value ?? '').trim())?.[1
 export const envRef = (name) => `env("${name}")`;
 export const suggested = (name, field) => `${String(name || 'connection').toUpperCase()}_${fields[field].suffix}`;
 
-export const emptyConnections = () => ({ default_database: '', default_storage_bucket: '', databases: [], storage_buckets: [] });
+// variables: the project's other .env variables, each { name, value }
+export const emptyConnections = () => ({ default_database: '', default_storage_bucket: '', databases: [], storage_buckets: [], variables: [] });
 export const copyConnections = (c) => ({ ...emptyConnections(), ...JSON.parse(JSON.stringify(c ?? {})) });
+// Stata reads no connections, but its .env takes variables
+export const variablesOnly = (c) => ({ ...emptyConnections(), variables: JSON.parse(JSON.stringify(c?.variables ?? [])) });
 
 const driversOf = (kind) => (kind === 'databases' ? databaseDrivers : bucketDrivers);
 

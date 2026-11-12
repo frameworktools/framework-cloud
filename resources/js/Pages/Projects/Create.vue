@@ -21,7 +21,7 @@ import UiModal from '@/Components/UiModal.vue';
 import { agentNames, agentSummary, fromChoices, NAMED, toChoices } from '@/agents.js';
 import { editorOptions, editorsOf } from '@/project-settings.js';
 import { fitsLanguage, group, groups, languageOptions, typeFits } from '@/library.js';
-import { connectionLanguages, copyConnections, emptyConnections } from '@/connections.js';
+import { connectionLanguages, copyConnections, variablesOnly } from '@/connections.js';
 
 const props = defineProps({
     blueprints: Array, catalog: Object, defaults: Object, selected: Number, start: Object,
@@ -71,7 +71,7 @@ const form = useForm({
     package_sets: [],
     package_overrides: {},
     package_auto_attach: {},
-    // Packages pushed with push_setup(): kept as they are when the project is edited here
+    // Packages from no package set, from the blueprint, the Packages tab, or push_setup()
     package_definitions: {},
     skill_sets: [],
     skills: [],
@@ -81,7 +81,9 @@ const form = useForm({
     quarto: { html: {}, revealjs: {} },
     ide: 'vscode',
     publish_destination: '',
-    connections: emptyConnections(),
+    connections: variablesOnly(null),
+    // Notebook, script, and slide templates; empty uses Framework's
+    templates: { notebook: '', script: '', slides: '' },
     extra_yaml: '',
     // A destination passed in the link, when it's available here; otherwise local setup
     destination: ({ download: props.downloads, github: props.github.enabled, local: true })[props.start?.destination]
@@ -97,11 +99,11 @@ const stata = computed(() => form.language === 'stata');
 
 // Filling the choices from a blueprint, as the blueprint editor opens it, for the chosen language
 const defaultFormat = (workflow, language, rmarkdown) => (language === 'stata' || workflow === 'scripts' ? null : workflow === 'jupyter' ? 'jupyter' : rmarkdown && language === 'r' ? 'rmarkdown' : 'quarto');
-const choiceKey = () => JSON.stringify([form.workflow, form.notebook_format, form.agents, form.structure, form.tools, form.package_sets, form.package_overrides, form.package_auto_attach, form.skill_sets, form.skills, form.excluded_skills, form.settings.git, form.settings.hooks, form.scaffold, form.quarto, form.ide, form.publish_destination, form.connections, form.extra_yaml]);
+const choiceKey = () => JSON.stringify([form.workflow, form.notebook_format, form.agents, form.structure, form.tools, form.package_sets, form.package_overrides, form.package_auto_attach, form.skill_sets, form.skills, form.excluded_skills, form.settings.git, form.settings.hooks, form.scaffold, form.quarto, form.ide, form.publish_destination, form.connections, form.templates, form.package_definitions, form.extra_yaml]);
 const filled = ref(null);
 const baseline = ref({});
 const contextSkills = ref(false);
-const choiceFields = ['workflow', 'notebook_format', 'agents', 'structure', 'tools', 'package_sets', 'package_overrides', 'package_auto_attach', 'skill_sets', 'skills', 'excluded_skills', 'settings', 'scaffold', 'quarto', 'ide', 'publish_destination', 'connections', 'extra_yaml'];
+const choiceFields = ['workflow', 'notebook_format', 'agents', 'structure', 'tools', 'package_sets', 'package_overrides', 'package_auto_attach', 'package_definitions', 'skill_sets', 'skills', 'excluded_skills', 'settings', 'scaffold', 'quarto', 'ide', 'publish_destination', 'connections', 'templates', 'extra_yaml'];
 const snapshot = () => Object.fromEntries(choiceFields.map(key => [key, form[key]]));
 const fill = (b) => {
     const c = b?.choices ?? {};
@@ -126,6 +128,7 @@ const fill = (b) => {
     form.package_sets = keep(c.package_sets, props.catalog.package_sets);
     form.package_overrides = sameLanguage ? { ...(c.package_overrides ?? {}) } : {};
     form.package_auto_attach = sameLanguage && language === 'r' ? { ...(c.package_auto_attach ?? {}) } : {};
+    form.package_definitions = sameLanguage && language !== 'stata' ? { ...(c.package_definitions ?? {}) } : {};
     form.skill_sets = keep(c.skill_sets, props.catalog.skill_sets);
     form.skills = keep(c.skills, props.catalog.skills);
     form.excluded_skills = keep(c.excluded_skills, props.catalog.skills);
@@ -135,8 +138,9 @@ const fill = (b) => {
     // RStudio's .Rproj is for R projects
     form.ide = language !== 'r' && ['rstudio', 'both'].includes(c.ide) ? 'vscode' : (c.ide ?? 'vscode');
     form.publish_destination = c.publish_destination ?? '';
-    // Stata reads no connections
-    form.connections = connectionLanguages.includes(language) ? copyConnections(c.connections) : emptyConnections();
+    // Stata reads no connections, but its .env takes variables
+    form.connections = connectionLanguages.includes(language) ? copyConnections(c.connections) : variablesOnly(c.connections);
+    form.templates = { notebook: '', script: '', slides: '', ...(c.templates ?? {}) };
     form.extra_yaml = c.extra_yaml ?? '';
     const named = JSON.stringify(form.skills);
     applyContextSkills(form, props.catalog, { reset: true });
@@ -153,7 +157,8 @@ const fillStored = (c) => {
     const language = form.language;
     if (c.workflow) form.workflow = language === 'stata' ? 'scripts' : c.workflow;
     if ('notebook_format' in c) form.notebook_format = c.notebook_format ?? defaultFormat(form.workflow, language, false);
-    form.package_definitions = { ...(c.package_definitions ?? {}) };
+    // Customized, the stored packages are the project's; otherwise pushed ones go over the blueprint's
+    form.package_definitions = c.customized ? { ...(c.package_definitions ?? {}) } : { ...form.package_definitions, ...(c.package_definitions ?? {}) };
     if (!c.customized) return;
     if (c.structure) form.structure = c.structure;
     for (const [key, on] of Object.entries(c.tools ?? {})) form.tools[key] = !!on;
@@ -172,6 +177,7 @@ const fillStored = (c) => {
     if (c.ide) form.ide = c.ide;
     form.publish_destination = c.publish_destination ?? '';
     if (c.connections) form.connections = copyConnections(c.connections);
+    if (c.templates) form.templates = { notebook: '', script: '', slides: '', ...c.templates };
     form.extra_yaml = c.extra_yaml ?? '';
 };
 if (editing?.choices) {
@@ -267,7 +273,7 @@ const toolChoices = (data) => (data.language === 'stata' ? {} : Object.fromEntri
 })));
 // Scaffold, Quarto, editor files, and publishing, for the languages that read them
 const settingChoices = (data) => ({
-    ...(data.language === 'stata' ? {} : { scaffold: data.scaffold, quarto: data.quarto, ide: data.ide, connections: data.connections }),
+    ...(data.language === 'stata' ? { connections: variablesOnly(data.connections) } : { scaffold: data.scaffold, quarto: data.quarto, ide: data.ide, connections: data.connections, templates: data.templates }),
     publish_destination: data.publish_destination,
 });
 const choicePayload = (data) => ({
@@ -285,6 +291,7 @@ const choicePayload = (data) => ({
         package_sets: data.package_sets,
         package_overrides: data.package_overrides,
         package_auto_attach: data.package_auto_attach,
+        package_definitions: data.language === 'stata' ? {} : data.package_definitions,
         skill_sets: data.skill_sets,
         skills: data.skills,
         excluded_skills: data.excluded_skills,
@@ -379,6 +386,7 @@ const newBlueprint = (data) => ({
     package_sets: data.package_sets,
     package_overrides: data.package_overrides,
     package_auto_attach: data.package_auto_attach,
+    package_definitions: data.language === 'stata' ? {} : data.package_definitions,
     skill_sets: data.skill_sets,
     skills: data.skills,
     excluded_skills: data.excluded_skills,
@@ -530,7 +538,10 @@ const settingChanges = computed(() => {
         ['Quarto', nested(before.quarto, after.quarto)],
         ['Editor', swap(editor(before.ide), editor(after.ide))],
         ['Publishing', swap(publishing(before.publish_destination), publishing(after.publish_destination))],
+        ['Other packages', delta(Object.keys(before.package_definitions ?? {}), Object.keys(after.package_definitions ?? {}))],
         ['Connections', connectionDelta(before.connections, after.connections)],
+        ['Environment variables', JSON.stringify(before.connections?.variables ?? []) === JSON.stringify(after.connections?.variables ?? []) ? '' : 'Changed'],
+        ['Templates', ['notebook', 'script', 'slides'].filter((key) => (before.templates?.[key] ?? '') !== (after.templates?.[key] ?? '')).join(', ')],
         ['Extra settings', (before.extra_yaml ?? '').trim() === (after.extra_yaml ?? '').trim() ? '' : 'Changed'],
     ].filter(([, detail]) => detail).map(([label, detail]) => ({ label, detail }));
 });

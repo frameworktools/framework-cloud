@@ -13,7 +13,7 @@ import UiSwitch from '@/Components/UiSwitch.vue';
 import ChoicesEditor from '@/Components/ChoicesEditor.vue';
 import ProjectTreeView from '@/Components/ProjectTreeView.vue';
 import { languageOptions, fitsLanguage, typeFits, visibilityOptions } from '@/library.js';
-import { connectionLanguages, copyConnections, emptyConnections } from '@/connections.js';
+import { connectionLanguages, copyConnections, variablesOnly } from '@/connections.js';
 
 const props = defineProps({
     onboarding: Object,
@@ -43,6 +43,8 @@ const initialData = {
     package_sets: [...(props.start?.package_sets ?? [])],
     package_overrides: { ...(props.start?.package_overrides ?? {}) },
     package_auto_attach: { ...(props.start?.package_auto_attach ?? {}) },
+    // Packages from no package set, each with its source
+    package_definitions: { ...(props.start?.package_definitions ?? {}) },
     skill_sets: [...(props.start?.skill_sets ?? ['framework/framework'])],
     skills: [...(props.start?.skills ?? [])],
     excluded_skills: [...(props.start?.excluded_skills ?? [])],
@@ -54,6 +56,8 @@ const initialData = {
     publish_destination: props.start?.publish_destination ?? '',
     // Databases and storage buckets, with env() for every secret
     connections: copyConnections(props.start?.connections),
+    // Notebook, script, and slide templates; empty uses Framework's
+    templates: { notebook: '', script: '', slides: '', ...(props.start?.templates ?? {}) },
     extra_yaml: props.start?.extra_yaml ?? '',
     notes: '',
 };
@@ -77,7 +81,7 @@ if (draftKey) watch(() => form.data(), data => {
 
 const errorSection = errors => {
     const field = Object.keys(errors)[0]?.split('.')[0];
-    return ({ agents: 'ai', language: 'language', structure: 'structure', languages: 'language', workflow: 'notebooks', workflows: 'notebooks', notebook_format: 'notebooks', tools: 'environment', package_sets: 'packages', package_overrides: 'packages', package_auto_attach: 'packages', skills: 'skills', excluded_skills: 'skills', skill_sets: 'skills', settings: 'git', scaffold: 'scaffold', quarto: 'quarto', ide: 'editor', publish_destination: 'publishing', connections: 'connections' })[field] ?? 'name';
+    return ({ agents: 'ai', language: 'language', structure: 'structure', languages: 'language', workflow: 'notebooks', workflows: 'notebooks', notebook_format: 'notebooks', tools: 'environment', package_sets: 'packages', package_overrides: 'packages', package_auto_attach: 'packages', package_definitions: 'packages', skills: 'skills', excluded_skills: 'skills', skill_sets: 'skills', settings: 'git', scaffold: 'scaffold', templates: 'templates', quarto: 'quarto', ide: 'editor', publish_destination: 'publishing', connections: 'connections' })[field] ?? 'name';
 };
 const save = async () => {
     if (props.onboarding && activeSection.value !== 'review') { await nextSection(); return; }
@@ -134,8 +138,9 @@ watch(() => form.language, (language) => {
     }
     form.package_overrides = {};
     form.package_auto_attach = {};
+    form.package_definitions = {};
     // Stata reads no connections
-    if (!connectionLanguages.includes(language)) form.connections = emptyConnections();
+    if (!connectionLanguages.includes(language)) form.connections = variablesOnly(form.connections);
 });
 
 // The files and folders a project would get, for one language and workflow it supports
@@ -143,6 +148,7 @@ const page = usePage();
 const previewKey = computed(() => JSON.stringify({
     language: form.language, agents: form.agents, workflow: workflow.value, notebook_format: sentFormat(form), structure: form.structure, tools: form.tools,
     package_sets: form.package_sets, package_overrides: form.package_overrides, package_auto_attach: form.package_auto_attach, skill_sets: form.skill_sets, skills: form.skills, excluded_skills: form.excluded_skills, settings: form.settings, extra_yaml: form.extra_yaml, ide: form.ide, connections: form.connections,
+    package_definitions: form.package_definitions, templates: form.templates,
 }));
 const preview = ref(null);
 const previewFor = ref(null);
@@ -179,6 +185,7 @@ const items = [
     { label: 'Reproducibility', anchor: 'environment' },
     { label: 'Packages', anchor: 'packages' },
     { label: 'Scaffold', anchor: 'scaffold' },
+    { label: 'Templates', anchor: 'templates' },
     { label: 'Editor support', anchor: 'editor' },
     { label: 'AI Agents', anchor: 'ai' },
     { label: 'AI Skills', anchor: 'skills' },
@@ -198,7 +205,7 @@ const sectionUrl = section => {
 const navigation = computed(() => items.filter(item => {
     if (!props.onboarding) return item.anchor !== 'quarto' || workflow.value !== 'scripts';
     if (item.anchor === 'language') return false;
-    if (form.language === 'stata' && ['notebooks', 'quarto', 'jupyter', 'environment', 'scaffold', 'editor', 'connections'].includes(item.anchor)) return false;
+    if (form.language === 'stata' && ['notebooks', 'quarto', 'jupyter', 'environment', 'scaffold', 'templates', 'editor', 'connections'].includes(item.anchor)) return false;
     if (item.anchor === 'quarto') return workflow.value === 'quarto';
     if (item.anchor === 'jupyter') return workflow.value === 'jupyter';
     return true;
