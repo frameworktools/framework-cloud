@@ -11,7 +11,7 @@
 # them; all three are public repositories under github.com/frameworktools.
 
 ARG FW_REF=80d1c4a8d41da3143373d4a8392a099b95090d50
-ARG FRAMEWORK_REF=7469d7e11609009b8bdf287ee8be32206407e033
+ARG FRAMEWORK_REF=0071b8ec6e77741646c38d9ad9b31c45d7269ed1
 ARG FRAMEWORK_PY_REF=e3806927b6250485b79cf49a0f62f02308bc7e34
 
 # 1. fw, built from source at its pin
