@@ -26,6 +26,8 @@ for variant, root in [('r', args.r), ('python', args.python), ('stata', args.sta
         manifest = 'framework-skill-bundle-v1\n'
         for f in files:
             raw = base64.b64decode(f['content'])
+            # Text files hash with LF line endings; a file with a NUL byte hashes raw
+            raw = raw if b'\0' in raw else raw.replace(b'\r\n', b'\n')
             manifest += f"{f['path']}\t{hashlib.sha256(raw).hexdigest()}\t{755 if f['executable'] else 644}\t{len(raw)}\n"
         checksum = hashlib.sha256(manifest.encode('ascii')).hexdigest()
         old = previous.get(folder.name, {}).get(variant, {})

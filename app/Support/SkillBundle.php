@@ -63,11 +63,22 @@ class SkillBundle
     {
         $manifest = "framework-skill-bundle-v1\n";
         foreach (self::normalize($files) as $file) {
-            $raw = base64_decode($file['content']);
+            $raw = self::hashBytes(base64_decode($file['content']));
             $manifest .= $file['path']."\t".hash('sha256', $raw)."\t".($file['executable'] ? '755' : '644')."\t".strlen($raw)."\n";
         }
 
         return hash('sha256', $manifest);
+    }
+
+    /**
+     * A file's bytes as hashed. Text files hash with LF line endings, so a
+     * CRLF checkout (git's core.autocrlf on Windows) matches its LF twin. A
+     * file with a NUL byte is binary and hashes raw. R, Python, and fw
+     * normalize the same way.
+     */
+    public static function hashBytes(string $raw): string
+    {
+        return str_contains($raw, "\0") ? $raw : str_replace("\r\n", "\n", $raw);
     }
 
     public static function files(SkillVersion $version, string $variant): array

@@ -91,6 +91,24 @@ class SkillSyncTest extends TestCase
         $this->assertDatabaseHas('skill_versions', ['id' => $source->id]);
     }
 
+    public function test_text_files_hash_with_lf_and_a_crlf_copy_of_a_built_in_is_not_a_change(): void
+    {
+        $fixture = json_decode(file_get_contents(base_path('tests/fixtures/skill-bundle-crlf.json')), true);
+        $this->assertSame($fixture['hash'], SkillBundle::hash($fixture['lf']));
+        $this->assertSame($fixture['hash'], SkillBundle::hash($fixture['crlf']));
+        $this->assertSame($fixture['binary_lf_hash'], SkillBundle::hash($fixture['binary_lf']));
+
+        $system = Skill::create(['key' => 'example', 'name' => 'Example', 'visibility' => 'public']);
+        $source = $system->publishVersion(['content' => base64_decode($this->bundle()[0]['content'])]);
+        $crlf = [['path' => 'SKILL.md', 'content' => base64_encode(str_replace("\n", "\r\n", base64_decode($this->bundle()[0]['content']))), 'executable' => false]];
+        $hash = SkillBundle::hash(SkillBundle::files($source, 'r'));
+        $this->assertSame($hash, SkillBundle::hash($crlf));
+        $this->actingAs(User::factory()->create());
+        $this->getJson('/api/v1/skills/sync/'.$system->sync_id.'?hash='.$hash)->assertOk()->assertJsonPath('version', 1);
+        $this->push($crlf, $system->sync_id, 1)->assertOk()->assertJsonPath('skill_id', $system->sync_id)->assertJsonPath('hash', $hash);
+        $this->assertDatabaseCount('skills', 1);
+    }
+
     public function test_private_skills_and_project_tokens_are_inaccessible(): void
     {
         $this->actingAs($user = User::factory()->create());
