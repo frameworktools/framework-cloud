@@ -21,14 +21,14 @@ watch(() => page.url, () => { menuOpen.value = false; });
 <template>
     <a href="#main" class="sr-only rounded-md bg-white px-4 py-2 text-sm font-medium text-slate-900 shadow-lg ring-1 ring-slate-900/10 focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] dark:bg-slate-800 dark:text-white">Skip to content</a>
     <div class="flex min-h-screen">
-        <aside aria-label="Sidebar" class="hidden w-60 shrink-0 flex-col overflow-y-auto border-r border-slate-200 bg-slate-50 p-4 md:sticky md:top-0 md:flex md:h-screen dark:border-slate-800 dark:bg-slate-900">
+        <aside aria-label="Sidebar" class="hidden w-60 shrink-0 flex-col overflow-y-auto border-r border-slate-200 bg-slate-50 px-4 py-3 md:sticky md:top-0 md:flex md:h-screen dark:border-slate-800 dark:bg-slate-900">
             <Link href="/dashboard" class="px-2 py-1 font-semibold tracking-tight">
                 <span class="inline-flex items-center gap-2"><img :src="'/images/logo-80.webp'" alt="" width="73" height="80" class="h-8 w-auto" /><span>Framework <span class="text-sky-700 dark:text-sky-500">Cloud</span></span></span>
             </Link>
 
-            <SidebarNav class="mt-6 flex-1" />
+            <SidebarNav class="mt-4 flex-1" />
 
-            <div class="mt-3 mb-3 flex items-center justify-between px-2">
+            <div class="mt-3 mb-2 flex items-center justify-between px-2">
                 <span class="text-xs text-slate-500 dark:text-slate-400">Theme</span>
                 <ThemeToggle />
             </div>
