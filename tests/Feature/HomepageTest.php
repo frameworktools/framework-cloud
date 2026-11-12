@@ -19,8 +19,8 @@ class HomepageTest extends TestCase
             ->assertSee('Start your project')
             ->assertSee('Conduct your analysis')
             ->assertSee('Publish your work')
-            ->assertSee('Four ways to start a Framework project')->assertSee('fw new penguin-study')->assertSee('destination=download', false)
-            ->assertSee('Start from GitHub')->assertSee('Download penguin-study.zip')
+            ->assertSee('Start a Framework project')->assertSee('Start from Framework Cloud')->assertSee('Start from your computer')->assertSee('fw new penguin-study')->assertSee('destination=download', false)
+            ->assertSee('Put it on GitHub')->assertSee('Download penguin-study.zip')
             ->assertSee('data-demo-slide', false)
             ->assertSee('Exploring data with Stata graphs');
     }
