@@ -6,6 +6,8 @@ import { computed, ref } from 'vue';
 import UiTabs from '@/Components/UiTabs.vue';
 import CopyBlock from '@/Components/CopyBlock.vue';
 import InfoPopover from '@/Components/InfoPopover.vue';
+import PublishExamples from '@/Components/PublishExamples.vue';
+import CollapsibleSection from '@/Components/CollapsibleSection.vue';
 import UiLink from '@/Components/UiLink.vue';
 import { DEFAULT_SERVER, clientUrl } from '@/cloud.js';
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -14,7 +16,7 @@ import UiButton from '@/Components/UiButton.vue';
 import UiTable from '@/Components/UiTable.vue';
 import UiCallout from '@/Components/UiCallout.vue';
 import { router, usePage } from '@inertiajs/vue3';
-import { ChevronDownIcon, PlusIcon } from '@heroicons/vue/24/outline';
+import { PlusIcon } from '@heroicons/vue/24/outline';
 import { artifactKind } from '@/report-artifacts.js';
 import { languageNames } from '@/library.js';
 
@@ -72,7 +74,7 @@ const quick = computed(() => ({
             { key: 'latest', label: 'Latest (recommended)', cmd: githubInstall, language: 'r', info: `We recommend Latest. It installs the newest Framework from GitHub. ${lag}, so CRAN can lag behind. Adds remotes and httr2 first if they are missing. Restart R after updating.` },
             { key: 'cran', label: 'CRAN', cmd: cranInstall, language: 'r', info: `Installs the CRAN release, with httr2 for signing in. ${lag}, so it can lag behind Latest from GitHub.` },
         ],
-        create: { title: 'Create resources in a project', note: 'Run these inside a project. They fill in your defaults.', commands: [
+        create: { title: 'Create resources in a project', note: null, commands: [
             { label: 'New notebook', cmd: 'framework::make_notebook("analysis")', language: 'r', info: `Fills in your defaults: the project's notebook format, notebooks folder, and author. The notebook ${scaffoldNote}` },
             { label: 'New script', cmd: 'framework::make_script("clean-data")', language: 'r', info: `Fills in your defaults: the project's scripts folder and author. The script ${scaffoldNote}` },
         ] },
@@ -82,7 +84,7 @@ const quick = computed(() => ({
             { key: 'latest', label: 'Latest (recommended)', cmd: 'pip install --upgrade "framework-py @ git+https://github.com/frameworktools/framework-py"', language: 'bash', info: 'We recommend Latest. It installs the newest framework-py from GitHub. PyPI releases come less often and can lag behind. Run it in a terminal, or use uv add with the same requirement.' },
             { key: 'pypi', label: 'PyPI', cmd: 'pip install --upgrade framework-py', language: 'bash', info: 'Installs the PyPI release. It can lag behind Latest from GitHub. Run it in a terminal, or use uv add framework-py.' },
         ],
-        create: { title: 'Create resources in a project', note: 'Run these inside a project. They fill in your defaults.', commands: [
+        create: { title: 'Create resources in a project', note: null, commands: [
             { label: 'New notebook', cmd: 'import framework\nframework.make_notebook("analysis")', language: 'python', info: `Fills in your defaults: the project's notebook format, notebooks folder, and author. The notebook ${scaffoldNote}` },
             { label: 'New script', cmd: 'import framework\nframework.make_script("clean_data")', language: 'python', info: `Fills in your defaults: the project's scripts folder and author. The script ${scaffoldNote}` },
         ] },
@@ -105,13 +107,6 @@ const quick = computed(() => ({
     },
 }[client.value]));
 const installFrom = ref('latest');
-// Quick commands open or closed, remembered in this browser
-const quickKey = 'fw.dashboard.quickCommandsCollapsed';
-const quickCollapsed = ref(localStorage.getItem(quickKey) === '1');
-const toggleQuick = () => {
-    quickCollapsed.value = !quickCollapsed.value;
-    localStorage.setItem(quickKey, quickCollapsed.value ? '1' : '0');
-};
 const install = computed(() => quick.value.installs.find((i) => i.key === installFrom.value) ?? quick.value.installs[0]);
 const pill = (on) => (on
     ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200 dark:bg-slate-800 dark:text-white dark:ring-slate-700'
@@ -143,15 +138,39 @@ const menuFor = (item) => [
                     {{ destination.label }}<span class="font-mono text-base font-medium text-slate-900 dark:text-white">{{ counts[destination.key] }}</span>
                 </Link>
             </nav>
-            <section aria-labelledby="quick-commands-heading">
-                <h2 id="quick-commands-heading" class="text-base font-medium text-slate-900 dark:text-white">
-                    <button type="button" class="flex items-center gap-1.5 rounded hover:text-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 dark:hover:text-slate-200" :aria-expanded="!quickCollapsed" aria-controls="quick-commands" @click="toggleQuick">
-                        Quick commands
-                        <ChevronDownIcon class="size-4 text-slate-400 transition-transform" :class="quickCollapsed ? '-rotate-90' : ''" aria-hidden="true" />
-                    </button>
-                </h2>
-                <div v-show="!quickCollapsed" id="quick-commands">
-                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Run these on your computer.</p>
+            <CollapsibleSection title="Recent activity" remember="dashboard_activity">
+                <UiTable v-if="activity.length" label="Recent activity" class="dashboard-results">
+                    <thead><tr><th>Title</th><th class="max-sm:hidden">Type</th><th class="max-lg:hidden">Updated</th><th class="actions"><span class="sr-only">Actions</span></th></tr></thead>
+                    <tbody><tr v-for="item in activity" :key="item.activityKey">
+                        <td class="strong max-w-96 truncate">
+                            <Link :href="item.management_url" class="block truncate py-0.5 hover:underline">{{ item.title }}</Link>
+                            <Link :href="`/projects/${item.project.slug}`" class="block truncate py-1 text-xs font-normal text-slate-500 dark:text-slate-400 hover:underline">{{ item.project.name }}</Link>
+                        </td>
+                        <td class="max-sm:hidden">{{ item.type }}</td>
+                        <td class="max-lg:hidden">{{ date(item.updated_at) }}</td>
+                        <td class="actions"><div class="flex justify-end gap-1">
+                            <UiButton :href="item.management_url" variant="ghost" size="sm">Edit</UiButton>
+                            <RowMenu :items="menuFor(item)" :label="`Actions for ${item.title}`" />
+                        </div></td>
+                    </tr></tbody>
+                </UiTable>
+                <p v-else class="py-4 text-sm text-slate-500 dark:text-slate-400">No recent activity. Published artifacts, collections, and reports appear here.</p>
+                <ShareDialog :target="shareTarget" @close="shareTarget = null" />
+            </CollapsibleSection>
+            <CollapsibleSection title="Recent projects" remember="dashboard_projects">
+                <template #actions><UiButton href="/projects" variant="ghost" size="sm">All projects</UiButton></template>
+                <UiTable v-if="projects.length" label="Recent projects" class="dashboard-projects">
+                    <thead><tr><th>Name</th><th class="max-sm:hidden">Language</th><th class="actions"><span class="sr-only">Actions</span></th></tr></thead>
+                    <tbody><tr v-for="project in projects.filter((p) => p.status === 'active').slice(0, 4)" :key="project.id">
+                        <td class="strong max-w-96 truncate"><Link :href="`/projects/${project.slug}`" class="block truncate py-0.5 hover:underline">{{ project.name }}</Link></td>
+                        <td class="max-sm:hidden">{{ languageNames[project.language] }}</td>
+                        <td class="actions"><UiButton :href="`/projects/${project.slug}`" variant="ghost" size="sm">Open</UiButton></td>
+                    </tr></tbody>
+                </UiTable>
+                <p v-else class="py-4 text-sm text-slate-500 dark:text-slate-400">No projects yet. Create a project to start.</p>
+            </CollapsibleSection>
+            <CollapsibleSection title="Quick commands" remember="dashboard_quick_commands">
+                <p class="text-sm text-slate-500 dark:text-slate-400">Run these on your computer.</p>
                 <UiTabs v-model="client" :tabs="clients" label="Client" class="mt-3 max-w-2xl" />
                 <div class="mt-4 flex flex-col gap-6">
                     <div class="min-w-0">
@@ -174,7 +193,7 @@ const menuFor = (item) => [
                     </div>
                     <div class="min-w-0">
                         <h3 class="text-sm font-medium text-slate-800 dark:text-slate-200">{{ quick.create.title }}</h3>
-                        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ quick.create.note }}</p>
+                        <p v-if="quick.create.note" class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ quick.create.note }}</p>
                         <div class="mt-3 grid gap-x-6 gap-y-5 lg:grid-cols-2">
                             <div v-for="command in quick.create.commands" :key="`${client}-${command.label}`" class="min-w-0">
                                 <h4 class="mb-2 flex items-center gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-300">
@@ -186,43 +205,8 @@ const menuFor = (item) => [
                         </div>
                     </div>
                 </div>
-                </div>
-            </section>
-            <section>
-                <h2 class="mb-3 text-base font-medium text-slate-900 dark:text-white">Recent activity</h2>
-                <UiTable v-if="activity.length" label="Recent activity" class="dashboard-results">
-                    <thead><tr><th>Title</th><th class="max-sm:hidden">Type</th><th class="max-lg:hidden">Updated</th><th class="actions"><span class="sr-only">Actions</span></th></tr></thead>
-                    <tbody><tr v-for="item in activity" :key="item.activityKey">
-                        <td class="strong max-w-96 truncate">
-                            <Link :href="item.management_url" class="block truncate py-0.5 hover:underline">{{ item.title }}</Link>
-                            <Link :href="`/projects/${item.project.slug}`" class="block truncate py-1 text-xs font-normal text-slate-500 dark:text-slate-400 hover:underline">{{ item.project.name }}</Link>
-                        </td>
-                        <td class="max-sm:hidden">{{ item.type }}</td>
-                        <td class="max-lg:hidden">{{ date(item.updated_at) }}</td>
-                        <td class="actions"><div class="flex justify-end gap-1">
-                            <UiButton :href="item.management_url" variant="ghost" size="sm">Edit</UiButton>
-                            <RowMenu :items="menuFor(item)" :label="`Actions for ${item.title}`" />
-                        </div></td>
-                    </tr></tbody>
-                </UiTable>
-                <p v-else class="py-4 text-sm text-slate-500 dark:text-slate-400">No recent activity. Published artifacts, collections, and reports appear here.</p>
-                <ShareDialog :target="shareTarget" @close="shareTarget = null" />
-            </section>
-            <section>
-                <div class="mb-3 flex items-center justify-between gap-3">
-                    <h2 class="text-base font-medium text-slate-900 dark:text-white">Recent projects</h2>
-                    <UiButton href="/projects" variant="ghost" size="sm">All projects</UiButton>
-                </div>
-                <UiTable v-if="projects.length" label="Recent projects" class="dashboard-projects">
-                    <thead><tr><th>Name</th><th class="max-sm:hidden">Language</th><th class="actions"><span class="sr-only">Actions</span></th></tr></thead>
-                    <tbody><tr v-for="project in projects.filter((p) => p.status === 'active').slice(0, 4)" :key="project.id">
-                        <td class="strong max-w-96 truncate"><Link :href="`/projects/${project.slug}`" class="block truncate py-0.5 hover:underline">{{ project.name }}</Link></td>
-                        <td class="max-sm:hidden">{{ languageNames[project.language] }}</td>
-                        <td class="actions"><UiButton :href="`/projects/${project.slug}`" variant="ghost" size="sm">Open</UiButton></td>
-                    </tr></tbody>
-                </UiTable>
-                <p v-else class="py-4 text-sm text-slate-500 dark:text-slate-400">No projects yet. Create a project to start.</p>
-            </section>
+            </CollapsibleSection>
+            <PublishExamples :language="client" remember="dashboard_publish" />
         </div>
     </AppLayout>
 </template>

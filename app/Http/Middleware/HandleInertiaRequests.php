@@ -29,6 +29,8 @@ class HandleInertiaRequests extends Middleware
                     'handle' => $user->handle,
                     'initials' => $user->initials(),
                     'is_admin' => (bool) $user->is_admin,
+                    // Sections the person collapsed, remembered across browsers
+                    'collapsed' => (object) ($user->ui_preferences['collapsed'] ?? []),
                 ] : null,
             ],
 

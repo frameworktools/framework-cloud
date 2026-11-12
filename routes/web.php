@@ -15,6 +15,7 @@ use App\Http\Controllers\App\SkillsController;
 use App\Http\Controllers\App\SkillTagsController;
 use App\Http\Controllers\App\TokensController;
 use App\Http\Controllers\App\TrashController;
+use App\Http\Controllers\App\UiPreferencesController;
 use App\Http\Controllers\App\WelcomeController;
 use App\Http\Controllers\Auth\PasskeyPromptController;
 use App\Http\Controllers\CollectionViewController;
@@ -190,6 +191,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->whereIn('section', array_slice(ProjectsController::SECTIONS, 1))->name('projects.section');
     Route::get('projects/{project}/download', [ProjectsController::class, 'download'])->whereNumber('project')->middleware('throttle:10,1')->name('projects.download');
     Route::post('projects/{project}/token', [ProjectsController::class, 'issueToken']);
+    // Collapsed sections, remembered on the account
+    Route::post('preferences/ui', UiPreferencesController::class)->middleware('throttle:60,1');
     Route::delete('projects/{project}/tokens/{token}', [ProjectsController::class, 'revokeToken']);
     Route::delete('projects/{project}', [ProjectsController::class, 'destroy']);
     Route::put('projects/{project}/status', [ProjectsController::class, 'setStatus'])->whereNumber('project');

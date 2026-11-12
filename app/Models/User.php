@@ -57,6 +57,7 @@ class User extends Authenticatable implements HasPasskeys, MustVerifyEmail
             'profile_public' => 'boolean',
             'can_publish' => 'boolean',
             'project_defaults' => 'array',
+            'ui_preferences' => 'array',
             'blueprint_defaults' => 'array',
             'onboarding_progress' => 'array',
         ];
