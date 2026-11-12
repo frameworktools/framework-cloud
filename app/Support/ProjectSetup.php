@@ -3,8 +3,10 @@
 namespace App\Support;
 
 use App\Http\Controllers\App\ProjectsController;
+use App\Models\FacetVersion;
 use App\Models\Project;
 use App\Models\Skill;
+use Illuminate\Support\Arr;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -114,24 +116,185 @@ class ProjectSetup
     {
         $project->loadMissing('user', 'blueprintVersion.blueprint.owner');
         $blueprint = $project->blueprintVersion?->blueprint;
-        if (! $blueprint || ! $project->user) {
+        // Without a blueprint, only exact pieces from POST /api/v1/projects can resolve again
+        $exact = ! $blueprint && ($project->choices['customized'] ?? false) && filled($project->choices['structure'] ?? null);
+        if ((! $blueprint && ! $exact) || ! $project->user) {
             throw ValidationException::withMessages([$field => 'This project has no blueprint, so its setup can\'t change on Framework Cloud.']);
         }
-        if ($project->composition && ! $project->choices) {
+
+        $stored = $project->choices ?? ($project->composition ? self::derivedChoices($project) : ['customized' => false]);
+        if ($stored === null) {
             throw ValidationException::withMessages([$field => 'This project has changes from before Framework Cloud kept choices. Open Edit project on Framework Cloud and save its setup once first.']);
         }
 
-        $choices = $change($project->choices ?? ['customized' => false]);
-
-        $resolved = (new Resolver($project->user))->resolve(ProjectsController::choicesFrom(
-            ['name' => $project->name, 'language' => $project->language ?? 'r'] + $choices,
-            $blueprint,
-        ));
+        $choices = $change($stored);
+        $resolved = self::resolve($project, $choices);
 
         $project->update(Resolver::setupAttributes($project->name, $resolved) + [
             'choices' => ProjectsController::storedChoices($choices),
             'setup_updated_at' => now(),
         ]);
+    }
+
+    /** The project resolved from stored choices, as Edit project resolves them. */
+    private static function resolve(Project $project, array $choices): array
+    {
+        $input = ['name' => $project->name, 'language' => $project->language ?? 'r'] + $choices;
+        $blueprint = $project->blueprintVersion?->blueprint;
+
+        return (new Resolver($project->user))->resolve($blueprint
+            ? ProjectsController::choicesFrom($input, $blueprint)
+            : Arr::only($input, ['name', 'language', ...ProjectsController::CHOICE_FIELDS]));
+    }
+
+    /**
+     * The choices to store for a project made with POST /api/v1/projects.
+     * With a blueprint, the request's pieces and settings are changes to it,
+     * kept with customized off. Without one, they are the exact pieces.
+     *
+     * @param  array<string, mixed>  $choices  the request's validated choices
+     * @param  array<string, mixed>  $resolved  from Resolver::resolve()
+     * @return array<string, mixed>
+     */
+    public static function apiChoices(array $choices, array $resolved): array
+    {
+        return ProjectsController::storedChoices([
+            'customized' => $resolved['blueprint'] === null,
+            // Pinned, so a later change to the blueprint's default workflow leaves the project as it is
+            'workflow' => $resolved['workflow'] ?? ($choices['workflow'] ?? null),
+        ] + Arr::only($choices, ProjectsController::BLUEPRINT_CHANGES));
+    }
+
+    /**
+     * Choices for a project from before Framework Cloud kept them: its
+     * pieces and its own layer, read as changes to its blueprint. Used only
+     * when they resolve to exactly the project's current setup; otherwise
+     * null.
+     *
+     * @return array<string, mixed>|null
+     */
+    private static function derivedChoices(Project $project): ?array
+    {
+        $version = $project->blueprintVersion;
+        $composition = $project->composition;
+        if (! $version || ! isset($composition['structure_version_id'])) {
+            return null;
+        }
+
+        $version->loadMissing('base.facet', 'facetVersions.facet');
+        $pieces = FacetVersion::with('facet.owner')->whereIn('id', $composition['piece_version_ids'] ?? [])->get();
+        $structure = FacetVersion::with('facet.owner')->find($composition['structure_version_id']);
+        $inBlueprint = $version->facetVersions->pluck('facet_id')->all();
+        $ofKind = fn (string $kind) => $pieces->filter(fn (FacetVersion $v) => $v->facet->kind === $kind);
+        $added = fn (string $kind) => $ofKind($kind)->reject(fn (FacetVersion $v) => in_array($v->facet_id, $inBlueprint, true))->map(fn (FacetVersion $v) => $v->facet->handle)->values()->all();
+
+        $choices = ['customized' => false, 'workflow' => $ofKind('workflow')->first()?->facet->category];
+        if ($structure && $structure->facet_id !== $version->base?->facet_id) {
+            $choices['structure'] = $structure->facet->handle;
+        }
+        $tools = $ofKind('tool')->mapWithKeys(fn (FacetVersion $v) => [$v->facet->isSystem() ? $v->facet->key : $v->facet->handle => true])->all();
+        foreach ($version->facetVersions->filter(fn (FacetVersion $v) => $v->facet->kind === 'tool') as $v) {
+            $tools[$v->facet->isSystem() ? $v->facet->key : $v->facet->handle] ??= false;
+        }
+        $choices['tools'] = $tools;
+        foreach (['package_sets' => 'package_set', 'skill_sets' => 'skill_set'] as $field => $pieceKind) {
+            if ($handles = $added($pieceKind)) {
+                $choices[$field] = $handles;
+            }
+        }
+
+        // The project's own layer: single skills, packages, the data registry, and settings
+        $own = collect(ProjectLayers::for($project)['layers'] ?? [])
+            ->first(fn (array $l) => ($l['kind'] ?? null) === 'project' && str_ends_with((string) ($l['key'] ?? ''), ' choices'))['layer'] ?? [];
+        $handle = function (string $key, mixed $entry) use ($project): ?string {
+            $skill = isset($entry['sync']['skill_id'])
+                ? Skill::with('owner')->where('sync_id', $entry['sync']['skill_id'])->first()
+                : Skill::visibleTo($project->user)->with('owner')->where('key', $key)->orderByRaw('user_id is not null')->first();
+
+            return $skill?->handle;
+        };
+        foreach ($own['skills'] ?? [] as $key => $entry) {
+            if ($found = $handle((string) $key, $entry)) {
+                $choices[$entry === null ? 'excluded_skills' : 'skills'][] = $found;
+            }
+        }
+        if (isset($own['packages']['default_packages'])) {
+            $choices['package_definitions'] = $own['packages']['default_packages'];
+        }
+        if (isset($own['data'])) {
+            $choices['data_entries'] = $own['data'];
+        }
+        $settings = array_filter([
+            'sensitive' => $own['security']['sensitive'] ?? null,
+            'git' => $own['git']['use_git'] ?? null,
+            'hooks' => isset($own['git']['hooks']) ? array_keys(array_filter($own['git']['hooks'])) : null,
+            'ai' => $own['ai'] ?? null,
+        ], fn ($v) => $v !== null);
+        if ($settings) {
+            $choices['settings'] = $settings;
+        }
+        if (isset($own['scaffold']['notebook_format'])) {
+            $choices['notebook_format'] = $own['scaffold']['notebook_format'];
+        }
+
+        // Sound only when nothing but the change itself would differ
+        try {
+            $again = self::resolve($project, $choices);
+        } catch (ValidationException) {
+            return null;
+        }
+
+        return DefaultsPreview::merge($again['envelope']['layers']) == DefaultsPreview::merge(ProjectLayers::for($project)['layers'] ?? [])
+            ? $choices
+            : null;
+    }
+
+    /**
+     * After a push saved $mine, the user's own copy of a skill, the project
+     * uses that copy where its setup listed a built-in Framework skill or the
+     * skill the copy was made from, so the next pull keeps it. True when the
+     * setup changed.
+     */
+    public static function useSkill(Project $project, Skill $mine, ?Skill $source): bool
+    {
+        $language = $project->language ?? 'r';
+        if (! $mine->fits($language)) {
+            return false;
+        }
+        $entries = self::spec($project, $language)['skills'] ?? [];
+        $key = collect([$source?->key, $mine->key])->filter()->first(fn (string $k) => is_array($entries[$k] ?? null));
+        if ($key === null) {
+            return false;
+        }
+
+        $entry = $entries[$key];
+        $current = isset($entry['sync']['skill_id']) ? Skill::with('owner')->where('sync_id', $entry['sync']['skill_id'])->first() : null;
+        if ($current?->is($mine)) {
+            return false;
+        }
+        $builtIn = ($entry['package'] ?? false) === true || ($current && $current->isSystem());
+        if (! $builtIn && ! ($source && $current?->is($source))) {
+            return false;
+        }
+        $replaced = $current?->handle ?? Skill::whereNull('user_id')->where('key', $key)->first()?->handle;
+
+        self::resolveWith($project, 'skills', function (array $choices) use ($project, $key, $mine, $replaced) {
+            $keys = Skill::visibleTo($project->user)->with('owner')->get()->mapWithKeys(fn (Skill $s) => [$s->handle => $s->key]);
+            $other = fn (string $h) => ($keys[$h] ?? null) !== $key && ($keys[$h] ?? null) !== $mine->key;
+            $choices['skills'] = [...array_values(array_filter($choices['skills'] ?? [], $other)), $mine->handle];
+            $excluded = array_values(array_filter($choices['excluded_skills'] ?? [], $other));
+            // A copy under another key replaces the one it was made from
+            if ($mine->key !== $key && $replaced) {
+                $excluded[] = $replaced;
+            }
+            if ($excluded || isset($choices['excluded_skills'])) {
+                $choices['excluded_skills'] = $excluded;
+            }
+
+            return $choices;
+        });
+
+        return true;
     }
 
     /**

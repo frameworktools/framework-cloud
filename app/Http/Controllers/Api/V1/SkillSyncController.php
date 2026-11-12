@@ -3,13 +3,17 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\Project;
 use App\Models\Skill;
 use App\Models\SkillVersion;
 use App\Models\User;
+use App\Support\ProjectSetup;
 use App\Support\SkillBundle;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class SkillSyncController extends Controller
 {
@@ -82,10 +86,13 @@ class SkillSyncController extends Controller
                 abort_unless(hash_equals($receipt->fingerprint, $fingerprint), 409, 'This request ID belongs to another change.');
                 $version = SkillVersion::findOrFail($receipt->version_id);
                 abort_unless(! $version->skill()->withTrashed()->first()->trashed(), 409, 'The skill was deleted.');
+                $source = $version->skill->forked_from_id ? SkillVersion::find($version->skill->forked_from_id)?->skill : null;
 
-                return response()->json($this->snapshot($version, $receipt->variant));
+                return response()->json($this->snapshot($version, $receipt->variant) + $this->useInProject($r, $user, $version->skill, $source));
             }
             $skill = ! empty($d['skill_id']) ? $this->skill($r, $d['skill_id']) : null;
+            // The skill a copy is made from: a built-in, or someone else's
+            $source = $skill && $skill->user_id !== $user->id ? $skill : null;
             $base = null;
             if ($skill) {
                 $skill = Skill::whereKey($skill->id)->lockForUpdate()->firstOrFail();
@@ -95,7 +102,7 @@ class SkillSyncController extends Controller
                 if ($skill->user_id === $user->id && $head->version !== $d['expected_version']) {
                     // An identical retry can advance without creating another version.
                     if (SkillBundle::hash(SkillBundle::files($head, $d['variant'])) === SkillBundle::hash($files)) {
-                        return response()->json($this->snapshot($head, $d['variant']));
+                        return response()->json($this->snapshot($head, $d['variant']) + $this->useInProject($r, $user, $skill, null));
                     }
                     if (SkillBundle::hash(SkillBundle::files($head, $d['variant'])) !== SkillBundle::hash(SkillBundle::files($base, $d['variant']))) {
                         return response()->json(['message' => 'The skill changed. Reconcile before syncing.', 'head' => $this->snapshot($head, $d['variant'])], 409);
@@ -134,8 +141,34 @@ class SkillSyncController extends Controller
             $skill->update(['name' => $meta['title'], 'description' => $meta['description'], 'language' => array_values(array_unique([...($skill->language ?? []), $d['variant']]))]);
             DB::table('skill_sync_receipts')->insert(['user_id' => $user->id, 'request_id' => $d['request_id'], 'fingerprint' => $fingerprint, 'version_id' => $version->id, 'variant' => $d['variant']]);
 
-            return response()->json($this->snapshot($version, $d['variant']));
+            return response()->json($this->snapshot($version, $d['variant']) + $this->useInProject($r, $user, $skill, $source));
         });
+    }
+
+    /**
+     * With the project's token as project_token, the project the push came
+     * from uses the user's copy in place of the built-in skill its setup
+     * listed, so the next pull keeps the copy. A problem never fails the push.
+     *
+     * @return array{}|array{project: array{slug: string, updated: bool, message?: string}}
+     */
+    private function useInProject(Request $r, User $user, Skill $mine, ?Skill $source): array
+    {
+        $plain = $r->input('project_token');
+        if (! is_string($plain) || $plain === '' || $mine->user_id !== $user->id) {
+            return [];
+        }
+        $token = PersonalAccessToken::findToken($plain);
+        $project = $token?->tokenable;
+        if (! $project instanceof Project || $project->user_id !== $user->id || ! $token->can(Project::PULL_ABILITY) || $token->expires_at?->isPast()) {
+            return [];
+        }
+
+        try {
+            return ['project' => ['slug' => $project->slug, 'updated' => ProjectSetup::useSkill($project, $mine, $source)]];
+        } catch (ValidationException $e) {
+            return ['project' => ['slug' => $project->slug, 'updated' => false, 'message' => collect($e->errors())->flatten()->first()]];
+        }
     }
 
     public function snapshot(SkillVersion $version, string $variant): array

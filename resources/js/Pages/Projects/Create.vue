@@ -159,7 +159,10 @@ const fillStored = (c) => {
     if ('notebook_format' in c) form.notebook_format = c.notebook_format ?? defaultFormat(form.workflow, language, false);
     // Customized, the stored packages are the project's; otherwise pushed ones go over the blueprint's
     form.package_definitions = c.customized ? { ...(c.package_definitions ?? {}) } : { ...form.package_definitions, ...(c.package_definitions ?? {}) };
-    if (!c.customized) return;
+    if (!c.customized) {
+        fillChanges(c);
+        return;
+    }
     if (c.structure) form.structure = c.structure;
     for (const [key, on] of Object.entries(c.tools ?? {})) form.tools[key] = !!on;
     for (const key of ['package_sets', 'skill_sets', 'skills', 'excluded_skills']) form[key] = [...(c[key] ?? [])];
@@ -180,6 +183,25 @@ const fillStored = (c) => {
     if (c.templates) form.templates = { notebook: '', script: '', slides: '', ...c.templates };
     form.extra_yaml = c.extra_yaml ?? '';
 };
+// A project made over the API keeps its changes to the blueprint: shown over the blueprint's
+// choices, and saved from then on as the project's own
+const blueprintChanges = ['structure', 'tools', 'package_sets', 'package_overrides', 'package_auto_attach', 'skill_sets', 'skills', 'excluded_skills', 'settings'];
+function fillChanges(c) {
+    if (!blueprintChanges.some((key) => key in c)) return;
+    const union = (list, more) => [...new Set([...list, ...(more ?? [])])];
+    if (c.structure) form.structure = c.structure;
+    for (const [key, on] of Object.entries(c.tools ?? {})) form.tools[key] = !!on;
+    form.package_sets = union(form.package_sets, c.package_sets);
+    form.skill_sets = union(form.skill_sets, c.skill_sets);
+    form.excluded_skills = union(form.excluded_skills, c.excluded_skills);
+    form.skills = union(form.skills, c.skills).filter((key) => !form.excluded_skills.includes(key));
+    form.package_overrides = { ...form.package_overrides, ...(c.package_overrides ?? {}) };
+    form.package_auto_attach = { ...form.package_auto_attach, ...(c.package_auto_attach ?? {}) };
+    const s = c.settings ?? {};
+    if ('ai' in s) form.agents = s.ai === false || s.ai?.enabled === false ? ['none'] : typeof s.ai === 'object' ? toChoices(true, Object.keys(s.ai.assistants ?? {}).filter((a) => s.ai.assistants[a]), false) : form.agents;
+    form.settings = { git: s.git ?? form.settings.git, hooks: [...(s.hooks ?? form.settings.hooks)], ai: !form.agents.includes('none') };
+    startCustomized.value = true;
+}
 if (editing?.choices) {
     fillStored(editing.choices);
     baseline.value = JSON.parse(JSON.stringify(snapshot()));

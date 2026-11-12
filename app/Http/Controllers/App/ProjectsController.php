@@ -411,10 +411,7 @@ class ProjectsController extends Controller
     /** The choices to keep on the project, so its edit page opens on them. */
     public static function storedChoices(array $validated): array
     {
-        return ['customized' => (bool) ($validated['customized'] ?? false)] + Arr::only($validated, [
-            'workflow', 'notebook_format', 'structure', 'tools', 'package_sets', 'package_overrides', 'package_auto_attach', 'package_definitions', 'data_entries',
-            'skill_sets', 'skills', 'excluded_skills', 'settings', 'extra_yaml', 'scaffold', 'quarto', 'ide', 'publish_destination', 'connections', 'templates',
-        ]);
+        return ['customized' => (bool) ($validated['customized'] ?? false)] + Arr::only($validated, self::CHOICE_FIELDS);
     }
 
     /**
@@ -616,11 +613,26 @@ class ProjectsController extends Controller
      */
     public static function choicesFrom(array $validated, Blueprint $blueprint): array
     {
-        // Pushed packages are the project's own, over the blueprint or the pieces chosen
+        // Pushed packages are the project's own, over the blueprint or the pieces chosen.
+        // Not customized, any other choices are changes to the blueprint, as the API makes them.
         return ($validated['customized'] ?? false)
-            ? ['from' => $blueprint->handle] + Arr::only($validated, ['name', 'language', 'workflow', 'notebook_format', 'structure', 'tools', 'package_sets', 'package_overrides', 'package_auto_attach', 'package_definitions', 'data_entries', 'skill_sets', 'skills', 'excluded_skills', 'settings', 'extra_yaml', 'scaffold', 'quarto', 'ide', 'publish_destination', 'connections', 'templates'])
-            : ['blueprint' => $blueprint->handle] + Arr::only($validated, ['name', 'language', 'workflow', 'package_definitions', 'data_entries']);
+            ? ['from' => $blueprint->handle] + Arr::only($validated, ['name', 'language', ...self::CHOICE_FIELDS])
+            : ['blueprint' => $blueprint->handle] + Arr::only($validated, ['name', 'language', 'workflow', 'package_definitions', 'data_entries', ...self::BLUEPRINT_CHANGES]);
     }
+
+    /** The choices a customized project resolves from. */
+    public const CHOICE_FIELDS = [
+        'workflow', 'notebook_format', 'structure', 'tools', 'package_sets', 'package_overrides', 'package_auto_attach', 'package_definitions', 'data_entries',
+        'skill_sets', 'skills', 'excluded_skills', 'settings', 'extra_yaml', 'scaffold', 'quarto', 'ide', 'publish_destination', 'connections', 'templates',
+    ];
+
+    /**
+     * Changes to a blueprint that POST /api/v1/projects takes, kept with
+     * customized off: the blueprint as it is, plus these.
+     */
+    public const BLUEPRINT_CHANGES = [
+        'notebook_format', 'structure', 'tools', 'package_sets', 'package_overrides', 'package_auto_attach', 'skill_sets', 'skills', 'excluded_skills', 'settings',
+    ];
 
     /**
      * Blueprint choices from the New project form, validated as the blueprint

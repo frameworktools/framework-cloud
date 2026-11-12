@@ -15,6 +15,7 @@ use App\Services\Scaffolder\ProjectZip;
 use App\Support\Layer;
 use App\Support\ProjectDefaults;
 use App\Support\ProjectLayers;
+use App\Support\ProjectSetup;
 use App\Support\Resolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -141,6 +142,8 @@ class PiecesController extends Controller
 
         $project = $resolver->createProject($choices['name'], $resolved, $choices['description'] ?? null, [
             'scaffold_status' => $target ? 'pending' : null,
+            // Kept as New project keeps them, so pushes and Edit project resolve the project again from them
+            'choices' => ProjectSetup::apiChoices($choices, $resolved),
         ] + $attributes);
 
         if ($target) {

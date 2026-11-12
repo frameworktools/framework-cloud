@@ -8,11 +8,15 @@ use App\Models\Facet;
 use App\Models\FacetVersion;
 use App\Models\GitHubAccount;
 use App\Models\Project;
+use App\Models\Skill;
 use App\Models\User;
+use App\Support\DefaultsPreview;
 use App\Support\ProjectLayers;
 use Database\Seeders\BlueprintSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
@@ -301,5 +305,174 @@ class ProjectSetupTest extends TestCase
         ])->assertSessionHasNoErrors();
         $this->assertSame('0.12.1', self::byName($this->pulled($token)['packages'])['fixest']['version']);
         $this->assertTrue(collect(ProjectLayers::for($project->fresh())['layers'])->contains(fn ($l) => isset($l['layer']['packages']['default_packages']['fixest'])));
+    }
+
+    /** A project made with POST /api/v1/projects, as R and fw make one, and its project token. */
+    private function apiProject(User $user, array $choices): array
+    {
+        $this->app['auth']->forgetGuards();
+        $token = $this->withToken($user->createToken('fw')->plainTextToken)
+            ->postJson('/api/v1/projects', ['name' => 'Survey Study'] + $choices)->assertCreated()->json('token');
+
+        return [$user->projects()->listed()->where('slug', 'survey-study')->firstOrFail(), $token];
+    }
+
+    private function pushData(string $token, array $body): TestResponse
+    {
+        $this->app['auth']->forgetGuards();
+
+        return $this->withToken($token)->postJson('/api/v1/projects/data', $body);
+    }
+
+    private const FIXEST = ['name' => 'fixest', 'source' => 'cran', 'version' => '0.12.1', 'auto_attach' => false, 'repo' => null];
+
+    private const SURVEY = ['name' => 'inputs.raw.survey', 'path' => 'inputs/raw/survey.csv', 'type' => 'csv'];
+
+    public function test_a_project_made_over_the_api_with_its_own_skills_takes_pushed_packages_and_data(): void
+    {
+        [$project, $token] = $this->apiProject(User::factory()->create(), [
+            'blueprint' => 'framework/project', 'skills' => ['framework/ggplot2-exploring'], 'tools' => ['renv' => true],
+        ]);
+
+        // Stored as changes to the blueprint, as Edit project reads them
+        $this->assertFalse($project->choices['customized']);
+        $this->assertSame(['framework/ggplot2-exploring'], $project->choices['skills']);
+        $this->assertSame(['renv' => true], $project->choices['tools']);
+        $this->assertSame('quarto', $project->choices['workflow']);
+        $layers = fn () => array_column(ProjectLayers::for($project->fresh())['layers'], 'key');
+        $before = $layers();
+
+        $setup = $this->pulled($token);
+        $this->assertContains('ggplot2-exploring', array_column($setup['skills'], 'key'));
+        $this->push($token, ['base_revision' => $setup['revision'], 'packages' => [...$setup['packages'], self::FIXEST]])
+            ->assertOk()->assertJsonPath('applied', true);
+
+        $data = $this->withToken($token)->getJson('/api/v1/projects/data')->assertOk()->json();
+        $this->pushData($token, ['base_revision' => $data['revision'], 'entries' => [self::SURVEY]])
+            ->assertOk()->assertJsonPath('applied', true);
+
+        // The skill, the tool, and the packages all stay
+        $after = $this->pulled($token);
+        $this->assertContains('ggplot2-exploring', array_column($after['skills'], 'key'));
+        $this->assertSame('0.12.1', self::byName($after['packages'])['fixest']['version']);
+        $this->assertSame($before, $layers());
+        $this->assertSame('inputs/raw/survey.csv', $this->withToken($token)->getJson('/api/v1/projects/data')->json('entries.0.path'));
+
+        // Edit project opens on the API's changes
+        $this->actingAs($project->user)->get("/projects/{$project->slug}/edit")
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('editing.choices.skills', ['framework/ggplot2-exploring'])->where('editing.unknown_choices', false));
+    }
+
+    public function test_a_project_made_over_the_api_from_exact_pieces_takes_pushed_packages(): void
+    {
+        [$project, $token] = $this->apiProject(User::factory()->create(), ['structure' => 'framework/project', 'skills' => ['framework/ggplot2-exploring']]);
+        $this->assertTrue($project->choices['customized']);
+        $this->assertNull($project->blueprint_version_id);
+
+        $setup = $this->pulled($token);
+        $this->push($token, ['base_revision' => $setup['revision'], 'packages' => [...$setup['packages'], self::FIXEST]])->assertOk();
+        $this->assertContains('ggplot2-exploring', array_column($this->pulled($token)['skills'], 'key'));
+    }
+
+    public function test_a_project_from_before_choices_were_kept_derives_them_when_they_match_its_setup(): void
+    {
+        [$project, $token] = $this->apiProject(User::factory()->create(), [
+            'blueprint' => 'framework/project', 'skills' => ['framework/ggplot2-exploring'], 'tools' => ['renv' => true], 'settings' => ['git' => false],
+        ]);
+        $project->update(['choices' => null]);
+        $resolved = $project->resolved;
+
+        $setup = $this->pulled($token);
+        $this->push($token, ['base_revision' => $setup['revision'], 'packages' => [...$setup['packages'], self::FIXEST]])
+            ->assertOk()->assertJsonPath('applied', true);
+
+        // The derived choices are kept, and only the pushed package changed
+        $choices = $project->fresh()->choices;
+        $this->assertSame(['framework/ggplot2-exploring'], $choices['skills']);
+        $this->assertTrue($choices['tools']['renv']);
+        $this->assertFalse($choices['settings']['git']);
+        $this->assertSame('0.12.1', $choices['package_definitions']['fixest']['version']);
+        $spec = DefaultsPreview::merge(json_decode($project->fresh()->resolved, true)['layers']);
+        Arr::forget($spec, 'packages.default_packages.fixest');
+        $this->assertEquals(DefaultsPreview::merge(json_decode($resolved, true)['layers']), $spec);
+
+        $data = $this->withToken($token)->getJson('/api/v1/projects/data')->assertOk()->json();
+        $project->update(['choices' => null]);
+        $this->pushData($token, ['base_revision' => $data['revision'], 'entries' => [self::SURVEY]])->assertOk();
+        $this->assertSame('0.12.1', self::byName($this->pulled($token)['packages'])['fixest']['version']);
+    }
+
+    public function test_a_project_from_before_choices_were_kept_is_refused_when_they_cant_be_derived(): void
+    {
+        [$project, $token] = $this->apiProject(User::factory()->create(), ['blueprint' => 'framework/project', 'skills' => ['framework/ggplot2-exploring']]);
+        // A setting no choice makes: resolving again would lose it
+        $envelope = json_decode($project->resolved, true);
+        foreach ($envelope['layers'] as &$layer) {
+            if (str_ends_with($layer['key'], ' choices')) {
+                $layer['layer']['scaffold']['seed'] = '4242';
+            }
+        }
+        $project->update(['choices' => null, 'resolved' => json_encode($envelope)]);
+
+        $setup = $this->pulled($token);
+        $this->push($token, ['base_revision' => $setup['revision'], 'packages' => [...$setup['packages'], self::FIXEST]])
+            ->assertUnprocessable()->assertJsonValidationErrors(['packages' => 'save its setup once first']);
+        $this->assertNull($project->fresh()->choices);
+    }
+
+    /** POST /api/v1/skills/sync as push_skills() sends it, with the project's token. */
+    private function pushSkill(User $user, ?Skill $source, string $text, ?string $projectToken, string $name = 'framework-data'): TestResponse
+    {
+        $this->app['auth']->forgetGuards();
+        $content = "---\nname: {$name}\ndescription: Data work, our way\n---\n{$text}\n";
+
+        return $this->withToken($user->createToken('fw')->plainTextToken)->postJson('/api/v1/skills/sync', [
+            'request_id' => (string) Str::uuid(), 'skill_id' => $source?->sync_id, 'expected_version' => $source?->latestVersion->version ?? 0,
+            'variant' => 'r', 'bundle' => [['path' => 'SKILL.md', 'content' => base64_encode($content), 'executable' => false]],
+            'project_token' => $projectToken, 'client' => ['app' => 'framework-r'],
+        ]);
+    }
+
+    public function test_a_pushed_copy_of_a_built_in_skill_replaces_it_in_the_projects_setup(): void
+    {
+        $user = User::factory()->create();
+        $project = $this->project('r', $user);
+        $token = $project->issuePullToken();
+        $builtIn = Skill::whereNull('user_id')->where('key', 'framework-data')->firstOrFail();
+        $entry = fn () => collect($this->pulled($token)['skills'])->firstWhere('key', 'framework-data');
+        $this->assertTrue($entry()['package']);
+
+        $copy = $this->pushSkill($user, $builtIn, 'Edited', $token)->assertOk()
+            ->assertJsonPath('project', ['slug' => $project->slug, 'updated' => true])->json();
+        $mine = Skill::where('sync_id', $copy['skill_id'])->firstOrFail();
+        $this->assertSame($user->id, $mine->user_id);
+
+        // The next pull lists the copy, not the built-in
+        $pulled = $entry();
+        $this->assertFalse($pulled['package']);
+        $this->assertSame($mine->handle, $pulled['handle']);
+        $this->assertSame($copy['skill_id'], $pulled['sync']['skill_id']);
+        $this->assertContains($mine->handle, $project->fresh()->choices['skills']);
+
+        // Pushing it again changes nothing more
+        $this->pushSkill($user, $mine, 'Edited again', $token)->assertOk()->assertJsonPath('project.updated', false);
+
+        // Without the project's token, or with another account's, no project changes
+        $other = $this->project('r', User::factory()->create());
+        $this->pushSkill($user, $builtIn, 'Elsewhere', $other->issuePullToken(), 'framework-workflow')->assertOk()->assertJsonMissingPath('project');
+        $this->assertTrue(collect($this->pulled($other->issuePullToken())['skills'])->firstWhere('key', 'framework-workflow')['package']);
+    }
+
+    public function test_a_built_in_copy_cloud_never_published_replaces_it_too(): void
+    {
+        $user = User::factory()->create();
+        [$project, $token] = $this->apiProject($user, ['blueprint' => 'framework/project']);
+
+        // No skill_id: the package shipped text Cloud never published
+        $copy = $this->pushSkill($user, null, 'Edited', $token, 'framework-workflow')->assertOk()->assertJsonPath('project.updated', true)->json();
+
+        $pulled = collect($this->pulled($token)['skills'])->firstWhere('key', 'framework-workflow');
+        $this->assertSame($copy['skill_id'], $pulled['sync']['skill_id']);
+        $this->assertSame(Skill::where('sync_id', $copy['skill_id'])->firstOrFail()->handle, $pulled['handle']);
     }
 }
