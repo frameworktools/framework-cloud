@@ -21,6 +21,7 @@ import ArtifactUpload from '@/Components/ArtifactUpload.vue';
 import CodeChip from '@/Components/CodeChip.vue';
 import ProjectGitHub from '@/Components/ProjectGitHub.vue';
 import ProjectToken from '@/Components/ProjectToken.vue';
+import PublishExamples from '@/Components/PublishExamples.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import { ChevronRightIcon } from '@heroicons/vue/24/outline';
 import { usePythonServerArg, useServerArg, useServerFlag } from '@/cloud.js';
@@ -190,6 +191,8 @@ const artifactMenu = (doc) => [
                     </section>
                 </div>
             </UiPanel>
+
+            <PublishExamples v-if="section === 'overview'" :language="project.language" remember="project_publish" />
 
             <UiPanel v-if="section === 'overview'" title="Configuration">
                 <template #header>
