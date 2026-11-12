@@ -16,7 +16,7 @@
 @endphp
 <section id="agents" class="border-t border-slate-800/10 py-14 sm:py-20 dark:border-white/10">
     <div class="mx-auto max-w-2xl text-center">
-        <h2 class="text-3xl font-semibold tracking-tight">AI agents</h2>
+        <h2 class="text-3xl font-semibold tracking-tight">Use AI agents as an interface to Framework Cloud</h2>
         <p class="mt-4 leading-relaxed text-slate-600 dark:text-slate-400">Connect Claude or ChatGPT to Framework Cloud. Your agent can work with your projects, published results, and reports, and Framework's skills keep its code to your project's conventions.</p>
     </div>
 
