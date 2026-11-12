@@ -2,22 +2,33 @@
     // What Framework Cloud is, then one pane per feature. Panes with more than one
     // screenshot of the current app play as a carousel.
     $screens = [
-        'defaults' => ['Default settings', 'Set your language, packages, data safety hooks, and Quarto defaults once.', [
-            ['settings-language', 'Choose R, Python, or Stata for new projects.', 'Language default for new projects: R, Python, or Stata'],
-            ['settings-packages', 'Pick the packages every new project installs.', 'Default R packages, each with its source and auto-attach setting'],
-            ['settings-hooks', 'Stop commits that contain secrets, private folders, or notebook outputs.', 'Data safety hooks: secret detection, private folder warnings, and notebook output checks, all switched on'],
-            ['settings-quarto', 'Set the theme, contents, and code options for documents.', 'Quarto defaults for HTML documents: theme, table of contents, and code options'],
+        'blueprints' => ['Blueprints', 'Save a project setup once and start each new project from it.', [
+            ['blueprints', 'See what each blueprint makes: folders, packages, agents, and skills.', 'Blueprints page with the Penguin lab blueprint, its project structure, and its packages'],
+            ['blueprint-packages', 'Pick the packages every project installs and which ones load.', 'Blueprint editor Packages tab with R packages, their sources, and auto-attach switches'],
+            ['blueprint-git', 'Stop commits that contain secrets, private folders, or notebook outputs.', 'Blueprint editor Git tab with secret detection, private folder warnings, and notebook output checks switched on'],
+            ['blueprint-quarto', 'Set the theme, contents, and code options for documents.', 'Blueprint editor Quarto tab with the Cosmo theme, table of contents, and code options'],
+            ['blueprint-connections', 'Name databases and storage buckets. Secrets stay in .env.', 'Blueprint editor Connections tab with a PostgreSQL database whose host, user, and password read env() variables'],
+            ['blueprint-skills', 'Choose the skills your AI agent gets.', 'Blueprint editor AI Skills tab with skill sets by category and the skills in the Framework set'],
+            ['project-defaults', 'Choose the default blueprint for each language.', 'Project defaults settings with the default language, projects folder, and Penguin lab as the R blueprint'],
         ]],
-        'templates' => ['Project pieces', 'Manage AI skills, .gitignore rules, folder layouts, and package sets.', [
-            ['template-gitignore', 'Edit the rules that keep private data out of Git.', 'Project structure editor with its .gitignore rules for private data and credentials'],
-            ['template-skills', 'Copy, edit, or import the skills your AI agent uses.', 'AI agent skills for R, Python, and Stata, with tags and Copy and edit'],
-            ['template-package-sets', 'Group packages you use together and add them in one step.', 'Package sets that add a group of packages to a project'],
+        'new-project' => ['New project', 'Start from a blueprint, adjust it, and review the result.', [
+            ['new-project-start', 'Choose a language and a blueprint.', 'New project start step with R selected and the Penguin lab blueprint chosen'],
+            ['new-project', 'Adjust any choice and watch the file tree update.', 'New project Project structure tab with structure choices and a preview of the project files'],
+            ['new-project-review', 'Check the summary, then set the project up.', 'New project review step with the project name, description, and a summary of its setup'],
         ]],
-        'blueprints' => ['Blueprints', 'Start each new project from a saved setup.', [
-            ['blueprints', 'Combine a structure, packages, and skills into a starting point.', 'Blueprints page showing a project structure and its package list'],
+        'projects' => ['Projects', 'Set a project up anywhere and keep it in sync.', [
+            ['project-overview', 'Set up the project locally, on GitHub, or from a zip.', 'Penguin study overview with Local setup, GitHub repository, and ZIP download cards'],
+            ['project-registry', 'See the last sync and the data the project reads by name.', 'Penguin study connections and data registry with four data entries'],
+            ['dashboard', 'Recent artifacts, collections, and projects in one place.', 'Dashboard with recent activity and recent projects'],
+            ['dashboard-commands', 'Copy commands for R, Python, Stata, or the command line.', 'Dashboard quick commands for installing the R package, signing in, and syncing setup, data registry, and skills'],
+        ]],
+        'pieces' => ['Project pieces', 'Manage AI skills, .gitignore rules, folder layouts, and package sets.', [
+            ['pieces-skills', 'Copy, edit, or import the skills your AI agent uses.', 'Skills page with R skills filtered by category, each with tags and Copy and edit'],
+            ['pieces-gitignore', 'Edit the rules that keep private data out of Git.', 'Project structure editor Git ignore tab with rules for private data, credentials, and local records'],
+            ['pieces-package-sets', 'Group packages you use together and add them in one step.', 'Package sets page with R package sets by category'],
         ]],
         'published' => ['Published results', 'Each result gets a stable link and a readable page.', [
-            ['published-index', 'Find everything you have published, across projects.', 'Artifacts page listing the published penguin model, data, figure, and table'],
+            ['published-index', 'Find everything you have published, across projects.', 'Artifacts page listing the published penguin figure, data, table, and model'],
             ['published-model', 'Readers get a formatted, searchable model summary.', 'Reader page for the penguin body mass model with its coefficient table'],
             ['published-figure', 'Readers see the figure and can download the file.', 'Reader page for a scatterplot of flipper length and body mass'],
         ]],
@@ -25,9 +36,10 @@
             ['versions', 'Open any earlier version. The main link shows the newest.', 'Versions of the penguin body mass model: version 2 is the newest, version 1 is kept'],
         ]],
         'sharing' => ['Sharing', 'Make each result public, unlisted, or password protected.', [
-            ['sharing', 'Choose who can read it, copy its links, or add a password.', 'Sharing settings with reader access, share links, and an optional password'],
+            ['sharing', 'Choose who can read it, copy its links, or add a password.', 'Sharing tab with reader access choices and the share and readable links'],
         ]],
         'collections' => ['Collections', 'Group related results on one page.', [
+            ['collection-edit', 'Add artifacts, order them, and choose who can read the collection.', 'Collection editor with four penguin study artifacts and its sharing settings'],
             ['collection', 'Share one link for a set of related results.', 'Collection page listing the penguin data, summary table, model, and figure'],
         ]],
     ];
@@ -35,7 +47,7 @@
 <section id="framework-cloud" data-cloud-screens class="scroll-mt-6 border-t border-slate-800/10 py-14 sm:py-20 dark:border-white/10">
     <div class="mx-auto max-w-3xl text-center">
         <h2 class="text-3xl font-semibold tracking-tight">Framework Cloud</h2>
-        <p class="mt-4 text-lg leading-relaxed text-balance text-slate-700 dark:text-slate-300">Framework Cloud is a companion web app for Framework. It stores your project defaults, blueprints, AI skills, and other settings. It also lets you share your work securely.</p>
+        <p class="mt-4 text-lg leading-relaxed text-balance text-slate-700 dark:text-slate-300">Framework Cloud is a companion web app for Framework. It stores your blueprints, AI skills, and project settings. It also lets you share your work securely.</p>
         <p class="mt-3 text-balance text-slate-600 dark:text-slate-400">Use it for free at <a href="https://framework.pub" class="text-slate-800 underline decoration-slate-300 underline-offset-4 dark:text-slate-200 dark:decoration-slate-600">framework.pub</a> or host it on your own server.</p>
     </div>
 
