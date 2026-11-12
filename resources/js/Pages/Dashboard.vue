@@ -119,7 +119,7 @@ const quick = computed(() => ({
     },
     fw: {
         installs: [
-            { key: 'brew', label: 'Homebrew', cmd: 'brew install frameworktools/tap/fw', language: 'bash', info: 'Installs fw on macOS with Homebrew. On Linux, clusters, and Windows, download it from the framework-cli releases on GitHub and put it on your PATH.', link: { href: 'https://github.com/frameworktools/framework-cli/releases', label: 'Releases' } },
+            { key: 'brew', label: 'Homebrew', cmd: 'brew install frameworktools/tap/fw', language: 'bash', info: 'Installs fw on macOS with Homebrew. Update it with brew upgrade fw. On Linux, clusters, and Windows, download it from the framework-cli releases on GitHub and put it on your PATH.', link: { href: 'https://github.com/frameworktools/framework-cli/releases', label: 'Releases' } },
         ],
         create: { title: 'Create a project', note: 'fw makes R, Python, and Stata projects.', commands: [
             { label: 'New project', cmd: 'fw new my-study', language: 'bash', info: 'Asks for the language and blueprint if you don\'t give them, then where to create the project folder.' },
@@ -203,7 +203,7 @@ const menuFor = (item) => [
                 <div class="mt-4 flex flex-col gap-6">
                     <div class="min-w-0">
                         <h3 class="mb-2 flex items-center gap-1.5 text-sm font-medium text-slate-800 dark:text-slate-200">
-                            Install
+                            {{ client === 'fw' ? 'Install or update fw' : 'Install or update the package' }}
                             <InfoPopover :label="`installing from ${install.label}`">{{ install.info }}<template v-if="install.link"> <UiLink :href="install.link.href" external>{{ install.link.label }}</UiLink></template></InfoPopover>
                         </h3>
                         <div v-if="quick.installs.length > 1" role="radiogroup" aria-label="Install from" class="mb-2 inline-flex gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-900">
