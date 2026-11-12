@@ -42,6 +42,20 @@ class User extends Authenticatable implements HasPasskeys, MustVerifyEmail
     ];
 
     /**
+     * Settings rows are polymorphic, so no foreign key removes them: the user's own and its
+     * projects' go with the user, however it is deleted. Projects cascade with the row.
+     */
+    protected static function booted(): void
+    {
+        static::deleting(function (User $user) {
+            $projectIds = Project::withTrashed()->where('user_id', $user->id)->pluck('id');
+            Setting::where(fn ($q) => $q->where('owner_type', $user->getMorphClass())->where('owner_id', $user->id))
+                ->orWhere(fn ($q) => $q->where('owner_type', (new Project)->getMorphClass())->whereIn('owner_id', $projectIds))
+                ->delete();
+        });
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>

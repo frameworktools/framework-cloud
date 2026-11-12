@@ -71,6 +71,22 @@ class AccountDeletionTest extends TestCase
         Storage::disk('local')->assertMissing($file);
     }
 
+    public function test_deleting_a_user_directly_removes_its_settings_and_its_projects_settings(): void
+    {
+        $user = User::factory()->create();
+        $project = Project::factory()->for($user)->create();
+        $user->globalSettings();
+        Setting::forOwner($project);
+        $other = User::factory()->create();
+        $other->globalSettings();
+
+        $user->delete();
+
+        $this->assertSame(0, Setting::where('owner_type', $user->getMorphClass())->where('owner_id', $user->id)->count());
+        $this->assertSame(0, Setting::where('owner_type', $project->getMorphClass())->where('owner_id', $project->id)->count());
+        $this->assertSame(1, Setting::where('owner_type', $other->getMorphClass())->where('owner_id', $other->id)->count());
+    }
+
     public function test_deleting_an_account_leaves_other_accounts_alone(): void
     {
         Storage::fake('local');

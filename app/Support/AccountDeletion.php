@@ -6,7 +6,6 @@ use App\Models\Document;
 use App\Models\DocumentVersion;
 use App\Models\InstanceSetting;
 use App\Models\Project;
-use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -14,7 +13,8 @@ use Laravel\Sanctum\PersonalAccessToken;
 
 /**
  * Removes an account and everything it owns. Foreign keys cascade most rows.
- * This removes the rest: polymorphic rows, tokens, sessions, and stored files.
+ * This removes the rest: tokens, sessions, and stored files. Settings rows go
+ * with the user (User::booted()).
  *
  * Ledger entries are append-only. On Postgres a trigger refuses to change
  * them. It allows deletes only when this transaction sets the account
@@ -38,9 +38,6 @@ class AccountDeletion
                 ->where(fn ($q) => $q->where('tokenable_type', $user->getMorphClass())->where('tokenable_id', $user->id))
                 ->orWhere(fn ($q) => $q->where('tokenable_type', (new Project)->getMorphClass())->whereIn('tokenable_id', $projectIds))
                 ->delete();
-            foreach ([$user->getMorphClass() => [$user->id], (new Project)->getMorphClass() => $projectIds] as $type => $ids) {
-                Setting::where('owner_type', $type)->whereIn('owner_id', $ids)->delete();
-            }
             InstanceSetting::where('updated_by', $user->id)->update(['updated_by' => null]);
             DB::table('sessions')->where('user_id', $user->id)->delete();
             DB::table('password_reset_tokens')->where('email', $user->email)->delete();
