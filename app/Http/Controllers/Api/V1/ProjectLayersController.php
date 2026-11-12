@@ -10,6 +10,7 @@ use App\Services\GitHub\Scaffolder;
 use App\Services\Scaffolder\ProjectZip;
 use App\Services\Scaffolder\ProjectZipFailed;
 use App\Support\Layer;
+use App\Support\ProjectDefaults;
 use App\Support\ProjectLayers;
 use App\Support\Share;
 use Illuminate\Http\Client\RequestException;
@@ -24,7 +25,12 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
  */
 class ProjectLayersController extends Controller
 {
-    /** GET /api/v1/projects/pull, with a project token. */
+    /**
+     * GET /api/v1/projects/pull, with a project token. The owner's projects
+     * folder rides in the Framework-Projects-Dir header, percent-encoded,
+     * not the body: layers.v1 allows no extra keys, and the body is
+     * committed to the project as .framework/layers.json.
+     */
     public function pull(Request $request): JsonResponse
     {
         $project = $request->user();
@@ -32,7 +38,10 @@ class ProjectLayersController extends Controller
         abort_unless($project instanceof Project, 403, 'This endpoint requires a project token.');
         abort_unless($project->tokenCan(Project::PULL_ABILITY), 403, 'Token lacks the project:pull ability.');
 
-        return $this->envelope($project);
+        $response = $this->envelope($project);
+        $dir = $project->user ? ProjectDefaults::projectsDir($project->user) : null;
+
+        return $dir === null ? $response : $response->header(ProjectDefaults::PROJECTS_DIR_HEADER, ProjectDefaults::headerValue($dir));
     }
 
     /**

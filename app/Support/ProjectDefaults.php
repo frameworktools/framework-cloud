@@ -209,6 +209,19 @@ class ProjectDefaults
         return is_string($dir) && trim($dir) !== '' ? trim($dir) : null;
     }
 
+    /** The pull response header that carries the owner's projects folder. */
+    public const PROJECTS_DIR_HEADER = 'Framework-Projects-Dir';
+
+    /**
+     * A path as a header value: UTF-8, with % and every byte outside
+     * printable ASCII percent-encoded, so ~/code stays ~/code. Clients
+     * percent-decode it.
+     */
+    public static function headerValue(string $dir): string
+    {
+        return (string) preg_replace_callback('/[^\x20-\x24\x26-\x7E]/', fn (array $m) => sprintf('%%%02X', ord($m[0])), $dir);
+    }
+
     /** Save the projects folder in the synced settings. Null or blank removes it. */
     public static function setProjectsDir(User $user, ?string $dir): void
     {

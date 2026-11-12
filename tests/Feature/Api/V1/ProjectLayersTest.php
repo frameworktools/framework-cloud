@@ -6,6 +6,7 @@ use App\Models\Blueprint;
 use App\Models\Project;
 use App\Models\User;
 use App\Support\Layer;
+use App\Support\ProjectDefaults;
 use Database\Seeders\BlueprintSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\PersonalAccessToken;
@@ -49,6 +50,28 @@ class ProjectLayersTest extends TestCase
 
         // Empty layers stay JSON objects
         $this->assertStringContainsString('"layer":{}', $response->getContent());
+    }
+
+    public function test_pull_sends_the_owners_projects_folder_in_a_header_and_keeps_the_body_valid(): void
+    {
+        $owner = User::factory()->create();
+        $token = $this->project($owner)->issuePullToken();
+
+        // Unset: no header
+        $this->withToken($token)->getJson('/api/v1/projects/pull')->assertOk()->assertHeaderMissing('Framework-Projects-Dir');
+
+        ProjectDefaults::setProjectsDir($owner, '~/code');
+        $response = $this->withToken($token)->getJson('/api/v1/projects/pull')->assertOk()->assertHeader('Framework-Projects-Dir', '~/code');
+        // Not in the body: layers.v1 allows no extra keys, and the body becomes .framework/layers.json
+        $this->assertArrayNotHasKey('projects_dir', $response->json());
+        $this->assertStringNotContainsString('~/code', $response->getContent());
+        $this->assertSame([], Layer::envelopeProblems($response->json()));
+
+        // Non-ASCII and % are percent-encoded UTF-8
+        ProjectDefaults::setProjectsDir($owner, '~/Études 100%');
+        $header = $this->withToken($token)->getJson('/api/v1/projects/pull')->headers->get('Framework-Projects-Dir');
+        $this->assertSame('~/%C3%89tudes 100%25', $header);
+        $this->assertSame('~/Études 100%', rawurldecode($header));
     }
 
     public function test_pull_refuses_a_user_token(): void
