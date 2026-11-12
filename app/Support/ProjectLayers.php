@@ -219,6 +219,15 @@ class ProjectLayers
             ->map(fn (array $a) => array_filter(Arr::only($a, ['name', 'department', 'city', 'country']), 'filled'))
             ->values()->all();
 
+        // Older R clients include these in their own defaults. Remove them
+        // beneath the chosen layers so explicit package selections still win.
+        $language = collect($layers)->pluck('layer.language')->filter()->last();
+        if ($language === 'r') {
+            array_unshift($layers, ['kind' => 'settings', 'key' => 'framework package defaults', 'layer' => [
+                'packages' => ['default_packages' => ['glue' => null, 'here' => null, 'lme4' => null]],
+            ]]);
+        }
+
         $envelope = [
             'spec_version' => 1,
             'name' => $name,

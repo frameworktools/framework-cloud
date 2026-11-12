@@ -71,8 +71,8 @@ class DefaultsConversionTest extends TestCase
         $this->assertArrayHasKey('fixest', $spec['packages']['default_packages']);
         // R starts with Framework's list, so what the person took out stays out
         $entries = $resolved['layers']['blueprint']['packages']['default_packages'];
-        $this->assertArrayHasKey('glue', $entries);
-        $this->assertNull($entries['glue']);
+        $this->assertArrayHasKey('readr', $entries);
+        $this->assertNull($entries['readr']);
 
         // Running again changes nothing
         $versions = $mine->versions()->count();
@@ -99,6 +99,31 @@ class DefaultsConversionTest extends TestCase
         $this->assertArrayNotHasKey('blueprints', $plain->fresh()->blueprint_defaults);
         $this->assertNotNull($plain->fresh()->blueprint_defaults['converted_at']);
         $this->assertSame(['r' => Blueprint::whereNull('user_id')->where('key', 'course')->value('id')], $course->fresh()->blueprint_defaults['blueprints']);
+    }
+
+    public function test_r_defaults_exclude_optional_packages_but_explicit_sets_can_add_them(): void
+    {
+        $user = User::factory()->create();
+        $blueprint = ProjectDefaults::blueprint($user, 'r');
+        $preview = DefaultsPreview::forBlueprint($user, $blueprint, 'r', 'quarto');
+        $names = array_column($preview['packages'], 'name');
+        $this->assertContains('dplyr', $names);
+        foreach (['glue', 'here', 'lme4'] as $name) {
+            $this->assertNotContains($name, $names);
+            $this->assertNotContains($name, array_column(ProjectDefaults::for($user)['packages']['r'], 'name'));
+        }
+
+        $resolved = (new Resolver($user))->resolve(['name' => 'Survey', 'language' => 'r']);
+        // Simulate an older R client's defaults beneath the Cloud envelope.
+        $oldDefaults = ['layer' => ['packages' => ['default_packages' => array_fill_keys(['glue', 'here', 'lme4'], ['source' => 'cran'])]]];
+        $spec = DefaultsPreview::merge([$oldDefaults, ...$resolved['envelope']['layers']]);
+        $this->assertEmpty(array_intersect(['glue', 'here', 'lme4'], array_keys($spec['packages']['default_packages'])));
+
+        $resolved = (new Resolver($user))->resolve(['name' => 'Survey', 'language' => 'r', 'package_sets' => ['framework/tidyverse-extended', 'framework/regression-r']]);
+        $spec = DefaultsPreview::merge([$oldDefaults, ...$resolved['envelope']['layers']]);
+        $this->assertArrayHasKey('glue', $spec['packages']['default_packages']);
+        $this->assertArrayHasKey('lme4', $spec['packages']['default_packages']);
+        $this->assertArrayNotHasKey('here', $spec['packages']['default_packages']);
     }
 
     public function test_an_unknown_email_fails(): void

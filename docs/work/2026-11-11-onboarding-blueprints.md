@@ -46,3 +46,9 @@ The author form now shows one empty affiliation row automatically. Entirely empt
 ## Dark secondary buttons
 
 Secondary ghost buttons now use a slate-900 background, sky-200 text, and a slate-800 hover background in dark mode. This gives Remove, Add affiliation, Back, and Skip setup a visible surface. Light mode keeps its existing appearance. The frontend build passed. Browser checks confirmed the rendered background and text colors for all four controls, and light, dark, and mobile screenshots were inspected without page errors or horizontal overflow.
+
+## Default R packages
+
+Removed glue, here, and lme4 from the default R list. New R envelopes remove older client defaults beneath explicit selections, so package sets can still add them. Existing saved projects retain their envelopes.
+
+Validation: DefaultsConversionTest, WelcomeTest, BlueprintBuilderTest, and ProjectEndToEndMatrixTest passed (29 tests, 1,038 assertions).

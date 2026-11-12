@@ -484,9 +484,8 @@ class ProjectDefaults
     public const PACKAGE_LANGUAGES = ['r', 'python'];
 
     /**
-     * Package lists for an account that never made its own: the R package's
-     * defaults (inst/settings/global-settings-default.yml), with the rest of
-     * the core tidyverse and lme4. Python starts empty, as framework-py does.
+     * Package lists for an account that never made its own. R starts with
+     * the core tidyverse. Python starts empty, as framework-py does.
      */
     public const DEFAULT_PACKAGES = [
         'r' => [
@@ -499,9 +498,6 @@ class ProjectDefaults
             ['name' => 'tibble', 'source' => 'cran', 'auto_attach' => true],
             ['name' => 'forcats', 'source' => 'cran', 'auto_attach' => true],
             ['name' => 'lubridate', 'source' => 'cran', 'auto_attach' => false],
-            ['name' => 'glue', 'source' => 'cran', 'auto_attach' => false],
-            ['name' => 'here', 'source' => 'cran', 'auto_attach' => false],
-            ['name' => 'lme4', 'source' => 'cran', 'auto_attach' => false],
         ],
         'python' => [],
     ];
