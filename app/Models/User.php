@@ -66,6 +66,16 @@ class User extends Authenticatable implements HasPasskeys, MustVerifyEmail
     /**
      * Publishing is available to every account. Hosted uploads share an account storage budget.
      */
+    /**
+     * Laravel restores a session from the remember cookie only when the
+     * password is a string, so an account that signs in with GitHub, a link,
+     * or a passkey uses an empty one. An empty hash never matches a password.
+     */
+    public function getAuthPassword(): string
+    {
+        return $this->password ?? '';
+    }
+
     public function canPublish(): bool
     {
         return true;
