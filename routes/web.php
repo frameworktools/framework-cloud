@@ -183,6 +183,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('projects/create', [ProjectsController::class, 'create'])->name('projects.create');
     Route::post('projects', [ProjectsController::class, 'store']);
     Route::post('projects/preview', [ProjectsController::class, 'preview'])->name('projects.preview');
+    Route::get('projects/{slug}/edit', [ProjectsController::class, 'edit'])->where('slug', '[A-Za-z0-9_-]+')->name('projects.edit');
+    Route::put('projects/{project}', [ProjectsController::class, 'update'])->whereNumber('project');
     Route::get('projects/{slug}', [ProjectsController::class, 'show'])->where('slug', '[A-Za-z0-9_-]+')->name('projects.show');
     Route::get('projects/{slug}/{section}', [ProjectsController::class, 'show'])->where('slug', '[A-Za-z0-9_-]+')
         ->whereIn('section', array_slice(ProjectsController::SECTIONS, 1))->name('projects.section');

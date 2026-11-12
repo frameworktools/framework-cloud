@@ -515,9 +515,23 @@ class Resolver
         unset($attributes['slug']);
 
         return $this->user->projects()->create([
-            'name' => $name,
             'slug' => $slug,
             'description' => $description,
+        ] + self::setupAttributes($name, $resolved) + $attributes);
+    }
+
+    /**
+     * A project's setup from resolved choices: its language, structure,
+     * blueprint pin or exact pieces, and the envelope its computers receive.
+     * Creating and editing a project both store it this way.
+     *
+     * @param  array<string, mixed>  $resolved  from resolve()
+     * @return array<string, mixed>
+     */
+    public static function setupAttributes(string $name, array $resolved): array
+    {
+        return [
+            'name' => $name,
             'language' => $resolved['language'],
             'project_type' => $resolved['structure']->layer['type'] ?? 'bare',
             'blueprint_version_id' => $resolved['blueprint']?->id,
@@ -528,7 +542,7 @@ class Resolver
                 'piece_version_ids' => array_map(fn (FacetVersion $v) => $v->id, $resolved['pieces']),
                 'layer' => $resolved['layer'],
             ],
-        ] + $attributes);
+        ];
     }
 
     /**

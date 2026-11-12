@@ -157,6 +157,10 @@ const artifactMenu = (doc) => [
                 </p>
             </UiCallout>
 
+<UiCallout v-if="page.props.flash.status === 'project-updated'" variant="success" heading="Project saved">
+                <p class="text-sm">New tokens, setup commands, and downloads use the saved setup. Folders already set up keep their files.<template v-if="github?.repo"> {{ github.repo }} keeps its current files.</template></p>
+            </UiCallout>
+
             <UiCallout v-if="githubError && section === 'github'" variant="danger" heading="GitHub">{{ githubError }}</UiCallout>
 
             <UiCallout v-if="page.props.flash.project_created && section === 'computers'" variant="success"><span class="font-medium text-slate-900 dark:text-slate-100">Project created</span></UiCallout>
@@ -178,6 +182,7 @@ const artifactMenu = (doc) => [
                         <h3 id="install-github" class="font-medium text-slate-900 dark:text-white">GitHub repository</h3>
                         <p v-if="!github?.repo" class="text-sm text-slate-600 dark:text-slate-400">Framework creates a repository on your GitHub account and sets the project up there. Clone it to work on it.</p>
                         <ProjectGitHub :project="project" :setup="githubSetup" collapsed @open="githubOpen = true" />
+                        <p v-if="github?.repo" class="text-xs text-slate-500 dark:text-slate-400">The repository keeps its own files. Setup changes made here do not change it.</p>
                     </section>
                     <section v-if="downloads" class="flex min-w-0 flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900" aria-labelledby="install-zip">
                         <h3 id="install-zip" class="font-medium text-slate-900 dark:text-white">ZIP download</h3>
@@ -189,7 +194,8 @@ const artifactMenu = (doc) => [
 
             <UiPanel v-if="section === 'overview'" title="Configuration">
                 <template #header>
-                    <Link :href="`/projects/${project.slug}/setup`" class="text-sm text-sky-700 hover:underline dark:text-sky-400">Project setup</Link>
+                    <UiButton :href="`/projects/${project.slug}/setup`" variant="subtle" size="sm">Project setup</UiButton>
+                    <UiButton :href="`/projects/${project.slug}/edit`" variant="ghost" size="sm">Edit project</UiButton>
                 </template>
                 <dl class="flex flex-col divide-y divide-slate-200 dark:divide-slate-700/70">
                     <div :class="rowClass">

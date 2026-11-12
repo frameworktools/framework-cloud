@@ -91,6 +91,7 @@ class Project extends Model
         return [
             'payload' => 'array',
             'composition' => 'array',
+            'choices' => 'array',
             'github_private' => 'boolean',
             'is_home' => 'boolean',
             // spec stays raw JSON text so empty maps stay {}

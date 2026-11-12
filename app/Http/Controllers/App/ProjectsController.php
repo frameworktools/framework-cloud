@@ -283,42 +283,9 @@ class ProjectsController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:100'],
-            'blueprint_id' => ['required', 'integer'],
-            'language' => ['nullable', Rule::in(Project::LANGUAGES)],
-            'workflow' => ['nullable', Rule::in(ProjectDefaults::WORKFLOW_KEYS)],
-            'description' => ['nullable', 'string', 'max:500'],
-            'customized' => ['boolean'],
-            'structure' => ['required_if_accepted:customized', 'nullable', 'string', 'max:200'],
-            'notebook_format' => ['nullable', Rule::in(['quarto', 'rmarkdown', 'jupyter'])],
-            'extra_yaml' => ['nullable', 'string', 'max:20000'],
-            'settings.hooks' => ['nullable', 'array'],
-            'settings.hooks.*' => [Rule::in(ProjectDefaults::HOOKS)],
+            ...self::projectRules(),
             // Also save these choices as a personal blueprint, in the blueprint builder's format
             'new_blueprint' => ['nullable', 'array'],
-            ...self::settingRules(),
-            'tools' => ['nullable', 'array'],
-            'tools.*' => ['boolean'],
-            'package_sets' => ['nullable', 'array'],
-            'package_sets.*' => ['string', 'max:200'],
-            'package_overrides' => ['nullable', 'array'],
-            'package_overrides.*' => ['boolean'],
-            'package_auto_attach' => ['nullable', 'array'],
-            'package_auto_attach.*' => ['boolean'],
-            'skill_sets' => ['nullable', 'array'],
-            'skill_sets.*' => ['string', 'max:200'],
-            'excluded_skills' => ['nullable', 'array'],
-            'excluded_skills.*' => ['string', 'max:200'],
-            'skills' => ['nullable', 'array'],
-            'skills.*' => ['string', 'max:200'],
-            'settings' => ['nullable', 'array'],
-            'settings.sensitive' => ['boolean'],
-            'settings.git' => ['boolean'],
-            // On or off, or the project's own agents: {enabled, assistants: {claude: bool, ...}}
-            'settings.ai' => ['nullable'],
-            'settings.ai.enabled' => ['sometimes', 'boolean'],
-            'settings.ai.assistants' => ['sometimes', 'array'],
-            'settings.ai.assistants.*' => ['boolean'],
             // download: a zip of the built project; local: a token for setting it up on a computer
             'destination' => ['nullable', Rule::in(['local', 'download', 'github'])],
             'github' => ['nullable', 'array'],
@@ -359,6 +326,7 @@ class ProjectsController extends Controller
 
         $project = $resolver->createProject($validated['name'], $resolved, $validated['description'] ?? null, [
             'scaffold_status' => $github ? 'pending' : null,
+            'choices' => self::storedChoices($validated),
         ]);
 
         if ($github) {
@@ -379,6 +347,126 @@ class ProjectsController extends Controller
             'status' => 'project-token',
             'project_created' => true,
         ]);
+    }
+
+    /**
+     * The New project form's fields for a project: its name and description,
+     * the blueprint and language, and the choices it changed.
+     *
+     * @return array<string, list<mixed>>
+     */
+    private static function projectRules(): array
+    {
+        return [
+            'name' => ['required', 'string', 'max:100'],
+            'blueprint_id' => ['required', 'integer'],
+            'language' => ['nullable', Rule::in(Project::LANGUAGES)],
+            'workflow' => ['nullable', Rule::in(ProjectDefaults::WORKFLOW_KEYS)],
+            'description' => ['nullable', 'string', 'max:500'],
+            'customized' => ['boolean'],
+            'structure' => ['required_if_accepted:customized', 'nullable', 'string', 'max:200'],
+            'notebook_format' => ['nullable', Rule::in(['quarto', 'rmarkdown', 'jupyter'])],
+            'extra_yaml' => ['nullable', 'string', 'max:20000'],
+            'settings.hooks' => ['nullable', 'array'],
+            'settings.hooks.*' => [Rule::in(ProjectDefaults::HOOKS)],
+            ...self::settingRules(),
+            'tools' => ['nullable', 'array'],
+            'tools.*' => ['boolean'],
+            'package_sets' => ['nullable', 'array'],
+            'package_sets.*' => ['string', 'max:200'],
+            'package_overrides' => ['nullable', 'array'],
+            'package_overrides.*' => ['boolean'],
+            'package_auto_attach' => ['nullable', 'array'],
+            'package_auto_attach.*' => ['boolean'],
+            'skill_sets' => ['nullable', 'array'],
+            'skill_sets.*' => ['string', 'max:200'],
+            'excluded_skills' => ['nullable', 'array'],
+            'excluded_skills.*' => ['string', 'max:200'],
+            'skills' => ['nullable', 'array'],
+            'skills.*' => ['string', 'max:200'],
+            'settings' => ['nullable', 'array'],
+            'settings.sensitive' => ['boolean'],
+            'settings.git' => ['boolean'],
+            // On or off, or the project's own agents: {enabled, assistants: {claude: bool, ...}}
+            'settings.ai' => ['nullable'],
+            'settings.ai.enabled' => ['sometimes', 'boolean'],
+            'settings.ai.assistants' => ['sometimes', 'array'],
+            'settings.ai.assistants.*' => ['boolean'],
+        ];
+    }
+
+    /** The choices to keep on the project, so its edit page opens on them. */
+    private static function storedChoices(array $validated): array
+    {
+        return ['customized' => (bool) ($validated['customized'] ?? false)] + Arr::only($validated, [
+            'workflow', 'notebook_format', 'structure', 'tools', 'package_sets', 'package_overrides', 'package_auto_attach',
+            'skill_sets', 'skills', 'excluded_skills', 'settings', 'extra_yaml', 'scaffold', 'quarto', 'ide', 'publish_destination',
+        ]);
+    }
+
+    /**
+     * GET /projects/{slug}/edit: the New project form, opened on the
+     * project's name, blueprint, language, and choices.
+     */
+    public function edit(Request $request, string $slug): Response
+    {
+        $project = $request->user()->projects()->listed()->where('slug', $slug)->with('blueprintVersion')->firstOrFail();
+        $create = $this->create($request);
+        $blueprintId = $project->blueprintVersion?->blueprint_id;
+
+        return $create->with([
+            'editing' => [
+                'id' => $project->id,
+                'slug' => $project->slug,
+                'name' => $project->name,
+                'description' => $project->description,
+                'language' => $project->language ?? 'r',
+                'blueprint_id' => $blueprintId,
+                'choices' => $project->choices,
+                // Changed pieces from before choices were kept: the form can't show them
+                'unknown_choices' => (bool) $project->composition && ! $project->choices,
+                'github_repo' => $project->github_repo,
+            ],
+            'selected' => $blueprintId,
+            'stage' => in_array($request->query('stage'), self::STAGES, true) ? $request->query('stage') : 'project',
+        ]);
+    }
+
+    /**
+     * PUT /projects/{id}: a new name and description, and, with
+     * update_setup, the setup resolved again from the form's choices. Tokens,
+     * setup commands, and downloads use the new setup from then on. A GitHub
+     * repository keeps its files.
+     */
+    public function update(Request $request, int $project): RedirectResponse
+    {
+        $project = $request->user()->projects()->listed()->findOrFail($project);
+        $validated = $request->validate([...self::projectRules(), 'update_setup' => ['boolean']]);
+
+        if (! ($validated['update_setup'] ?? false)) {
+            $envelope = $project->resolved ? json_decode($project->resolved, true) : null;
+            $project->update([
+                'name' => $validated['name'],
+                'description' => $validated['description'] ?? null,
+                // The name names files such as the .Rproj
+                'resolved' => $envelope ? json_encode(['name' => $validated['name']] + $envelope, JSON_UNESCAPED_SLASHES) : null,
+            ]);
+
+            return to_route('projects.show', $project->slug)->with('status', 'project-updated');
+        }
+
+        $blueprint = Blueprint::with('owner')->find($validated['blueprint_id']);
+        if (! $blueprint?->isVisibleTo($request->user()) || ! $blueprint->latestVersion) {
+            return back()->withErrors(['blueprint_id' => 'Choose a blueprint.']);
+        }
+
+        $resolved = (new Resolver($request->user()))->resolve(self::choicesFrom($validated, $blueprint));
+        $project->update(Resolver::setupAttributes($validated['name'], $resolved) + [
+            'description' => $validated['description'] ?? null,
+            'choices' => self::storedChoices($validated),
+        ]);
+
+        return to_route('projects.show', $project->slug)->with('status', 'project-updated');
     }
 
     /**

@@ -18,7 +18,7 @@ import UiRadioCards from '@/Components/UiRadioCards.vue';
 import ChoicesEditor, { errorSection, PAGE_SECTIONS, SECTIONS } from '@/Components/ChoicesEditor.vue';
 import ProjectTreeView from '@/Components/ProjectTreeView.vue';
 import UiModal from '@/Components/UiModal.vue';
-import { agentNames, agentSummary, fromChoices, NAMED } from '@/agents.js';
+import { agentNames, agentSummary, fromChoices, NAMED, toChoices } from '@/agents.js';
 import { editorOptions, editorsOf } from '@/project-settings.js';
 import { fitsLanguage, group, groups, languageOptions, typeFits } from '@/library.js';
 
@@ -26,7 +26,10 @@ const props = defineProps({
     blueprints: Array, catalog: Object, defaults: Object, selected: Number, start: Object,
     stage: String, tab: String, github: Object, downloads: Boolean, githubUnavailable: Object,
     ggplotThemes: Array, quartoChoices: Object,
+    // An existing project to edit: its id, slug, name, description, language, blueprint_id, and stored choices
+    editing: { type: Object, default: null },
 });
+const editing = props.editing;
 
 const page = usePage();
 const githubReady = computed(() => props.github.enabled && props.github.login && props.github.owners?.length);
@@ -48,13 +51,15 @@ const defaultFor = (language) => [byHandle(props.defaults?.blueprints?.[language
     .find((b) => fits(b, language));
 const languages = computed(() => languageOptions.filter((o) => props.blueprints.some((b) => fits(b, o.value))));
 const linked = props.blueprints.find((b) => b.id === props.selected);
-const initialLanguage = [props.start?.language, linked && blueprintLanguages(linked).length === 1 ? blueprintLanguages(linked)[0] : null, props.defaults?.language, 'r', ...allLanguages]
+const initialLanguage = [editing?.language, props.start?.language, linked && blueprintLanguages(linked).length === 1 ? blueprintLanguages(linked)[0] : null, props.defaults?.language, 'r', ...allLanguages]
     .find((l) => l && props.blueprints.some((b) => fits(b, l)));
 const initialBlueprint = fits(linked, initialLanguage) ? linked : defaultFor(initialLanguage);
+// Changes the project kept from its blueprint, sent again when it is saved
+const startCustomized = ref(!!editing?.choices?.customized);
 
 const form = useForm({
-    name: '',
-    description: '',
+    name: editing?.name ?? '',
+    description: editing?.description ?? '',
     blueprint_id: initialBlueprint?.id,
     language: initialLanguage,
     workflow: '',
@@ -136,6 +141,40 @@ const fill = (b) => {
     filled.value = choiceKey();
 };
 fill(blueprint.value);
+
+// Editing: the project's own choices over its blueprint's, as it last saved them
+const fillStored = (c) => {
+    const language = form.language;
+    if (c.workflow) form.workflow = language === 'stata' ? 'scripts' : c.workflow;
+    if ('notebook_format' in c) form.notebook_format = c.notebook_format ?? defaultFormat(form.workflow, language, false);
+    if (!c.customized) return;
+    if (c.structure) form.structure = c.structure;
+    for (const [key, on] of Object.entries(c.tools ?? {})) form.tools[key] = !!on;
+    for (const key of ['package_sets', 'skill_sets', 'skills', 'excluded_skills']) form[key] = [...(c[key] ?? [])];
+    form.package_overrides = { ...(c.package_overrides ?? {}) };
+    form.package_auto_attach = { ...(c.package_auto_attach ?? {}) };
+    const ai = c.settings?.ai;
+    if (ai && typeof ai === 'object') {
+        form.agents = toChoices(ai.enabled !== false, Object.keys(ai.assistants ?? {}).filter((a) => ai.assistants[a]), false);
+    } else if (ai === false) {
+        form.agents = ['none'];
+    }
+    form.settings = { git: c.settings?.git ?? true, hooks: [...(c.settings?.hooks ?? [])], ai: !form.agents.includes('none') };
+    if (c.scaffold) form.scaffold = { ...c.scaffold };
+    if (c.quarto) form.quarto = { html: { ...(c.quarto.html ?? {}) }, revealjs: { ...(c.quarto.revealjs ?? {}) } };
+    if (c.ide) form.ide = c.ide;
+    form.publish_destination = c.publish_destination ?? '';
+    form.extra_yaml = c.extra_yaml ?? '';
+};
+if (editing?.choices) {
+    fillStored(editing.choices);
+    baseline.value = JSON.parse(JSON.stringify(snapshot()));
+    filled.value = choiceKey();
+}
+// Whether saving changes the setup, or only the name and description
+const setupKey = () => JSON.stringify([form.blueprint_id, form.language, choiceKey()]);
+const initialSetup = setupKey();
+const setupChanged = computed(() => !!editing && setupKey() !== initialSetup);
 watch(() => form.agents, (agents) => { form.settings.ai = !agents.includes('none'); });
 // Changes made to the blueprint's choices, which another blueprint or language would replace
 const edited = computed(() => filled.value !== null && choiceKey() !== filled.value);
@@ -144,6 +183,7 @@ const edited = computed(() => filled.value !== null && choiceKey() !== filled.va
 const pending = ref(null);
 const confirming = computed({ get: () => pending.value !== null, set: (open) => { if (!open) pending.value = null; } });
 const apply = ({ language, id }) => {
+    startCustomized.value = false;
     form.language = language;
     form.blueprint_id = id;
     fill(props.blueprints.find((b) => b.id === id));
@@ -227,7 +267,7 @@ const choicePayload = (data) => ({
     language: data.language,
     workflow: data.workflow || undefined,
     name: data.name || undefined,
-    ...(edited.value || contextSkills.value ? {
+    ...(edited.value || contextSkills.value || startCustomized.value ? {
         customized: true,
         structure: data.structure,
         notebook_format: data.notebook_format || undefined,
@@ -307,7 +347,7 @@ const destinations = computed(() => {
 
     return githubReady.value ? [local, ...github, ...download] : [local, ...download, ...github];
 });
-const submitLabel = computed(() => ({ download: 'Create and download', github: 'Create on GitHub' })[form.destination] ?? 'Create project');
+const submitLabel = computed(() => (editing ? 'Save changes' : ({ download: 'Create and download', github: 'Create on GitHub' })[form.destination] ?? 'Create project'));
 const destinationName = computed(() => destinations.value.find((d) => d.key === form.destination)?.title ?? '');
 const githubError = computed(() => page.props.errors.github ?? form.errors['github.enabled']);
 
@@ -369,7 +409,7 @@ const next = () => {
         const at = tabs.value.findIndex((t) => t.key === tab.value);
         return at < tabs.value.length - 1 ? go('project', tabs.value[at + 1].key) : go('review');
     }
-    return create();
+    return editing ? save() : create();
 };
 const back = () => {
     if (stage.value === 'review') return go('project', tabs.value.at(-1).key);
@@ -400,6 +440,21 @@ const create = () => form
         ...(data.save_blueprint ? { new_blueprint: newBlueprint(data) } : {}),
     }))
     .post('/projects', {
+        preserveScroll: true,
+        preserveState: true,
+        onError: (errors) => {
+            const [to, toTab] = errorPlace(Object.keys(errors)[0] ?? '');
+            if (to !== stage.value || (toTab ?? null) !== (to === 'project' ? tab.value : null)) go(to, toTab);
+        },
+    });
+const save = () => form
+    .transform((data) => ({
+        name: data.name,
+        description: data.description,
+        ...choicePayload(data),
+        update_setup: setupChanged.value,
+    }))
+    .put(`/projects/${editing.id}`, {
         preserveScroll: true,
         preserveState: true,
         onError: (errors) => {
@@ -463,20 +518,32 @@ const settingChanges = computed(() => {
 // Nothing changed leaves nothing new to save
 watch(() => settingChanges.value.length, (count) => { if (!count) form.save_blueprint = false; });
 const blueprintError = computed(() => Object.entries(form.errors).find(([key]) => key.startsWith('new_blueprint.'))?.[1]);
-const submitDisabled = computed(() => form.processing || (stage.value === 'review' && onGitHub.value && (!githubReady.value || (sensitive.value && !form.github.private))));
+const submitDisabled = computed(() => form.processing || (stage.value === 'review' && !editing && onGitHub.value && (!githubReady.value || (sensitive.value && !form.github.private))));
 </script>
 
 <template>
-    <Head title="New project" />
+    <Head :title="editing ? `Edit ${editing.name}` : 'New project'" />
 
-    <SectionLayout heading="New project" :back="{ label: 'Back to all projects', href: '/projects' }" :items="navigation" :dirty="edited" wide>
-        <PageHeader title="New project">
+    <SectionLayout
+        :heading="editing ? editing.name : 'New project'"
+        :back="editing ? { label: 'Back to the project', href: `/projects/${editing.slug}` } : { label: 'Back to all projects', href: '/projects' }"
+        :items="navigation" :dirty="editing ? setupChanged : edited" wide
+    >
+        <PageHeader :title="editing ? 'Edit project' : 'New project'">
             <template #description>
-                <template v-if="stage === 'start'">Choose a language and the blueprint to start from. The blueprint fills in the project's choices.</template>
+                <template v-if="editing && stage === 'start'">Change the project's language or blueprint. A new blueprint replaces the project's choices.</template>
+                <template v-else-if="editing && stage === 'project'">Change the project's name and choices.</template>
+                <template v-else-if="editing">Check the project, then save it. New tokens, setup commands, and downloads use the saved setup.</template>
+                <template v-else-if="stage === 'start'">Choose a language and the blueprint to start from. The blueprint fills in the project's choices.</template>
                 <template v-else-if="stage === 'project'">Name the project and adjust its choices. Changes apply to this project only.</template>
                 <template v-else>Check the project, then choose where to set it up.</template>
             </template>
         </PageHeader>
+
+        <UiCallout v-if="editing?.unknown_choices" variant="warning" heading="Earlier changes" class="mt-6 max-w-3xl">
+            This project changed its blueprint's choices before Framework kept them, so the form starts from the blueprint.
+            Saving keeps those changes unless you change the setup here.
+        </UiCallout>
 
         <form id="create-form" class="mt-8 flex flex-col gap-8" @submit.prevent="next">
             <!-- Start: a language, then a blueprint for it -->
@@ -534,7 +601,7 @@ const submitDisabled = computed(() => form.processing || (stage.value === 'revie
                 <p class="max-w-2xl text-sm text-slate-600 dark:text-slate-400">
                     From <UiLink :href="`/blueprints/${blueprint?.id}`">{{ blueprint?.name }}</UiLink>
                     for {{ languages.find((l) => l.value === form.language)?.label }}.
-                    <template v-if="edited">Changed for this project.</template>
+                    <template v-if="edited || startCustomized">Changed for this project.</template>
                     <UiButton variant="subtle" size="xs" class="ml-1" @click="go('start')">Change</UiButton>
                 </p>
 
@@ -634,7 +701,7 @@ const submitDisabled = computed(() => form.processing || (stage.value === 'revie
                             <span class="ml-1 font-mono text-xs text-slate-500 dark:text-slate-400">{{ blueprint?.handle }} v{{ blueprint?.version }}</span>
                         </dd>
                         <dt class="text-slate-500 dark:text-slate-400">Language</dt><dd>{{ languages.find((l) => l.value === form.language)?.label ?? form.language }}</dd>
-                        <dt class="text-slate-500 dark:text-slate-400">Choices</dt><dd>{{ edited ? 'Changed for this project' : 'As the blueprint has them' }}</dd>
+                        <dt class="text-slate-500 dark:text-slate-400">Choices</dt><dd>{{ edited || startCustomized ? 'Changed for this project' : 'As the blueprint has them' }}</dd>
                         <template v-if="!shown"><dt class="sr-only">Status</dt><dd class="col-span-2 text-slate-500 dark:text-slate-400">Resolving…</dd></template>
                         <template v-else-if="shown.problem"><dt class="sr-only">Problem</dt><dd class="col-span-2 text-amber-800 dark:text-amber-300">{{ shown.problem }}</dd></template>
                         <template v-else>
@@ -661,7 +728,21 @@ const submitDisabled = computed(() => form.processing || (stage.value === 'revie
 
                 <UiSeparator />
 
-                <UiPanel id="where" title="Destination" flush class="max-w-3xl scroll-mt-6">
+                <UiPanel v-if="editing" id="saving" title="Setup update" flush class="max-w-3xl scroll-mt-6">
+                    <p v-if="!setupChanged" class="text-sm text-slate-600 dark:text-slate-400">The setup is unchanged. Saving updates the name and description.</p>
+                    <template v-else>
+                        <dl v-if="settingChanges.length" class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-6 gap-y-2 text-sm">
+                            <template v-for="change in settingChanges" :key="change.label">
+                                <dt class="text-slate-500 dark:text-slate-400">{{ change.label }}</dt>
+                                <dd class="break-words">{{ change.detail }}</dd>
+                            </template>
+                        </dl>
+                        <p class="text-sm text-slate-600 dark:text-slate-400">New tokens, setup commands, and downloads use the saved setup. Folders already set up keep their files.</p>
+                        <p v-if="editing.github_repo" class="text-sm text-slate-600 dark:text-slate-400">{{ editing.github_repo }} keeps its current files. Framework does not change the repository.</p>
+                    </template>
+                </UiPanel>
+
+                <UiPanel v-if="!editing" id="where" title="Destination" flush class="max-w-3xl scroll-mt-6">
                     <div class="grid gap-3" :class="destinations.length === 3 ? 'lg:grid-cols-3' : 'sm:grid-cols-2'">
                         <button
                             v-for="d in destinations" :key="d.key"
@@ -711,9 +792,9 @@ const submitDisabled = computed(() => form.processing || (stage.value === 'revie
                     </div>
                 </UiPanel>
 
-                <UiSeparator />
+                <UiSeparator v-if="!editing" />
 
-                <UiPanel id="save-blueprint" title="Blueprint copy" flush class="max-w-2xl scroll-mt-6">
+                <UiPanel v-if="!editing" id="save-blueprint" title="Blueprint copy" flush class="max-w-2xl scroll-mt-6">
                     <div v-if="settingChanges.length" class="flex flex-col gap-2">
                         <h3 class="text-sm font-medium text-slate-800 dark:text-slate-200">Changes from {{ blueprint?.name }}</h3>
                         <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-6 gap-y-2 text-sm">
@@ -737,7 +818,7 @@ const submitDisabled = computed(() => form.processing || (stage.value === 'revie
 
             <div class="flex items-center justify-between gap-3 border-t border-slate-800/10 pt-6 dark:border-white/15">
                 <UiButton v-if="stage !== 'start'" variant="ghost" @click="back">Back</UiButton>
-                <UiButton v-else href="/projects" variant="ghost">Cancel</UiButton>
+                <UiButton v-else :href="editing ? `/projects/${editing.slug}` : '/projects'" variant="ghost">Cancel</UiButton>
                 <UiButton type="submit" class="max-lg:hidden" :disabled="submitDisabled">{{ nextLabel }}</UiButton>
             </div>
         </form>
