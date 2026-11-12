@@ -280,7 +280,7 @@ const choiceClass = (on) => on
                     </SettingRow>
                 </SettingGroup>
                 <SettingGroup title="File portability">
-                    <SettingRow more="Includes images, styles, and scripts in one HTML file. Increases file size. When disabled, the supporting files folder must accompany the HTML." v-slot="{ id, labelledby, describedby }" label="Embed resources" description="Each HTML file opens on its own.">
+                    <SettingRow more="Includes images, styles, and scripts in one HTML file. Increases file size. When disabled, the supporting files folder must accompany the HTML." v-slot="{ id, labelledby, describedby }" label="Embed resources" description="Each HTML file opens on its own. Recommended.">
                         <UiToggle :id="id" v-model="form.quarto.html.embed_resources" :aria-labelledby="labelledby" :aria-describedby="describedby" />
                     </SettingRow>
                 </SettingGroup>
