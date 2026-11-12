@@ -13,8 +13,8 @@
             ['heroicon-o-archive-box', 'Download a ZIP', 'Download the project files and unpack them on your computer.', null, 'zip'],
         ]],
         'local' => ['Start from your computer', [
-            ['heroicon-o-code-bracket', 'Use a package', 'Create a project from R or Python. Signed in, it uses your default blueprint from Framework Cloud. Name another with type.', 'framework::new_project("penguin-study")', null],
-            ['heroicon-o-command-line', 'Use the command line', 'Create a project from your terminal with the Framework CLI'.($stata ? ', including Stata projects' : '').'. Signed in, it uses your default blueprint. Name another with --blueprint.', 'fw new penguin-study', null],
+            ['heroicon-o-code-bracket', 'Use a package', 'Create a project from R or Python. Signed in, it uses your default blueprint from Framework Cloud.', 'framework::new_project("penguin-study")', null],
+            ['heroicon-o-command-line', 'Use the command line', 'Create a project from your terminal with the Framework CLI'.($stata ? ', including Stata projects' : '').'. Signed in, it uses your default blueprint.', 'fw new penguin-study', null],
         ]],
     ];
 @endphp
