@@ -62,13 +62,19 @@ for (pkg in c("framework", "httr2")) {
 packageVersion("framework")`;
 const signInInfo = 'Opens a browser to approve this computer. It stays signed in. Scripts and jobs that can\'t wait for a browser use a token.';
 const highlighting = { r: 'r', python: 'python', stata: 'stata', fw: 'bash' };
-const quickCommands = computed(() => client.value === 'r' ? [
-    { label: 'Install latest (recommended)', cmd: githubInstall, info: 'Installs the newest Framework from GitHub. Adds remotes and httr2 first if they are missing. Restart R after updating.' },
-    { label: 'Install from CRAN', cmd: cranInstall, info: 'Installs the CRAN release, with httr2 for signing in. CRAN can lag behind GitHub.' },
-    { label: 'Sign in', cmd: signIn.value.cmd, info: signInInfo, tokens: true },
-    { label: 'New notebook', cmd: 'framework::make_notebook("analysis")', info: 'Run inside a project. Fills in your defaults: the project\'s notebook format, notebooks folder, and author. The notebook starts with scaffold(), which loads the project\'s packages and functions.' },
-    { label: 'New script', cmd: 'framework::make_script("clean-data")', info: 'Run inside a project. Fills in your defaults: the project\'s scripts folder and author. The script starts with scaffold(), which loads the project\'s packages and functions.' },
-] : [{ label: 'Sign in', cmd: signIn.value.cmd, info: signInInfo, tokens: true }]);
+const installs = [
+    { key: 'latest', label: 'Latest (recommended)', cmd: githubInstall, info: 'Installs the newest Framework from GitHub. Adds remotes and httr2 first if they are missing. Restart R after updating.' },
+    { key: 'cran', label: 'CRAN', cmd: cranInstall, info: 'Installs the CRAN release, with httr2 for signing in. CRAN can lag behind GitHub.' },
+];
+const installFrom = ref('latest');
+const install = computed(() => installs.find((i) => i.key === installFrom.value));
+const createCommands = [
+    { label: 'New notebook', cmd: 'framework::make_notebook("analysis")', info: 'Fills in your defaults: the project\'s notebook format, notebooks folder, and author. The notebook starts with scaffold(), which loads the project\'s packages and functions.' },
+    { label: 'New script', cmd: 'framework::make_script("clean-data")', info: 'Fills in your defaults: the project\'s scripts folder and author. The script starts with scaffold(), which loads the project\'s packages and functions.' },
+];
+const pill = (on) => (on
+    ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200 dark:bg-slate-800 dark:text-white dark:ring-slate-700'
+    : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white');
 const date = value => new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 
 const shareTarget = ref(null);
@@ -100,16 +106,37 @@ const menuFor = (item) => [
                 <h2 id="quick-commands-heading" class="text-base font-medium text-slate-900 dark:text-white">Quick commands</h2>
                 <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Run these on your computer.</p>
                 <UiTabs v-model="client" :tabs="clients" label="Client" class="mt-3 max-w-2xl" />
-                <div class="mt-4 grid gap-x-6 gap-y-5 lg:grid-cols-2">
-                    <div v-for="command in quickCommands" :key="`${client}-${command.label}`" class="min-w-0">
+                <div class="mt-4 flex flex-col gap-6">
+                    <div v-if="client === 'r'" class="min-w-0">
+                        <div class="mb-2 flex flex-wrap items-center gap-3">
+                            <h3 class="text-sm font-medium text-slate-800 dark:text-slate-200">Install</h3>
+                            <div role="radiogroup" aria-label="Install from" class="inline-flex gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-900">
+                                <button v-for="option in installs" :key="option.key" type="button" role="radio" :aria-checked="installFrom === option.key"
+                                    class="rounded-md px-2.5 py-0.5 text-xs font-medium transition" :class="pill(installFrom === option.key)" @click="installFrom = option.key">{{ option.label }}</button>
+                            </div>
+                            <InfoPopover :label="`installing from ${install.label}`">{{ install.info }}</InfoPopover>
+                        </div>
+                        <CopyBlock :value="install.cmd" :label="`install from ${install.label}`" language="r" />
+                    </div>
+                    <div class="min-w-0">
                         <h3 class="mb-2 flex items-center gap-1.5 text-sm font-medium text-slate-800 dark:text-slate-200">
-                            {{ command.label }}
-                            <InfoPopover :label="command.label">
-                                {{ command.info }}
-                                <template v-if="command.tokens"> <UiLink href="/tokens">Create a token</UiLink>.</template>
-                            </InfoPopover>
+                            Sign in
+                            <InfoPopover label="signing in">{{ signInInfo }} <UiLink href="/tokens">Create a token</UiLink>.</InfoPopover>
                         </h3>
-                        <CopyBlock :value="command.cmd" :label="command.label.toLowerCase()" :language="highlighting[client]" />
+                        <CopyBlock :value="signIn.cmd" label="sign in" :language="highlighting[client]" />
+                    </div>
+                    <div v-if="client === 'r'" class="min-w-0">
+                        <h3 class="text-sm font-medium text-slate-800 dark:text-slate-200">Create resources in a project</h3>
+                        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Run these inside a project. They fill in your defaults.</p>
+                        <div class="mt-3 grid gap-x-6 gap-y-5 lg:grid-cols-2">
+                            <div v-for="command in createCommands" :key="command.label" class="min-w-0">
+                                <h4 class="mb-2 flex items-center gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-300">
+                                    {{ command.label }}
+                                    <InfoPopover :label="command.label">{{ command.info }}</InfoPopover>
+                                </h4>
+                                <CopyBlock :value="command.cmd" :label="command.label.toLowerCase()" language="r" />
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
