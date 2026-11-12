@@ -28,7 +28,7 @@ watch(() => page.url, () => { menuOpen.value = false; });
 
             <SidebarNav class="mt-6 flex-1" />
 
-            <div class="mb-3 flex items-center justify-between px-2">
+            <div class="mt-3 mb-3 flex items-center justify-between px-2">
                 <span class="text-xs text-slate-500 dark:text-slate-400">Theme</span>
                 <ThemeToggle />
             </div>
