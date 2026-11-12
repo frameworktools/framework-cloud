@@ -195,6 +195,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('share/{type}/{id}', ShareController::class)->whereIn('type', ['artifact', 'report', 'collection', 'blueprint', 'project'])->whereNumber('id');
     Route::post('share/{type}/{id}', [ShareController::class, 'open'])->whereIn('type', ['artifact', 'report', 'collection', 'blueprint', 'project'])->whereNumber('id')->middleware('throttle:30,1');
     Route::put('projects/{project}/public-download', [ProjectsController::class, 'setPublicDownload'])->whereNumber('project');
+    Route::post('projects/{project}/scaffold', [ProjectsController::class, 'scaffold'])->whereNumber('project')->middleware('throttle:10,1');
     Route::post('projects/{project}/scaffold/refresh', [ProjectsController::class, 'refreshScaffold']);
     Route::post('projects/{project}/scaffold/retry', [ProjectsController::class, 'retryScaffold']);
     Route::post('projects/{project}/pages', [ProjectsController::class, 'enablePages'])->middleware('throttle:10,1');

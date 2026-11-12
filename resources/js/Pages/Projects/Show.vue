@@ -19,14 +19,15 @@ import { ArrowTopRightOnSquareIcon, LockClosedIcon } from '@heroicons/vue/20/sol
 import { GlobeAltIcon, LinkIcon } from '@heroicons/vue/24/outline';
 import ArtifactUpload from '@/Components/ArtifactUpload.vue';
 import CodeChip from '@/Components/CodeChip.vue';
-import CopyBlock from '@/Components/CopyBlock.vue';
+import ProjectGitHub from '@/Components/ProjectGitHub.vue';
+import ProjectToken from '@/Components/ProjectToken.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import { ChevronRightIcon } from '@heroicons/vue/24/outline';
-import { clientUrl, usePythonServerArg, useServerArg, useServerFlag, useSetupCommand } from '@/cloud.js';
+import { usePythonServerArg, useServerArg, useServerFlag } from '@/cloud.js';
 import { languageNames } from '@/library.js';
 import { statusLabel, statusVariant, typeName } from '@/projects.js';
 
-const props = defineProps({ project: Object, section: String, setup: Object, downloads: Boolean, canPublish: Boolean });
+const props = defineProps({ project: Object, section: String, setup: Object, githubSetup: Object, downloads: Boolean, canPublish: Boolean });
 const publishing = ref(false);
 
 const sectionTitles = { overview: 'Overview', setup: 'Project setup', github: 'GitHub & Pages', published: 'Artifacts', computers: 'Computers & tokens' };
@@ -39,34 +40,11 @@ const hookNames = { data_security: 'Check for secrets', check_sensitive_dirs: 'W
 
 const page = usePage();
 
-// The address setup commands name (FW_CLIENT_URL or APP_URL), checked from
-// this browser: a computer that can't reach it can't set the project up
-const serverUrl = computed(() => clientUrl(page));
-const viewingOrigin = typeof window !== 'undefined' ? window.location.origin : '';
-const viewingElsewhere = computed(() => viewingOrigin !== serverUrl.value);
-const reachable = ref(null);
-const checkServer = async () => {
-    reachable.value = 'checking';
-    try {
-        await fetch(`${serverUrl.value}/up`, { mode: 'no-cors', cache: 'no-store' });
-        reachable.value = 'yes';
-    } catch {
-        reachable.value = 'no';
-    }
-};
 const serverArg = useServerArg();
 const pythonServerArg = usePythonServerArg();
 const serverFlag = useServerFlag();
-const setupCommand = useSetupCommand();
-// The language the flashed token was issued for, and where its command runs
+// The language the flashed token was issued for
 const tokenLanguage = computed(() => page.props.flash.token_language ?? props.project.language);
-const setupWhere = computed(() => ({
-    r: 'Paste it into the R console.',
-    python: 'Paste it into Python.',
-    stata: 'Run it in a terminal. Paste the token when asked.',
-}[tokenLanguage.value] ?? 'Paste it into the R console.'));
-// R, Python, and fw (Stata) all ask before creating the folder
-const setupFolder = computed(() => 'It asks where to create the project folder. Press Enter for the current folder.');
 const pullToken = computed(() => (page.props.flash.status === 'project-token' ? page.props.flash.token : null));
 const githubError = computed(() => page.props.errors.github);
 
@@ -87,8 +65,14 @@ onMounted(() => { if (justCreated && props.downloads) download(); });
 onBeforeUnmount(() => clearTimeout(preparingTimer));
 
 const github = computed(() => props.project.github);
-const refresh = () => router.post(`/projects/${props.project.id}/scaffold/refresh`, {}, { preserveScroll: true });
-const retry = () => router.post(`/projects/${props.project.id}/scaffold/retry`, {}, { preserveScroll: true });
+const githubOpen = ref(false);
+
+// Overview's installation boxes, as New project's destinations describe them
+const localText = computed(() => ({
+    stata: 'In a terminal, run fw login, then fw new with the project name. Framework sets up Git.',
+    python: 'Get a project token and pass it to framework.new(key=...) in Python, or to fw new in a terminal.',
+}[props.project.language] ?? 'Get a project token and pass it to framework::setup() in R, or to fw new in a terminal.'));
+const installCards = computed(() => 2 + (props.downloads ? 1 : 0));
 
 const pagesBusy = ref(false);
 const enablePages = async () => {
@@ -156,7 +140,7 @@ const artifactMenu = (doc) => [
                     </template>
                     <template v-else>{{ project.name }}</template>
                 </template>
-                <template v-if="downloads && (section === 'overview' || section === 'computers')" #actions>
+                <template v-if="downloads && section === 'computers'" #actions>
                     <UiButton variant="outline" size="sm" :disabled="preparing" @click="download">{{ preparing ? 'Preparing…' : 'Download zip' }}</UiButton>
                 </template>
             </PageHeader>
@@ -165,11 +149,10 @@ const artifactMenu = (doc) => [
             <UiCallout v-else-if="justCreated && section === 'overview'" variant="success" heading="Project download">
                 <p class="text-sm">
                     Unzip <span class="font-mono text-xs">{{ project.slug }}.zip</span> and open the folder in RStudio, Positron, VS Code, or Stata.
-                    If the download doesn't start, use Download zip.
+                    If the download doesn't start, use Download zip below.
                 </p>
                 <p class="text-sm">
-                    To connect the folder to Framework Cloud later, get a project token under
-                    <Link :href="`/projects/${project.slug}/computers`" class="underline">Computers &amp; tokens</Link>
+                    To connect the folder to Framework Cloud later, get a project token under Local setup
                     and paste it into the folder's <span class="font-mono text-xs">.env</span> file, where a line marks the spot.
                 </p>
             </UiCallout>
@@ -177,31 +160,32 @@ const artifactMenu = (doc) => [
             <UiCallout v-if="githubError && section === 'github'" variant="danger" heading="GitHub">{{ githubError }}</UiCallout>
 
             <UiCallout v-if="page.props.flash.project_created && section === 'computers'" variant="success"><span class="font-medium text-slate-900 dark:text-slate-100">Project created</span></UiCallout>
-            <section v-if="pullToken && section === 'computers'" aria-labelledby="project-token-heading" class="flex max-w-2xl min-w-0 flex-col gap-6">
-                <div>
-                    <h2 id="project-token-heading" class="text-base font-medium text-slate-900 dark:text-white">Project token</h2>
-                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Copy it now. It is shown only once.</p>
-                    <CopyBlock :value="pullToken" label="project token" kind="value" class="mt-3" />
-                </div>
-                <div>
-                    <h2 class="text-base font-medium text-slate-900 dark:text-white">Setup command</h2>
-                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ setupWhere }}</p>
-                    <CopyBlock :value="setupCommand(tokenLanguage, pullToken)" label="setup command" class="mt-3" />
-                    <p v-if="setupFolder" class="mt-2 text-sm text-slate-500 dark:text-slate-400">{{ setupFolder }}</p>
-                </div>
-                <details class="text-sm text-slate-500 dark:text-slate-400">
-                    <summary class="cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200">Connection details</summary>
-                    <div class="mt-3 flex flex-col gap-2">
-                        <p v-if="tokenLanguage === 'python'">Python connects to the server you signed in to with <code class="font-mono text-xs">cloud_login()</code>. That should be {{ serverUrl }}.</p>
-                        <p v-else>The command connects to {{ serverUrl }}.</p>
-                        <p v-if="viewingElsewhere">This page is open at {{ viewingOrigin }}. Check that your computer can reach the server.</p>
-                        <p v-if="tokenLanguage === 'stata'">After <code class="font-mono text-xs">fw login</code>, <code class="font-mono text-xs">fw new --from {{ project.slug }}{{ serverFlag }}</code> needs no token.</p>
-                        <UiButton variant="ghost" size="sm" class="self-start" :disabled="reachable === 'checking'" @click="checkServer">{{ reachable === 'checking' ? 'Checking…' : 'Check browser connection' }}</UiButton>
-                        <p v-if="reachable === 'yes'">This browser reached {{ serverUrl }}.</p>
-                        <p v-else-if="reachable === 'no'" class="text-red-700 dark:text-red-300">This browser could not reach {{ serverUrl }}. Ask whoever runs this server to set FW_CLIENT_URL to an address your computer can reach.</p>
-                    </div>
-                </details>
+            <section v-if="pullToken && section === 'computers'" aria-label="Project token" class="max-w-2xl">
+                <ProjectToken :project="project" :token="pullToken" :language="tokenLanguage" />
             </section>
+
+            <UiPanel v-if="section === 'overview'" flush title="Installation" description="Set the project up on a computer, on GitHub, or from a zip. Each uses the project's current setup.">
+                <div class="grid gap-3" :class="installCards === 3 ? 'lg:grid-cols-3' : 'sm:grid-cols-2'">
+                    <section class="flex min-w-0 flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900" :class="pullToken ? (installCards === 3 ? 'lg:col-span-3' : 'sm:col-span-2') : ''" aria-labelledby="install-local">
+                        <h3 id="install-local" class="font-medium text-slate-900 dark:text-white">Local setup</h3>
+                        <ProjectToken v-if="pullToken" :project="project" :token="pullToken" :language="tokenLanguage" />
+                        <template v-else>
+                            <p class="flex-1 text-sm text-slate-600 dark:text-slate-400">{{ localText }}</p>
+                            <div><UiButton variant="ghost" size="sm" @click="issueToken">Get token</UiButton></div>
+                        </template>
+                    </section>
+                    <section class="flex min-w-0 flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900" :class="githubOpen ? (installCards === 3 ? 'lg:col-span-3' : 'sm:col-span-2') : ''" aria-labelledby="install-github">
+                        <h3 id="install-github" class="font-medium text-slate-900 dark:text-white">GitHub repository</h3>
+                        <p v-if="!github?.repo" class="text-sm text-slate-600 dark:text-slate-400">Framework creates a repository on your GitHub account and sets the project up there. Clone it to work on it.</p>
+                        <ProjectGitHub :project="project" :setup="githubSetup" collapsed @open="githubOpen = true" />
+                    </section>
+                    <section v-if="downloads" class="flex min-w-0 flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900" aria-labelledby="install-zip">
+                        <h3 id="install-zip" class="font-medium text-slate-900 dark:text-white">ZIP download</h3>
+                        <p class="flex-1 text-sm text-slate-600 dark:text-slate-400">Framework builds the project and your browser downloads it. Unzip it and open the folder. You need no Git and no Framework packages.</p>
+                        <div><UiButton variant="ghost" size="sm" :disabled="preparing" @click="download">{{ preparing ? 'Preparing…' : 'Download zip' }}</UiButton></div>
+                    </section>
+                </div>
+            </UiPanel>
 
             <UiPanel v-if="section === 'overview'" title="Configuration">
                 <template #header>
@@ -332,21 +316,9 @@ const artifactMenu = (doc) => [
                 </dl>
             </UiPanel>
 
-            <UiPanel v-if="section === 'github'" title="GitHub & Pages">
-                <template v-if="github?.repo || github?.status">
-                    <div class="flex flex-col gap-3 text-sm">
-                        <div class="flex flex-wrap items-center gap-2">
-                            <UiBadge :variant="statusVariant[github.status]">{{ statusLabel[github.status] }}</UiBadge>
-                            <a v-if="github.url" :href="github.url" class="font-mono text-xs text-slate-700 hover:underline dark:text-slate-300">{{ github.repo }}</a>
-                            <span v-if="github.private" class="text-xs text-slate-500 dark:text-slate-400">private</span>
-                            <a v-if="github.run_url" :href="github.run_url" class="text-xs text-slate-500 dark:text-slate-400 hover:underline">Run log</a>
-                            <UiButton v-if="github.status === 'running'" variant="ghost" size="sm" @click="refresh">Check status</UiButton>
-                            <UiButton v-if="github.status === 'failed' && github.url" variant="outline" size="sm" @click="retry">Retry</UiButton>
-                        </div>
-                        <p v-if="github.error" class="text-red-600 dark:text-red-400">{{ github.error }}</p>
-                        <div v-if="github.status === 'done'"><CodeChip>git clone {{ github.url }}.git</CodeChip></div>
-                    </div>
-
+            <UiPanel v-if="section === 'github'" title="GitHub & Pages" :description="github?.repo ? null : 'Framework creates a repository on your GitHub account and sets the project up there with its current setup.'">
+                <ProjectGitHub :project="project" :setup="githubSetup" />
+                <template v-if="github?.repo">
                     <div v-if="github.status === 'done'" class="flex flex-col gap-3 border-t border-slate-200 pt-5 dark:border-slate-700">
                         <h3 class="text-sm font-semibold text-slate-900 dark:text-white">GitHub Pages</h3>
                         <div v-if="github.pages_url" class="flex flex-wrap items-center gap-2 text-sm">
@@ -363,7 +335,6 @@ const artifactMenu = (doc) => [
                         </div>
                     </div>
                 </template>
-                <p v-else class="text-sm text-slate-600 dark:text-slate-400">This project was set up for a computer, so it has no repository here.</p>
             </UiPanel>
 
             <UiSection v-if="section === 'published'" title="Published artifacts" description="Figures, tables, models, data, and documents published from this project or linked to it. Each has a reader page and a version history.">

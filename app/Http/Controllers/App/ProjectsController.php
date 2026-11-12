@@ -114,6 +114,8 @@ class ProjectsController extends Controller
             'downloads' => ProjectZip::enabled(),
             'canPublish' => $request->user()->canPublish(),
             'setup' => fn () => $section === 'setup' ? self::setup($project) : null,
+            // Creating the repository from the project page, when it has none yet
+            'githubSetup' => fn () => in_array($section, ['overview', 'github'], true) && ! $project->github_repo ? self::githubSetup($request->user(), $project) : null,
             'project' => self::summary($project) + [
                 'share' => Share::for($project),
                 'tokens' => $project->tokens->sortByDesc('id')->values()
@@ -180,6 +182,28 @@ class ProjectsController extends Controller
         ];
     }
 
+    /**
+     * What the Create on GitHub form needs: whether this server and the
+     * person can scaffold, where the app is installed, and whether the
+     * project's repository must be private.
+     *
+     * @return array<string, mixed>
+     */
+    private static function githubSetup(User $user, Project $project): array
+    {
+        $account = $user->githubAccount;
+        $enabled = Scaffolder::enabled();
+
+        return [
+            'enabled' => $enabled,
+            'unavailable' => $enabled ? Scaffolder::unavailableFor($project->language ?? 'r') : null,
+            'login' => $account?->login,
+            'owners' => $account && $enabled ? Installations::for($account) : [],
+            'install_url' => Installations::installUrl(),
+            'sensitive' => ProjectLayers::isSensitive(ProjectLayers::for($project)['layers'] ?? []),
+        ];
+    }
+
     /** What the project list and the sidebar show for one project. */
     private static function summary(Project $p): array
     {
@@ -195,7 +219,8 @@ class ProjectsController extends Controller
                 'run_url' => $p->scaffold_run_url,
                 'error' => $p->scaffold_error,
                 'pages_url' => $p->pages_url,
-            ] : ($p->scaffold_status === 'failed' ? ['status' => 'failed', 'error' => $p->scaffold_error] : null),
+                // Before the job creates the repository, and when creating it failed
+            ] : (in_array($p->scaffold_status, ['pending', 'running', 'failed'], true) ? ['status' => $p->scaffold_status, 'error' => $p->scaffold_error] : null),
             'blueprint' => $p->blueprintVersion ? [
                 'id' => $p->blueprintVersion->blueprint_id,
                 'handle' => $p->blueprintVersion->blueprint->handle,
@@ -598,12 +623,44 @@ class ProjectsController extends Controller
     }
 
     /**
-     * Check where the repository goes before the project exists. The owner
-     * must be an account where the app is installed, and a sensitive
-     * project's repository is always private.
-     *
-     * @return array{org: ?string, name: string, private: bool}
+     * POST /projects/{id}/scaffold: create a repository for a project that
+     * has none and scaffold it there, checked as the New project form checks
+     * it. The owner must be an account where the app is installed, and a
+     * sensitive project's repository is always private.
      */
+    public function scaffold(Request $request, int $project): RedirectResponse
+    {
+        $project = $request->user()->projects()->listed()->findOrFail($project);
+
+        if ($project->github_repo) {
+            return back()->withErrors(['github' => "This project already has a repository: {$project->github_repo}."]);
+        }
+        if (in_array($project->scaffold_status, ['pending', 'running'], true)) {
+            return back()->withErrors(['github' => 'The repository is still being created.']);
+        }
+
+        $github = $request->validate([
+            'github' => ['required', 'array'],
+            'github.owner' => ['required', 'string', 'max:100'],
+            'github.name' => ['required', 'string', 'max:100', 'regex:/^[A-Za-z0-9._-]+$/', 'not_in:.,..'],
+            'github.private' => ['boolean'],
+        ], [
+            'github.name.regex' => 'Use letters, numbers, hyphens, underscores, and periods.',
+        ])['github'];
+
+        if ($reason = Scaffolder::unavailableFor($project->language ?? 'r')) {
+            return back()->withErrors(['github.enabled' => $reason]);
+        }
+
+        $target = RepositoryTarget::for($request->user(), $github, ProjectLayers::isSensitive(ProjectLayers::for($project)['layers'] ?? []));
+
+        $project->update(['scaffold_status' => 'pending', 'scaffold_error' => null, 'scaffold_run_url' => null]);
+        ScaffoldOnGitHub::dispatch($project, $target['org'], $target['name'], $target['private']);
+
+        return back();
+    }
+
+    /** Issue a project token, shown once on the page that asked for it. */
     public function issueToken(Request $request, int $project): RedirectResponse
     {
         $project = $request->user()->projects()->findOrFail($project);
