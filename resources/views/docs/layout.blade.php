@@ -70,7 +70,7 @@
         @include('docs.partials.search')
     @endif
 
-    <x-code-copy />
+    <x-code-blocks />
 
     <script>
         // One button for light and dark, as on the old site; the theme script remembers the choice

@@ -5,7 +5,7 @@
 
 @source '../views/docs';
 @source '../views/components/theme-script.blade.php';
-@source '../views/components/code-copy.blade.php';
+@source '../views/components/code-blocks.blade.php';
 
 /* Dark mode follows the .dark class that the theme script sets on <html> */
 @custom-variant dark (&:where(.dark, .dark *));

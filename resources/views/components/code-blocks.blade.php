@@ -1,9 +1,11 @@
-{{-- A Copy button on every code block in main. The button sits outside the
+{{-- Every code block in main gets a Copy button. The button sits outside the
      pre, so it stays put while the code scrolls sideways. Blocks that bring
-     their own button sit inside [data-has-copy] and are skipped. --}}
+     their own button sit inside [data-has-copy] and are skipped.
+     Folder trees get a tighter line height, so their box-drawing lines join. --}}
 <script>
     (() => {
         document.querySelectorAll('main pre').forEach((pre) => {
+            if (/[│├└]/.test(pre.textContent)) pre.style.lineHeight = '1.2';
             if (pre.closest('[data-has-copy]')) return;
 
             const wrap = document.createElement('div');

@@ -58,7 +58,7 @@
         </main>
     </div>
 
-<x-code-copy />
+<x-code-blocks />
 
 <script>
     // R or Python: every tab group on the page follows the last choice, and
