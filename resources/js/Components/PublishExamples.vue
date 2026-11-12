@@ -45,10 +45,12 @@ const highlighting = { r: 'r', python: 'python', stata: 'stata', fw: 'bash' };
 
 <template>
     <CollapsibleSection v-if="examples.length" :title="heading" :remember="remember">
+        <p class="mb-4 text-sm text-slate-500 dark:text-slate-400">Examples. Replace the file paths, object names, and slugs with your own.</p>
         <div class="grid gap-x-6 gap-y-5 lg:grid-cols-2">
             <div v-for="example in examples" :key="`${language}-${example.label}`" class="min-w-0">
                 <h3 class="mb-2 flex items-center gap-1.5 text-sm font-medium text-slate-800 dark:text-slate-200">
                     {{ example.label }}
+                    <span class="text-xs font-normal text-slate-500 dark:text-slate-400">Example</span>
                     <InfoPopover :label="example.label">{{ example.info }}</InfoPopover>
                 </h3>
                 <CopyBlock :value="example.cmd" :label="`publish ${example.label.toLowerCase()}`" :language="highlighting[language]" />
