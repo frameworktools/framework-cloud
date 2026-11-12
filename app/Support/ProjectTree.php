@@ -95,11 +95,15 @@ class ProjectTree
                 $add($path, 'dir', later: true);
             }
 
-            $add('settings.yml', 'file');
-            if (($spec['settings_layout'] ?? (in_array($type, ['project', 'project_sensitive'], true) ? 'split' : 'flat')) === 'split') {
+            // The connections the project defines beyond Framework's own database, in the file that holds them
+            $described = Connections::described((array) ($spec['connections'] ?? []));
+            $connectionNote = ($named = [...$described['databases'], ...$described['storage_buckets']]) ? 'connections: '.implode(', ', $named) : null;
+            $split = ($spec['settings_layout'] ?? (in_array($type, ['project', 'project_sensitive'], true) ? 'split' : 'flat')) === 'split';
+            $add('settings.yml', 'file', $split ? null : $connectionNote);
+            if ($split) {
                 foreach (self::SPLIT_SETTINGS as $name) {
                     if (! ($language === 'python' && $name === 'packages')) {
-                        $add("settings/{$name}.yml", 'file');
+                        $add("settings/{$name}.yml", 'file', $name === 'connections' ? $connectionNote : null);
                     }
                 }
             }
@@ -114,7 +118,8 @@ class ProjectTree
             }
 
             if ($core) {
-                $add('.env', 'file', 'secrets, kept out of git');
+                $variables = array_keys(Connections::variables((array) ($spec['connections'] ?? [])));
+                $add('.env', 'file', 'secrets, kept out of git'.($variables ? '. Fill in '.implode(', ', $variables) : ''));
                 $add($language === 'r' ? 'scaffold.R' : 'scaffold.py', 'file');
                 if ($language === 'python') {
                     $add('framework.db', 'file');

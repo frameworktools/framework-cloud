@@ -245,7 +245,7 @@ class BlueprintsController extends Controller
     }
 
     /** The editor's tabs, as ?tab= names them. */
-    private const TABS = ['name', 'language', 'notebooks', 'quarto', 'jupyter', 'structure', 'environment', 'packages', 'scaffold', 'editor', 'ai', 'skills', 'git', 'publishing'];
+    private const TABS = ['name', 'language', 'notebooks', 'quarto', 'jupyter', 'structure', 'environment', 'packages', 'scaffold', 'editor', 'ai', 'skills', 'git', 'connections', 'publishing'];
 
     /** @param array<string, mixed>|null $start choices to begin from: the version being edited, or ?from= */
     private function builder(Request $request, ?Blueprint $blueprint, ?array $start): Response

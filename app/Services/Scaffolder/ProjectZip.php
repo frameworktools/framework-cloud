@@ -152,6 +152,10 @@ class ProjectZip
         $page = "{$url}/projects/{$project->slug}/computers";
 
         $env = $zip->getFromName("{$folder}/.env");
+        // The variables to fill in on each computer, without values, for git and for bootstrap()
+        if ($env !== false && $zip->locateName("{$folder}/.env.example") === false) {
+            $zip->addFromString("{$folder}/.env.example", self::example($env));
+        }
         $env = $env === false ? '' : rtrim($env, "\n")."\n\n";
         $env .= self::connectionLines($url, $page);
         $zip->addFromString("{$folder}/.env", $env);
@@ -164,6 +168,15 @@ class ProjectZip
         }
 
         $zip->close();
+    }
+
+    /** A .env as a template: each variable's name, with no value. */
+    public static function example(string $env): string
+    {
+        preg_match_all('/^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=/m', $env, $matches);
+
+        return "# Copy to .env and fill in the values on each computer. Never commit .env.\n"
+            .implode('', array_map(fn (string $name) => "{$name}=\n", array_values(array_unique($matches[1]))));
     }
 
     public static function connectionLines(string $url, string $page): string

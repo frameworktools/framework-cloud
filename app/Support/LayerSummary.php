@@ -104,10 +104,24 @@ class LayerSummary
             $add('Publishing', [$layer['publish']['default']]);
         }
 
-        foreach (['scaffold', 'quarto', 'connections', 'env', 'data_hooks'] as $key) {
+        foreach (['scaffold', 'quarto', 'data_hooks'] as $key) {
             if (! empty($layer[$key])) {
                 $add(ucfirst(str_replace('_', ' ', $key)), array_keys($layer[$key]));
             }
+        }
+
+        // Connections, the settings file they land in, and the .env variables they read
+        $connections = is_array($layer['connections'] ?? null) ? $layer['connections'] : [];
+        $described = Connections::described($connections);
+        $add('Databases', $described['databases']);
+        $add('Storage buckets', $described['storage_buckets']);
+        $add('Default database', [is_string($connections['default_database'] ?? null) ? $connections['default_database'] : '']);
+        $add('Default storage bucket', [is_string($connections['default_storage_bucket'] ?? null) ? $connections['default_storage_bucket'] : '']);
+        if ($described['databases'] || $described['storage_buckets']) {
+            $add('Connections file', [($layer['settings_layout'] ?? null) === 'flat' ? 'settings.yml' : 'settings/connections.yml (settings.yml in flat settings)']);
+        }
+        if (! empty($layer['env'])) {
+            $add('.env variables', array_keys($layer['env']));
         }
 
         return $sections;

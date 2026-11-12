@@ -15,6 +15,7 @@ export const SECTIONS = [
     { key: 'ai', label: 'AI Agents' },
     { key: 'skills', label: 'AI Skills' },
     { key: 'git', label: 'Git' },
+    { key: 'connections', label: 'Connections' },
     { key: 'publishing', label: 'Publishing' },
 ];
 
@@ -34,6 +35,7 @@ export const errorSection = (field) => ({
     skills: 'skills', skill_sets: 'skills', excluded_skills: 'skills',
     settings: 'git',
     publish_destination: 'publishing',
+    connections: 'connections',
 })[String(field ?? '').split('.')[0]] ?? null;
 </script>
 
@@ -49,6 +51,7 @@ import UiPanel from '@/Components/UiPanel.vue';
 import UiSeparator from '@/Components/UiSeparator.vue';
 import UiSwitch from '@/Components/UiSwitch.vue';
 import LayerSummary from '@/Components/LayerSummary.vue';
+import ConnectionsEditor from '@/Components/ConnectionsEditor.vue';
 import UiInput from '@/Components/UiInput.vue';
 import UiSelect from '@/Components/UiSelect.vue';
 import UiToggle from '@/Components/UiToggle.vue';
@@ -71,8 +74,8 @@ const props = defineProps({
     flush: Boolean,
     section: { type: String, default: null },
     // Settings sections shown when no section is given: scaffold, quarto,
-    // jupyter, editor, and publishing. Each edits its own form field
-    // (scaffold, quarto, tools.jupyter, ide, publish_destination).
+    // jupyter, editor, connections, and publishing. Each edits its own form field
+    // (scaffold, quarto, tools.jupyter, ide, connections, publish_destination).
     extras: { type: Array, default: () => [] },
     // The choices the Scaffold and Quarto sections offer, from ProjectDefaults
     ggplotThemes: { type: Array, default: () => [] },
@@ -360,6 +363,11 @@ const choiceClass = (on) => on
         <p v-if="form.language === 'stata'" class="text-sm text-slate-500 dark:text-slate-400">Stata projects don't get editor files.</p>
         <UiCheckboxCards v-else v-model="editors" legend="Editor support" hide-legend :options="editorChoices" />
         <p v-if="form.errors.ide" class="text-xs text-red-600 dark:text-red-400">{{ form.errors.ide }}</p>
+    </UiPanel>
+
+    <UiSeparator v-if="flush && !section && extras.includes('connections')" />
+    <UiPanel v-if="extra('connections') && form.connections" :flush="flush" id="connections" title="Connections" class="scroll-mt-6" description="Databases and storage buckets the project's code opens by name.">
+        <ConnectionsEditor :form="form" />
     </UiPanel>
 
     <UiSeparator v-if="flush && !section && extras.includes('publishing')" />

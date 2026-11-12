@@ -21,6 +21,7 @@ import UiModal from '@/Components/UiModal.vue';
 import { agentNames, agentSummary, fromChoices, NAMED, toChoices } from '@/agents.js';
 import { editorOptions, editorsOf } from '@/project-settings.js';
 import { fitsLanguage, group, groups, languageOptions, typeFits } from '@/library.js';
+import { connectionLanguages, copyConnections, emptyConnections } from '@/connections.js';
 
 const props = defineProps({
     blueprints: Array, catalog: Object, defaults: Object, selected: Number, start: Object,
@@ -80,6 +81,7 @@ const form = useForm({
     quarto: { html: {}, revealjs: {} },
     ide: 'vscode',
     publish_destination: '',
+    connections: emptyConnections(),
     extra_yaml: '',
     // A destination passed in the link, when it's available here; otherwise local setup
     destination: ({ download: props.downloads, github: props.github.enabled, local: true })[props.start?.destination]
@@ -95,11 +97,11 @@ const stata = computed(() => form.language === 'stata');
 
 // Filling the choices from a blueprint, as the blueprint editor opens it, for the chosen language
 const defaultFormat = (workflow, language, rmarkdown) => (language === 'stata' || workflow === 'scripts' ? null : workflow === 'jupyter' ? 'jupyter' : rmarkdown && language === 'r' ? 'rmarkdown' : 'quarto');
-const choiceKey = () => JSON.stringify([form.workflow, form.notebook_format, form.agents, form.structure, form.tools, form.package_sets, form.package_overrides, form.package_auto_attach, form.skill_sets, form.skills, form.excluded_skills, form.settings.git, form.settings.hooks, form.scaffold, form.quarto, form.ide, form.publish_destination, form.extra_yaml]);
+const choiceKey = () => JSON.stringify([form.workflow, form.notebook_format, form.agents, form.structure, form.tools, form.package_sets, form.package_overrides, form.package_auto_attach, form.skill_sets, form.skills, form.excluded_skills, form.settings.git, form.settings.hooks, form.scaffold, form.quarto, form.ide, form.publish_destination, form.connections, form.extra_yaml]);
 const filled = ref(null);
 const baseline = ref({});
 const contextSkills = ref(false);
-const choiceFields = ['workflow', 'notebook_format', 'agents', 'structure', 'tools', 'package_sets', 'package_overrides', 'package_auto_attach', 'skill_sets', 'skills', 'excluded_skills', 'settings', 'scaffold', 'quarto', 'ide', 'publish_destination', 'extra_yaml'];
+const choiceFields = ['workflow', 'notebook_format', 'agents', 'structure', 'tools', 'package_sets', 'package_overrides', 'package_auto_attach', 'skill_sets', 'skills', 'excluded_skills', 'settings', 'scaffold', 'quarto', 'ide', 'publish_destination', 'connections', 'extra_yaml'];
 const snapshot = () => Object.fromEntries(choiceFields.map(key => [key, form[key]]));
 const fill = (b) => {
     const c = b?.choices ?? {};
@@ -133,6 +135,8 @@ const fill = (b) => {
     // RStudio's .Rproj is for R projects
     form.ide = language !== 'r' && ['rstudio', 'both'].includes(c.ide) ? 'vscode' : (c.ide ?? 'vscode');
     form.publish_destination = c.publish_destination ?? '';
+    // Stata reads no connections
+    form.connections = connectionLanguages.includes(language) ? copyConnections(c.connections) : emptyConnections();
     form.extra_yaml = c.extra_yaml ?? '';
     const named = JSON.stringify(form.skills);
     applyContextSkills(form, props.catalog, { reset: true });
@@ -167,6 +171,7 @@ const fillStored = (c) => {
     if (c.quarto) form.quarto = { html: { ...(c.quarto.html ?? {}) }, revealjs: { ...(c.quarto.revealjs ?? {}) } };
     if (c.ide) form.ide = c.ide;
     form.publish_destination = c.publish_destination ?? '';
+    if (c.connections) form.connections = copyConnections(c.connections);
     form.extra_yaml = c.extra_yaml ?? '';
 };
 if (editing?.choices) {
@@ -262,7 +267,7 @@ const toolChoices = (data) => (data.language === 'stata' ? {} : Object.fromEntri
 })));
 // Scaffold, Quarto, editor files, and publishing, for the languages that read them
 const settingChoices = (data) => ({
-    ...(data.language === 'stata' ? {} : { scaffold: data.scaffold, quarto: data.quarto, ide: data.ide }),
+    ...(data.language === 'stata' ? {} : { scaffold: data.scaffold, quarto: data.quarto, ide: data.ide, connections: data.connections }),
     publish_destination: data.publish_destination,
 });
 const choicePayload = (data) => ({
@@ -499,6 +504,14 @@ const settingChanges = computed(() => {
     });
     const nested = (a, b) => paths(a, b).join('; ');
     const swap = (a, b) => (a === b ? '' : `${a} → ${b}`);
+    // Connections added, removed, or changed, by name
+    const connectionDelta = (a, b) => {
+        const rows = (c) => Object.fromEntries([...(c?.databases ?? []), ...(c?.storage_buckets ?? [])].map((row) => [row.name, JSON.stringify(row)]));
+        const [x, y] = [rows(a), rows(b)];
+        const changed = Object.keys(y).filter((key) => key in x && x[key] !== y[key]).map((key) => `${key} changed`);
+        const defaults = ['default_database', 'default_storage_bucket'].filter((key) => (a?.[key] ?? '') !== (b?.[key] ?? '')).map((key) => `${key.replaceAll('_', ' ')}: ${b?.[key] || 'not set'}`);
+        return [delta(Object.keys(x), Object.keys(y)), ...changed, ...defaults].filter(Boolean).join(', ');
+    };
     return [
         ['Notebook format', swap(format(before), format(after))],
         ['Structure', swap(name('structures', before.structure), name('structures', after.structure))],
@@ -517,6 +530,7 @@ const settingChanges = computed(() => {
         ['Quarto', nested(before.quarto, after.quarto)],
         ['Editor', swap(editor(before.ide), editor(after.ide))],
         ['Publishing', swap(publishing(before.publish_destination), publishing(after.publish_destination))],
+        ['Connections', connectionDelta(before.connections, after.connections)],
         ['Extra settings', (before.extra_yaml ?? '').trim() === (after.extra_yaml ?? '').trim() ? '' : 'Changed'],
     ].filter(([, detail]) => detail).map(([label, detail]) => ({ label, detail }));
 });

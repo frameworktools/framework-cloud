@@ -382,8 +382,8 @@ class Resolver
             $layer['scaffold']['notebook_format'] = $format;
         }
 
-        // Scaffold, Quarto, and publishing settings, written as a blueprint writes them, and the editor files
-        $layer = BlueprintInput::withSettings($layer, ['language' => $this->language] + Arr::only($choices, ['scaffold', 'quarto', 'publish_destination']));
+        // Scaffold, Quarto, publishing, and connections, written as a blueprint writes them, and the editor files
+        $layer = BlueprintInput::withSettings($layer, ['language' => $this->language] + Arr::only($choices, ['scaffold', 'quarto', 'publish_destination', 'connections']));
         if (filled($choices['ide'] ?? null) && $this->language !== 'stata' && ($ide = BlueprintInput::ide($choices['ide']))) {
             $layer['scaffold']['ide'] = $ide;
         }

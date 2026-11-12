@@ -109,7 +109,7 @@ class WelcomeController extends Controller
             $start['default_workflow'] = [$language => $draft['builder']['workflow']];
             $start['notebook_format'] = $draft['builder']['notebook_format'] ?? ($draft['builder']['workflow'] === 'scripts' ? 'scripts' : $draft['builder']['workflow']);
         }
-        $tabs = ['name', 'notebooks', 'quarto', 'jupyter', 'structure', 'environment', 'packages', 'scaffold', 'editor', 'ai', 'skills', 'git', 'publishing', 'review'];
+        $tabs = ['name', 'notebooks', 'quarto', 'jupyter', 'structure', 'environment', 'packages', 'scaffold', 'editor', 'ai', 'skills', 'git', 'connections', 'publishing', 'review'];
 
         return Inertia::render('Blueprints/Builder', [
             'blueprint' => null, 'start' => $start, 'catalog' => Catalog::for($user),
@@ -179,8 +179,8 @@ class WelcomeController extends Controller
             }
             $request->merge(['visibility' => 'private', 'languages' => [$draft['language']]]);
             BlueprintInput::validated($request);
-            $draft['builder'] = $request->only(['name', 'description', 'visibility', 'language', 'workflow', 'notebook_format', 'agents', 'structure', 'tools', 'package_sets', 'package_overrides', 'package_auto_attach', 'skill_sets', 'skills', 'excluded_skills', 'settings', 'scaffold', 'quarto', 'ide', 'publish_destination', 'extra_yaml', 'notes']);
-            $section = $request->validate(['section' => ['required', Rule::in(['name', 'notebooks', 'quarto', 'jupyter', 'structure', 'environment', 'packages', 'scaffold', 'editor', 'ai', 'skills', 'git', 'publishing', 'review'])]])['section'];
+            $draft['builder'] = $request->only(['name', 'description', 'visibility', 'language', 'workflow', 'notebook_format', 'agents', 'structure', 'tools', 'package_sets', 'package_overrides', 'package_auto_attach', 'skill_sets', 'skills', 'excluded_skills', 'settings', 'scaffold', 'quarto', 'ide', 'publish_destination', 'connections', 'extra_yaml', 'notes']);
+            $section = $request->validate(['section' => ['required', Rule::in(['name', 'notebooks', 'quarto', 'jupyter', 'structure', 'environment', 'packages', 'scaffold', 'editor', 'ai', 'skills', 'git', 'connections', 'publishing', 'review'])]])['section'];
             $draft['section'] = $section;
             $draft['step'] = 4;
         }

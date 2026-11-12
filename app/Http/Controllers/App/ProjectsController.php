@@ -24,6 +24,7 @@ use App\Services\Scaffolder\ProjectZip;
 use App\Services\Scaffolder\ProjectZipFailed;
 use App\Support\BlueprintInput;
 use App\Support\Catalog;
+use App\Support\Connections;
 use App\Support\Layer;
 use App\Support\Library;
 use App\Support\ProjectDefaults;
@@ -408,7 +409,7 @@ class ProjectsController extends Controller
     {
         return ['customized' => (bool) ($validated['customized'] ?? false)] + Arr::only($validated, [
             'workflow', 'notebook_format', 'structure', 'tools', 'package_sets', 'package_overrides', 'package_auto_attach', 'package_definitions',
-            'skill_sets', 'skills', 'excluded_skills', 'settings', 'extra_yaml', 'scaffold', 'quarto', 'ide', 'publish_destination',
+            'skill_sets', 'skills', 'excluded_skills', 'settings', 'extra_yaml', 'scaffold', 'quarto', 'ide', 'publish_destination', 'connections',
         ]);
     }
 
@@ -536,7 +537,7 @@ class ProjectsController extends Controller
     }
 
     /**
-     * A blueprint version's scaffold, Quarto, editor, and publishing settings
+     * A blueprint version's scaffold, Quarto, editor, publishing, and connection settings
      * as a project from it gets them: the version's own values over
      * Framework's, as creating the project from it as it is would apply them.
      * Choices that move into these settings leave the extra settings YAML.
@@ -553,6 +554,7 @@ class ProjectsController extends Controller
             'quarto' => ProjectDefaults::quarto((array) ($layer['quarto'] ?? [])),
             'ide' => BlueprintInput::ide(ProjectDefaults::ide($version)) ?? ProjectDefaults::IDE,
             'publish_destination' => BlueprintInput::destination($layer) ?? '',
+            'connections' => Connections::split($layer)[0],
             'extra_yaml' => is_array($extra) ? Layer::toYaml(BlueprintInput::withoutSettings($extra)) : $extraYaml,
         ];
     }
@@ -577,6 +579,7 @@ class ProjectsController extends Controller
             'quarto.revealjs' => ['array'],
             'ide' => ['sometimes', 'nullable', Rule::in(BlueprintInput::IDE_CHOICES)],
             'publish_destination' => ['sometimes', 'nullable', Rule::in(['', ...BlueprintInput::DESTINATIONS])],
+            ...Connections::rules(),
         ];
         foreach (ProjectDefaults::QUARTO as $format => $values) {
             foreach ($values as $key => $default) {
@@ -605,7 +608,7 @@ class ProjectsController extends Controller
     {
         // Pushed packages are the project's own, over the blueprint or the pieces chosen
         return ($validated['customized'] ?? false)
-            ? ['from' => $blueprint->handle] + Arr::only($validated, ['name', 'language', 'workflow', 'notebook_format', 'structure', 'tools', 'package_sets', 'package_overrides', 'package_auto_attach', 'package_definitions', 'skill_sets', 'skills', 'excluded_skills', 'settings', 'extra_yaml', 'scaffold', 'quarto', 'ide', 'publish_destination'])
+            ? ['from' => $blueprint->handle] + Arr::only($validated, ['name', 'language', 'workflow', 'notebook_format', 'structure', 'tools', 'package_sets', 'package_overrides', 'package_auto_attach', 'package_definitions', 'skill_sets', 'skills', 'excluded_skills', 'settings', 'extra_yaml', 'scaffold', 'quarto', 'ide', 'publish_destination', 'connections'])
             : ['blueprint' => $blueprint->handle] + Arr::only($validated, ['name', 'language', 'workflow', 'package_definitions']);
     }
 

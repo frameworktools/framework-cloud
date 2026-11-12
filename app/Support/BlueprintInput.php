@@ -80,7 +80,7 @@ class BlueprintInput
         unset($data['settings']['sensitive']);
 
         $resolved = (new Resolver($request->user(), withDefaults: false))->resolve(Arr::only($data, [
-            'name', 'language', 'workflow', 'notebook_format', 'structure', 'tools', 'package_sets', 'package_overrides', 'package_auto_attach', 'skill_sets', 'skills', 'excluded_skills', 'settings', 'extra_yaml',
+            'name', 'language', 'workflow', 'notebook_format', 'structure', 'tools', 'package_sets', 'package_overrides', 'package_auto_attach', 'skill_sets', 'skills', 'excluded_skills', 'settings', 'extra_yaml', 'connections',
         ]));
 
         return [
@@ -156,6 +156,7 @@ class BlueprintInput
             'settings.hooks' => ['nullable', 'array'],
             'settings.hooks.*' => [Rule::in(ProjectDefaults::HOOKS)],
             'ide' => ['sometimes', 'nullable', Rule::in(self::IDE_CHOICES)],
+            ...Connections::rules(),
         ]);
 
         unset($data['settings']['sensitive']);
@@ -213,7 +214,7 @@ class BlueprintInput
 
     /**
      * Rules for the settings a blueprint holds beside its pieces: scaffold,
-     * Quarto, editor files, and the publishing destination. Each is optional,
+     * Quarto, editor files, the publishing destination, and connections. Each is optional,
      * so clients that don't send them change nothing.
      *
      * @return array<string, list<mixed>>
@@ -232,6 +233,7 @@ class BlueprintInput
             'quarto.revealjs' => ['array'],
             'ide' => ['sometimes', 'nullable', Rule::in(self::IDE_CHOICES)],
             'publish_destination' => ['sometimes', 'nullable', Rule::in(['', ...self::DESTINATIONS])],
+            ...Connections::rules(),
         ];
         foreach (ProjectDefaults::QUARTO as $format => $values) {
             foreach ($values as $key => $default) {
@@ -251,8 +253,9 @@ class BlueprintInput
     /**
      * The blueprint's own layer with the settings the editor sent: every
      * scaffold key the language reads (the packages fill a missing key with
-     * their own default), the HTML and RevealJS Quarto settings, and the
-     * publishing destination. Stata reads neither scaffold nor Quarto.
+     * their own default), the HTML and RevealJS Quarto settings, the
+     * publishing destination, and connections with the .env variables they
+     * read. Stata reads neither scaffold, Quarto, nor connections.
      *
      * @param  array<string, mixed>  $layer
      * @param  array<string, mixed>  $data  validated input
@@ -275,6 +278,12 @@ class BlueprintInput
         if (in_array($destination = $data['publish_destination'] ?? null, self::DESTINATIONS, true)) {
             $layer['publish']['default'] = $destination;
             $layer['publish']['destinations'][$destination] = ['driver' => $destination];
+        }
+        // Connections, and the .env variables they read
+        if (is_array($data['connections'] ?? null)) {
+            foreach (Connections::layer($data['connections'], $language) as $key => $value) {
+                $layer[$key] = array_replace_recursive(is_array($layer[$key] ?? null) ? $layer[$key] : [], $value);
+            }
         }
 
         return $layer;
@@ -300,6 +309,7 @@ class BlueprintInput
         if ($destination = self::destination($layer)) {
             unset($layer['publish']['default'], $layer['publish']['destinations'][$destination]);
         }
+        [, $layer] = Connections::split($layer);
         foreach (array_keys(ProjectDefaults::SCAFFOLD) as $key) {
             unset($layer['scaffold'][$key]);
         }
@@ -334,13 +344,14 @@ class BlueprintInput
             'quarto' => ProjectDefaults::quarto(array_replace_recursive($defaults['settings']['quarto'], (array) ($layer['quarto'] ?? []))),
             'ide' => self::ide($version?->ide) ?? self::ide($defaults['settings']['ide']) ?? ProjectDefaults::IDE,
             'publish_destination' => self::destination($layer) ?? (in_array($defaults['publish_destination'], self::DESTINATIONS, true) ? $defaults['publish_destination'] : ''),
+            'connections' => Connections::split($layer)[0],
         ];
         if ($choices === null) {
             return $settings;
         }
 
         [$extra] = Layer::fromYaml((string) ($choices['extra_yaml'] ?? ''));
-        if (is_array($extra) && array_intersect(['scaffold', 'quarto', 'publish'], array_keys($extra))) {
+        if (is_array($extra) && array_intersect(['scaffold', 'quarto', 'publish', 'connections', 'env'], array_keys($extra))) {
             $choices['extra_yaml'] = Layer::toYaml(self::withoutSettings($extra));
         }
 
