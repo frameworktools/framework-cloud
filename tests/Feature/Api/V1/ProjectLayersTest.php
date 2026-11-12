@@ -80,6 +80,18 @@ class ProjectLayersTest extends TestCase
         $this->withToken($token)->getJson('/api/v1/projects/pull')->assertHeaderMissing('Framework-Projects-Dir');
     }
 
+    public function test_only_a_token_made_in_the_last_day_gets_the_projects_folder(): void
+    {
+        $owner = User::factory()->create();
+        ProjectDefaults::setProjectsDir($owner, '~/code');
+        $project = $this->project($owner);
+        $token = $project->issuePullToken();
+        $project->tokens()->update(['created_at' => now()->subDays(2)]);
+
+        // An older token may be one a collaborator was given
+        $this->withToken($token)->getJson('/api/v1/projects/pull')->assertOk()->assertHeaderMissing('Framework-Projects-Dir');
+    }
+
     public function test_pull_refuses_a_user_token(): void
     {
         $user = User::factory()->create();

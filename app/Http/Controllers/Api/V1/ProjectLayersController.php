@@ -29,7 +29,9 @@ class ProjectLayersController extends Controller
      * GET /api/v1/projects/pull, with a project token. The owner's projects
      * folder rides in the Framework-Projects-Dir header, percent-encoded,
      * not the body: layers.v1 allows no extra keys, and the body is
-     * committed to the project as .framework/layers.json.
+     * committed to the project as .framework/layers.json. Only a token made
+     * in the last day gets it: the owner makes one to set the project up, and
+     * an older token may be one a collaborator was given.
      */
     public function pull(Request $request): JsonResponse
     {
@@ -39,7 +41,9 @@ class ProjectLayersController extends Controller
         abort_unless($project->tokenCan(Project::PULL_ABILITY), 403, 'Token lacks the project:pull ability.');
 
         $response = $this->envelope($project);
-        $dir = $project->user ? ProjectDefaults::projectsDir($project->user) : null;
+        $created = $project->currentAccessToken()?->created_at;
+        $fresh = $created !== null && $created->gt(now()->subDay());
+        $dir = $fresh && $project->user ? ProjectDefaults::projectsDir($project->user) : null;
 
         return $dir === null ? $response : $response->header(ProjectDefaults::PROJECTS_DIR_HEADER, ProjectDefaults::headerValue($dir));
     }
