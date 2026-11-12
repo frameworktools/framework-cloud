@@ -70,6 +70,33 @@ class ToolCatalog
                 'title' => 'Update a project',
                 'description' => 'Rename a project, change its description, set its status (active, triaged, completed, or inactive), or turn its public download link on or off. Its slug and links stay the same. Turn on a public download only when the user asks.',
             ],
+            'projects_setup_show' => [
+                'level' => self::READ, 'method' => 'GET', 'path' => '/projects/setup',
+                'query' => ['project' => ['type' => 'string', 'description' => 'The project slug, from projects_list.']],
+                'title' => 'Show a project\'s packages and skills',
+                'description' => 'The project\'s packages (name, source, version, auto_attach, repo) and skills, as its computers install them, with a revision. Pass the revision to projects_setup_packages_update.',
+            ],
+            'projects_setup_packages_update' => [
+                'level' => self::FULL, 'method' => 'POST', 'path' => '/projects/setup/packages',
+                'query' => ['project' => ['type' => 'string', 'description' => 'The project slug, from projects_list.']],
+                'body' => ['properties' => [
+                    'base_revision' => ['type' => 'string', 'description' => 'The revision from projects_setup_show.'],
+                    'packages' => ['type' => 'array', 'description' => 'The full desired package list.', 'items' => ['type' => 'object', 'properties' => [
+                        'name' => ['type' => 'string'],
+                        'source' => ['type' => 'string', 'enum' => ['cran', 'bioc', 'github', 'pypi'], 'description' => 'Defaults to cran in R projects and pypi in Python projects.'],
+                        'version' => ['type' => ['string', 'null']],
+                        'auto_attach' => ['type' => 'boolean', 'description' => 'R only: whether scaffold() attaches it.'],
+                        'repo' => ['type' => ['string', 'null'], 'description' => 'owner/name, for source github.'],
+                    ], 'required' => ['name']]],
+                    'remove' => ['type' => 'boolean', 'description' => 'Also remove packages missing from the list. Otherwise they are kept.'],
+                    'force' => ['type' => 'boolean', 'description' => 'Apply even if the setup changed since base_revision.'],
+                    'preview' => ['type' => 'boolean', 'description' => 'Report the changes without saving.'],
+                ], 'required' => ['base_revision', 'packages']],
+                // The tool's own dry_run shows the request; preview is the endpoint's dry_run
+                'rename' => ['preview' => 'dry_run'],
+                'title' => 'Update a project\'s packages',
+                'description' => 'Set the project\'s package list: packages are added or changed, and missing ones removed only with remove. Changes this project only, never its blueprint or package sets, and offers Update on GitHub. Run it with preview first and get the user\'s go-ahead.',
+            ],
             'projects_scaffold' => [
                 'level' => self::FULL, 'method' => 'POST', 'path' => '/projects/{slug}/scaffold', 'path_params' => $project,
                 'body' => ['properties' => [

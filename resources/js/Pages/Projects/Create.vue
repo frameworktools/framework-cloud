@@ -70,6 +70,8 @@ const form = useForm({
     package_sets: [],
     package_overrides: {},
     package_auto_attach: {},
+    // Packages pushed with push_setup(): kept as they are when the project is edited here
+    package_definitions: {},
     skill_sets: [],
     skills: [],
     excluded_skills: [],
@@ -147,6 +149,7 @@ const fillStored = (c) => {
     const language = form.language;
     if (c.workflow) form.workflow = language === 'stata' ? 'scripts' : c.workflow;
     if ('notebook_format' in c) form.notebook_format = c.notebook_format ?? defaultFormat(form.workflow, language, false);
+    form.package_definitions = { ...(c.package_definitions ?? {}) };
     if (!c.customized) return;
     if (c.structure) form.structure = c.structure;
     for (const [key, on] of Object.entries(c.tools ?? {})) form.tools[key] = !!on;
@@ -267,6 +270,8 @@ const choicePayload = (data) => ({
     language: data.language,
     workflow: data.workflow || undefined,
     name: data.name || undefined,
+    // Another language's packages don't carry over
+    ...(editing && data.language === editing.language && Object.keys(data.package_definitions ?? {}).length ? { package_definitions: data.package_definitions } : {}),
     ...(edited.value || contextSkills.value || startCustomized.value ? {
         customized: true,
         structure: data.structure,

@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\V1\ProjectLayersController;
 use App\Http\Controllers\Api\V1\ProjectPullController;
 use App\Http\Controllers\Api\V1\ProjectRepositoryController;
 use App\Http\Controllers\Api\V1\ProjectsController;
+use App\Http\Controllers\Api\V1\ProjectSetupController;
 use App\Http\Controllers\Api\V1\ReportsController;
 use App\Http\Controllers\Api\V1\SettingsController;
 use App\Http\Controllers\Api\V1\SkillsController;
@@ -84,6 +85,9 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::get('/projects', [ProjectsController::class, 'index']);
     Route::post('/projects', [ProjectsController::class, 'store'])->middleware('throttle:20,1');
     Route::get('/projects/pull', [ProjectLayersController::class, 'pull']);
+    // pull_setup() and push_setup(): packages and skills, with a project token or a user token and ?project=<slug>
+    Route::get('/projects/setup', [ProjectSetupController::class, 'show']);
+    Route::post('/projects/setup/packages', [ProjectSetupController::class, 'packages'])->middleware('throttle:30,1');
     Route::get('/projects/{slug}', [ProjectLayersController::class, 'show']);
     Route::patch('/projects/{slug}', [ProjectsController::class, 'update'])->middleware('throttle:60,1');
     Route::delete('/projects/{slug}', [ProjectsController::class, 'destroy'])->middleware('throttle:30,1');

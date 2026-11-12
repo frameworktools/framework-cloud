@@ -297,6 +297,17 @@ class Resolver
         $settings = $choices['settings'] ?? [];
         $layer = [];
 
+        // Packages pushed for this project (push_setup()): exact entries, or null to remove.
+        // Applied first, so the form's switches below still turn them off or change auto-attach.
+        if (! empty($choices['package_definitions'])) {
+            foreach ($choices['package_definitions'] as $name => $definition) {
+                if ($definition !== null && ($problem = self::packageProblem((string) $name, $definition, $this->language))) {
+                    throw ValidationException::withMessages(['package_definitions' => $problem]);
+                }
+                $layer['packages']['default_packages'][$name] = $definition;
+            }
+        }
+
         if (isset($choices['package_overrides'])) {
             $available = Catalog::packageOptions($this->user, $this->language);
             foreach ($choices['package_overrides'] as $name => $on) {
@@ -378,6 +389,55 @@ class Resolver
         }
 
         return $layer;
+    }
+
+    /** Package sources each language can install from. */
+    public const PACKAGE_SOURCES = ['r' => ['cran', 'bioc', 'github'], 'python' => ['pypi', 'github']];
+
+    /**
+     * What is wrong with one package entry for a language, or null: its name,
+     * source, version, GitHub repository, and auto-attach (R only).
+     */
+    public static function packageProblem(string $name, mixed $definition, string $language): ?string
+    {
+        $languageName = Project::LANGUAGE_NAMES[$language] ?? $language;
+        if (! isset(self::PACKAGE_SOURCES[$language])) {
+            return "{$languageName} projects have no package list.";
+        }
+        if (! preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]*$/', $name) || strlen($name) > 100) {
+            return "{$name} is not a package name.";
+        }
+        if (! is_array($definition)) {
+            return "Give {$name} a source.";
+        }
+        if (array_diff(array_keys($definition), ['source', 'version', 'repo', 'ref', 'auto_attach'])) {
+            return "{$name} has fields a package can't have.";
+        }
+        $source = $definition['source'] ?? null;
+        if (! in_array($source, self::PACKAGE_SOURCES[$language], true)) {
+            return "{$name}: the source must be ".implode(' or ', self::PACKAGE_SOURCES[$language])." in {$languageName} projects.";
+        }
+        foreach (['version', 'ref'] as $field) {
+            $value = $definition[$field] ?? null;
+            if ($value !== null && (! is_string($value) || ! preg_match('/^[^\s\x00-\x1F]{1,100}$/', $value))) {
+                return "{$name}: the {$field} must be a short text without spaces.";
+            }
+        }
+        $repo = $definition['repo'] ?? null;
+        if ($source === 'github' && (! is_string($repo) || ! preg_match('#^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(/[^\s]+)?(@[^\s]+)?$#', $repo) || strlen($repo) > 200)) {
+            return "{$name}: GitHub packages need a repo such as owner/name.";
+        }
+        if ($source !== 'github' && $repo !== null) {
+            return "{$name}: only GitHub packages have a repo.";
+        }
+        if (! is_bool($definition['auto_attach'] ?? null)) {
+            return "{$name}: auto_attach must be true or false.";
+        }
+        if ($definition['auto_attach'] && $language !== 'r') {
+            return 'Auto-attach is available for R only. Python and Stata do not auto-import packages.';
+        }
+
+        return null;
     }
 
     /**

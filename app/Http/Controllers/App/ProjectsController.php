@@ -383,6 +383,9 @@ class ProjectsController extends Controller
             'package_overrides.*' => ['boolean'],
             'package_auto_attach' => ['nullable', 'array'],
             'package_auto_attach.*' => ['boolean'],
+            // Packages pushed with push_setup(); the resolver checks each entry
+            'package_definitions' => ['nullable', 'array'],
+            'package_definitions.*' => ['nullable', 'array'],
             'skill_sets' => ['nullable', 'array'],
             'skill_sets.*' => ['string', 'max:200'],
             'excluded_skills' => ['nullable', 'array'],
@@ -401,10 +404,10 @@ class ProjectsController extends Controller
     }
 
     /** The choices to keep on the project, so its edit page opens on them. */
-    private static function storedChoices(array $validated): array
+    public static function storedChoices(array $validated): array
     {
         return ['customized' => (bool) ($validated['customized'] ?? false)] + Arr::only($validated, [
-            'workflow', 'notebook_format', 'structure', 'tools', 'package_sets', 'package_overrides', 'package_auto_attach',
+            'workflow', 'notebook_format', 'structure', 'tools', 'package_sets', 'package_overrides', 'package_auto_attach', 'package_definitions',
             'skill_sets', 'skills', 'excluded_skills', 'settings', 'extra_yaml', 'scaffold', 'quarto', 'ide', 'publish_destination',
         ]);
     }
@@ -502,6 +505,8 @@ class ProjectsController extends Controller
             'package_overrides.*' => ['boolean'],
             'package_auto_attach' => ['nullable', 'array'],
             'package_auto_attach.*' => ['boolean'],
+            'package_definitions' => ['nullable', 'array'],
+            'package_definitions.*' => ['nullable', 'array'],
             'skill_sets' => ['nullable', 'array'],
             'skill_sets.*' => ['string', 'max:200'],
             'excluded_skills' => ['nullable', 'array'],
@@ -596,11 +601,12 @@ class ProjectsController extends Controller
      * @param  array<string, mixed>  $validated
      * @return array<string, mixed>
      */
-    private static function choicesFrom(array $validated, Blueprint $blueprint): array
+    public static function choicesFrom(array $validated, Blueprint $blueprint): array
     {
+        // Pushed packages are the project's own, over the blueprint or the pieces chosen
         return ($validated['customized'] ?? false)
-            ? ['from' => $blueprint->handle] + Arr::only($validated, ['name', 'language', 'workflow', 'notebook_format', 'structure', 'tools', 'package_sets', 'package_overrides', 'package_auto_attach', 'skill_sets', 'skills', 'excluded_skills', 'settings', 'extra_yaml', 'scaffold', 'quarto', 'ide', 'publish_destination'])
-            : ['blueprint' => $blueprint->handle] + Arr::only($validated, ['name', 'language', 'workflow']);
+            ? ['from' => $blueprint->handle] + Arr::only($validated, ['name', 'language', 'workflow', 'notebook_format', 'structure', 'tools', 'package_sets', 'package_overrides', 'package_auto_attach', 'package_definitions', 'skill_sets', 'skills', 'excluded_skills', 'settings', 'extra_yaml', 'scaffold', 'quarto', 'ide', 'publish_destination'])
+            : ['blueprint' => $blueprint->handle] + Arr::only($validated, ['name', 'language', 'workflow', 'package_definitions']);
     }
 
     /**
