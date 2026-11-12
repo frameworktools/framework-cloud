@@ -57,7 +57,7 @@ return [
         // never a branch, so a repo's scaffold is reproducible. Bump it here
         // deliberately; the env var overrides it, and an empty one turns
         // GitHub scaffolding off.
-        'framework_sha' => env('GITHUB_FRAMEWORK_SHA', '7469d7e11609009b8bdf287ee8be32206407e033'),
+        'framework_sha' => env('GITHUB_FRAMEWORK_SHA', '0071b8ec6e77741646c38d9ad9b31c45d7269ed1'),
         // The framework-py commit that scaffolds Python projects. Empty turns
         // Python scaffolding on GitHub off.
         'framework_py_sha' => env('GITHUB_FRAMEWORK_PY_SHA', 'e3806927b6250485b79cf49a0f62f02308bc7e34'),
