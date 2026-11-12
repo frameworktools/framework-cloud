@@ -24,7 +24,7 @@ class Layer
     /** Keys a facet or blueprint layer may set. Bases may also set "type". */
     public const KEYS = [
         'directories', 'extra_directories', 'render_dirs', 'packages', 'git',
-        'publish', 'ai', 'scaffold', 'quarto', 'connections', 'env', 'data_hooks', 'security', 'files', 'skills',
+        'publish', 'ai', 'scaffold', 'quarto', 'connections', 'env', 'data', 'data_hooks', 'security', 'files', 'skills',
     ];
 
     /** Which of Framework's own files a project gets: core_files false leaves out scaffold.R and .env; flat settings keep everything in settings.yml. */
@@ -109,8 +109,34 @@ class Layer
         $problems = [...$problems, ...self::credentialProblems($layer['connections'] ?? [], 'connections')];
         $problems = [...$problems, ...self::credentialProblems($layer['publish']['destinations'] ?? [], 'publish.destinations')];
         $problems = [...$problems, ...self::envProblems($layer['env'] ?? [])];
+        $problems = [...$problems, ...self::dataProblems($layer['data'] ?? [])];
 
         return array_values(array_unique($problems));
+    }
+
+    /**
+     * A data catalog name that is also the group of another can't be
+     * written nested into the settings, as R's spec_check() refuses it.
+     *
+     * @return list<string>
+     */
+    public static function dataProblems(mixed $data): array
+    {
+        if (! is_array($data)) {
+            return [];
+        }
+        $names = array_map('strval', array_keys(array_filter($data, fn ($entry) => $entry !== null)));
+        $problems = [];
+        foreach ($names as $name) {
+            foreach ($names as $other) {
+                if (str_starts_with($other, $name.'.')) {
+                    $problems[] = "Data entry \"{$name}\" is an entry, so \"{$other}\" can't be inside it.";
+                    break;
+                }
+            }
+        }
+
+        return $problems;
     }
 
     /**

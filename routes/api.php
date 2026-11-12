@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\ExternalArtifactsController;
 use App\Http\Controllers\Api\V1\LedgerController;
 use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\PiecesController;
+use App\Http\Controllers\Api\V1\ProjectDataController;
 use App\Http\Controllers\Api\V1\ProjectLayersController;
 use App\Http\Controllers\Api\V1\ProjectPullController;
 use App\Http\Controllers\Api\V1\ProjectRepositoryController;
@@ -88,6 +89,9 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     // pull_setup() and push_setup(): packages and skills, with a project token or a user token and ?project=<slug>
     Route::get('/projects/setup', [ProjectSetupController::class, 'show']);
     Route::post('/projects/setup/packages', [ProjectSetupController::class, 'packages'])->middleware('throttle:30,1');
+    // pull_data_registry() and push_data_registry(): the data catalog's definitions, never files or hashes
+    Route::get('/projects/data', [ProjectDataController::class, 'show']);
+    Route::post('/projects/data', [ProjectDataController::class, 'update'])->middleware('throttle:30,1');
     Route::get('/projects/{slug}', [ProjectLayersController::class, 'show']);
     Route::patch('/projects/{slug}', [ProjectsController::class, 'update'])->middleware('throttle:60,1');
     Route::delete('/projects/{slug}', [ProjectsController::class, 'destroy'])->middleware('throttle:30,1');

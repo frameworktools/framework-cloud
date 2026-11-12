@@ -91,23 +91,37 @@ class ProjectSetup
      */
     private static function save(Project $project, array $definitions): void
     {
+        self::resolveWith($project, 'packages', function (array $choices) use ($definitions) {
+            $choices['package_definitions'] = array_replace($choices['package_definitions'] ?? [], $definitions);
+            // The form's switches for these packages would otherwise override what was pushed
+            foreach (['package_overrides', 'package_auto_attach'] as $key) {
+                if (isset($choices[$key])) {
+                    $choices[$key] = array_diff_key($choices[$key], $definitions);
+                }
+            }
+
+            return $choices;
+        });
+    }
+
+    /**
+     * Change the project's stored choices and resolve it again from them,
+     * as saving Edit project does. Problems are reported under $field.
+     *
+     * @param  \Closure(array<string, mixed>): array<string, mixed>  $change
+     */
+    public static function resolveWith(Project $project, string $field, \Closure $change): void
+    {
         $project->loadMissing('user', 'blueprintVersion.blueprint.owner');
         $blueprint = $project->blueprintVersion?->blueprint;
         if (! $blueprint || ! $project->user) {
-            throw ValidationException::withMessages(['packages' => 'This project has no blueprint, so its setup can\'t change on Framework Cloud.']);
+            throw ValidationException::withMessages([$field => 'This project has no blueprint, so its setup can\'t change on Framework Cloud.']);
         }
         if ($project->composition && ! $project->choices) {
-            throw ValidationException::withMessages(['packages' => 'This project has changes from before Framework Cloud kept choices. Open Edit project on Framework Cloud and save its setup once first.']);
+            throw ValidationException::withMessages([$field => 'This project has changes from before Framework Cloud kept choices. Open Edit project on Framework Cloud and save its setup once first.']);
         }
 
-        $choices = $project->choices ?? ['customized' => false];
-        $choices['package_definitions'] = array_replace($choices['package_definitions'] ?? [], $definitions);
-        // The form's switches for these packages would otherwise override what was pushed
-        foreach (['package_overrides', 'package_auto_attach'] as $key) {
-            if (isset($choices[$key])) {
-                $choices[$key] = array_diff_key($choices[$key], $definitions);
-            }
-        }
+        $choices = $change($project->choices ?? ['customized' => false]);
 
         $resolved = (new Resolver($project->user))->resolve(ProjectsController::choicesFrom(
             ['name' => $project->name, 'language' => $project->language ?? 'r'] + $choices,

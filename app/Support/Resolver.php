@@ -308,6 +308,11 @@ class Resolver
             }
         }
 
+        // The data registry pushed for this project (push_data_registry()): entries by catalog name, or null to remove
+        foreach ($choices['data_entries'] ?? [] as $name => $entry) {
+            $layer['data'][(string) $name] = $entry;
+        }
+
         if (isset($choices['package_overrides'])) {
             $available = Catalog::packageOptions($this->user, $this->language);
             foreach ($choices['package_overrides'] as $name => $on) {

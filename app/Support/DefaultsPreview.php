@@ -16,7 +16,7 @@ use Illuminate\Validation\ValidationException;
 class DefaultsPreview
 {
     /** Entries replaced whole when a later layer sets them, as in the layer merge R, Python, and fw share. */
-    private const ATOMIC = ['files', 'skills', 'extra_directories', 'packages/default_packages'];
+    private const ATOMIC = ['files', 'skills', 'extra_directories', 'packages/default_packages', 'data'];
 
     /**
      * A Framework blueprint with the workflow guided setup's form has for

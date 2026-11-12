@@ -272,6 +272,31 @@ const artifactMenu = (doc) => [
                 </details>
             </UiPanel>
 
+            <UiPanel v-if="section === 'overview'" title="Data registry" description="The data entries computers read by name, such as data_read(&quot;inputs.raw.survey&quot;). Definitions only. Data files and their hashes stay on each computer.">
+                <UiTable v-if="project.data_registry.length" label="Data registry">
+                    <thead>
+                        <tr><th>Name</th><th>Path</th><th>Type</th><th class="actions"><span class="sr-only">Options</span></th></tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="entry in project.data_registry" :key="entry.name">
+                            <td class="strong font-mono text-xs">{{ entry.name }}</td>
+                            <td class="font-mono text-xs" :title="entry.description ?? undefined">{{ entry.path }}</td>
+                            <td>{{ entry.type ?? 'From extension' }}</td>
+                            <td class="actions">
+                                <span class="inline-flex gap-1.5">
+                                    <UiBadge v-if="entry.locked">Locked</UiBadge>
+                                    <UiBadge v-if="entry.private">Private</UiBadge>
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </UiTable>
+                <p v-else class="text-sm text-slate-500 dark:text-slate-400">No data entries yet.</p>
+                <p class="mt-4 text-sm text-slate-500 dark:text-slate-400">
+                    Send a computer's entries with <code class="font-mono text-xs">push_data_registry()</code> or <code class="font-mono text-xs">fw data push</code>. Get them with <code class="font-mono text-xs">pull_data_registry()</code> or <code class="font-mono text-xs">fw data pull</code>.
+                </p>
+            </UiPanel>
+
             <UiPanel v-if="section === 'setup'" title="Project components">
                 <template #header>
                     <UiBadge v-if="setup.customized">Customized</UiBadge>

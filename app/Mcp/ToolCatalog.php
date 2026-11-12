@@ -3,6 +3,7 @@
 namespace App\Mcp;
 
 use App\Models\McpConnection;
+use App\Support\ProjectData;
 use App\Support\ProjectDefaults;
 
 /**
@@ -96,6 +97,35 @@ class ToolCatalog
                 'rename' => ['preview' => 'dry_run'],
                 'title' => 'Update a project\'s packages',
                 'description' => 'Set the project\'s package list: packages are added or changed, and missing ones removed only with remove. Changes this project only, never its blueprint or package sets, and offers Update on GitHub. Run it with preview first and get the user\'s go-ahead.',
+            ],
+            'projects_data_show' => [
+                'level' => self::READ, 'method' => 'GET', 'path' => '/projects/data',
+                'query' => ['project' => ['type' => 'string', 'description' => 'The project slug, from projects_list.']],
+                'title' => 'Show a project\'s data registry',
+                'description' => 'The project\'s data catalog: each entry\'s dot-notation name (as data_read() takes it), path, type, delimiter, locked and private flags, description, and Stata names, with a revision. Definitions only: no data files or hashes. Pass the revision to projects_data_update.',
+            ],
+            'projects_data_update' => [
+                'level' => self::FULL, 'method' => 'POST', 'path' => '/projects/data',
+                'query' => ['project' => ['type' => 'string', 'description' => 'The project slug, from projects_list.']],
+                'body' => ['properties' => [
+                    'base_revision' => ['type' => 'string', 'description' => 'The revision from projects_data_show.'],
+                    'entries' => ['type' => 'array', 'description' => 'The full desired entry list.', 'items' => ['type' => 'object', 'properties' => [
+                        'name' => ['type' => 'string', 'description' => 'Dot-notation name, such as inputs.raw.survey.'],
+                        'path' => ['type' => 'string', 'description' => 'Relative to the project root, such as inputs/raw/survey.csv.'],
+                        'type' => ['type' => ['string', 'null'], 'enum' => [...ProjectData::TYPES, null], 'description' => 'Left out, clients pick the type from the extension.'],
+                        'delimiter' => ['type' => ['string', 'null'], 'enum' => [...ProjectData::DELIMITERS, null]],
+                        'locked' => ['type' => 'boolean', 'description' => 'Whether reads must find the file unchanged.'],
+                        'private' => ['type' => ['boolean', 'null']],
+                        'description' => ['type' => ['string', 'null']],
+                        'stata_names' => ['type' => ['object', 'null'], 'description' => 'Column name in the file -> Stata variable name, for fw_use.'],
+                    ], 'required' => ['name', 'path']]],
+                    'remove' => ['type' => 'boolean', 'description' => 'Also remove entries missing from the list. Otherwise they are kept.'],
+                    'force' => ['type' => 'boolean', 'description' => 'Apply even if the registry changed since base_revision.'],
+                    'preview' => ['type' => 'boolean', 'description' => 'Report the changes without saving.'],
+                ], 'required' => ['base_revision', 'entries']],
+                'rename' => ['preview' => 'dry_run'],
+                'title' => 'Update a project\'s data registry',
+                'description' => 'Set the project\'s data catalog: entries are added or changed, and missing ones removed only with remove. Definitions only: never upload data or hashes. Computers get the change with pull_data_registry() or fw data pull. Run it with preview first and get the user\'s go-ahead.',
             ],
             'projects_scaffold' => [
                 'level' => self::FULL, 'method' => 'POST', 'path' => '/projects/{slug}/scaffold', 'path_params' => $project,

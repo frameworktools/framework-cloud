@@ -27,6 +27,7 @@ use App\Support\Catalog;
 use App\Support\Connections;
 use App\Support\Layer;
 use App\Support\Library;
+use App\Support\ProjectData;
 use App\Support\ProjectDefaults;
 use App\Support\ProjectLayers;
 use App\Support\ResolvedSelections;
@@ -123,6 +124,8 @@ class ProjectsController extends Controller
                 'tokens' => $project->tokens->sortByDesc('id')->values()
                     ->map(fn ($t) => $t->only(['id', 'name', 'created_at', 'last_used_at'])),
                 'adopted_at' => $project->adopted_at,
+                // The data catalog its computers pull with pull_data_registry(), read-only here
+                'data_registry' => $section === 'overview' ? ProjectData::for($project)['entries'] : [],
                 'spec' => $project->spec ? [
                     'received_at' => $project->spec_received_at,
                     'json' => json_encode(json_decode($project->spec), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
@@ -408,7 +411,7 @@ class ProjectsController extends Controller
     public static function storedChoices(array $validated): array
     {
         return ['customized' => (bool) ($validated['customized'] ?? false)] + Arr::only($validated, [
-            'workflow', 'notebook_format', 'structure', 'tools', 'package_sets', 'package_overrides', 'package_auto_attach', 'package_definitions',
+            'workflow', 'notebook_format', 'structure', 'tools', 'package_sets', 'package_overrides', 'package_auto_attach', 'package_definitions', 'data_entries',
             'skill_sets', 'skills', 'excluded_skills', 'settings', 'extra_yaml', 'scaffold', 'quarto', 'ide', 'publish_destination', 'connections',
         ]);
     }
@@ -469,6 +472,10 @@ class ProjectsController extends Controller
             return back()->withErrors(['blueprint_id' => 'Choose a blueprint.']);
         }
 
+        // The data registry changes only through push_data_registry(); the form keeps it
+        if (isset($project->choices['data_entries'])) {
+            $validated['data_entries'] = $project->choices['data_entries'];
+        }
         $resolved = (new Resolver($request->user()))->resolve(self::choicesFrom($validated, $blueprint));
         $project->update(Resolver::setupAttributes($validated['name'], $resolved) + [
             'description' => $validated['description'] ?? null,
@@ -608,8 +615,8 @@ class ProjectsController extends Controller
     {
         // Pushed packages are the project's own, over the blueprint or the pieces chosen
         return ($validated['customized'] ?? false)
-            ? ['from' => $blueprint->handle] + Arr::only($validated, ['name', 'language', 'workflow', 'notebook_format', 'structure', 'tools', 'package_sets', 'package_overrides', 'package_auto_attach', 'package_definitions', 'skill_sets', 'skills', 'excluded_skills', 'settings', 'extra_yaml', 'scaffold', 'quarto', 'ide', 'publish_destination', 'connections'])
-            : ['blueprint' => $blueprint->handle] + Arr::only($validated, ['name', 'language', 'workflow', 'package_definitions']);
+            ? ['from' => $blueprint->handle] + Arr::only($validated, ['name', 'language', 'workflow', 'notebook_format', 'structure', 'tools', 'package_sets', 'package_overrides', 'package_auto_attach', 'package_definitions', 'data_entries', 'skill_sets', 'skills', 'excluded_skills', 'settings', 'extra_yaml', 'scaffold', 'quarto', 'ide', 'publish_destination', 'connections'])
+            : ['blueprint' => $blueprint->handle] + Arr::only($validated, ['name', 'language', 'workflow', 'package_definitions', 'data_entries']);
     }
 
     /**

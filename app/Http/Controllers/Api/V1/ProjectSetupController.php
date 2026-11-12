@@ -19,7 +19,7 @@ class ProjectSetupController extends Controller
     /** GET /api/v1/projects/setup */
     public function show(Request $request): JsonResponse
     {
-        return response()->json(ProjectSetup::for($this->project($request)));
+        return response()->json(ProjectSetup::for(self::project($request)));
     }
 
     /**
@@ -29,7 +29,7 @@ class ProjectSetupController extends Controller
      */
     public function packages(Request $request): JsonResponse
     {
-        $project = $this->project($request);
+        $project = self::project($request);
 
         $validated = $request->validate([
             'base_revision' => ['nullable', 'string', 'max:100'],
@@ -65,7 +65,8 @@ class ProjectSetupController extends Controller
         ));
     }
 
-    private function project(Request $request): Project
+    /** The project a project token reaches, or the user's project named by ?project=<slug>. */
+    public static function project(Request $request): Project
     {
         $tokenable = $request->user();
 
