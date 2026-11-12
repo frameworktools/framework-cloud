@@ -235,9 +235,9 @@ const menuFor = (item) => [
                             </div>
                         </div>
                     </div>
+                    <PublishExamples embedded :language="client" />
                 </div>
             </CollapsibleSection>
-            <PublishExamples :language="client" remember="dashboard_publish" />
         </div>
     </AppLayout>
 </template>

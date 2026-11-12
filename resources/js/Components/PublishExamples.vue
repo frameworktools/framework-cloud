@@ -8,7 +8,8 @@ import CollapsibleSection from '@/Components/CollapsibleSection.vue';
 // and remembers that on the account.
 const props = defineProps({
     language: { type: String, required: true }, // r | python | stata | fw
-    remember: { type: String, required: true }, // the preference key for collapsing
+    remember: { type: String, default: null }, // the preference key for collapsing
+    embedded: Boolean, // a group inside another section, such as Quick commands, instead of its own section
     heading: { type: String, default: 'Read and publish' },
 });
 
@@ -43,12 +44,13 @@ const examples = computed(() => ({
         { label: 'GitHub Pages', cmd: 'fw publish outputs/notebooks/analysis.html --to github', info: 'Publishes to the project\'s GitHub Pages site instead of Framework Cloud.' },
     ],
 }[props.language] ?? []));
+const note = 'Examples. Replace the data names, file paths, object names, and slugs with your own.';
 const highlighting = { r: 'r', python: 'python', stata: 'stata', fw: 'bash' };
 </script>
 
 <template>
-    <CollapsibleSection v-if="examples.length" :title="heading" :remember="remember">
-        <p class="mb-4 text-sm text-slate-500 dark:text-slate-400">Examples. Replace the data names, file paths, object names, and slugs with your own.</p>
+    <CollapsibleSection v-if="examples.length && !embedded" :title="heading" :remember="remember">
+        <p class="mb-4 text-sm text-slate-500 dark:text-slate-400">{{ note }}</p>
         <div class="grid gap-x-6 gap-y-5 lg:grid-cols-2">
             <div v-for="example in examples" :key="`${language}-${example.label}`" class="min-w-0">
                 <h3 class="mb-2 flex items-center gap-1.5 text-sm font-medium text-slate-800 dark:text-slate-200">
@@ -60,4 +62,18 @@ const highlighting = { r: 'r', python: 'python', stata: 'stata', fw: 'bash' };
             </div>
         </div>
     </CollapsibleSection>
+    <div v-else-if="examples.length" class="min-w-0">
+        <h3 class="text-sm font-medium text-slate-800 dark:text-slate-200">{{ heading }}</h3>
+        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ note }}</p>
+        <div class="mt-3 grid gap-x-6 gap-y-5 lg:grid-cols-2">
+            <div v-for="example in examples" :key="`${language}-${example.label}`" class="min-w-0">
+                <h4 class="mb-2 flex items-center gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-300">
+                    {{ example.label }}
+                    <span class="text-xs font-normal text-slate-500 dark:text-slate-400">Example</span>
+                    <InfoPopover :label="example.label">{{ example.info }}</InfoPopover>
+                </h4>
+                <CopyBlock :value="example.cmd" :label="`publish ${example.label.toLowerCase()}`" :language="highlighting[language]" />
+            </div>
+        </div>
+    </div>
 </template>
