@@ -16,7 +16,7 @@ export const pieceCopy = {
     skill_set: {
         title: 'Skill sets',
         noun: 'skill set',
-        description: 'Skills that belong together, with the packages they need.',
+        description: 'Related skills by topic.',
         empty: "No custom skill sets.",
     },
 };

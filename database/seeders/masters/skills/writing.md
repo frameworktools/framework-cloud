@@ -25,7 +25,10 @@ deliverables.
 - Give a count its own short sentence instead of a trailing aside.
 - Use bullets for parallel lists and paragraphs for arguments.
 - End a sentence when its information ends.
-- Use American spellings, such as `color`, `gray`, `catalog`, and `analyze`.
+- Prefer American spelling when the author works in the United States, such as
+  `color`, `gray`, `catalog`, and `analyze`. Prefer British spelling when the
+  author works where British spelling is standard, such as `colour`, `grey`,
+  `catalogue`, and `analyse`.
 
 ## Numbers
 
