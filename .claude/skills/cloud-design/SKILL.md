@@ -55,7 +55,7 @@ or "library" wording.
 
 | Need | Use |
 |---|---|
-| Actions | `UiButton` — `primary` (one per view), `ghost` (secondary by default), `subtle` (quiet), `outline` (only when a border is specifically needed), `danger` (inside a confirm only). Sizes `md` 40px, `sm` 32px, `xs` 24px. `href` renders a link styled as a button; `square` for icon-only. Disabled is 50% opacity, never a pale tint. |
+| Actions | `UiButton` — `primary` (one per view), `ghost` (secondary by default, with a gray tint so it reads as a button), `subtle` (quiet), `outline` (only when a border is specifically needed), `danger` (inside a confirm only). Sizes `md` 40px, `sm` 32px, `xs` 24px. `href` renders a link styled as a button; `square` for icon-only. Disabled is 50% opacity, never a pale tint. |
 | Text fields | `UiInput`, `UiSelect`, `UiTextarea` (all wrap `UiField`). Bare controls use the recipes in `resources/js/ui.js`. |
 | Sections of a page | `UiTabs` (underline tabs, links or v-model), `UiSection`, `UiSeparator` |
 | Lists of records | `UiTable` — plain `<thead>/<tbody>`, first and last columns flush, class `strong` on the name cell, `actions` / `numeric` for right-aligned cells. Prefer a table over cards for anything with columns. |
