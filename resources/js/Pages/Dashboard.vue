@@ -108,13 +108,13 @@ const menuFor = (item) => [
                 <UiTabs v-model="client" :tabs="clients" label="Client" class="mt-3 max-w-2xl" />
                 <div class="mt-4 flex flex-col gap-6">
                     <div v-if="client === 'r'" class="min-w-0">
-                        <div class="mb-2 flex flex-wrap items-center gap-3">
-                            <h3 class="text-sm font-medium text-slate-800 dark:text-slate-200">Install</h3>
-                            <div role="radiogroup" aria-label="Install from" class="inline-flex gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-900">
-                                <button v-for="option in installs" :key="option.key" type="button" role="radio" :aria-checked="installFrom === option.key"
-                                    class="rounded-md px-2.5 py-0.5 text-xs font-medium transition" :class="pill(installFrom === option.key)" @click="installFrom = option.key">{{ option.label }}</button>
-                            </div>
+                        <h3 class="mb-2 flex items-center gap-1.5 text-sm font-medium text-slate-800 dark:text-slate-200">
+                            Install
                             <InfoPopover :label="`installing from ${install.label}`">{{ install.info }}</InfoPopover>
+                        </h3>
+                        <div role="radiogroup" aria-label="Install from" class="mb-2 inline-flex gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-900">
+                            <button v-for="option in installs" :key="option.key" type="button" role="radio" :aria-checked="installFrom === option.key"
+                                class="rounded-md px-2.5 py-0.5 text-xs font-medium transition" :class="pill(installFrom === option.key)" @click="installFrom = option.key">{{ option.label }}</button>
                         </div>
                         <CopyBlock :value="install.cmd" :label="`install from ${install.label}`" language="r" />
                     </div>
