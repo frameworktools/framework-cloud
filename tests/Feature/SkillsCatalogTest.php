@@ -65,7 +65,6 @@ class SkillsCatalogTest extends TestCase
             $choices = ['blueprint' => 'framework/project_sensitive', 'language' => $language];
             $skills = array_filter($this->resolve($user, $choices)['skills'] ?? []);
             $this->assertArrayHasKey('framework-sensitive-data', $skills);
-            $this->assertArrayHasKey('identifiable-data', $skills);
             $withoutGit = $this->resolve($user, $choices + ['settings' => ['git' => false]]);
             $this->assertArrayNotHasKey('git-workflow', array_filter($withoutGit['skills'] ?? []));
             $withoutAI = $this->resolve($user, $choices + ['skills' => ['framework/writing'], 'settings' => ['ai' => false]]);

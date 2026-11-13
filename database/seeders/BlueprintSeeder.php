@@ -170,7 +170,11 @@ class BlueprintSeeder extends Seeder
             unset($texts['r']);
             $skill->publishVersion(['content' => $content, 'variants' => $texts ?: null, 'files' => [], 'bundle_files' => $files ?: null]);
         }
+        Skill::whereNull('user_id')->whereIn('key', self::RETIRED_SKILLS)->delete();
     }
+
+    /** Framework skills no longer offered. Seeding moves them to the Trash. */
+    private const RETIRED_SKILLS = ['identifiable-data'];
 
     /** Cloud sets extend the package catalog without changing its locked snapshots. */
     private function skillSets(string $mastersDir): array

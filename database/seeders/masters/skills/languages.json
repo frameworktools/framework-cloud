@@ -43,11 +43,6 @@
     "python",
     "stata"
   ],
-  "identifiable-data": [
-    "r",
-    "python",
-    "stata"
-  ],
   "matplotlib-exploring": [
     "python"
   ],

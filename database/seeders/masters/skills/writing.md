@@ -1,6 +1,6 @@
 ---
 name: writing
-description: Use before writing or editing any prose in a data analysis project - text about results, notebook text, captions, READMEs, summaries, or messages that explain findings. Covers a plain register, stating numbers with their uncertainty, claims that match the design, consistent names, headings, and banned patterns. It governs how sentences read; for building and publishing a report, use framework-reports.
+description: Use before writing or editing any prose in a data analysis project - text about results, notebook text, captions, READMEs, summaries, or messages that explain findings. Covers a plain register, stating numbers with their uncertainty, claims that match the design, consistent names, headings, and banned patterns. It governs how sentences read, not how a report is built.
 metadata:
   title: Writing
   summary: Plain, exact prose about data and findings.
@@ -15,8 +15,7 @@ When a sentence is in doubt, ask whether it tells the reader something they
 can check. Keep only sentences that do.
 
 These rules cover how prose reads. They do not set the structure of a report,
-a notebook, or a paper. A project's own skills can add rules for its
-deliverables.
+a notebook, or a paper.
 
 ## Register
 

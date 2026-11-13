@@ -16,7 +16,7 @@ Preserve source identifiers as strings when leading zeros matter. Distinguish ab
 
 Before a join, establish its cardinality. Count unmatched keys on both sides and compare row counts before and after. Resolve duplicate keys explicitly; dropping duplicates is a substantive decision. For repeated observations, include the time or episode identifier in the key.
 
-Keep a small record of exclusions and row counts at each consequential step. Data validation and assertions belong in checking-data when available.
+Keep a small record of exclusions and row counts at each consequential step.
 
 ## Language conventions
 

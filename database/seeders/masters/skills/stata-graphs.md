@@ -15,10 +15,10 @@ not polish them.
 ## Rules
 
 - Use a clean scheme. On Stata 18 or later, `set scheme stcolor`. On Stata 17,
-  use the project's scheme from `settings.do`, or `set scheme s1color`.
+  use the project's scheme if it sets one, or `set scheme s1color`.
 - Name graphs with `name(..., replace)` so you can compare several in one
-  session, and `graph export` the ones you keep to `$fw_outputs_figures`.
-- Do not `save` a new dataset to `inputs/` just to draw a graph. Use
+  session, and `graph export` the ones you keep.
+- Do not `save` a new dataset just to draw a graph. Use
   `preserve` and `restore` around `collapse` or `contract`.
 
 ## Choose the graph from the question
@@ -48,7 +48,13 @@ read.
 - **Missing values:** graphs drop missing values silently. Check them with
   `misstable summarize` before you trust the graph.
 
-## Saving and publishing
+## Saving
 
-- `graph export "$fw_outputs_figures/name.svg", replace`
-- To share one, `fw_publish "$fw_outputs_figures/name.svg", slug(...)`.
+- `graph export "figures/name.svg", replace`
+
+## In a Framework project
+
+Projects with a `settings.do` use the framework-stata package. Take the scheme
+from `settings.do` on Stata 17. Export figures to `$fw_outputs_figures`, and
+do not save graph data to `inputs/`. To share a figure, run
+`fw_publish "$fw_outputs_figures/name.svg", slug(...)`.

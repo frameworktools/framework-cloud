@@ -58,15 +58,6 @@ dual y axes, and 3-D effects. They make comparisons harder to read.
 - **Missing values:** ggplot2 drops rows with missing values and warns.
   Read the warning and count what was dropped before you trust the figure.
 
-## Keep it plain
-
-- Label axes with readable names and units, using `labs()`. Variable names
-  such as `sbp_mean` are not labels.
-- Do not add titles, annotations, or custom colors to an exploratory figure.
-  That is publication work.
-- Do not save every exploratory figure. Show it in the notebook. Save a figure
-  only when someone needs the file.
-
 ## Example
 
 ```r

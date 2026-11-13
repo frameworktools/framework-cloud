@@ -14,13 +14,12 @@ not polish them.
 
 ## Rules
 
-- Set the style once, right after `fw.scaffold()`, with
-  `sns.set_theme(style="whitegrid")`. If the project defines its own style in
-  `functions/`, use that instead.
+- Set the style once, at the start, with `sns.set_theme(style="whitegrid")`.
+  If the project defines its own style, use that instead.
 - Create figures with `fig, ax = plt.subplots()` and draw on `ax`. Pass `ax=ax`
-  to seaborn so every figure has a handle you can save or publish.
+  to seaborn so every figure has a handle you can save.
 - Compute the counts and summaries a figure needs in memory. Do not write a new
-  dataset to `inputs/` just to draw figures.
+  dataset just to draw figures.
 - Close figures you are done with, `plt.close(fig)`, in loops and scripts.
 
 ## Choose the chart from the question
@@ -50,7 +49,14 @@ read.
 - **Missing values:** seaborn drops rows with `NaN` silently. Count them with
   `df[cols].isna().sum()` before you trust the figure.
 
-## Saving and publishing
+## Saving
 
-- Save exploratory figures to `outputs/figures/` with `fig.savefig(path)`.
-- To share one, publish the figure object: `fw.publish(fig, slug="...")`.
+- Save the figures you keep with `fig.savefig(path)`.
+
+## In a Framework project
+
+Projects with a `settings.yml` use the framework Python package. Set the style
+right after `fw.scaffold()`, and look for a project style in `functions/`.
+Read data with `fw.data_read()`, not pandas readers. Save figures to
+`outputs/figures/`, and do not write figure data to `inputs/`. To share a
+figure, publish the figure object: `fw.publish(fig, slug="...")`.

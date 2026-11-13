@@ -16,7 +16,7 @@ Choose the outcome family and link from the measurement scale and sampling desig
 
 Record the analysis sample and compare it across specifications. Inspect convergence, separation, residual patterns, influential observations, and model-specific assumptions. For predictive work, split or resample at the independent sampling unit and fit preprocessing inside each training fold.
 
-Do not choose an adjustment set or a final model solely from p-values. Explain specification changes using the research design and diagnostics. Keep presentation of estimates in model-results when available.
+Do not choose an adjustment set or a final model solely from p-values. Explain specification changes using the research design and diagnostics.
 
 ## Language conventions
 

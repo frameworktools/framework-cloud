@@ -49,7 +49,6 @@ class SkillTags
         'stata-graphs-publishing' => ['visualization', 'publication'],
         'report-structure' => ['reports'], 'quarto-documents' => ['quarto', 'notebooks'],
         'jupyter-notebooks' => ['jupyter', 'notebooks'], 'git-workflow' => ['git'],
-        'identifiable-data' => ['privacy'],
     ];
 
     public static function seed(): void

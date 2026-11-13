@@ -16,4 +16,4 @@ Describe methods at the level needed to interpret and reproduce the results: tra
 
 Organize findings around questions. Place each figure or table beside the claim it supports and refer to it in the text. Captions state the sample, units, and uncertainty convention. Explain differences between descriptive summaries and adjusted estimates.
 
-End with limitations and the implications supported by the design. Keep exploratory findings distinguishable from planned analyses. Use the project's prose conventions for sentences. Publishing through Framework Cloud is a separate operation covered by framework-reports when installed.
+End with limitations and the implications supported by the design. Keep exploratory findings distinguishable from planned analyses. Use the project's prose conventions for sentences.

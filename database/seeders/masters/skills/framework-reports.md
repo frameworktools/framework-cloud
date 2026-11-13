@@ -135,6 +135,5 @@ the new versions.
   numbers; take estimates and counts from the published results or the
   project's outputs.
 - Never include identifiable or private data in report text, and never embed
-  artifacts published from private folders. See the
-  `framework-sensitive-data` skill if the project has one.
+  artifacts published from private folders.
 - Tell the user the report's `url` and its visibility when you finish.
