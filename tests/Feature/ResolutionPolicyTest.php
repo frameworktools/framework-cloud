@@ -199,6 +199,6 @@ class ResolutionPolicyTest extends TestCase
         }
         $this->assertArrayHasKey('framework-workflow', $skills);
         $this->assertNull($skills['framework-workflow']);
-        $this->assertNull($skills['ggplot2-exploring']);
+        $this->assertNull($skills['ggplot2-figures']);
     }
 }

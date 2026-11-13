@@ -8,12 +8,20 @@ metadata:
 
 # Structuring an analysis report
 
-## Report structure
+## Sections
 
-Start with the question, population, and principal finding. State the study design and the scope of the evidence. Define the data source, observation unit, eligibility criteria, exclusions, and analysis sample before reporting estimates.
+- Open with the question, the population, and the main finding.
+- Describe the data source, unit of observation, eligibility, exclusions, and
+  analysis sample before the estimates.
+- Describe methods in enough detail to interpret and reproduce the results:
+  transformations, missing data, models, uncertainty, and sensitivity
+  analyses. Put further detail in an appendix or a notebook.
+- Organize findings by question.
+- Label exploratory analyses separately from planned ones.
+- Close with limitations and the conclusions the design supports.
 
-Describe methods at the level needed to interpret and reproduce the results: transformations, missing-data handling, model specification, uncertainty, and sensitivity analyses. Link detailed implementation to an appendix or reproducible notebook where appropriate.
+## Figures and tables
 
-Organize findings around questions. Place each figure or table beside the claim it supports and refer to it in the text. Captions state the sample, units, and uncertainty convention. Explain differences between descriptive summaries and adjusted estimates.
-
-End with limitations and the implications supported by the design. Keep exploratory findings distinguishable from planned analyses. Use the project's prose conventions for sentences.
+- Place each figure or table next to the claim it supports, and refer to it
+  in the text.
+- Captions give the sample, the units, and the kind of interval.

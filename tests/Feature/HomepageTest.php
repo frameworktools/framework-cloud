@@ -22,7 +22,7 @@ class HomepageTest extends TestCase
             ->assertSee('Start a Framework project')->assertSee('Start from Framework Cloud')->assertSee('Start from your computer')->assertSee('fw new penguin-study')->assertSee('destination=download', false)
             ->assertSee('Put it on GitHub')->assertSee('Download penguin-study.zip')
             ->assertSee('data-demo-slide', false)
-            ->assertSee('Exploring data with Stata graphs');
+            ->assertSee('Graphs in Stata');
     }
 
     public function test_without_a_live_example_the_result_card_has_no_link(): void

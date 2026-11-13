@@ -11,24 +11,22 @@ metadata:
 A report is one page that reads like a notebook: text blocks in Markdown (or
 HTML) with published results placed between them. Each result is an artifact
 already published from the project, such as a figure, table, or model, shown
-at a pinned version. Publishing a report creates a version at a stable link;
-publishing again adds the next version at the same link.
+at a pinned version. Each publish adds a version at the same stable link.
 
-## Before you start
+## Requirements
 
 - Publish the results first. The report embeds published artifacts by their
   slug, so each figure, table, or model needs `publish()` (R),
   `fw.publish()` (Python), `fw_publish` (Stata), or `fw publish` (terminal)
   before it can appear in a report.
 - The project's `.env` has `FW_CLOUD_URL` and `FW_PROJECT_TOKEN`. Use them for
-  the API. Never print the token, write it into a file, or put it in the
-  report. If the project has no token, ask the user to connect it to
-  Framework Cloud; don't create one yourself.
+  the API. Keep the token out of output, files, and the report. If the project has no token, ask the user to connect it to
+  Framework Cloud.
 - Ask before choosing `public`. Reports start `private`. A public report may
   contain only public artifacts, and an unlisted report needs
   `"share_unlisted": true` on each unlisted artifact it shows.
 
-## The API
+## API
 
 All requests go to `$FW_CLOUD_URL/api/v1/projects/<project-slug>/reports`
 with `Authorization: Bearer $FW_PROJECT_TOKEN` and JSON bodies.
@@ -71,9 +69,7 @@ Blocks:
 The response includes `url` (the stable link), `latest_version`, each
 version's own `url`, and the draft `blocks`.
 
-## Examples
-
-Terminal:
+## Example
 
 ```sh
 curl -sS -X POST "$FW_CLOUD_URL/api/v1/projects/penguin-study/reports" \
@@ -86,54 +82,18 @@ curl -sS -X POST "$FW_CLOUD_URL/api/v1/projects/penguin-study/reports" \
        ]}'
 ```
 
-R (httr2):
+In a terminal, load the `.env` values first, for example
+`set -a; . ./.env; set +a`. In R and Python, `scaffold()` loads them.
 
-```r
-library(httr2)
-report <- request(Sys.getenv("FW_CLOUD_URL")) |>
-  req_url_path_append("api/v1/projects/penguin-study/reports") |>
-  req_auth_bearer_token(Sys.getenv("FW_PROJECT_TOKEN")) |>
-  req_body_json(list(
-    title = "Penguin body mass",
-    blocks = list(
-      list(type = "text", text = "## Body mass by species"),
-      list(type = "artifact", artifact = "mass-by-species")
-    )
-  )) |>
-  req_perform() |>
-  resp_body_json()
-report$url
-```
+## Report updates
 
-Python:
+To revise, `PATCH` the report with the full `blocks` list, which replaces the
+draft, then publish. The link stays the same and shows the new version.
+Earlier versions keep their own links. Republish changed artifacts first, so
+the report pins their new versions.
 
-```python
-import os, requests
-response = requests.post(
-    f"{os.environ['FW_CLOUD_URL']}/api/v1/projects/penguin-study/reports",
-    headers={"Authorization": f"Bearer {os.environ['FW_PROJECT_TOKEN']}"},
-    json={"title": "Penguin body mass", "markdown": "## Draft\n\nNotes so far."},
-)
-response.raise_for_status()
-print(response.json()["url"])
-```
+## Text
 
-In R and Python, the `.env` values are loaded by `scaffold()`. In a terminal,
-load them first, for example `set -a; . ./.env; set +a`.
-
-## Updating a report
-
-To revise, `PATCH` the report with the full `blocks` list you want (it
-replaces the draft), then publish. The link stays the same and readers get the
-new version; earlier versions stay available at their own links. Re-publish
-the underlying artifacts first if their content changed, so the report pins
-the new versions.
-
-## Rules
-
-- Write the text from the analysis that was actually run. Don't invent
-  numbers; take estimates and counts from the published results or the
-  project's outputs.
-- Never include identifiable or private data in report text, and never embed
-  artifacts published from private folders.
+- Take estimates and counts from the published results or the project's
+  outputs.
 - Tell the user the report's `url` and its visibility when you finish.

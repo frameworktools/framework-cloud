@@ -1,7 +1,7 @@
 {
   "id": "data-cleaning",
   "name": "Data cleaning",
-  "description": "Transformations and validation of analysis data.",
+  "description": "Transforming and checking analysis data.",
   "category": "data-cleaning",
   "language": [
     "r",
@@ -10,8 +10,7 @@
   ],
   "layer": {
     "skills": {
-      "cleaning-data": {},
-      "checking-data": {}
+      "cleaning-data": {}
     }
   }
 }

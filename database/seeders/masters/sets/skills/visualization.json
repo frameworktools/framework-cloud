@@ -1,7 +1,7 @@
 {
   "id": "visualization",
   "name": "Visualization",
-  "description": "Exploratory and publication figures for the project language.",
+  "description": "Figures for the project language, from exploring data to publication.",
   "category": "visualization",
   "language": [
     "r",
@@ -14,8 +14,7 @@
   "language_layers": {
     "r": {
       "skills": {
-        "ggplot2-exploring": {},
-        "ggplot2-publishing": {}
+        "ggplot2-figures": {}
       },
       "packages": {
         "default_packages": {
@@ -28,8 +27,7 @@
     },
     "python": {
       "skills": {
-        "matplotlib-exploring": {},
-        "matplotlib-publishing": {}
+        "matplotlib-figures": {}
       },
       "packages": {
         "default_packages": {
@@ -46,8 +44,7 @@
     },
     "stata": {
       "skills": {
-        "stata-graphs": {},
-        "stata-graphs-publishing": {}
+        "stata-graphs": {}
       }
     }
   }

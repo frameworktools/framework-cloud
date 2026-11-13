@@ -35,12 +35,12 @@ class SkillReadingTest extends TestCase
         // The Python text is framework-py's own copy
         $this->assertSame(base64_decode(collect(json_decode(file_get_contents(database_path('seeders/masters/skill-bundles.json')), true)['framework-workflow']['python']['bundle'])->firstWhere('path', 'SKILL.md')['content']), $workflow->latestVersion->contentFor('python'));
         // People read a short summary; agents read the description
-        $this->assertSame('Quick, accurate ggplot2 figures for understanding data.', $this->system('ggplot2-exploring')->summary);
+        $this->assertSame('Accurate ggplot2 figures, from exploring data to publication.', $this->system('ggplot2-figures')->summary);
         $this->assertNull(Skill::frontmatter("---\nname: x\ndescription: Use when.\n---\n", 'content')['summary']);
         $this->assertSame('Short', Skill::frontmatter("---\nname: x\ndescription: Use when.\nmetadata:\n  title: X\n  summary: Short\n---\n", 'content')['summary']);
 
         // ggplot2 is R's alone
-        $this->assertSame(['r'], $this->system('ggplot2-exploring')->language);
+        $this->assertSame(['r'], $this->system('ggplot2-figures')->language);
     }
 
     public function test_the_read_view_renders_the_whole_skill_for_the_chosen_language(): void
@@ -60,7 +60,7 @@ class SkillReadingTest extends TestCase
             ->where('source', $workflow->latestVersion->content));
 
         // An R-only skill shows R even when Python is asked for
-        $this->actingAs($user)->get('/skills/'.$this->system('ggplot2-exploring')->id.'?language=python')->assertInertia(fn (Assert $page) => $page->where('language', 'r')->where('variants', ['r']));
+        $this->actingAs($user)->get('/skills/'.$this->system('ggplot2-figures')->id.'?language=python')->assertInertia(fn (Assert $page) => $page->where('language', 'r')->where('variants', ['r']));
 
         // Reading someone else's skill doesn't open the editor
         $this->actingAs($user)->get("/skills/{$workflow->id}/edit")->assertRedirect("/skills/{$workflow->id}");

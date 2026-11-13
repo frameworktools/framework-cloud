@@ -118,14 +118,9 @@ class BlueprintSeeder extends Seeder
     }
 
     /**
-     * Framework's skills: R's text from the framework R package, and for
-     * the ones framework-py ships too, Python's own text as a variant
-     * (masters/skills/python, copied at the commit in its lock.json). A
-     * skill is for the languages that have its text.
-     */
-    /**
-     * Skills written for one language only. Their SKILL.md is that language's
-     * text, so they offer no R default.
+     * Package skills come from skill-bundles.json, one text per language.
+     * Cloud skills come from masters/skills, with Python and Stata variants
+     * in its python/ and stata/ folders.
      */
     private function seedSkills(string $dir): void
     {
@@ -174,7 +169,11 @@ class BlueprintSeeder extends Seeder
     }
 
     /** Framework skills no longer offered. Seeding moves them to the Trash. */
-    private const RETIRED_SKILLS = ['identifiable-data'];
+    private const RETIRED_SKILLS = [
+        'identifiable-data', 'checking-data', 'regression-models',
+        'ggplot2-exploring', 'ggplot2-publishing', 'matplotlib-exploring',
+        'matplotlib-publishing', 'stata-graphs-publishing',
+    ];
 
     /** Cloud sets extend the package catalog without changing its locked snapshots. */
     private function skillSets(string $mastersDir): array

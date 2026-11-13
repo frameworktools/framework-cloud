@@ -8,12 +8,21 @@ metadata:
 
 # Using Git in an analysis project
 
-## Git changes
+## Changes
 
-Inspect the current branch, status, and diff before editing or committing. Preserve unrelated work. Stage explicit paths so generated output, raw data, credentials, and machine-specific files are not included accidentally.
+- Check the branch, status, and diff before editing or committing.
+- Keep unrelated work as it is.
+- Stage explicit paths, so generated output, data, credentials, and
+  machine-specific files stay out of commits.
+- Keep each commit to one coherent change, and describe what changed.
 
-Keep commits focused on a coherent change. Review the staged diff and run checks appropriate to the affected work. Describe the changed behavior and relevant validation in the commit or review description.
+## Conflicts
 
-For notebook conflicts, compare cell content and metadata using notebook-aware tools when available. Re-execute affected analyses after resolving conflicts. For generated files, establish which source produced them before choosing a side.
+- Resolve notebook conflicts with notebook-aware tools when available.
+- Regenerate generated files from their source.
+- Rerun affected analyses after resolving a conflict.
 
-Do not rewrite shared history or overwrite local work to simplify synchronization. Inspect divergence before merging or rebasing. Follow the user's authorization for commits, pushes, and publication. A request to analyze data does not authorize publishing its repository or outputs.
+## Shared history
+
+- Leave shared history as it is. Check divergence before merging or rebasing.
+- Commit, push, and publish only when the user asks.

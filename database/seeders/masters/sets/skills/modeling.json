@@ -1,7 +1,7 @@
 {
   "id": "modeling",
-  "name": "Modeling",
-  "description": "Regression specification, diagnostics, and presentation.",
+  "name": "Model results",
+  "description": "Presenting estimates, uncertainty, and samples.",
   "category": "modeling",
   "language": [
     "r",
@@ -10,7 +10,6 @@
   ],
   "layer": {
     "skills": {
-      "regression-models": {},
       "model-results": {}
     }
   }

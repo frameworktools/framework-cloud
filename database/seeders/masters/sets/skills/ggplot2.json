@@ -1,0 +1,22 @@
+{
+  "id": "ggplot2",
+  "name": "Figures with ggplot2",
+  "description": "Figures with ggplot2, from exploring data to publication.",
+  "category": "visualization",
+  "language": [
+    "r"
+  ],
+  "layer": {
+    "skills": {
+      "ggplot2-figures": {}
+    },
+    "packages": {
+      "default_packages": {
+        "ggplot2": {
+          "source": "cran",
+          "auto_attach": true
+        }
+      }
+    }
+  }
+}

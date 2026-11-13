@@ -8,12 +8,23 @@ metadata:
 
 # Working in Jupyter notebooks
 
-## Notebook execution
+## Editing
 
-Check the notebook's kernel metadata and project environment before editing. Preserve cell identifiers and notebook metadata unless the format requires a change. Use notebook-aware tools or valid notebook JSON; do not manipulate cells with textual substitutions that can corrupt the file.
+- Check the notebook's kernel and the project environment before editing.
+- Edit notebooks with notebook-aware tools, which keep the JSON valid. Keep
+  cell ids and metadata.
 
-Organize cells in execution order. Put configuration and imports near the start, then input loading, transformations, analysis, and output. Keep narrative cells close to the results they explain.
+## Execution order
 
-Restart the kernel and execute all cells to verify reproducibility. A notebook that works only after out-of-order execution needs correction. Inspect warnings and outputs as well as execution status. Use project-relative paths and make randomness reproducible when it affects reported results.
+- Arrange cells in the order they run: setup and imports, data loading,
+  transformations, analysis, and output.
+- Keep text cells next to the results they explain.
+- Restart the kernel and run all cells to confirm the notebook runs in order.
+- Use project-relative paths, and set a seed when randomness affects reported
+  results.
 
-Review outputs for sensitive records and credentials before sharing. Follow repository policy for retaining or clearing outputs. Avoid large embedded data or binary outputs when a saved artifact and a reference suffice. Report execution limitations if the required kernel or data is unavailable.
+## Outputs
+
+- Follow the repository's policy on keeping or clearing outputs.
+- Save large data and binary outputs as files, and refer to them.
+- Check outputs for credentials before sharing.

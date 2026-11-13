@@ -8,12 +8,23 @@ metadata:
 
 # Writing Quarto documents
 
-## Quarto documents
+## Setup
 
-Read the document YAML and project `_quarto.yml` before changing output settings. Respect the existing engine and environment. Use executable cell syntax for the chosen language and unique labels for figures, tables, and cross-references.
+- Read the document's YAML and the project's `_quarto.yml` before changing
+  output settings. Keep the existing engine.
+- Use project-relative paths.
+- Keep credentials out of YAML and code cells.
 
-Keep computations in dependency order. Render from a fresh process to expose hidden state. Use project-relative input paths and avoid machine-specific working directories. Do not embed credentials in YAML or code cells.
+## Cells and references
 
-Use `fig-` and `tbl-` labels for references and meaningful captions that identify units and uncertainty. Keep citations in the project's bibliography. Preview the target format; HTML success does not establish that PDF or Word output renders correctly.
+- Order cells so each runs after what it depends on.
+- Label figures and tables with `fig-` and `tbl-` prefixes for
+  cross-references, and give each a caption.
+- Keep citations in the project's bibliography.
 
-Use caching or frozen execution only when its invalidation rules match the workflow. After changing data, parameters, or code dependencies, verify that affected results execute again. Render with `quarto render` from the project context and inspect warnings, missing references, and the final output.
+## Rendering
+
+- Render with `quarto render`, and check the warnings, missing references,
+  and output.
+- Render each target format. An HTML render does not test PDF or Word output.
+- With caching or `freeze`, confirm that changed code and data run again.

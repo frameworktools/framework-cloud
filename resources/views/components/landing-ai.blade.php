@@ -3,7 +3,7 @@
     // installed skills are listed beside it.
     $aiPanels = [];
     $aiFiles = [];
-    foreach (['r' => ['R', 'ggplot2-exploring'], 'py' => ['Python', 'matplotlib-exploring']] as $language => [$label, $plotting]) {
+    foreach (['r' => ['R', 'ggplot2-figures'], 'py' => ['Python', 'matplotlib-figures']] as $language => [$label, $plotting]) {
         $project = \App\Support\LandingProject::files($language);
         $main = ".claude/skills/$plotting/SKILL.md";
         $aiPanels[$language] = ['label' => $label, 'path' => $main, 'code' => $project[$main]];

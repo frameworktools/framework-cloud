@@ -1,23 +1,40 @@
 ---
 name: cleaning-data
-description: Use when transforming raw observations into analysis data, including parsing, recoding, joins, reshaping, and missing-value decisions.
+description: Use when turning raw data into analysis data, including parsing, recoding, joins, reshaping, missing values, and checks on keys, ranges, and samples.
 metadata:
   title: Cleaning data
-  summary: Documented transformations from raw observations to analysis data.
+  summary: Documented, checked steps from raw data to analysis data.
 ---
 
 # Cleaning data
 
 ## Transformations
 
-Keep raw inputs unchanged. Write transformations in execution order and save the analysis data separately. State the unit of observation and expected key before joining or reshaping.
+- Keep raw inputs unchanged. Save analysis data to a separate file.
+- Write transformations in the order they run.
+- Keep identifiers as strings when leading zeros matter.
+- Keep the source's distinctions among missing values, such as unknown,
+  refused, and not applicable.
+- Take units and missing-value codes from the source's documentation.
+- Record recoding rules beside the code.
 
-Preserve source identifiers as strings when leading zeros matter. Distinguish absent, unknown, refused, and structurally inapplicable values when the source does. Record recoding rules beside the code. Do not infer units or missing-value codes from a few rows.
+## Joins and reshaping
 
-Before a join, establish its cardinality. Count unmatched keys on both sides and compare row counts before and after. Resolve duplicate keys explicitly; dropping duplicates is a substantive decision. For repeated observations, include the time or episode identifier in the key.
+- State the unit of observation and the key before joining or reshaping.
+- Set the expected cardinality of a join, such as one-to-one or
+  many-to-one. In dplyr, set `relationship` in the join, such as `relationship = "many-to-one"`.
+- Count unmatched keys on both sides, and compare row counts before and
+  after.
+- Resolve duplicate keys explicitly. Dropping duplicates changes the sample.
+- For repeated observations, include the time or episode in the key.
+- After reshaping, compare group totals and the number of measurements.
 
-Keep a small record of exclusions and row counts at each consequential step.
+## Checks
 
-## Language conventions
-
-Use explicit parsing types and `dplyr` join relationships where available. Keep identifier columns character. Compare `nrow()` and key counts across joins.
+- Check that keys are unique and required values are present.
+- Summarize missing values by variable and by relevant groups.
+- Check impossible values separately from unusual ones. Remove an outlier
+  only for a substantive reason.
+- Use assertions for conditions that must hold, and summaries for conditions
+  that need judgment.
+- Record exclusions and row counts at each step that changes the sample.

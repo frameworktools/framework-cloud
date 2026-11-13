@@ -4,25 +4,9 @@
     "python",
     "stata"
   ],
-  "checking-data": [
-    "r",
-    "python",
-    "stata"
-  ],
-  "regression-models": [
-    "r",
-    "python",
-    "stata"
-  ],
   "model-results": [
     "r",
     "python",
-    "stata"
-  ],
-  "matplotlib-publishing": [
-    "python"
-  ],
-  "stata-graphs-publishing": [
     "stata"
   ],
   "report-structure": [
@@ -43,9 +27,6 @@
     "python",
     "stata"
   ],
-  "matplotlib-exploring": [
-    "python"
-  ],
   "stata-graphs": [
     "stata"
   ],
@@ -58,5 +39,8 @@
     "r",
     "python",
     "stata"
+  ],
+  "matplotlib-figures": [
+    "python"
   ]
 }

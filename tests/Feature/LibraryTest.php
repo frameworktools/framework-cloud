@@ -70,9 +70,9 @@ class LibraryTest extends TestCase
     {
         $counts = Facet::whereNull('user_id')->get()->countBy('kind')->all();
         $this->assertEquals(['structure' => 9, 'workflow' => 3, 'tool' => 7, 'setting' => 1, 'skill_set' => 12, 'package_set' => 27], $counts);
-        $this->assertSame(25, Skill::whereNull('user_id')->count());
+        $this->assertSame(20, Skill::whereNull('user_id')->count());
         // Single-language skills offer only their own language
-        $this->assertSame(['python'], Skill::whereNull('user_id')->where('key', 'matplotlib-exploring')->value('language'));
+        $this->assertSame(['python'], Skill::whereNull('user_id')->where('key', 'matplotlib-figures')->value('language'));
         $this->assertSame(['stata'], Skill::whereNull('user_id')->where('key', 'stata-graphs')->value('language'));
         // The reports skill uses the API, so it is for every language
         $this->assertSame(['r', 'python', 'stata'], Skill::whereNull('user_id')->where('key', 'framework-reports')->value('language'));
@@ -485,7 +485,7 @@ class LibraryTest extends TestCase
         $this->actingAs($user)->get('/structures/create')->assertInertia(fn (Assert $page) => $page
             ->component('Pieces/Edit')->where('kind', 'structure')->where('values.settings_yaml', "type: project\n"));
         $this->actingAs($user)->get('/facets')->assertRedirect('/structures');
-        $this->actingAs($user)->get('/skills')->assertInertia(fn (Assert $page) => $page->component('Skills/Index')->has('skills', 25));
+        $this->actingAs($user)->get('/skills')->assertInertia(fn (Assert $page) => $page->component('Skills/Index')->has('skills', 20));
 
         $system = $this->system(Blueprint::class, 'project_sensitive');
         $this->actingAs($user)->get("/blueprints/{$system->id}")->assertInertia(fn (Assert $page) => $page

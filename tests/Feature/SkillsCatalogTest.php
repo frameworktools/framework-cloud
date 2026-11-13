@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\Blueprint;
 use App\Models\Facet;
-use App\Models\Skill;
 use App\Models\User;
 use App\Support\DefaultsPreview;
 use App\Support\Layer;
@@ -34,7 +33,7 @@ class SkillsCatalogTest extends TestCase
     public function test_standard_defaults_follow_the_language_and_workflow(): void
     {
         $user = User::factory()->create();
-        foreach (['r' => ['ggplot2-exploring', 'ggplot2-publishing'], 'python' => ['matplotlib-exploring', 'matplotlib-publishing'], 'stata' => ['stata-graphs', 'stata-graphs-publishing']] as $language => $figures) {
+        foreach (['r' => ['ggplot2-figures'], 'python' => ['matplotlib-figures'], 'stata' => ['stata-graphs']] as $language => $figures) {
             foreach ($language === 'stata' ? ['scripts'] : ['quarto', 'jupyter', 'scripts'] as $workflow) {
                 $spec = $this->resolve($user, ['blueprint' => 'framework/project', 'language' => $language, 'workflow' => $workflow]);
                 $skills = array_filter($spec['skills'] ?? []);
@@ -42,7 +41,7 @@ class SkillsCatalogTest extends TestCase
                     $this->assertArrayHasKey($key, $skills);
                 }
                 $this->assertArrayNotHasKey('cleaning-data', $skills);
-                $this->assertArrayNotHasKey('regression-models', $skills);
+                $this->assertArrayNotHasKey('model-results', $skills);
                 $this->assertArrayNotHasKey('framework-cache', $skills);
                 $this->assertArrayNotHasKey('framework-reports', $skills);
                 $this->assertSame($workflow === 'quarto', isset($skills['quarto-documents']));
@@ -53,7 +52,7 @@ class SkillsCatalogTest extends TestCase
                         $this->assertSame($language, $entry['sync']['variant']);
                     }
                 }
-                $this->assertCount($language === 'stata' ? 5 : ($workflow === 'scripts' ? 8 : 9), $skills);
+                $this->assertCount($language === 'stata' ? 4 : ($workflow === 'scripts' ? 7 : 8), $skills);
             }
         }
     }
@@ -78,7 +77,7 @@ class SkillsCatalogTest extends TestCase
         foreach (['r' => 'ggplot2', 'python' => 'matplotlib', 'stata' => 'stata-graphs'] as $language => $prefix) {
             $sets = $this->actingAs($user)->getJson('/api/v1/skill-sets?language='.$language)->assertOk()->json('skill_sets');
             $visualization = collect($sets)->firstWhere('key', 'framework/visualization');
-            $this->assertCount(2, $visualization['skills']);
+            $this->assertCount(1, $visualization['skills']);
             $this->assertSame(match ($language) {
                 'r' => ['ggplot2'], 'python' => ['matplotlib', 'seaborn'], 'stata' => [],
             }, $visualization['packages']);
@@ -88,11 +87,15 @@ class SkillsCatalogTest extends TestCase
         }
         foreach (['r', 'python'] as $language) {
             $spec = $this->resolve($user, ['blueprint' => 'framework/project', 'language' => $language, 'skill_sets' => ['framework/framework-extras']]);
-            foreach (Skill::INLINE_PACKAGE_SKILLS as $key) {
+            foreach (['framework-cache', 'framework-databases', 'framework-publishing'] as $key) {
                 $this->assertArrayNotHasKey('package', $spec['skills'][$key]);
                 $this->assertSame($language, $spec['skills'][$key]['sync']['variant']);
             }
         }
+        // ggplot2-figures is inline until a framework release ships it
+        $spec = $this->resolve($user, ['blueprint' => 'framework/project', 'language' => 'r', 'skill_sets' => ['framework/ggplot2']]);
+        $this->assertArrayNotHasKey('package', $spec['skills']['ggplot2-figures']);
+        $this->assertSame('r', $spec['skills']['ggplot2-figures']['sync']['variant']);
     }
 
     public function test_reseeding_preserves_custom_blueprints_and_their_skill_keys_and_folders(): void
@@ -124,7 +127,7 @@ class SkillsCatalogTest extends TestCase
         $this->assertSame('visualization', $copy->category);
         $this->get("/skill-sets/{$copy->id}/edit?language=python")->assertInertia(fn ($page) => $page
             ->where('variant', 'python')
-            ->where('values.skills.0.name', 'matplotlib-exploring'));
+            ->where('values.skills.0.name', 'matplotlib-figures'));
         $before = $copy->latestVersion->language_layers;
         $this->put("/skill-sets/{$copy->id}", [
             'name' => $copy->name, 'visibility' => 'private', 'language' => 'python', 'variant' => 'python',

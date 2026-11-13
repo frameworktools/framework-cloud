@@ -1,23 +1,23 @@
 ---
 name: model-results
-description: Use when converting fitted models into coefficient tables, marginal effects, predictions, or model plots for a report.
+description: Use when presenting fitted models in tables or figures, including coefficients, intervals, predictions, and marginal effects.
 metadata:
-  title: Reporting model results
-  summary: Estimates, uncertainty, and sample information for model tables and plots.
+  title: Presenting model results
+  summary: Estimates, uncertainty, and sample information in model tables and figures.
 ---
 
-# Reporting model results
+# Presenting model results
 
-## Results
+## Estimates
 
-Identify the fitted model and its estimation sample. Label the outcome, model family, scale, reference groups, and units. Report the sample size and the uncertainty method, including clustering or weighting when used.
-
-Present estimates with intervals. State whether an estimate is on the link scale, response scale, or exponentiated scale. For nonlinear models and interactions, use predictions or marginal contrasts when they answer the question more directly than coefficients. Specify the covariate distribution or values used in those calculations.
-
-Match uncertainty calculations to the fitted model. Preserve covariance when calculating contrasts. Do not construct intervals for a transformed estimate by transforming its standard error.
-
-Keep comparable specifications in aligned columns with a stable row order. Explain sample changes and omitted terms. Use sensible precision and explicit interval levels. Separate evidence of association from causal claims and substantive importance.
-
-## Language conventions
-
-Use `estimates store` for models that will be compared. `margins` and `lincom` use the active estimation results; restore the intended model before computing them.
+- Name the outcome, the model, and the estimation sample.
+- Give the sample size and how uncertainty was estimated, including
+  clustering or weights.
+- Label units, reference groups, and the scale of each estimate: link,
+  response, or exponentiated.
+- Present estimates with intervals, and state the interval level.
+- For an exponentiated estimate, exponentiate the interval limits.
+- For nonlinear models and interactions, predictions or marginal contrasts
+  can be easier to read than coefficients. State the covariate values used.
+- Note changes in the sample between models.
+- In Stata, store each model with `estimates store`, and restore the intended model before `margins` or `lincom`.

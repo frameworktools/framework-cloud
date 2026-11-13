@@ -331,19 +331,19 @@ class ProjectSetupTest extends TestCase
     public function test_a_project_made_over_the_api_with_its_own_skills_takes_pushed_packages_and_data(): void
     {
         [$project, $token] = $this->apiProject(User::factory()->create(), [
-            'blueprint' => 'framework/project', 'skills' => ['framework/ggplot2-exploring'], 'tools' => ['renv' => true],
+            'blueprint' => 'framework/project', 'skills' => ['framework/ggplot2-figures'], 'tools' => ['renv' => true],
         ]);
 
         // Stored as changes to the blueprint, as Edit project reads them
         $this->assertFalse($project->choices['customized']);
-        $this->assertSame(['framework/ggplot2-exploring'], $project->choices['skills']);
+        $this->assertSame(['framework/ggplot2-figures'], $project->choices['skills']);
         $this->assertSame(['renv' => true], $project->choices['tools']);
         $this->assertSame('quarto', $project->choices['workflow']);
         $layers = fn () => array_column(ProjectLayers::for($project->fresh())['layers'], 'key');
         $before = $layers();
 
         $setup = $this->pulled($token);
-        $this->assertContains('ggplot2-exploring', array_column($setup['skills'], 'key'));
+        $this->assertContains('ggplot2-figures', array_column($setup['skills'], 'key'));
         $this->push($token, ['base_revision' => $setup['revision'], 'packages' => [...$setup['packages'], self::FIXEST]])
             ->assertOk()->assertJsonPath('applied', true);
 
@@ -353,31 +353,31 @@ class ProjectSetupTest extends TestCase
 
         // The skill, the tool, and the packages all stay
         $after = $this->pulled($token);
-        $this->assertContains('ggplot2-exploring', array_column($after['skills'], 'key'));
+        $this->assertContains('ggplot2-figures', array_column($after['skills'], 'key'));
         $this->assertSame('0.12.1', self::byName($after['packages'])['fixest']['version']);
         $this->assertSame($before, $layers());
         $this->assertSame('inputs/raw/survey.csv', $this->withToken($token)->getJson('/api/v1/projects/data')->json('entries.0.path'));
 
         // Edit project opens on the API's changes
         $this->actingAs($project->user)->get("/projects/{$project->slug}/edit")
-            ->assertInertia(fn (AssertableInertia $page) => $page->where('editing.choices.skills', ['framework/ggplot2-exploring'])->where('editing.unknown_choices', false));
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('editing.choices.skills', ['framework/ggplot2-figures'])->where('editing.unknown_choices', false));
     }
 
     public function test_a_project_made_over_the_api_from_exact_pieces_takes_pushed_packages(): void
     {
-        [$project, $token] = $this->apiProject(User::factory()->create(), ['structure' => 'framework/project', 'skills' => ['framework/ggplot2-exploring']]);
+        [$project, $token] = $this->apiProject(User::factory()->create(), ['structure' => 'framework/project', 'skills' => ['framework/ggplot2-figures']]);
         $this->assertTrue($project->choices['customized']);
         $this->assertNull($project->blueprint_version_id);
 
         $setup = $this->pulled($token);
         $this->push($token, ['base_revision' => $setup['revision'], 'packages' => [...$setup['packages'], self::FIXEST]])->assertOk();
-        $this->assertContains('ggplot2-exploring', array_column($this->pulled($token)['skills'], 'key'));
+        $this->assertContains('ggplot2-figures', array_column($this->pulled($token)['skills'], 'key'));
     }
 
     public function test_a_project_from_before_choices_were_kept_derives_them_when_they_match_its_setup(): void
     {
         [$project, $token] = $this->apiProject(User::factory()->create(), [
-            'blueprint' => 'framework/project', 'skills' => ['framework/ggplot2-exploring'], 'tools' => ['renv' => true], 'settings' => ['git' => false],
+            'blueprint' => 'framework/project', 'skills' => ['framework/ggplot2-figures'], 'tools' => ['renv' => true], 'settings' => ['git' => false],
         ]);
         $project->update(['choices' => null]);
         $resolved = $project->resolved;
@@ -388,7 +388,7 @@ class ProjectSetupTest extends TestCase
 
         // The derived choices are kept, and only the pushed package changed
         $choices = $project->fresh()->choices;
-        $this->assertSame(['framework/ggplot2-exploring'], $choices['skills']);
+        $this->assertSame(['framework/ggplot2-figures'], $choices['skills']);
         $this->assertTrue($choices['tools']['renv']);
         $this->assertFalse($choices['settings']['git']);
         $this->assertSame('0.12.1', $choices['package_definitions']['fixest']['version']);
@@ -404,7 +404,7 @@ class ProjectSetupTest extends TestCase
 
     public function test_a_project_from_before_choices_were_kept_is_refused_when_they_cant_be_derived(): void
     {
-        [$project, $token] = $this->apiProject(User::factory()->create(), ['blueprint' => 'framework/project', 'skills' => ['framework/ggplot2-exploring']]);
+        [$project, $token] = $this->apiProject(User::factory()->create(), ['blueprint' => 'framework/project', 'skills' => ['framework/ggplot2-figures']]);
         // A setting no choice makes: resolving again would lose it
         $envelope = json_decode($project->resolved, true);
         foreach ($envelope['layers'] as &$layer) {

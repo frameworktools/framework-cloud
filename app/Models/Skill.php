@@ -86,7 +86,7 @@ class Skill extends Model
     }
 
     // Keep new keys inline until released clients ship them.
-    public const INLINE_PACKAGE_SKILLS = ['framework-cache', 'framework-databases', 'framework-publishing'];
+    public const INLINE_PACKAGE_SKILLS = ['framework-cache', 'framework-databases', 'framework-publishing', 'ggplot2-figures'];
 
     /**
      * A released package bundle is referenced by key for its language.

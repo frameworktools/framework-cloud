@@ -164,23 +164,23 @@ class BlueprintBuilderTest extends TestCase
             ->has('catalog.categories', 10)
             ->where('catalog.package_sets', fn ($sets) => collect($sets)->firstWhere('key', 'framework/regression-r')['category'] === 'modeling')
             ->where('catalog.skills', fn ($skills) => collect($skills)->firstWhere('key', 'framework/cleaning-data')['tags'][0]['key'] === 'data-cleaning')
-            ->where('catalog.skill_sets', fn ($sets) => collect($sets)->firstWhere('key', 'framework/visualization')['members']['python'] === ['matplotlib-exploring', 'matplotlib-publishing']));
+            ->where('catalog.skill_sets', fn ($sets) => collect($sets)->firstWhere('key', 'framework/visualization')['members']['python'] === ['matplotlib-figures']));
     }
 
     public function test_individual_skills_are_saved_with_their_language_variant(): void
     {
         $user = User::factory()->create(['email_verified_at' => now()]);
         $this->actingAs($user)->post('/blueprints', $this->choices([
-            'language' => 'python', 'skills' => ['framework/cleaning-data', 'framework/checking-data'],
+            'language' => 'python', 'skills' => ['framework/cleaning-data', 'framework/model-results'],
         ]))->assertSessionHasNoErrors();
         $blueprint = Blueprint::where('user_id', $user->id)->sole();
         $skills = array_filter($blueprint->latestVersion->layer['skills']);
-        $this->assertSame(['cleaning-data', 'checking-data'], array_keys($skills));
+        $this->assertSame(['cleaning-data', 'model-results'], array_keys($skills));
         foreach ($skills as $entry) {
             $this->assertSame('python', $entry['sync']['variant']);
         }
         $this->get("/blueprints/{$blueprint->id}/edit?tab=ai")->assertInertia(fn ($page) => $page
-            ->where('section', 'ai')->where('start.skills', ['framework/cleaning-data', 'framework/checking-data']));
+            ->where('section', 'ai')->where('start.skills', ['framework/cleaning-data', 'framework/model-results']));
     }
 
     public function test_skills_can_be_removed_individually_from_a_selected_set(): void
