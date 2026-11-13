@@ -127,23 +127,23 @@
         },
         "conformance/create/stata/bare-scripts.json": {
             "source": "inst/conformance/create/stata/bare-scripts.json",
-            "sha256": "8a624f6588f35f4452e14a57f74236f7f19451acf118b9b3783917c1b7acc8ef"
+            "sha256": "c7395cf23015820a97d789dd516dc467a97b5f6d40925ca47c8210aabdafb84c"
         },
         "conformance/create/stata/project-scripts-codex-copilot.json": {
             "source": "inst/conformance/create/stata/project-scripts-codex-copilot.json",
-            "sha256": "2aeb26edb35577abe517cab9f0af84263921024388abe831fd1116adc5675059"
+            "sha256": "146ed235c0c55eeaba876d78566cc978c919010ecf604bc502ee180abfbe5e27"
         },
         "conformance/create/stata/project-scripts-no-agents.json": {
             "source": "inst/conformance/create/stata/project-scripts-no-agents.json",
-            "sha256": "59052e3d9514772a2eafac399762a0f3e2d75408052b28883ddef6b80b5e37cf"
+            "sha256": "7a5144f6e2de66e26d01bbdfe632372b0d1b1e58f42072a48a7591a2cc832010"
         },
         "conformance/create/stata/project-scripts.json": {
             "source": "inst/conformance/create/stata/project-scripts.json",
-            "sha256": "08d80a3bd38310e0033583d89eeed71d3634be7a12b70911e75b582704aa9abc"
+            "sha256": "bd0431f6a3c3540c0137cee5612e6e09574c5c1f094098226c501328d01f5153"
         },
         "conformance/create/stata/project_sensitive-scripts.json": {
             "source": "inst/conformance/create/stata/project_sensitive-scripts.json",
-            "sha256": "8700fe3d2161ba01626d31eba7deafbc90d36d4e01aac05a5418516b214708ee"
+            "sha256": "7e97214f9c879b1acc2948e8daac44ca331d1fcea7d25a3ca778f3582a5fa8a5"
         },
         "features/jupyter.json": {
             "source": "inst/features/jupyter.json",

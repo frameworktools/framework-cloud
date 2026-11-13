@@ -92,7 +92,7 @@ const menuFor = (item) => [
                                 <div class="min-w-0">
                                     <div :class="label" class="mb-2">Folders and files</div>
                                     <ProjectTreeView :entries="s.preview.tree" show-when />
-                                    <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Editor, agent, and Git files and packages come from the blueprint and your defaults. Stata projects get the same folders, with settings.do in place of settings.yml.</p>
+                                    <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Editor, agent, and Git files and packages come from the blueprint and your defaults. Stata projects get the same folders, plus settings.do for the path globals.</p>
                                 </div>
 
                                 <!-- What the structure decides -->

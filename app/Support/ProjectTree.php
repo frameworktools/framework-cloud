@@ -64,6 +64,8 @@ class ProjectTree
             foreach ($directories as $path) {
                 $add($path, self::isFile($path) ? 'file' : 'dir');
             }
+            // settings.yml holds the catalog and destinations, and settings.do the path globals
+            $add('settings.yml', 'file');
             $add('settings.do', 'file');
             $add('.gitignore', 'file');
             // Starter do-files come from the blueprint, like any starter scripts
