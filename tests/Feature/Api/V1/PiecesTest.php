@@ -46,9 +46,9 @@ class PiecesTest extends TestCase
         $this->assertContains('framework/quarto', $python);
 
         $this->withToken($token)->getJson('/api/v1/skill-sets')->assertOk()
-            ->assertJsonPath('skill_sets.1.key', 'framework/ggplot2')
-            ->assertJsonPath('skill_sets.1.skills', ['ggplot2-figures'])
-            ->assertJsonPath('skill_sets.1.packages', ['ggplot2']);
+            ->assertJsonPath('skill_sets.2.key', 'framework/ggplot2')
+            ->assertJsonPath('skill_sets.2.skills', ['ggplot2-figures'])
+            ->assertJsonPath('skill_sets.2.packages', ['ggplot2']);
         $this->withToken($token)->getJson('/api/v1/package-sets')->assertOk()->assertJsonPath('package_sets.0.key', 'framework/tidy-core')->assertJsonPath('package_sets.1.key', 'framework/tidyverse-analysis')->assertJsonPath('package_sets.3.key', 'framework/python-data-analysis');
         $this->withToken($token)->getJson('/api/v1/skills')->assertOk()->assertJsonCount(20, 'skills');
 

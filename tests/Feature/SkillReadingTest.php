@@ -89,7 +89,7 @@ class SkillReadingTest extends TestCase
             // Each language's description is its own
             ->where('sets.0.skills', fn ($skills) => str_contains(collect($skills)->firstWhere('key', 'framework-workflow')['descriptions']['python'], 'Python'))
             ->where('sets.0.skills.0.language', ['r', 'python'])
-            ->where('sets.1.packages.0.name', 'ggplot2'));
+            ->where('sets.2.packages.0.name', 'ggplot2'));
     }
 
     public function test_a_skill_for_another_language_isnt_delivered_and_the_right_text_is(): void
