@@ -40,6 +40,8 @@ sits on a shared baseline.
   points when zero is not meaningful.
 - **Order:** sort categories by value with `forcats::fct_reorder()` unless
   they have a natural order.
+- **Missing-value codes:** check the codebook for codes such as -99 before
+  plotting, and recode them to missing.
 - **Missing values:** ggplot2 drops rows with missing values and warns. Count
   what was dropped before you trust the figure.
 - **Panels:** panels that readers compare share axis limits, the

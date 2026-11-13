@@ -36,6 +36,8 @@ sits on a shared baseline.
   right-skewed values. Say so in the axis title.
 - **Bars:** bars start at zero. Use `graph dot` when zero is not meaningful.
 - **Order:** sort categories by value unless they have a natural order.
+- **Missing-value codes:** check the codebook for codes such as -99 before
+  plotting, and recode them to missing.
 - **Missing values:** graphs drop missing values without a note. Check them
   with `misstable summarize` before you trust the graph.
 - **Panels:** panels that readers compare share axis scales, the `by()`

@@ -38,6 +38,8 @@ sits on a shared baseline.
 - **Bars:** a bar's length encodes its value, so the axis starts at zero. Use
   points when zero is not meaningful.
 - **Order:** sort categories by value unless they have a natural order.
+- **Missing-value codes:** check the codebook for codes such as -99 before
+  plotting, and recode them to missing.
 - **Missing values:** seaborn drops rows with missing values without a
   warning. Count them with `df[cols].isna().sum()` before you trust the
   figure.
