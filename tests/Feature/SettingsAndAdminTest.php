@@ -267,9 +267,17 @@ class SettingsAndAdminTest extends TestCase
         $this->assertNotSame('cosmo', $spec['quarto']['html']['theme'] ?? null);
         $this->assertNotSame(false, $spec['git']['use_git'] ?? true);
         $this->assertFalse($spec['tools']['renv'] ?? false);
-        // Python seeds and puts functions/ on the import path; the theme is R's. Stata has no scaffold settings
-        $this->assertSame(['ide', 'seed_on_scaffold', 'seed', 'source_all_functions'], array_keys($this->base((new Resolver($user->fresh()))->resolve(['name' => 'S', 'language' => 'python'])['envelope']['layers'])['scaffold']));
-        $this->assertArrayNotHasKey('scaffold', $this->base((new Resolver($user->fresh()))->resolve(['name' => 'S', 'language' => 'stata'])['envelope']['layers']));
+        // Python seeds and puts functions/ on the import path; the theme is R's. Stata's fw_scaffold
+        // seeds, adds functions/ to the ado-path, and sets a graph scheme for fw releases that take one
+        $python = fn () => array_keys($this->base((new Resolver($user->fresh()))->resolve(['name' => 'S', 'language' => 'python'])['envelope']['layers'])['scaffold']);
+        $this->assertSame(['ide', 'seed_on_scaffold', 'seed', 'set_theme_on_scaffold', 'source_all_functions'], $python());
+        $stata = fn () => $this->base((new Resolver($user->fresh()))->resolve(['name' => 'S', 'language' => 'stata'])['envelope']['layers']);
+        $this->assertSame(['seed_on_scaffold', 'seed', 'set_theme_on_scaffold', 'source_all_functions'], array_keys($stata()['scaffold']));
+        config(['framework.spec_parity' => true]);
+        $this->assertSame(['seed_on_scaffold', 'seed', 'set_theme_on_scaffold', 'stata_scheme', 'source_all_functions'], array_keys($stata()['scaffold']));
+        // Stata packages install into the project's ado/plus unless a blueprint turns it off
+        $this->assertSame(['project_ado' => true, 'default_packages' => []], $stata()['packages']);
+        $this->assertSame(['ide', 'seed_on_scaffold', 'seed', 'set_theme_on_scaffold', 'matplotlib_style', 'source_all_functions'], $python());
     }
 
     public function test_the_blueprint_decides_agents_scaffold_quarto_and_packages(): void

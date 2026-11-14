@@ -135,11 +135,6 @@ class ProjectLayers
     {
         $facet = $version->facet;
         $layer = self::pieceLayer($facet, $version->layer);
-        if ($language === 'stata' && $facet->kind === 'package_set' && $version->manual_packages) {
-            $layer['files']['.framework/packages/stata-'.$facet->id.'.txt'] = [
-                'content' => implode("\n", $version->manual_packages)."\n",
-            ];
-        }
         // R's released schema takes jupyter as a notebook format from the
         // framework commit that adds workflows; until then R picks the format
         // from the tools
@@ -230,6 +225,10 @@ class ProjectLayers
             ]]]);
         }
 
+        if (! config('framework.spec_parity')) {
+            $layers = $language === 'stata' ? self::stataPackageList($layers) : self::withoutStyle($layers);
+        }
+
         $envelope = [
             'spec_version' => 1,
             'name' => $name,
@@ -258,6 +257,43 @@ class ProjectLayers
         }
 
         return $envelope;
+    }
+
+    /** For framework-py releases that predate scaffold.matplotlib_style. */
+    private static function withoutStyle(array $layers): array
+    {
+        foreach ($layers as $i => $entry) {
+            unset($layers[$i]['layer']['scaffold']['matplotlib_style']);
+        }
+
+        return $layers;
+    }
+
+    /**
+     * For fw releases that predate Stata packages in the spec: takes the
+     * packages and the graph scheme out of every layer, and lists the package
+     * names the layers add up to in .framework/packages/stata.txt, as Cloud
+     * did before fw_packages.
+     */
+    private static function stataPackageList(array $layers): array
+    {
+        $entries = [];
+        foreach ($layers as $i => $entry) {
+            unset($layers[$i]['layer']['scaffold']['stata_scheme']);
+            if (! isset($entry['layer']['packages'])) {
+                continue;
+            }
+            $entries = array_replace($entries, $entry['layer']['packages']['default_packages'] ?? []);
+            unset($layers[$i]['layer']['packages']);
+        }
+        $names = array_keys(array_filter($entries, 'is_array'));
+        if ($names) {
+            $layers[] = ['kind' => 'settings', 'key' => 'stata packages', 'layer' => [
+                'files' => ['.framework/packages/stata.txt' => ['content' => implode("\n", $names)."\n"]],
+            ]];
+        }
+
+        return array_values($layers);
     }
 
     /**

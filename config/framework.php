@@ -24,6 +24,14 @@ return [
     // predate that schema.
     'spec_workflows' => (bool) env('FW_SPEC_WORKFLOWS', true),
 
+    // The spec keys that bring Stata and Python level with R (framework after
+    // 2.0.7): Stata packages (the ssc and net sources, url, and
+    // packages.project_ado), scaffold.stata_scheme, and
+    // scaffold.matplotlib_style. Older fw and framework-py reject them, so
+    // while this is off they stay out, and Stata projects get their package
+    // names in .framework/packages/stata.txt.
+    'spec_parity' => (bool) env('FW_SPEC_PARITY', false),
+
     /*
     |--------------------------------------------------------------------------
     | Documents storage

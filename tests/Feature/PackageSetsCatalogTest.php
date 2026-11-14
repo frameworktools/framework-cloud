@@ -42,13 +42,14 @@ class PackageSetsCatalogTest extends TestCase
             ->where('sets.1.language', ['r'])
             ->where('sets.3.language', ['python'])
             ->where('sets.3.packages.0.name', 'pandas')
-            ->where('sets.27.language', ['python'])
-            ->where('sets.27.requirements', 'Nothing outside Python.')
-            ->where('sets.27.packages.0.source', 'pypi'));
+            ->where('sets.31.language', ['python'])
+            ->where('sets.31.requirements', 'Nothing outside Python.')
+            ->where('sets.31.packages.0.source', 'pypi'));
 
-        // Stata has a manual package-list tab.
+        // Framework's Stata sets install from SSC
         $stata = User::factory()->create(['email_verified_at' => now(), 'project_defaults' => ['language' => 'stata']]);
-        $this->actingAs($stata)->get('/package-sets')->assertInertia(fn (Assert $page) => $page->where('language', 'stata'));
+        $this->actingAs($stata)->get('/package-sets')->assertInertia(fn (Assert $page) => $page->where('language', 'stata')
+            ->where('sets.23.key', 'stata-tables')->where('sets.23.language', ['stata'])->where('sets.23.packages.0.source', 'ssc'));
     }
 
     public function test_a_package_set_names_its_language_and_isnt_installed_for_another(): void
@@ -58,8 +59,20 @@ class PackageSetsCatalogTest extends TestCase
         $this->actingAs($user)->post('/package-sets', ['name' => 'Anything', 'visibility' => 'private', 'language' => 'stata', 'packages' => 'reghdfe'])->assertSessionHasNoErrors();
 
         $stataSet = Facet::where('user_id', $user->id)->where('key', 'anything')->sole();
-        $stataResolved = (new Resolver($user))->resolve(['name' => 'Manual Stata', 'language' => 'stata', 'package_sets' => [$stataSet->handle]]);
-        $this->assertSame("reghdfe\n", DefaultsPreview::merge($stataResolved['envelope']['layers'])['files']['.framework/packages/stata-'.$stataSet->id.'.txt']['content']);
+        $stataResolved = (new Resolver($user))->resolve(['name' => 'Stata', 'language' => 'stata', 'package_sets' => [$stataSet->handle]]);
+        // fw releases before Stata packages get the names in a file and no package entries
+        $merged = DefaultsPreview::merge($stataResolved['envelope']['layers']);
+        $this->assertSame("reghdfe\n", $merged['files']['.framework/packages/stata.txt']['content']);
+        $this->assertArrayNotHasKey('packages', $merged);
+        config(['framework.spec_parity' => true]);
+        $stataResolved = (new Resolver($user))->resolve(['name' => 'Stata', 'language' => 'stata', 'package_sets' => [$stataSet->handle], 'settings' => ['project_ado' => true]]);
+        $merged = DefaultsPreview::merge($stataResolved['envelope']['layers']);
+        $this->assertSame(['source' => 'ssc', 'auto_attach' => false], $merged['packages']['default_packages']['reghdfe']);
+        $this->assertTrue($merged['packages']['project_ado']);
+        $this->assertArrayNotHasKey('.framework/packages/stata.txt', $merged['files'] ?? []);
+        // An R project never takes a Stata set's packages
+        $rResolved = (new Resolver($user))->resolve(['name' => 'R', 'language' => 'r', 'package_sets' => [$stataSet->handle]]);
+        $this->assertArrayNotHasKey('reghdfe', DefaultsPreview::merge($rResolved['envelope']['layers'])['packages']['default_packages'] ?? []);
         $set = $this->pythonSet($user);
         $resolved = (new Resolver($user))->resolve(['name' => 'S', 'language' => 'r', 'package_sets' => [$set->handle]]);
         $this->assertNotContains($set->id, collect($resolved['pieces'])->pluck('facet_id'));

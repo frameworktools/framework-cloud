@@ -13,20 +13,22 @@ import UiSwitch from '@/Components/UiSwitch.vue';
  * sets load their packages into the list; the list is what's saved.
  */
 const props = defineProps({
-    language: { type: String, required: true }, // r | python
+    language: { type: String, required: true }, // r | python | stata
     attachment: { type: Boolean, default: true },
     presets: { type: Array, default: () => [] }, // package sets that fit this language
 });
 const rows = defineModel({ type: Array, default: () => [] });
 
-const manual = computed(() => props.language === 'stata');
+const stata = computed(() => props.language === 'stata');
 const r = computed(() => props.language === 'r');
-const sources = computed(() => (r.value
-    ? [{ value: 'cran', label: 'CRAN' }, { value: 'github', label: 'GitHub' }, { value: 'bioc', label: 'Bioconductor' }]
-    : [{ value: 'pypi', label: 'PyPI' }, { value: 'github', label: 'GitHub' }]));
+const sources = computed(() => ({
+    r: [{ value: 'cran', label: 'CRAN' }, { value: 'github', label: 'GitHub' }, { value: 'bioc', label: 'Bioconductor' }],
+    python: [{ value: 'pypi', label: 'PyPI' }, { value: 'github', label: 'GitHub' }],
+    stata: [{ value: 'ssc', label: 'SSC' }, { value: 'github', label: 'GitHub' }, { value: 'net', label: 'Web address' }],
+})[props.language] ?? []);
 
 // New packages are installed but not attached until the person turns it on
-const blank = () => ({ name: '', source: manual.value ? 'manual' : r.value ? 'cran' : 'pypi', auto_attach: false, version: null, repo: null });
+const blank = () => ({ name: '', source: stata.value ? 'ssc' : r.value ? 'cran' : 'pypi', auto_attach: false, version: null, repo: null, ref: null, url: null });
 const update = (i, patch) => {
     rows.value = rows.value.map((row, j) => (j === i ? { ...row, ...patch } : row));
 };
@@ -38,7 +40,13 @@ const add = () => {
 };
 // A GitHub package is written owner/repo; its name is the repository's
 const setRepo = (i, value) => update(i, { repo: value || null, name: (value ?? '').split('/')[1] ?? '' });
-const setSource = (i, source) => update(i, source === 'github' ? { source } : { source, repo: null });
+// Each source keeps only its own fields: a repo and ref for GitHub, a url for net
+const setSource = (i, source) => update(i, { source, ...(source === 'github' ? {} : { repo: null, ref: null }), ...(source === 'net' ? {} : { url: null }) });
+// Stata's third column: SSC keeps no versions, a GitHub ref picks one, and net needs its address
+const stataDetail = (row) => ({
+    github: { field: 'ref', placeholder: 'Tag or branch', label: 'Tag, branch, or commit' },
+    net: { field: 'url', placeholder: 'https://…', label: 'Web address of the package' },
+})[row.source];
 
 // A set adds the packages the list doesn't have yet
 const missing = (preset) => preset.packages.filter((p) => !rows.value.some((row) => row.name.toLowerCase() === p.name.toLowerCase()));
@@ -83,7 +91,7 @@ const field = 'w-full rounded-md border border-slate-300 bg-white px-3 py-2 text
 
         <div class="divide-y divide-slate-800/10 dark:divide-white/15">
             <!-- Column labels, for the rows below -->
-            <div v-if="!manual" class="hidden gap-3 py-2 text-xs font-medium text-slate-500 dark:text-slate-400 sm:grid grid-cols-[minmax(0,1fr)_9rem_9rem_2rem]">
+            <div class="hidden gap-3 py-2 text-xs font-medium text-slate-500 dark:text-slate-400 sm:grid grid-cols-[minmax(0,1fr)_9rem_9rem_2rem]">
                 <span>Package</span><span>Source</span>
                 <span v-if="r && attachment" class="flex items-center gap-1">
                     Auto-attach
@@ -98,23 +106,32 @@ const field = 'w-full rounded-md border border-slate-300 bg-white px-3 py-2 text
                         >When scaffold() runs, it installs any missing packages and loads the ones switched on here with library(), so they're ready in every notebook and script.</span>
                     </span>
                 </span>
+                <span v-else-if="stata">Tag or address</span>
                 <span v-else>Version</span><span class="sr-only">Remove</span>
             </div>
-            <div v-for="(row, i) in rows" :key="i" class="grid items-center gap-3 py-3" :class="manual ? 'grid-cols-[minmax(0,1fr)_2rem]' : 'sm:grid-cols-[minmax(0,1fr)_9rem_9rem_2rem]'">
-                <input v-if="manual" :value="row.name" type="text" placeholder="Package name" spellcheck="false" aria-label="Package name" :class="[field, 'font-mono']" @input="update(i, { name: $event.target.value.trim() })">
+            <div v-for="(row, i) in rows" :key="i" class="grid items-center gap-3 py-3 sm:grid-cols-[minmax(0,1fr)_9rem_9rem_2rem]">
+                <input
+                    v-if="stata && row.source !== 'github'" :value="row.name" type="text" :placeholder="row.source === 'ssc' ? 'Name on SSC' : 'Package name'" spellcheck="false" aria-label="Package name"
+                    :class="[field, 'font-mono']" @input="update(i, { name: $event.target.value.trim() })"
+                >
                 <PackageNameInput
                     v-else :source="row.source" :language="language" :model-value="row.source === 'github' ? row.repo ?? '' : row.name" aria-label="Package"
                     :placeholder="{ cran: 'Search CRAN…', bioc: 'Search Bioconductor…', pypi: 'Name on PyPI', github: 'Search GitHub or owner/repo…' }[row.source]"
                     @update:model-value="(name) => row.source === 'github' ? setRepo(i, name) : update(i, { name })"
                 />
-                <select v-if="!manual" :value="row.source" aria-label="Source" :class="field" @change="setSource(i, $event.target.value)">
+                <select :value="row.source" aria-label="Source" :class="field" @change="setSource(i, $event.target.value)">
                     <option v-for="s in sources" :key="s.value" :value="s.value">{{ s.label }}</option>
                 </select>
                 <div v-if="r && attachment" class="[&>label]:w-fit" :title="'Call library() when scaffold() runs'">
                     <UiSwitch :model-value="row.auto_attach" :sr-label="`Auto-attach ${row.name || 'this package'}`" @update:model-value="(on) => update(i, { auto_attach: on })" />
                 </div>
                 <input
-                    v-else-if="!manual" :value="row.version ?? ''" type="text" placeholder="Any version" spellcheck="false" aria-label="Version"
+                    v-else-if="stata && stataDetail(row)" :value="row[stataDetail(row).field] ?? ''" type="text" :placeholder="stataDetail(row).placeholder" spellcheck="false" :aria-label="stataDetail(row).label"
+                    :class="[field, 'font-mono']" @input="update(i, { [stataDetail(row).field]: $event.target.value.trim() || null })"
+                >
+                <span v-else-if="stata" class="text-xs text-slate-500 dark:text-slate-400">Latest</span>
+                <input
+                    v-else :value="row.version ?? ''" type="text" placeholder="Any version" spellcheck="false" aria-label="Version"
                     :class="[field, 'font-mono']" @input="update(i, { version: $event.target.value.trim() || null })"
                 >
                 <button

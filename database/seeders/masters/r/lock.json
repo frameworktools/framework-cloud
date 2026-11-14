@@ -1,5 +1,5 @@
 {
-    "commit": "1fc99c805a7a73379126cc6751d7a56fe89f9fa9",
+    "commit": "b9499a565d993dcd300f701615db9685732dc9d6",
     "files": {
         "conformance/create/python/bare-jupyter.json": {
             "source": "inst/conformance/create/python/bare-jupyter.json",
@@ -240,6 +240,22 @@
         "sets/packages/spatial-r.json": {
             "source": "inst/sets/packages/spatial-r.json",
             "sha256": "0751ba7e4fae1d57a61da3d54435ef99a77c397809939168c678e37c239631a2"
+        },
+        "sets/packages/stata-data-tools.json": {
+            "source": "inst/sets/packages/stata-data-tools.json",
+            "sha256": "1dcb39c1be0222979e054518d140b5e44762fcad5bd1446b9df83b04eca7916f"
+        },
+        "sets/packages/stata-fixed-effects.json": {
+            "source": "inst/sets/packages/stata-fixed-effects.json",
+            "sha256": "25582d2d2ec2a916a336fb5c6e2f755879c38720054de7c21317d5f8390f4075"
+        },
+        "sets/packages/stata-graphs.json": {
+            "source": "inst/sets/packages/stata-graphs.json",
+            "sha256": "4ec55b333e510d1f5d47aeeffd74886b30f08be1df5bf9ea2253e6c3f973101d"
+        },
+        "sets/packages/stata-tables.json": {
+            "source": "inst/sets/packages/stata-tables.json",
+            "sha256": "230b64b3b3fb7205e4794f6f50cf71bb4fb7da9389b2591660b8256b811111f6"
         },
         "sets/packages/survey-r.json": {
             "source": "inst/sets/packages/survey-r.json",

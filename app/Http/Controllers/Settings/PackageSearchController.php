@@ -15,7 +15,7 @@ class PackageSearchController extends Controller
         $validated = $request->validate([
             'source' => ['required', 'in:cran,bioc,pypi,github'],
             'q' => ['required', 'string', 'max:100'],
-            'language' => ['nullable', 'in:r,python'],
+            'language' => ['nullable', 'in:r,python,stata'],
         ]);
 
         return response()->json(['packages' => PackageIndex::search($validated['source'], $validated['q'], $validated['language'] ?? null)]);

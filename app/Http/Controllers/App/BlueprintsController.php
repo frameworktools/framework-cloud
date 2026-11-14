@@ -258,7 +258,7 @@ class BlueprintsController extends Controller
             'start' => $start,
             'agents' => $defaults['settings']['ai'] ? ($defaults['settings']['agents'] ?: ['other']) : ['none'],
             'catalog' => Catalog::for($user),
-            'ggplotThemes' => ProjectDefaults::GGPLOT_THEMES,
+            'ggplotThemes' => ProjectDefaults::GGPLOT_THEMES, 'stataSchemes' => ProjectDefaults::STATA_SCHEMES, 'matplotlibStyles' => ProjectDefaults::MATPLOTLIB_STYLES,
             'quartoChoices' => ProjectDefaults::QUARTO_CHOICES,
             'section' => in_array($request->query('tab'), self::TABS, true) ? $request->query('tab') : 'name',
         ]);

@@ -42,6 +42,8 @@ class ProjectDefaults
         'seed' => '123',
         'set_theme_on_scaffold' => false,
         'ggplot_theme' => 'theme_minimal',
+        'stata_scheme' => 's2color',
+        'matplotlib_style' => 'seaborn-v0_8-whitegrid',
         'source_all_functions' => true,
     ];
 
@@ -87,6 +89,12 @@ class ProjectDefaults
         'transition' => ['none', 'fade', 'slide', 'convex', 'concave', 'zoom'],
         'highlight_style' => ['github', 'tango', 'pygments', 'kate', 'monochrome', 'espresso', 'zenburn', 'haddock', 'breezedark'],
     ];
+
+    /** The matplotlib styles the Scaffold page offers, from matplotlib.style.available. */
+    public const MATPLOTLIB_STYLES = ['seaborn-v0_8-whitegrid', 'seaborn-v0_8-white', 'seaborn-v0_8-darkgrid', 'seaborn-v0_8-colorblind', 'ggplot', 'bmh', 'fivethirtyeight', 'tableau-colorblind10', 'grayscale', 'classic'];
+
+    /** The Stata graph schemes the Scaffold page offers. The st ones need Stata 18. */
+    public const STATA_SCHEMES = ['s2color', 's2mono', 's1color', 's1mono', 's1rcolor', 'economist', 'sj', 'stcolor', 'stcolor_alt', 'stmono'];
 
     /** The ggplot2 themes the Scaffold page offers. */
     public const GGPLOT_THEMES = ['theme_minimal', 'theme_bw', 'theme_classic', 'theme_light', 'theme_gray', 'theme_linedraw', 'theme_dark', 'theme_void'];
@@ -412,12 +420,16 @@ class ProjectDefaults
     {
         $seed = trim((string) ($values['seed'] ?? ''));
         $theme = (string) ($values['ggplot_theme'] ?? '');
+        $scheme = (string) ($values['stata_scheme'] ?? '');
+        $style = (string) ($values['matplotlib_style'] ?? '');
 
         return [
             'seed_on_scaffold' => (bool) ($values['seed_on_scaffold'] ?? self::SCAFFOLD['seed_on_scaffold']),
             'seed' => preg_match('/^-?\d{1,9}$/', $seed) ? $seed : self::SCAFFOLD['seed'],
             'set_theme_on_scaffold' => (bool) ($values['set_theme_on_scaffold'] ?? self::SCAFFOLD['set_theme_on_scaffold']),
             'ggplot_theme' => in_array($theme, self::GGPLOT_THEMES, true) ? $theme : self::SCAFFOLD['ggplot_theme'],
+            'stata_scheme' => in_array($scheme, self::STATA_SCHEMES, true) ? $scheme : self::SCAFFOLD['stata_scheme'],
+            'matplotlib_style' => in_array($style, self::MATPLOTLIB_STYLES, true) ? $style : self::SCAFFOLD['matplotlib_style'],
             'source_all_functions' => (bool) ($values['source_all_functions'] ?? self::SCAFFOLD['source_all_functions']),
         ];
     }
@@ -494,9 +506,14 @@ class ProjectDefaults
         $layer = [];
         if ($language !== 'stata') {
             $layer['scaffold']['ide'] = self::ide($version);
-            foreach ($language === 'r' ? array_keys(self::SCAFFOLD) : ['seed_on_scaffold', 'seed', 'source_all_functions'] as $key) {
-                $layer['scaffold'][$key] = self::SCAFFOLD[$key];
-            }
+        }
+        foreach (BlueprintInput::SCAFFOLD_KEYS[$language] as $key) {
+            $layer['scaffold'][$key] = self::SCAFFOLD[$key];
+        }
+        if ($language === 'stata') {
+            // Packages install into the project's ado/plus, so a commit keeps
+            // their exact versions. The spec requires default_packages beside it.
+            $layer['packages'] = ['project_ado' => true, 'default_packages' => []];
         }
 
         $agents = self::agentDefaults($version);
@@ -597,6 +614,8 @@ class ProjectDefaults
             'source' => $row['source'],
             'version' => $row['version'] ?? null,
             'repo' => $row['source'] === 'github' ? ($row['repo'] ?? null) : null,
+            'ref' => $row['source'] === 'github' && filled($row['ref'] ?? null) ? $row['ref'] : null,
+            'url' => $row['source'] === 'net' ? ($row['url'] ?? null) : null,
             'auto_attach' => (bool) ($row['auto_attach'] ?? false),
         ], fn ($value) => $value !== null)])->all();
     }

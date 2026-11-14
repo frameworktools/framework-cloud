@@ -283,6 +283,7 @@ class PiecesController extends Controller
             'settings' => ['nullable', 'array'],
             'settings.sensitive' => ['boolean'],
             'settings.git' => ['boolean'],
+            'settings.project_ado' => ['boolean'],
             'settings.hooks' => ['nullable', 'array'],
             'settings.hooks.*' => ['in:'.implode(',', ProjectDefaults::HOOKS)],
             'settings.ai' => ['nullable'],

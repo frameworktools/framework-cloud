@@ -83,6 +83,8 @@ const props = defineProps({
     extras: { type: Array, default: () => [] },
     // The choices the Scaffold and Quarto sections offer, from ProjectDefaults
     ggplotThemes: { type: Array, default: () => [] },
+    stataSchemes: { type: Array, default: () => [] },
+    matplotlibStyles: { type: Array, default: () => [] },
     quartoChoices: { type: Object, default: () => ({}) },
     // A saved blueprint or project opens as saved: its skills change only when a choice does
     applyOnLoad: { type: Boolean, default: true },
@@ -192,13 +194,16 @@ const choiceClass = (on) => on
     <UiPanel v-if="visible('packages')" :flush="flush" id="packages" title="Packages" class="scroll-mt-6">
         <SetChoices v-model="form.package_sets" :sets="catalog.package_sets" :tags="catalog.package_set_tags" :language="form.language" label="Package sets" />
         <UiSeparator />
-        <PackagePicker v-if="form.language !== 'stata'" v-model="form.package_overrides" v-model:auto-attach="form.package_auto_attach" :selected-sets="form.package_sets" :packages="catalog.packages" :sets="catalog.package_sets" :categories="catalog.package_categories" :language="form.language" />
-        <p v-if="form.language === 'stata'" class="text-sm text-slate-500 dark:text-slate-400">Stata package names are recorded in .framework/packages/. Install them manually.</p>
+        <PackagePicker v-model="form.package_overrides" v-model:auto-attach="form.package_auto_attach" :selected-sets="form.package_sets" :packages="catalog.packages" :sets="catalog.package_sets" :categories="catalog.package_categories" :language="form.language" />
+        <template v-if="form.language === 'stata'">
+            <UiSwitch v-model="form.settings.project_ado" label="Project packages" description="Installs packages into ado/plus in the project folder. Commit the folder to keep exact versions with the project." />
+            <p class="text-sm text-slate-500 dark:text-slate-400">fw_packages installs these packages in Stata.</p>
+        </template>
         <p v-if="stacked.sets > 1" class="text-sm text-slate-700 dark:text-slate-300">
             {{ stacked.packages }} packages from {{ stacked.sets }} sets<template v-if="stacked.shared">, with {{ stacked.shared }} in more than one set</template>.
         </p>
         <p class="text-sm text-slate-500 dark:text-slate-400"><Link href="/package-sets/create" class="text-sky-700 hover:underline dark:text-sky-400">Make a package set</Link></p>
-        <template v-if="form.language !== 'stata' && form.package_definitions">
+        <template v-if="form.package_definitions">
             <UiSeparator />
             <OwnPackages :form="form" :catalog="catalog" />
         </template>
@@ -235,16 +240,26 @@ const choiceClass = (on) => on
         <UiSwitch v-model="form.settings.git" label="Use git" />
     </UiPanel>
     <UiSeparator v-if="flush && !section && extras.includes('scaffold')" />
-    <UiPanel v-if="extra('scaffold') && form.scaffold" :flush="flush" id="scaffold" title="Scaffold" class="scroll-mt-6" description="What scaffold() does at the start of every notebook and script.">
-        <p v-if="form.language === 'stata'" class="text-sm text-slate-500 dark:text-slate-400">Stata projects don't run scaffold().</p>
-        <div v-else class="flex max-w-xl flex-col gap-5">
+    <UiPanel v-if="extra('scaffold') && form.scaffold" :flush="flush" id="scaffold" title="Scaffold" class="scroll-mt-6" :description="form.language === 'stata' ? 'What fw_scaffold does at the start of master.do and every do-file.' : 'What scaffold() does at the start of every notebook and script.'">
+        <div class="flex max-w-xl flex-col gap-5">
             <UiSwitch v-model="form.scaffold.seed_on_scaffold" label="Set a random seed" description="Random results repeat from run to run." />
             <UiInput v-if="form.scaffold.seed_on_scaffold" v-model="form.scaffold.seed" class="-mt-2 max-w-40" label="Seed" placeholder="123" :error="form.errors['scaffold.seed']" />
             <template v-if="form.language === 'r'">
                 <UiSwitch v-model="form.scaffold.set_theme_on_scaffold" label="Set a ggplot2 theme" description="Every plot starts from the same theme." />
                 <UiSelect v-if="form.scaffold.set_theme_on_scaffold" v-model="form.scaffold.ggplot_theme" class="-mt-2 max-w-48" label="Theme" :options="ggplotThemes.map((t) => ({ value: t, label: t }))" :error="form.errors['scaffold.ggplot_theme']" />
             </template>
-            <UiSwitch v-model="form.scaffold.source_all_functions" label="Load your functions" description="Code in functions/ is ready in every notebook and script." />
+            <template v-if="form.language === 'python'">
+                <UiSwitch v-model="form.scaffold.set_theme_on_scaffold" label="Set a matplotlib style" description="Every figure starts from the same style." />
+                <UiSelect v-if="form.scaffold.set_theme_on_scaffold" v-model="form.scaffold.matplotlib_style" class="-mt-2 max-w-64" label="Style" :options="matplotlibStyles.map((s) => ({ value: s, label: s }))" :error="form.errors['scaffold.matplotlib_style']" />
+            </template>
+            <template v-if="form.language === 'stata'">
+                <UiSwitch v-model="form.scaffold.set_theme_on_scaffold" label="Set a graph scheme" description="Every graph starts from the same scheme." />
+                <UiSelect v-if="form.scaffold.set_theme_on_scaffold" v-model="form.scaffold.stata_scheme" class="-mt-2 max-w-48" label="Scheme" :options="stataSchemes.map((s) => ({ value: s, label: s }))" :error="form.errors['scaffold.stata_scheme']" />
+            </template>
+            <UiSwitch
+                v-model="form.scaffold.source_all_functions" label="Load your functions"
+                :description="form.language === 'stata' ? 'Programs in functions/ run by name in every do-file.' : 'Code in functions/ is ready in every notebook and script.'"
+            />
         </div>
     </UiPanel>
 

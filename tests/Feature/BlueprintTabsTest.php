@@ -129,7 +129,7 @@ class BlueprintTabsTest extends TestCase
         $python = $this->choices(['name' => 'Python study', 'language' => 'python', 'workflow' => 'jupyter', 'notebook_format' => 'jupyter', 'tools' => [], 'ide' => 'positron']);
         $this->actingAs($user)->post('/blueprints', $python)->assertSessionHasNoErrors();
         $version = Blueprint::where('user_id', $user->id)->where('name', 'Python study')->sole()->latestVersion;
-        $this->assertSame(['seed_on_scaffold', 'seed', 'source_all_functions'], array_values(array_diff(array_keys($version->layer['scaffold']), ['notebook_format', 'workflow'])));
+        $this->assertSame(['seed_on_scaffold', 'seed', 'set_theme_on_scaffold', 'matplotlib_style', 'source_all_functions'], array_values(array_diff(array_keys($version->layer['scaffold']), ['notebook_format', 'workflow'])));
         $this->assertSame('vscode', $version->ide);
         $this->assertSame('cosmo', $version->layer['quarto']['html']['theme']);
 
@@ -138,7 +138,8 @@ class BlueprintTabsTest extends TestCase
         $version = Blueprint::where('user_id', $user->id)->where('name', 'Stata study')->sole()->latestVersion;
         $this->assertNull($version->ide);
         $this->assertNull($version->layer['quarto']['html']['theme'] ?? null);
-        $this->assertEmpty(array_intersect(['seed', 'seed_on_scaffold', 'ggplot_theme'], array_keys($version->layer['scaffold'] ?? [])));
+        // fw_scaffold reads the seed, the graph scheme, and the functions switch; the ggplot2 theme is R's
+        $this->assertSame(['seed_on_scaffold', 'seed', 'set_theme_on_scaffold', 'stata_scheme', 'source_all_functions'], array_values(array_diff(array_keys($version->layer['scaffold']), ['notebook_format', 'workflow'])));
         $this->assertSame('github', $version->layer['publish']['default']);
     }
 

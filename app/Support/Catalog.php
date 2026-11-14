@@ -50,9 +50,9 @@ class Catalog
             // Package names too, so the builder can count what stacked sets install
             'package_sets' => $pieces->where('kind', 'package_set')->values()
                 ->map(fn (Facet $f) => $piece($f) + [
-                    'packages' => $f->latestVersion?->manual_packages ?: array_keys($f->latestVersion?->layer['packages']['default_packages'] ?? []),
-                    'package_members' => collect(Project::LANGUAGES)->mapWithKeys(fn ($language) => [$language => $language === 'stata' ? ($f->latestVersion?->manual_packages ?? []) : array_keys(PackageSetLayer::installOnly($f->latestVersion?->catalogLayer($language) ?? [])['packages']['default_packages'] ?? [])]),
-                    'package_entries' => collect(Project::LANGUAGES)->mapWithKeys(fn ($language) => [$language => $language === 'stata' ? array_fill_keys($f->latestVersion?->manual_packages ?? [], ['source' => 'manual']) : PackageSetLayer::installOnly($f->latestVersion?->catalogLayer($language) ?? [])['packages']['default_packages'] ?? []]),
+                    'packages' => array_keys($f->latestVersion?->layer['packages']['default_packages'] ?? []),
+                    'package_members' => collect(Project::LANGUAGES)->mapWithKeys(fn ($language) => [$language => array_keys(self::setPackages($f, $language))]),
+                    'package_entries' => collect(Project::LANGUAGES)->mapWithKeys(fn ($language) => [$language => self::setPackages($f, $language)]),
                     'tags' => PackageCategories::setTags($f->key, $f->category),
                 ]),
             'skill_sets' => $pieces->where('kind', 'skill_set')->values()->map(fn (Facet $f) => $piece($f) + [
@@ -104,6 +104,21 @@ class Catalog
         }
 
         return array_values($packages);
+    }
+
+    /**
+     * A package set's entries for one language. A Stata project takes only
+     * Stata sets: R and Python packages mean nothing to Stata.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private static function setPackages(Facet $set, string $language): array
+    {
+        if ($language === 'stata' && ! in_array('stata', $set->language ?? [], true)) {
+            return [];
+        }
+
+        return PackageSetLayer::installOnly($set->latestVersion?->catalogLayer($language) ?? [])['packages']['default_packages'] ?? [];
     }
 
     public static function packageOptions(User $user, string $language): array
@@ -196,8 +211,8 @@ class Catalog
                 'ai' => (bool) ($layer['ai']['enabled'] ?? true),
                 'git' => (bool) ($layer['git']['use_git'] ?? true),
                 'hooks' => array_keys(array_filter($layer['git']['hooks'] ?? [])),
-            ],
-            'extra_yaml' => Layer::toYaml(Arr::except($layer, [...self::SETTING_KEYS, 'scaffold.notebook_format', 'packages.default_packages'])),
+            ] + ($language === 'stata' ? ['project_ado' => (bool) ($layer['packages']['project_ado'] ?? true)] : []),
+            'extra_yaml' => Layer::toYaml(Arr::except($layer, [...self::SETTING_KEYS, 'scaffold.notebook_format', 'packages.default_packages', 'packages.project_ado'])),
             // What it supports; none listed means everything
             'languages' => $compatibility['languages'] ?? Project::LANGUAGES,
             'workflows' => $compatibility['workflows'] ?? ProjectDefaults::WORKFLOW_KEYS,

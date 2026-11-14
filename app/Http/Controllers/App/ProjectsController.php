@@ -258,7 +258,7 @@ class ProjectsController extends Controller
                 'choices' => self::settingChoices($versions[$b['id']] ?? null, $b['choices']['extra_yaml'] ?? '') + $b['choices'],
             ]))->values()->all(),
             'catalog' => fn () => Catalog::for($user),
-            'ggplotThemes' => ProjectDefaults::GGPLOT_THEMES,
+            'ggplotThemes' => ProjectDefaults::GGPLOT_THEMES, 'stataSchemes' => ProjectDefaults::STATA_SCHEMES, 'matplotlibStyles' => ProjectDefaults::MATPLOTLIB_STYLES,
             'quartoChoices' => ProjectDefaults::QUARTO_CHOICES,
             'defaults' => $defaults,
             'selected' => $request->integer('blueprint') ?: null,
@@ -400,6 +400,7 @@ class ProjectsController extends Controller
             'settings' => ['nullable', 'array'],
             'settings.sensitive' => ['boolean'],
             'settings.git' => ['boolean'],
+            'settings.project_ado' => ['boolean'],
             // On or off, or the project's own agents: {enabled, assistants: {claude: bool, ...}}
             'settings.ai' => ['nullable'],
             'settings.ai.enabled' => ['sometimes', 'boolean'],
@@ -523,6 +524,7 @@ class ProjectsController extends Controller
             // As store() validates them, so the preview resolves what creating would
             'settings.sensitive' => ['boolean'],
             'settings.git' => ['boolean'],
+            'settings.project_ado' => ['boolean'],
             'settings.ai' => ['nullable'],
             'settings.ai.enabled' => ['sometimes', 'boolean'],
             'settings.ai.assistants' => ['sometimes', 'array'],
@@ -579,6 +581,8 @@ class ProjectsController extends Controller
             'scaffold.seed' => ['nullable', 'regex:/^-?\d{1,9}$/'],
             'scaffold.set_theme_on_scaffold' => ['boolean'],
             'scaffold.ggplot_theme' => ['nullable', Rule::in(ProjectDefaults::GGPLOT_THEMES)],
+            'scaffold.stata_scheme' => ['nullable', Rule::in(ProjectDefaults::STATA_SCHEMES)],
+            'scaffold.matplotlib_style' => ['nullable', Rule::in(ProjectDefaults::MATPLOTLIB_STYLES)],
             'scaffold.source_all_functions' => ['boolean'],
             'quarto' => ['sometimes', 'nullable', 'array'],
             'quarto.html' => ['array'],

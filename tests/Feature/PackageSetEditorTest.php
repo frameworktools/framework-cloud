@@ -35,23 +35,41 @@ class PackageSetEditorTest extends TestCase
         $this->put('/package-sets/'.$set->id, ['name' => 'Analysis', 'visibility' => 'private', 'language' => 'python', 'package_rows' => $rows])->assertSessionHasErrors('package_rows.0.source');
     }
 
-    public function test_stata_names_are_versioned_and_copied_as_manual_lists(): void
+    public function test_stata_sets_hold_ssc_github_and_net_packages(): void
     {
         $user = User::factory()->create();
         $this->actingAs($user)->get('/package-sets/create?language=stata')->assertInertia(fn (Assert $page) => $page->where('language', 'stata'));
         $this->actingAs($user)->post('/package-sets', ['name' => 'Stata analysis', 'visibility' => 'private', 'language' => 'stata', 'package_rows' => [
-            ['name' => 'reghdfe', 'source' => 'manual'], ['name' => 'estout', 'source' => 'manual'],
+            ['name' => 'estout', 'source' => 'ssc'],
+            ['name' => 'reghdfe', 'source' => 'github', 'repo' => 'sergiocorreia/reghdfe', 'ref' => '6.12.3'],
+            ['name' => 'mytools', 'source' => 'net', 'url' => 'https://example.org/stata'],
         ]])->assertSessionHasNoErrors();
         $set = Facet::where('user_id', $user->id)->sole();
-        $this->assertSame(['reghdfe', 'estout'], $set->latestVersion->manual_packages);
+        $this->assertSame([
+            'estout' => ['source' => 'ssc', 'auto_attach' => false],
+            'reghdfe' => ['source' => 'github', 'repo' => 'sergiocorreia/reghdfe', 'ref' => '6.12.3', 'auto_attach' => false],
+            'mytools' => ['source' => 'net', 'url' => 'https://example.org/stata', 'auto_attach' => false],
+        ], $set->latestVersion->layer['packages']['default_packages']);
         $entries = ProjectLayers::entries($set->latestVersion, 'stata');
-        $this->assertArrayNotHasKey('packages', $entries[0]['layer']);
-        $this->assertSame("reghdfe\nestout\n", $entries[0]['layer']['files']['.framework/packages/stata-'.$set->id.'.txt']['content']);
         $this->assertSame([], Layer::problems($entries[0]['layer'], 'package_set'));
+        $this->get('/package-sets/'.$set->id.'/edit')->assertInertia(fn (Assert $page) => $page->has('values.package_rows', 3)
+            ->where('values.package_rows.1.ref', '6.12.3')->where('values.package_rows.2.url', 'https://example.org/stata'));
         $this->post('/package-sets/'.$set->id.'/fork')->assertRedirect();
         $copy = Facet::where('user_id', $user->id)->whereKeyNot($set->id)->sole();
-        $this->assertSame(['reghdfe', 'estout'], $copy->latestVersion->manual_packages);
-        $this->get('/package-sets?language=stata')->assertInertia(fn (Assert $page) => $page->where('language', 'stata')->where('sets.0.packages.0.name', 'reghdfe'));
+        $this->assertSame($set->latestVersion->layer, $copy->latestVersion->layer);
+        $this->get('/package-sets?language=stata')->assertInertia(fn (Assert $page) => $page->where('language', 'stata')->where('sets.0.packages.0.name', 'estout'));
+    }
+
+    public function test_stata_rows_need_a_stata_name_and_their_sources_fields(): void
+    {
+        $user = User::factory()->create();
+        $post = fn (array $row) => $this->actingAs($user)->post('/package-sets', ['name' => 'Stata', 'visibility' => 'private', 'language' => 'stata', 'package_rows' => [$row]]);
+        $post(['name' => 'dplyr', 'source' => 'cran'])->assertSessionHasErrors('package_rows.0.source');
+        $post(['name' => 'mytools', 'source' => 'net'])->assertSessionHasErrors('package_rows.0.url');
+        $post(['name' => 'mytools', 'source' => 'net', 'url' => 'ftp://example.org'])->assertSessionHasErrors('package_rows.0.url');
+        $post(['name' => 'my-tools', 'source' => 'ssc'])->assertSessionHasErrors('package_rows.0.name');
+        $post(['name' => 'reghdfe', 'source' => 'github'])->assertSessionHasErrors('package_rows.0.source');
+        $this->assertSame(0, Facet::where('user_id', $user->id)->count());
     }
 
     public function test_github_search_and_exact_repository_lookup_use_the_api(): void

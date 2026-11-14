@@ -69,7 +69,7 @@ class LibraryTest extends TestCase
     public function test_seeder_builds_the_system_library_and_is_idempotent(): void
     {
         $counts = Facet::whereNull('user_id')->get()->countBy('kind')->all();
-        $this->assertEquals(['structure' => 9, 'workflow' => 3, 'tool' => 7, 'setting' => 1, 'skill_set' => 12, 'package_set' => 27], $counts);
+        $this->assertEquals(['structure' => 9, 'workflow' => 3, 'tool' => 7, 'setting' => 1, 'skill_set' => 12, 'package_set' => 31], $counts);
         $this->assertSame(20, Skill::whereNull('user_id')->count());
         // Single-language skills offer only their own language
         $this->assertSame(['python'], Skill::whereNull('user_id')->where('key', 'matplotlib-figures')->value('language'));
@@ -480,7 +480,7 @@ class LibraryTest extends TestCase
             // Targets is no longer offered in the builder
             ->where('catalog.tools', fn ($tools) => ! collect($tools)->contains('key', 'targets')));
         $this->actingAs($user)->get('/structures')->assertInertia(fn (Assert $page) => $page->component('Pieces/Structures')->has('structures', 9));
-        $this->actingAs($user)->get('/package-sets')->assertInertia(fn (Assert $page) => $page->component('Pieces/PackageSets')->has('sets', 27));
+        $this->actingAs($user)->get('/package-sets')->assertInertia(fn (Assert $page) => $page->component('Pieces/PackageSets')->has('sets', 31));
         $this->actingAs($user)->get('/skill-sets')->assertInertia(fn (Assert $page) => $page->component('Pieces/SkillSets')->has('sets', 12));
         $this->actingAs($user)->get('/structures/create')->assertInertia(fn (Assert $page) => $page
             ->component('Pieces/Edit')->where('kind', 'structure')->where('values.settings_yaml', "type: project\n"));

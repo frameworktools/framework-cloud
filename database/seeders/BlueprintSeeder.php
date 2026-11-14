@@ -81,6 +81,7 @@ class BlueprintSeeder extends Seeder
         'tidy-database', 'large-data-r', 'tables-r', 'regression-r', 'easystats-r', 'tidymodels', 'bayes-r',
         'causal-inference-r', 'survival-r', 'survey-r', 'spatial-r', 'text-r', 'tidy-omop',
         'python-database', 'python-viz', 'python-ml', 'python-bayes', 'python-spatial',
+        'stata-tables', 'stata-fixed-effects', 'stata-graphs', 'stata-data-tools',
         'shiny-r', 'plumber-r', 'shiny-python', 'fastapi-python',
     ];
 

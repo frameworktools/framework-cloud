@@ -130,6 +130,29 @@ class BlueprintBuilderTest extends TestCase
         $this->postJson("/blueprints/{$blueprint->id}/preview", ['language' => 'r'])->assertOk()->assertJsonPath('available', false);
     }
 
+    public function test_a_stata_blueprint_keeps_packages_and_project_packages(): void
+    {
+        config(['framework.spec_parity' => true]);
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $this->actingAs($user)->post('/blueprints', $this->choices([
+            'language' => 'stata', 'tools' => [], 'package_sets' => ['framework/stata-tables'],
+            'package_definitions' => ['ftools' => ['source' => 'github', 'repo' => 'sergiocorreia/ftools', 'ref' => 'v2.49.1', 'auto_attach' => false]],
+            'settings' => ['sensitive' => false, 'ai' => true, 'git' => true, 'project_ado' => true],
+        ]))->assertSessionHasNoErrors();
+        $blueprint = Blueprint::where('user_id', $user->id)->sole();
+        $this->get("/blueprints/{$blueprint->id}/edit")->assertInertia(fn ($page) => $page->where('start.settings.project_ado', true));
+
+        $spec = DefaultsPreview::merge((new Resolver($user))->resolve(['blueprint' => $blueprint->handle, 'language' => 'stata'])['envelope']['layers']);
+        $this->assertTrue($spec['packages']['project_ado']);
+        $this->assertSame(['source' => 'ssc', 'auto_attach' => false], $spec['packages']['default_packages']['estout']);
+        $this->assertSame('v2.49.1', $spec['packages']['default_packages']['ftools']['ref']);
+
+        // A CRAN package or an auto-attached one has no place in a Stata project
+        foreach ([['source' => 'cran', 'auto_attach' => false], ['source' => 'ssc', 'auto_attach' => true]] as $definition) {
+            $this->actingAs($user)->post('/blueprints', $this->choices(['language' => 'stata', 'tools' => [], 'package_definitions' => ['dplyr' => $definition]]))->assertSessionHasErrors('package_definitions');
+        }
+    }
+
     public function test_notebook_format_and_environment_settings_survive_save_and_preview(): void
     {
         $user = User::factory()->create(['email_verified_at' => now()]);

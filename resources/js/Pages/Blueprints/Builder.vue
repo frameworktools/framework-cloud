@@ -23,6 +23,8 @@ const props = defineProps({
     section: String,
     agents: Array,
     ggplotThemes: Array,
+    stataSchemes: Array,
+    matplotlibStyles: Array,
     quartoChoices: Object,
 });
 
@@ -48,7 +50,7 @@ const initialData = {
     skill_sets: [...(props.start?.skill_sets ?? ['framework/framework'])],
     skills: [...(props.start?.skills ?? [])],
     excluded_skills: [...(props.start?.excluded_skills ?? [])],
-    settings: { git: true, hooks: [], ...(props.start?.settings ?? {}), ai: !(props.start?.agents ?? props.agents ?? ['other']).includes('none'), sensitive: !!props.catalog.structures.find(structure => structure.key === (props.start?.structure ?? 'framework/project'))?.sensitive },
+    settings: { git: true, hooks: [], project_ado: true, ...(props.start?.settings ?? {}), ai: !(props.start?.agents ?? props.agents ?? ['other']).includes('none'), sensitive: !!props.catalog.structures.find(structure => structure.key === (props.start?.structure ?? 'framework/project'))?.sensitive },
     // Scaffold, Quarto, editor files, and publishing: the settings a project's defaults held
     scaffold: { ...(props.start?.scaffold ?? {}) },
     quarto: { html: { ...(props.start?.quarto?.html ?? {}) }, revealjs: { ...(props.start?.quarto?.revealjs ?? {}) } },
@@ -296,7 +298,7 @@ const previousSection = computed(() => navigation.value[navigation.value.findInd
                 <p v-else-if="form.settings.git" class="text-sm text-slate-500 dark:text-slate-400">Commit hooks are available for R and Python projects.</p>
                 <p v-if="form.errors.settings" class="text-xs text-red-600 dark:text-red-400">{{ form.errors.settings }}</p>
             </UiPanel>
-            <ChoicesEditor :form="form" :catalog="catalog" :apply-on-load="!blueprint" :section="activeSection" :required="requiredTools" :ggplot-themes="ggplotThemes" :quarto-choices="quartoChoices" agent-picker flush>
+            <ChoicesEditor :form="form" :catalog="catalog" :apply-on-load="!blueprint" :section="activeSection" :required="requiredTools" :ggplot-themes="ggplotThemes" :stata-schemes="stataSchemes" :matplotlib-styles="matplotlibStyles" :quarto-choices="quartoChoices" agent-picker flush>
                 <!-- The files and folders a project gets from these choices, with nobody's defaults -->
                 <template #structure-preview>
                     <div class="flex flex-col gap-3 border-t border-slate-800/10 pt-6 dark:border-white/15">

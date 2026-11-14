@@ -42,7 +42,7 @@ const isPackageSet = computed(() => props.kind === 'package_set');
 const paged = computed(() => isStructure.value || isPackageSet.value);
 const isSkillSet = computed(() => props.kind === 'skill_set');
 
-const blankPackage = (language) => ({ name: '', source: language === 'stata' ? 'manual' : language === 'python' ? 'pypi' : 'cran', version: null, repo: null, auto_attach: false });
+const blankPackage = (language) => ({ name: '', source: language === 'stata' ? 'ssc' : language === 'python' ? 'pypi' : 'cran', version: null, repo: null, ref: null, url: null, auto_attach: false });
 const form = useForm({
     variant: props.variant,
     name: props.facet?.name ?? '',
@@ -230,7 +230,7 @@ const errorFor = (prefix) => Object.entries(form.errors).filter(([k]) => k.start
 
             <UiPanel
                 v-if="!isStructure && visible('packages')" :flush="isPackageSet" id="packages" title="Packages" class="scroll-mt-6"
-                :description="isSkillSet ? 'Packages these skills need. Projects that use the skill set get them.' : form.language === 'stata' ? 'Package names for reference. Projects record this list in .framework/packages/. Install these packages manually.' : 'Search for packages and choose their installation source.'"
+                :description="isSkillSet ? 'Packages these skills need. Projects that use the skill set get them.' : form.language === 'stata' ? 'Choose each package\'s source: SSC, a GitHub repository, or a web address. fw_packages installs them in Stata.' : 'Search for packages and choose their installation source.'"
             >
                 <PackagesEditor v-if="isPackageSet" v-model="form.package_rows" :language="form.language" :attachment="false" />
                 <p v-if="isPackageSet && errorFor('package_rows')" role="alert" class="text-sm text-red-600">{{ errorFor('package_rows') }}</p>

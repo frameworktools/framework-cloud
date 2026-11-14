@@ -58,6 +58,7 @@ class BlueprintInput
             'settings' => ['nullable', 'array'],
             'settings.sensitive' => ['boolean'],
             'settings.git' => ['boolean'],
+            'settings.project_ado' => ['boolean'],
             'settings.ai' => ['boolean'],
             'settings.hooks' => ['nullable', 'array'],
             'settings.hooks.*' => [Rule::in(ProjectDefaults::HOOKS)],
@@ -198,11 +199,11 @@ class BlueprintInput
     /** The editor choices a blueprint takes. positron is an older name for vscode. */
     public const IDE_CHOICES = ['rstudio', 'vscode', 'positron', 'both', 'none'];
 
-    /** The scaffold settings each language reads: the ggplot2 theme is R's, and Stata has none. */
+    /** The scaffold settings each language reads: a ggplot2 theme in R, a matplotlib style in Python, and a graph scheme in Stata (fw_scaffold). */
     public const SCAFFOLD_KEYS = [
         'r' => ['seed_on_scaffold', 'seed', 'set_theme_on_scaffold', 'ggplot_theme', 'source_all_functions'],
-        'python' => ['seed_on_scaffold', 'seed', 'source_all_functions'],
-        'stata' => [],
+        'python' => ['seed_on_scaffold', 'seed', 'set_theme_on_scaffold', 'matplotlib_style', 'source_all_functions'],
+        'stata' => ['seed_on_scaffold', 'seed', 'set_theme_on_scaffold', 'stata_scheme', 'source_all_functions'],
     ];
 
     /** The publishing destinations a blueprint can name. Automatic names none. */
@@ -233,6 +234,8 @@ class BlueprintInput
             'scaffold.seed' => ['nullable', 'regex:/^-?\d{1,9}$/'],
             'scaffold.set_theme_on_scaffold' => ['boolean'],
             'scaffold.ggplot_theme' => ['nullable', Rule::in(ProjectDefaults::GGPLOT_THEMES)],
+            'scaffold.stata_scheme' => ['nullable', Rule::in(ProjectDefaults::STATA_SCHEMES)],
+            'scaffold.matplotlib_style' => ['nullable', Rule::in(ProjectDefaults::MATPLOTLIB_STYLES)],
             'scaffold.source_all_functions' => ['boolean'],
             'quarto' => ['sometimes', 'nullable', 'array'],
             'quarto.html' => ['array'],

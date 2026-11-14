@@ -61,7 +61,7 @@ class PackageIndex
                     $items = $response->successful() ? [$response->json()] : [];
                 } else {
                     $response = $client->get('https://api.github.com/search/repositories', [
-                        'q' => $query.($language ? ' language:'.($language === 'r' ? 'R' : 'Python') : ''),
+                        'q' => $query.($language ? ' language:'.['r' => 'R', 'python' => 'Python', 'stata' => 'Stata'][$language] : ''),
                         'per_page' => 10,
                     ]);
                     $items = $response->successful() ? $response->json('items', []) : [];

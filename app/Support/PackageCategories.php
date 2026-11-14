@@ -12,11 +12,11 @@ class PackageCategories
 
     private const SETS = [
         'analysis' => ['tidy-core', 'tidyverse-analysis', 'tidyverse-extended', 'python-data-analysis', 'polars-python'],
-        'data' => ['large-data-r'],
+        'data' => ['large-data-r', 'stata-data-tools'],
         'databases' => ['tidy-database', 'python-database', 'tidy-omop'],
-        'modeling' => ['regression-r', 'easystats-r', 'tidymodels', 'bayes-r', 'causal-inference-r', 'survival-r', 'survey-r', 'python-ml', 'python-bayes'],
-        'visualization' => ['python-viz'],
-        'tables' => ['tables-r'],
+        'modeling' => ['regression-r', 'easystats-r', 'tidymodels', 'bayes-r', 'causal-inference-r', 'survival-r', 'survey-r', 'python-ml', 'python-bayes', 'stata-fixed-effects'],
+        'visualization' => ['python-viz', 'stata-graphs'],
+        'tables' => ['tables-r', 'stata-tables'],
         'specialized' => ['spatial-r', 'text-r', 'python-spatial'],
         'apps' => ['shiny-r', 'plumber-r', 'shiny-python', 'fastapi-python'],
     ];

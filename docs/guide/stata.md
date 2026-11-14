@@ -40,7 +40,6 @@ fw_setup
 
 Create a Stata project in Framework Cloud, or with `fw new` in a terminal.
 Choose **Stata** as the project's language. Stata projects use do-files.
-Package sets don't apply to Stata.
 
 In a do-file, `fw_project` finds the project and sets path globals:
 
@@ -58,6 +57,27 @@ Stata reads `settings.yml` directly, including split files such as
 `settings/data.yml` and environment sections. Plain YAML mappings, lists, and
 scalars work. Anchors, aliases, and nested flow collections stop with an
 error that names them.
+
+## Packages
+
+A Stata blueprint lists the community packages its projects use: Stata
+package sets, such as **Stata regression tables**, and single packages from
+SSC, GitHub, or a web address. The project's `settings.yml` lists them under
+`packages:`. In Stata, `fw_packages` shows which are installed, and
+`fw_packages install` installs the missing ones:
+
+```stata
+fw_packages
+fw_packages install
+```
+
+**Project packages**, on by default, installs them into `ado/plus` in the
+project folder. Commit that folder to keep the exact versions with the
+project. Turn it off in the blueprint to use Stata's shared PLUS folder.
+
+The server writes these settings only with `FW_SPEC_PARITY=true`,
+for fw and framework-stata releases that read them. Without it, a Stata
+project lists its package names in `.framework/packages/stata.txt`.
 
 ## Data
 

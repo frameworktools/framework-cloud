@@ -239,8 +239,7 @@ class DefaultsConversion
             $layer['publish'] = ['default' => $legacy['publish_destination'], 'destinations' => [$legacy['publish_destination'] => ['driver' => $legacy['publish_destination']]]];
         }
         if ($language !== 'stata') {
-            $keys = $language === 'r' ? array_keys(ProjectDefaults::SCAFFOLD) : ['seed_on_scaffold', 'seed', 'source_all_functions'];
-            foreach ($keys as $key) {
+            foreach (BlueprintInput::SCAFFOLD_KEYS[$language] as $key) {
                 if ($settings['scaffold'][$key] !== ProjectDefaults::SCAFFOLD[$key]) {
                     $layer['scaffold'][$key] = $settings['scaffold'][$key];
                 }

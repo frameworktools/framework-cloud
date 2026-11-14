@@ -3,25 +3,28 @@ import { computed, ref, watch } from 'vue';
 import PackagesEditor from '@/Components/PackagesEditor.vue';
 
 // Packages no package set offers, each with its source: CRAN, Bioconductor, or
-// GitHub for R, PyPI or GitHub for Python. Edits form.package_definitions, the
+// GitHub for R, PyPI or GitHub for Python, SSC, GitHub, or a web address for Stata. Edits form.package_definitions, the
 // entries the resolver writes to packages.default_packages as they are.
 const props = defineProps({ form: Object, catalog: Object });
 const f = props.form;
 
 const toRows = (definitions) => Object.entries(definitions ?? {})
     .filter(([, d]) => d && typeof d === 'object')
-    .map(([name, d]) => ({ name, source: d.source, version: d.version ?? null, repo: d.repo ?? null, auto_attach: !!d.auto_attach, entry: d }));
-// An entry as the resolver checks it: a repo only for GitHub, auto-attach only in
-// R. Fields this editor doesn't show, such as a GitHub ref, stay.
+    .map(([name, d]) => ({ name, source: d.source, version: d.version ?? null, repo: d.repo ?? null, ref: d.ref ?? null, url: d.url ?? null, auto_attach: !!d.auto_attach, entry: d }));
+// An entry as the resolver checks it: a repo and ref only for GitHub, a url only
+// for net, auto-attach only in R. A GitHub ref the editor doesn't show (R and
+// Python) stays.
 const toDefinition = (row) => {
-    const { repo: _repo, version: _version, ...kept } = row.entry ?? {};
+    const { repo: _repo, version: _version, url: _url, ...kept } = row.entry ?? {};
     return {
         ...kept,
         source: row.source,
         auto_attach: f.language === 'r' && !!row.auto_attach,
         ...(row.version ? { version: row.version } : {}),
         ...(row.source === 'github' && row.repo ? { repo: row.repo } : {}),
+        ...(row.source === 'github' && f.language === 'stata' ? { ref: row.ref || undefined } : {}),
         ...(row.source === 'github' ? {} : { ref: undefined }),
+        ...(row.source === 'net' && row.url ? { url: row.url } : {}),
     };
 };
 const toDefinitions = (list) => Object.fromEntries(list.filter((row) => row.name).map((row) => [row.name, JSON.parse(JSON.stringify(toDefinition(row)))]));
@@ -57,7 +60,7 @@ const error = computed(() => f.errors.package_definitions);
     <div class="flex flex-col gap-3">
         <div>
             <h3 class="text-sm font-medium text-slate-900 dark:text-white">Other packages</h3>
-            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Packages from no package set, such as a GitHub package or one CRAN package. scaffold() installs them with the rest.</p>
+            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ form.language === 'stata' ? 'Packages from no package set, such as one SSC or GitHub package. fw_packages installs them with the rest.' : 'Packages from no package set, such as a GitHub package or one CRAN package. scaffold() installs them with the rest.' }}</p>
         </div>
         <PackagesEditor v-model="rows" :language="form.language" />
         <p v-if="offered.length" class="text-sm text-amber-700 dark:text-amber-400">{{ offered.join(', ') }} {{ offered.length === 1 ? 'is' : 'are' }} in a package set. Choose {{ offered.length === 1 ? 'it' : 'them' }} in the list above instead.</p>

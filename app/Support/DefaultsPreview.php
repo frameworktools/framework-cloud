@@ -151,6 +151,9 @@ class DefaultsPreview
             $here = ltrim("{$path}/{$key}", '/');
             if ($value === null) {
                 unset($base[$key]);
+            } elseif ($value === [] && is_array($base[$key] ?? null) && $base[$key] !== [] && ! array_is_list($base[$key])) {
+                // An empty map, {} in the JSON, merges into a map as in R and fw
+                continue;
             } elseif (is_array($value) && ! array_is_list($value) && ! in_array($path, self::ATOMIC, true) && is_array($base[$key] ?? null)) {
                 $base[$key] = self::mergeInto($base[$key], $value, $here);
             } else {

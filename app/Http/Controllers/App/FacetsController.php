@@ -12,6 +12,7 @@ use App\Support\Library;
 use App\Support\PackageCategories;
 use App\Support\PackageSetLayer;
 use App\Support\ProjectDefaults;
+use App\Support\Resolver;
 use App\Support\SkillTags;
 use App\Support\StructureLayout;
 use App\Support\StructurePreview;
@@ -101,14 +102,14 @@ class FacetsController extends Controller
     public function store(Request $request, string $kind): RedirectResponse
     {
         $user = $request->user();
-        [$meta, $layer, $notes, $manualPackages] = $this->validated($request, $kind);
+        [$meta, $layer, $notes] = $this->validated($request, $kind);
 
         $facet = Facet::create($meta + [
             'user_id' => $user->id,
             'kind' => $kind,
             'key' => Library::uniqueKey(Facet::query(), $meta['name'], $user->id),
         ]);
-        $facet->publishVersion(['layer' => $layer, 'manual_packages' => $manualPackages, 'notes' => $notes]);
+        $facet->publishVersion(['layer' => $layer, 'notes' => $notes]);
 
         return to_route(self::PATHS[$kind].'.edit', $facet)->with('status', 'facet-saved');
     }
@@ -124,7 +125,7 @@ class FacetsController extends Controller
     {
         abort_unless($facet->kind === $kind && $facet->isEditableBy($request->user()), 403);
 
-        [$meta, $layer, $notes, $manualPackages] = $this->validated($request, $kind);
+        [$meta, $layer, $notes] = $this->validated($request, $kind);
         $variant = $request->input('variant');
         $languageLayers = $facet->latestVersion->language_layers;
         if ($kind === 'skill_set' && $languageLayers) {
@@ -137,9 +138,9 @@ class FacetsController extends Controller
             $meta['language'] = $facet->language;
         }
 
-        DB::transaction(function () use ($facet, $meta, $layer, $notes, $languageLayers, $manualPackages) {
+        DB::transaction(function () use ($facet, $meta, $layer, $notes, $languageLayers) {
             $facet->update($meta);
-            $facet->publishVersion(['layer' => $layer, 'language_layers' => $languageLayers, 'manual_packages' => $manualPackages, 'notes' => $notes]);
+            $facet->publishVersion(['layer' => $layer, 'language_layers' => $languageLayers, 'notes' => $notes]);
         });
 
         return back()->with('status', 'facet-saved');
@@ -173,7 +174,7 @@ class FacetsController extends Controller
             'visibility' => 'private',
             'forked_from_id' => $source->id,
         ]);
-        $copy->publishVersion(['layer' => $source->layer, 'language_layers' => $source->language_layers, 'manual_packages' => $source->manual_packages, 'notes' => "Copied from {$facet->handle} v{$source->version}"]);
+        $copy->publishVersion(['layer' => $source->layer, 'language_layers' => $source->language_layers, 'notes' => "Copied from {$facet->handle} v{$source->version}"]);
 
         return to_route(self::PATHS[$kind].'.edit', ['facet' => $copy, 'copy' => 1, 'language' => $request->input('language')])->with('status', 'facet-forked');
     }
@@ -266,10 +267,11 @@ class FacetsController extends Controller
             'packages' => ['nullable', 'string', 'max:5000'],
             'package_rows' => ['sometimes', 'array', 'max:300'],
             'package_rows.*.name' => ['required', 'string', 'max:100', 'regex:/^[A-Za-z][A-Za-z0-9._-]*$/', 'distinct:ignore_case'],
-            'package_rows.*.source' => ['required', Rule::in(['cran', 'bioc', 'github', 'pypi', 'manual'])],
+            'package_rows.*.source' => ['required', Rule::in(['cran', 'bioc', 'github', 'pypi', 'ssc', 'net'])],
             'package_rows.*.repo' => ['nullable', 'string', 'max:200', 'regex:/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/'],
             'package_rows.*.version' => ['nullable', 'string', 'max:100'],
             'package_rows.*.ref' => ['nullable', 'string', 'max:200'],
+            'package_rows.*.url' => ['nullable', 'string', 'max:500', 'regex:/^https?:\/\/[^\s"\'`]+$/'],
             'files' => ['array'],
             'files.*.path' => ['required', 'string', 'max:255', 'distinct'],
             'files.*.content' => ['nullable', 'string'],
@@ -320,35 +322,28 @@ class FacetsController extends Controller
             }
         }
 
-        $manualPackages = null;
         if ($kind === 'package_set' && array_key_exists('package_rows', $data)) {
             $language = $data['language'];
-            $allowedSources = match ($language) {
-                'r' => ['cran', 'bioc', 'github'], 'python' => ['pypi', 'github'], 'stata' => ['manual'],
-            };
             foreach ($data['package_rows'] as $i => $row) {
-                if (! in_array($row['source'], $allowedSources, true) || ($row['source'] === 'github' && empty($row['repo']))) {
+                if (! in_array($row['source'], Resolver::PACKAGE_SOURCES[$language], true) || ($row['source'] === 'github' && empty($row['repo']))) {
                     throw ValidationException::withMessages(["package_rows.{$i}.source" => 'Choose a valid source and repository for this language.']);
                 }
-            }
-            if ($language === 'stata') {
-                $manualPackages = array_column($data['package_rows'], 'name');
-            } else {
-                $layer['packages']['default_packages'] = ProjectDefaults::packageLayer($data['package_rows']);
-                foreach ($data['package_rows'] as $row) {
-                    if ($row['source'] === 'github' && filled($row['ref'] ?? null)) {
-                        $layer['packages']['default_packages'][$row['name']]['ref'] = $row['ref'];
-                    }
+                if ($row['source'] === 'net' && empty($row['url'])) {
+                    throw ValidationException::withMessages(["package_rows.{$i}.url" => 'Give the web address that holds the package.']);
                 }
             }
-        } elseif ($kind === 'package_set' && ($data['language'] ?? '') === 'stata') {
-            $manualPackages = array_keys($this->packages($data['packages'] ?? '', 'r'));
+            $layer['packages']['default_packages'] = ProjectDefaults::packageLayer($data['package_rows']);
+            foreach ($data['package_rows'] as $i => $row) {
+                if ($problem = Resolver::packageProblem($row['name'], $layer['packages']['default_packages'][$row['name']], $language)) {
+                    throw ValidationException::withMessages(["package_rows.{$i}.name" => $problem]);
+                }
+            }
         } elseif (in_array($kind, ['package_set', 'skill_set'], true) && ($packages = $this->packages($data['packages'] ?? '', $data['language'] ?? 'r'))) {
             $layer['packages'] = ['default_packages' => $packages];
         }
         if ($kind === 'package_set') {
             $layer = PackageSetLayer::installOnly($layer);
-            if (empty($layer['packages']['default_packages']) && empty($manualPackages)) {
+            if (empty($layer['packages']['default_packages'])) {
                 throw ValidationException::withMessages([array_key_exists('package_rows', $data) ? 'package_rows' : 'packages' => 'Add at least one package.']);
             }
         }
@@ -362,7 +357,7 @@ class FacetsController extends Controller
             'language' => $kind === 'structure' || blank($data['language'] ?? null) ? null : [$data['language']],
         ];
 
-        return [$meta, $layer, $data['notes'] ?? null, $manualPackages];
+        return [$meta, $layer, $data['notes'] ?? null];
     }
 
     /**
@@ -388,6 +383,8 @@ class FacetsController extends Controller
             $name = str_contains($line, '/') ? substr($line, strpos($line, '/') + 1) : $line;
             $packages[$name] = match (true) {
                 $language === 'python' => ['source' => 'pypi', 'auto_attach' => false],
+                $language === 'stata' && str_contains($line, '/') => ['source' => 'github', 'repo' => $line, 'auto_attach' => false],
+                $language === 'stata' => ['source' => 'ssc', 'auto_attach' => false],
                 str_contains($line, '/') => ['source' => 'github', 'repo' => $line, 'auto_attach' => true],
                 default => ['source' => 'cran', 'auto_attach' => true],
             };

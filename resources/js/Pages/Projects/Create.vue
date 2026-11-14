@@ -26,7 +26,7 @@ import { connectionLanguages, copyConnections, variablesOnly } from '@/connectio
 const props = defineProps({
     blueprints: Array, catalog: Object, defaults: Object, selected: Number, start: Object,
     stage: String, tab: String, github: Object, downloads: Boolean, githubUnavailable: Object,
-    ggplotThemes: Array, quartoChoices: Object,
+    ggplotThemes: Array, stataSchemes: Array, matplotlibStyles: Array, quartoChoices: Object,
     // An existing project to edit: its id, slug, name, description, language, blueprint_id, and stored choices
     editing: { type: Object, default: null },
 });
@@ -703,7 +703,7 @@ const submitDisabled = computed(() => form.processing || (stage.value === 'revie
                         <p v-if="form.errors.settings" class="text-xs text-red-600 dark:text-red-400">{{ form.errors.settings }}</p>
                     </UiPanel>
 
-                    <ChoicesEditor :form="form" :catalog="catalog" :apply-on-load="!editing" :section="tab" :languages="[form.language]" :required="requiredTools" :ggplot-themes="ggplotThemes" :quarto-choices="quartoChoices" agent-picker flush>
+                    <ChoicesEditor :form="form" :catalog="catalog" :apply-on-load="!editing" :section="tab" :languages="[form.language]" :required="requiredTools" :ggplot-themes="ggplotThemes" :stata-schemes="stataSchemes" :matplotlib-styles="matplotlibStyles" :quarto-choices="quartoChoices" agent-picker flush>
                         <!-- The files and folders this project gets, as the choices stand -->
                         <template #structure-preview>
                             <div class="flex flex-col gap-3 border-t border-slate-800/10 pt-6 dark:border-white/15" :class="current ? '' : 'opacity-60'">

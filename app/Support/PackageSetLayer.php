@@ -8,13 +8,9 @@ class PackageSetLayer
 {
     public static function rows(FacetVersion $version): array
     {
-        if ($version->manual_packages) {
-            return array_map(fn ($name) => ['name' => $name, 'source' => 'manual', 'version' => null, 'repo' => null], $version->manual_packages);
-        }
-
         return collect($version->layer['packages']['default_packages'] ?? [])
             ->filter(fn ($entry) => is_array($entry))
-            ->map(fn ($entry, $name) => ['name' => $name, 'source' => $entry['source'], 'version' => $entry['version'] ?? null, 'repo' => $entry['repo'] ?? null, 'ref' => $entry['ref'] ?? null])
+            ->map(fn ($entry, $name) => ['name' => $name, 'source' => $entry['source'], 'version' => $entry['version'] ?? null, 'repo' => $entry['repo'] ?? null, 'ref' => $entry['ref'] ?? null, 'url' => $entry['url'] ?? null])
             ->values()->all();
     }
 

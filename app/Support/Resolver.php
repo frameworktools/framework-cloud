@@ -343,6 +343,11 @@ class Resolver
         if (array_key_exists('sensitive', $settings)) {
             $layer['security']['sensitive'] = (bool) $settings['sensitive'];
         }
+        // Stata installs packages into the project's ado/plus. The base layer
+        // gives the spec the default_packages it needs beside it.
+        if ($this->language === 'stata' && array_key_exists('project_ado', $settings)) {
+            $layer['packages']['project_ado'] = (bool) $settings['project_ado'];
+        }
         if (array_key_exists('ai', $settings)) {
             $ai = is_array($settings['ai']) ? $settings['ai'] : ['enabled' => (bool) $settings['ai']];
             $layer['ai'] = array_filter([
@@ -397,7 +402,7 @@ class Resolver
     }
 
     /** Package sources each language can install from. */
-    public const PACKAGE_SOURCES = ['r' => ['cran', 'bioc', 'github'], 'python' => ['pypi', 'github']];
+    public const PACKAGE_SOURCES = ['r' => ['cran', 'bioc', 'github'], 'python' => ['pypi', 'github'], 'stata' => ['ssc', 'github', 'net']];
 
     /**
      * What is wrong with one package entry for a language, or null: its name,
@@ -415,7 +420,7 @@ class Resolver
         if (! is_array($definition)) {
             return "Give {$name} a source.";
         }
-        if (array_diff(array_keys($definition), ['source', 'version', 'repo', 'ref', 'auto_attach'])) {
+        if (array_diff(array_keys($definition), ['source', 'version', 'repo', 'ref', 'url', 'auto_attach'])) {
             return "{$name} has fields a package can't have.";
         }
         $source = $definition['source'] ?? null;
@@ -434,6 +439,16 @@ class Resolver
         }
         if ($source !== 'github' && $repo !== null) {
             return "{$name}: only GitHub packages have a repo.";
+        }
+        $url = $definition['url'] ?? null;
+        if ($source === 'net' && (! is_string($url) || ! preg_match('#^https?://[^\s"\'`]+$#', $url) || strlen($url) > 500)) {
+            return "{$name}: net packages need the web address that holds {$name}.pkg.";
+        }
+        if ($source !== 'net' && $url !== null) {
+            return "{$name}: only net packages have a url.";
+        }
+        if ($language === 'stata' && ! preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $name)) {
+            return "{$name} is not a Stata package name. Use letters, digits, and underscores.";
         }
         if (! is_bool($definition['auto_attach'] ?? null)) {
             return "{$name}: auto_attach must be true or false.";

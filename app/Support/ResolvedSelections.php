@@ -105,7 +105,7 @@ class ResolvedSelections
                 'sensitive' => (bool) ($spec['security']['sensitive'] ?? false),
                 'git' => (bool) ($spec['git']['use_git'] ?? true),
                 'ai' => (bool) ($spec['ai']['enabled'] ?? true),
-            ],
+            ] + ($resolved['language'] === 'stata' ? ['project_ado' => (bool) ($spec['packages']['project_ado'] ?? true)] : []),
             'notices' => $resolved['notices'],
         ];
     }
