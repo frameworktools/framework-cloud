@@ -144,7 +144,7 @@
 <section id="practices" data-practices class="scroll-mt-6 py-14 sm:py-20">
     <div class="mx-auto max-w-3xl text-center">
         <h2 class="text-3xl font-semibold tracking-tight text-balance">Best practices made easy</h2>
-        <p class="mt-4 leading-relaxed text-balance text-slate-600 dark:text-slate-400">Framework's R, Python, and Stata packages make it easy to set up projects with a sensible structure so they start organized. Data safeguards need no extra code. Use Framework Cloud to make starting projects, keeping them organized, and sharing results even easier.</p>
+        <p class="mt-4 leading-relaxed text-balance text-slate-600 dark:text-slate-400">Framework's R, Python, and Stata packages give every project a sensible structure. Data safeguards are built in. Framework Cloud makes starting projects and sharing results even easier.</p>
     </div>
 
     <div class="mt-10">
