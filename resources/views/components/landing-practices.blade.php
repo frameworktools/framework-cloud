@@ -1,23 +1,15 @@
 @php
     // Before and after: the setup code a project repeats by hand, and the Framework call that
     // replaces it, in each language Framework supports for the topic. Each side is a list of
-    // [file, code] blocks; a null file shows no caption. Topics without a language key apply
+    // [file, code] blocks; a null file shows no caption. A third item, 'tree' or 'output',
+    // shows a folder tree or console output instead of highlighted code. Topics without a language key apply
     // to every language and show no language tabs.
     $groups = [
         'Project setup' => [
             'structure' => ['Curated project structures', 'Curated project structures', [
-                'r' => [
-                    [[null, "dir.create(\"data/raw\", recursive = TRUE)\ndir.create(\"data/clean\")\ndir.create(\"output/figures\", recursive = TRUE)\nfile.copy(\"../last-project/.gitignore\", \".\")\nusethis::use_git()"]],
-                    [[null, "framework::new_project(\"penguin-study\")"]],
-                ],
-                'py' => [
-                    [[null, "from pathlib import Path\n\nfor folder in [\"data/raw\", \"output/figures\"]:\n    Path(folder).mkdir(parents=True, exist_ok=True)\n# Copy .gitignore and settings from the last project"]],
-                    [[null, "import framework\n\nframework.new_project(\"penguin-study\")"]],
-                ],
-                'stata' => [
-                    [[null, "mkdir \"C:/Users/me/penguin-study\"\nmkdir \"C:/Users/me/penguin-study/data\"\nmkdir \"C:/Users/me/penguin-study/output\"\n// Write master.do and a .gitignore by hand"]],
-                    [['Terminal', "fw new penguin-study --lang stata"]],
-                ],
+                'r' => [[[null, "penguin-study/\n├── analysis.R\n├── analysis_v2_FINAL.R\n├── clean_old.R\n├── penguins.csv\n├── penguins_clean.csv\n├── penguins_clean (1).csv\n├── Rplot01.png\n├── flipper_mass_final.png\n├── model.rds\n├── table1.docx\n├── .env\n└── notes.txt", 'tree']], [[null, "penguin-study/\n├── inputs/\n│   ├── raw/\n│   │   └── penguins.csv\n│   └── intermediate/\n│       └── penguins_clean.csv\n├── scripts/\n│   ├── clean.R\n│   └── analysis.R\n├── outputs/\n│   ├── figures/\n│   │   ├── flipper_mass.png\n│   │   └── body_mass.png\n│   ├── tables/\n│   │   └── table1.docx\n│   └── models/\n│       └── model.rds\n├── docs/\n│   └── notes.txt\n├── .env\n├── settings.yml\n├── scaffold.R\n└── .gitignore", 'tree']]],
+                'py' => [[[null, "penguin-study/\n├── analysis.ipynb\n├── Untitled.ipynb\n├── Untitled1.ipynb\n├── helpers.py\n├── penguins.csv\n├── penguins_clean.csv\n├── penguins_clean (1).csv\n├── figure1.png\n├── flipper_mass_final.png\n├── model.pkl\n├── results.xlsx\n├── .env\n└── requirements.txt", 'tree']], [[null, "penguin-study/\n├── inputs/\n│   ├── raw/\n│   │   └── penguins.csv\n│   └── intermediate/\n│       └── penguins_clean.csv\n├── notebooks/\n│   └── analysis.ipynb\n├── functions/\n│   └── helpers.py\n├── outputs/\n│   ├── figures/\n│   │   ├── flipper_mass.png\n│   │   └── body_mass.png\n│   ├── tables/\n│   │   └── results.xlsx\n│   └── models/\n│       └── model.pkl\n├── .env\n├── pyproject.toml\n├── settings.yml\n├── scaffold.py\n└── .gitignore", 'tree']]],
+                'stata' => [[[null, "penguin-study/\n├── master_old.do\n├── analysis.do\n├── analysis_v2.do\n├── penguins.csv\n├── penguins.dta\n├── penguins_clean.dta\n├── penguins_clean2.dta\n├── Graph.gph\n├── Graph.png\n├── results.rtf\n├── analysis.log\n└── notes.txt", 'tree']], [[null, "penguin-study/\n├── inputs/\n│   ├── raw/\n│   │   └── penguins.csv\n│   ├── intermediate/\n│   │   └── penguins.dta\n│   └── final/\n│       └── penguins_clean.dta\n├── do/\n│   └── analysis.do\n├── outputs/\n│   ├── figures/\n│   │   └── flipper_mass.png\n│   └── tables/\n│       └── results.rtf\n├── logs/\n│   └── analysis.log\n├── docs/\n│   └── notes.txt\n├── master.do\n├── settings.do\n├── settings.yml\n└── .gitignore", 'tree']]],
             ], 'Our project structures scale as your project grows, keep data safe, and make sense to collaborators at a glance. Prefer your own structure? Framework supports that; you can even share them with Framework Cloud.'],
             'packages' => ['Sane package management', 'Keep a dictionary of your packages for one-step installation and loading.', [
                 'r' => [
@@ -59,12 +51,12 @@
             ]],
             'outputs' => ['Organized outputs', 'Catalog and publish your project\'s deliverables.', [
                 'r' => [
-                    [[null, "dir.create(\"output/figures\", recursive = TRUE)\nggsave(\"output/figures/flipper-mass.png\", plot,\n       width = 8, height = 6)"]],
-                    [[null, "save_figure(plot, \"flipper-mass\")"]],
+                    [[null, "dir.create(\"output/figures\", recursive = TRUE)\nggsave(\"output/figures/flipper-mass.png\", plot,\n       width = 8, height = 6)\nwrite.csv(summary, \"output/body-mass.csv\")"]],
+                    [[null, "save_figure(plot, \"flipper-mass\")\nsave_table(summary, \"body-mass-by-species\")\nresult_list()[c(\"name\", \"type\")]"], ['Console', "                                     name   type\n1 outputs/tables/body-mass-by-species.csv  table\n2        outputs/figures/flipper-mass.png figure", 'output']],
                 ],
                 'py' => [
-                    [[null, "os.makedirs(\"output/figures\", exist_ok=True)\nfig.savefig(\"output/figures/flipper-mass.png\")"]],
-                    [[null, "fw.save_figure(fig, \"flipper-mass\")"]],
+                    [[null, "os.makedirs(\"output/figures\", exist_ok=True)\nfig.savefig(\"output/figures/flipper-mass.png\")\nsummary.to_csv(\"output/body-mass.csv\")"]],
+                    [[null, "fw.save_figure(fig, \"flipper-mass\")\nfw.save_table(summary, \"body-mass-by-species\")\nfw.result_list()[[\"name\", \"type\"]]"], ['Console', "                                      name    type\n0  outputs/tables/body-mass-by-species.csv   table\n1         outputs/figures/flipper-mass.png  figure", 'output']],
                 ],
                 'stata' => [
                     [[null, "capture mkdir \"\$figures\"\ngraph export \"\$figures/flipper-mass.png\", replace"]],
@@ -136,6 +128,12 @@
     $languages = ['r' => 'R', 'py' => 'Python', 'stata' => 'Stata'];
     // Notes are plain text, with `code` in backticks.
     $prose = fn (string $text) => preg_replace('/`([^`]+)`/', '<code class="font-mono text-[0.85em] text-slate-700 dark:text-slate-300">$1</code>', e($text));
+    // A folder tree: folders in blue, the branch lines dimmed.
+    $tree = fn (string $text) => preg_replace(
+        ['~(?<=\s|^)([\w.\-]+/)~mu', '~([│├└─]+)~u'],
+        ['<span class="text-sky-300">$1</span>', '<span class="text-slate-500">$1</span>'],
+        e($text),
+    );
     // One list, most persuasive first. The AI agents section covers agents.
     $order = ['session', 'integrity', 'packages', 'git', 'structure', 'outputs', 'databases', 'caching', 'publish'];
     $topics = array_replace(array_flip($order), array_merge(...array_values($groups)));
@@ -178,12 +176,13 @@
                                             <div class="min-w-0">
                                                 <p @class(['text-xs font-medium', 'text-slate-500 dark:text-slate-400' => $loop->first, 'text-sky-700 dark:text-sky-400' => ! $loop->first])>{{ $side }}</p>
                                                 <div class="mt-2 space-y-2">
-                                                    @foreach ($blocks as [$file, $code])
+                                                    @foreach ($blocks as $block)
+                                                        @php([$file, $code] = $block)
                                                         <div @class(['overflow-hidden rounded-lg bg-[#0c1526] ring-1 ring-slate-400/20', 'opacity-80' => $loop->parent->first])>
                                                             @if ($file)
                                                                 <p class="border-b border-white/10 px-3 py-1.5 font-mono text-[0.7rem] text-slate-400">{{ $file }}</p>
                                                             @endif
-                                                            <pre class="overflow-x-auto px-3 py-2.5 font-mono text-xs leading-[1.6] text-slate-100" style="color-scheme: dark"><code>{!! \App\Support\ExampleCode::highlight($code, false) !!}</code></pre>
+                                                            <pre @class(["overflow-x-auto px-3 py-2.5 font-mono text-xs text-slate-100", "leading-[1.6]" => ($block[2] ?? null) !== "tree", "leading-[1.3]" => ($block[2] ?? null) === "tree"]) style="color-scheme: dark"><code>{!! match ($block[2] ?? 'code') { 'tree' => $tree($code), 'output' => e($code), default => \App\Support\ExampleCode::highlight($code, false) } !!}</code></pre>
                                                         </div>
                                                     @endforeach
                                                 </div>
