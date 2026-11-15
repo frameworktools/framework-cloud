@@ -137,7 +137,7 @@
     // Notes are plain text, with `code` in backticks.
     $prose = fn (string $text) => preg_replace('/`([^`]+)`/', '<code class="font-mono text-[0.85em] text-slate-700 dark:text-slate-300">$1</code>', e($text));
     // One list, most persuasive first. The AI agents section covers agents.
-    $order = ['session', 'integrity', 'git', 'structure', 'outputs', 'packages', 'databases', 'caching', 'publish'];
+    $order = ['session', 'integrity', 'packages', 'git', 'structure', 'outputs', 'databases', 'caching', 'publish'];
     $topics = array_replace(array_flip($order), array_merge(...array_values($groups)));
     $first = $order[0];
 @endphp
