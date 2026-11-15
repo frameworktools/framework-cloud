@@ -55,7 +55,6 @@
         <x-landing-setup />
         <x-landing-workflow />
         <span id="copy"></span><span id="environments"></span>
-        <x-landing-safeguards />
         <x-landing-platform />
         <x-landing-agents />
         <x-landing-ai />
