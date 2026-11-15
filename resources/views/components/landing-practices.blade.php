@@ -7,14 +7,14 @@
     $groups = [
         'Project setup' => [
             'structure' => ['Curated project structures', 'Curated project structures', [
-                'r' => [[[null, "penguin-study/\n├── data/\n│   ├── penguins.csv\n│   └── penguins_clean.csv\n├── analysis.R\n├── analysis_v2_FINAL.R\n├── clean_old.R\n├── penguins_clean (1).csv\n├── Rplot01.png\n├── flipper_mass_final.png\n├── model.rds\n├── table1.docx\n├── .env\n├── .gitignore  # data/*.csv\n└── notes.txt", 'tree']], [[null, "penguin-study/\n├── inputs/\n│   ├── private/  # never shared\n│   │   ├── raw/\n│   │   │   └── penguins.csv\n│   │   └── intermediate/\n│   │       └── penguins_clean.csv\n│   └── public/   # shareable\n├── scripts/\n│   ├── clean.R\n│   └── analysis.R\n├── outputs/\n│   ├── private/  # never shared\n│   │   └── models/\n│   │       └── model.rds\n│   └── public/   # shareable\n│       ├── figures/\n│       │   ├── flipper_mass.png\n│       │   └── body_mass.png\n│       └── tables/\n│           └── table1.docx\n├── docs/\n│   └── notes.txt\n├── .env\n├── settings.yml\n├── scaffold.R\n└── .gitignore    # **/private/**", 'tree']]],
-                'py' => [[[null, "penguin-study/\n├── data/\n│   ├── penguins.csv\n│   └── penguins_clean.csv\n├── analysis.ipynb\n├── Untitled.ipynb\n├── Untitled1.ipynb\n├── helpers.py\n├── penguins_clean (1).csv\n├── figure1.png\n├── flipper_mass_final.png\n├── model.pkl\n├── results.xlsx\n├── .env\n├── .gitignore  # data/*.csv\n└── requirements.txt", 'tree']], [[null, "penguin-study/\n├── inputs/\n│   ├── private/  # never shared\n│   │   ├── raw/\n│   │   │   └── penguins.csv\n│   │   └── intermediate/\n│   │       └── penguins_clean.csv\n│   └── public/   # shareable\n├── notebooks/\n│   └── analysis.ipynb\n├── functions/\n│   └── helpers.py\n├── outputs/\n│   ├── private/  # never shared\n│   │   └── models/\n│   │       └── model.pkl\n│   └── public/   # shareable\n│       ├── figures/\n│       │   ├── flipper_mass.png\n│       │   └── body_mass.png\n│       └── tables/\n│           └── results.xlsx\n├── .env\n├── pyproject.toml\n├── settings.yml\n├── scaffold.py\n└── .gitignore    # **/private/**", 'tree']]],
-                'stata' => [[[null, "penguin-study/\n├── data/\n│   ├── penguins.dta\n│   └── penguins_clean.dta\n├── master_old.do\n├── analysis.do\n├── analysis_v2.do\n├── penguins.csv\n├── penguins_clean2.dta\n├── Graph.gph\n├── Graph.png\n├── results.rtf\n├── analysis.log\n├── .gitignore  # data/*.dta\n└── notes.txt", 'tree']], [[null, "penguin-study/\n├── inputs/\n│   ├── private/  # never shared\n│   │   ├── raw/\n│   │   │   └── penguins.csv\n│   │   ├── intermediate/\n│   │   │   └── penguins.dta\n│   │   └── final/\n│   │       └── penguins_clean.dta\n│   └── public/   # shareable\n├── do/\n│   └── analysis.do\n├── outputs/\n│   ├── private/  # never shared\n│   │   └── tables/\n│   │       └── results.rtf\n│   └── public/   # shareable\n│       └── figures/\n│           └── flipper_mass.png\n├── logs/\n│   └── analysis.log\n├── docs/\n│   └── notes.txt\n├── master.do\n├── settings.do\n├── settings.yml\n└── .gitignore    # **/private/**", 'tree']]],
-            ], 'Our project structures scale as your project grows, keep data safe, and make sense to collaborators at a glance. Sensitive projects keep private data in private/ folders. Prefer your own structure? Framework supports that; you can even share them with Framework Cloud.'],
+                'r' => [[[null, "penguin-study/\n├── data/\n│   ├── penguins.csv\n│   └── penguins_clean.csv\n├── analysis.R\n├── analysis_v2_FINAL.R\n├── clean_old.R\n├── penguins_clean (1).csv\n├── Rplot01.png\n├── flipper_mass_final.png\n├── model.rds\n├── table1.docx\n├── .env\n├── .gitignore  # data/*.csv\n└── notes.txt", 'tree']], [[null, "penguin-study/\n├── inputs/\n│   ├── private/  # never shared\n│   │   ├── raw/\n│   │   │   └── penguins.csv\n│   │   └── intermediate/\n│   │       └── penguins_clean.csv\n│   └── public/   # shareable\n├── scripts/\n│   ├── clean.R\n│   └── analysis.R\n├── outputs/\n│   ├── private/  # never shared\n│   │   └── models/\n│   │       └── model.rds\n│   └── public/   # shareable\n│       ├── figures/\n│       │   ├── flipper-mass.png\n│       │   └── body_mass.png\n│       └── tables/\n│           └── body-mass-by-species.csv\n├── docs/\n│   └── notes.txt\n├── .env\n├── settings.yml\n├── scaffold.R\n└── .gitignore    # **/private/**", 'tree']]],
+                'py' => [[[null, "penguin-study/\n├── data/\n│   ├── penguins.csv\n│   └── penguins_clean.csv\n├── analysis.ipynb\n├── Untitled.ipynb\n├── Untitled1.ipynb\n├── helpers.py\n├── penguins_clean (1).csv\n├── figure1.png\n├── flipper_mass_final.png\n├── model.pkl\n├── results.xlsx\n├── .env\n├── .gitignore  # data/*.csv\n└── requirements.txt", 'tree']], [[null, "penguin-study/\n├── inputs/\n│   ├── private/  # never shared\n│   │   ├── raw/\n│   │   │   └── penguins.csv\n│   │   └── intermediate/\n│   │       └── penguins_clean.csv\n│   └── public/   # shareable\n├── notebooks/\n│   └── analysis.ipynb\n├── functions/\n│   └── helpers.py\n├── outputs/\n│   ├── private/  # never shared\n│   │   └── models/\n│   │       └── model.pkl\n│   └── public/   # shareable\n│       ├── figures/\n│       │   ├── flipper-mass.png\n│       │   └── body_mass.png\n│       └── tables/\n│           └── body-mass-by-species.csv\n├── .env\n├── pyproject.toml\n├── settings.yml\n├── scaffold.py\n└── .gitignore    # **/private/**", 'tree']]],
+                'stata' => [[[null, "penguin-study/\n├── data/\n│   ├── penguins.dta\n│   └── penguins_clean.dta\n├── master_old.do\n├── analysis.do\n├── analysis_v2.do\n├── penguins.csv\n├── penguins_clean2.dta\n├── Graph.gph\n├── Graph.png\n├── results.rtf\n├── analysis.log\n├── .gitignore  # data/*.dta\n└── notes.txt", 'tree']], [[null, "penguin-study/\n├── inputs/\n│   ├── private/  # never shared\n│   │   ├── raw/\n│   │   │   └── penguins.csv\n│   │   ├── intermediate/\n│   │   │   └── penguins.dta\n│   │   └── final/\n│   │       └── penguins_clean.dta\n│   └── public/   # shareable\n├── do/\n│   └── analysis.do\n├── outputs/\n│   ├── private/  # never shared\n│   │   └── tables/\n│   │       └── results.rtf\n│   └── public/   # shareable\n│       ├── figures/\n│       │   └── flipper-mass.png\n│       └── tables/\n│           └── body-mass-by-species.csv\n├── logs/\n│   └── analysis.log\n├── docs/\n│   └── notes.txt\n├── master.do\n├── settings.do\n├── settings.yml\n└── .gitignore    # **/private/**", 'tree']]],
+            ], 'Our project structures scale as your project grows and make sense to collaborators at a glance. Sensitive inputs and unreviewed outputs go in private/ folders. Reviewed results go in public/ folders. Prefer your own structure? Framework supports that, and you can share it through Framework Cloud.'],
             'packages' => ['Sane package management', 'Keep a dictionary of your packages for one-step installation and loading.', [
                 'r' => [
                     [[null, "pkgs <- c(\"dplyr\", \"ggplot2\", \"readr\")\nnew <- setdiff(pkgs, rownames(installed.packages()))\ninstall.packages(new)\nlibrary(dplyr)\nlibrary(ggplot2)"]],
-                    [['settings/packages.yml', "packages:\n  default_packages:\n    - name: dplyr\n      auto_attach: true\n    - name: ggplot2\n      auto_attach: true\n    - name: readr\n      auto_attach: false"], [null, "scaffold()  # installs all three, attaches two\npenguins <- readr::read_csv(\"data/raw/penguins.csv\")"]],
+                    [['settings/packages.yml', "packages:\n  default_packages:\n    - name: dplyr\n      auto_attach: true\n    - name: ggplot2\n      auto_attach: true\n    - name: readr\n      auto_attach: false"], [null, "scaffold()  # installs all three, attaches two\npenguins <- readr::read_csv(\"inputs/private/raw/penguins.csv\")"]],
                 ],
                 'py' => [
                     [['Terminal', "pip install polars matplotlib\n# Then add both to requirements.txt by hand"]],
@@ -25,9 +25,9 @@
                     [['settings.yml', "packages:\n  project_ado: true\n  default_packages:\n    - estout\n    - reghdfe\n    - ftools"], [null, "fw_packages install"]],
                 ],
             ], [
-                'r' => 'Declare your packages in a settings file. Framework will make sure they\'re installed and even load them for you in `scaffold()` if you want. Collaborators and AI agents alike can easily see what your project needs.',
-                'py' => 'Declare your packages in pyproject.toml. Framework will make sure they\'re installed. Collaborators and AI agents alike can easily see what your project needs.',
-                'stata' => 'Declare your packages in a settings file. Framework will make sure they\'re installed, and `fw_scaffold` installs any that are missing. Collaborators and AI agents alike can easily see what your project needs.',
+                'r' => 'Declare your packages in a settings file. Framework installs them, and `scaffold()` can load them for you. Collaborators and AI agents can see what your project needs.',
+                'py' => 'Declare your packages in pyproject.toml. Framework installs them. Collaborators and AI agents can see what your project needs.',
+                'stata' => 'Declare your packages in a settings file. Framework installs them, and `fw_scaffold` adds any that are missing. Collaborators and AI agents can see what your project needs.',
             ]],
         ],
         'Analysis' => [
@@ -45,24 +45,24 @@
                     [[null, "fw_scaffold"]],
                 ],
             ], [
-                'r' => 'The `scaffold()` function sets up your environment, ensures packages are available, and gives you access to all your functions. No more juggling `source()` and `library()` calls in a dozen places.',
-                'py' => 'The `fw.scaffold()` function sets up your environment and gives you access to all your functions. No more `os.chdir()` and `sys.path` edits at the top of every notebook.',
-                'stata' => 'The `fw_scaffold` command sets up your environment, installs missing packages, and gives you access to all your programs. No more hard-coded paths at the top of every do-file.',
+                'r' => 'The `scaffold()` function sets up your environment, makes sure your packages are installed, and loads your project\'s functions. It replaces the `source()` and `library()` calls at the top of every script.',
+                'py' => 'The `fw.scaffold()` function sets up your environment and loads your project\'s functions. It replaces the `os.chdir()` and `sys.path` edits at the top of every notebook.',
+                'stata' => 'The `fw_scaffold` command sets up your environment, installs missing packages, and loads your project\'s programs. It replaces the hard-coded paths at the top of every do-file.',
             ]],
             'outputs' => ['Organized outputs', 'Catalog and publish your project\'s deliverables.', [
                 'r' => [
                     [[null, "dir.create(\"output/figures\", recursive = TRUE)\nggsave(\"output/figures/flipper-mass.png\", plot,\n       width = 8, height = 6)\nwrite.csv(summary, \"output/body-mass.csv\")"]],
-                    [[null, "save_figure(plot, \"flipper-mass\")\nsave_table(summary, \"body-mass-by-species\")\nresult_list()[c(\"name\", \"type\")]"], ['Console', "                                     name   type\n1 outputs/tables/body-mass-by-species.csv  table\n2        outputs/figures/flipper-mass.png figure", 'output']],
+                    [[null, "save_figure(plot, \"flipper-mass\", public = TRUE)\nsave_table(summary, \"body-mass-by-species\", public = TRUE)\nresult_list()[c(\"name\", \"type\")]"], ['Console', "                                            name   type\n1 outputs/public/tables/body-mass-by-species.csv  table\n2        outputs/public/figures/flipper-mass.png figure", 'output']],
                 ],
                 'py' => [
                     [[null, "os.makedirs(\"output/figures\", exist_ok=True)\nfig.savefig(\"output/figures/flipper-mass.png\")\nsummary.to_csv(\"output/body-mass.csv\")"]],
-                    [[null, "fw.save_figure(fig, \"flipper-mass\")\nfw.save_table(summary, \"body-mass-by-species\")\nfw.result_list()[[\"name\", \"type\"]]"], ['Console', "                                      name    type\n0  outputs/tables/body-mass-by-species.csv   table\n1         outputs/figures/flipper-mass.png  figure", 'output']],
+                    [[null, "fw.save_figure(fig, \"flipper-mass\", public=True)\nfw.save_table(summary, \"body-mass-by-species\", public=True)\nfw.result_list()[[\"name\", \"type\"]]"], ['Console', "                                             name    type\n0  outputs/public/tables/body-mass-by-species.csv   table\n1         outputs/public/figures/flipper-mass.png  figure", 'output']],
                 ],
                 'stata' => [
-                    [[null, "capture mkdir \"\$figures\"\ngraph export \"\$figures/flipper-mass.png\", replace"]],
-                    [[null, "fw_graph flipper-mass"]],
+                    [[null, "capture mkdir \"\$figures\"\ngraph export \"\$figures/flipper-mass.png\", replace\ncollapse (mean) body_mass_g, by(species)\nexport delimited \"output/body-mass.csv\", replace"]],
+                    [[null, "fw_graph flipper-mass, public\ncollapse (mean) body_mass_g, by(species)\nfw_table body-mass-by-species, public"], ['Console', "Saved figure to outputs/public/figures/flipper-mass.png\nSaved table to outputs/public/tables/body-mass-by-species.csv", 'output']],
                 ],
-            ], 'Use our helper functions to keep track of your project\'s outputs. With Framework Cloud, you can easily publish and share plots, tables, models, notebooks, and more.'],
+            ], 'Framework\'s save helpers record each figure, table, and model you save. With Framework Cloud, you can publish and share plots, tables, models, notebooks, and more.'],
             'publish' => ['Publish study artifacts', 'Use Framework Cloud to share your work.', [
                 'r' => [
                     [[null, "quarto::quarto_render(\"notebooks/analysis.qmd\")\n# Email analysis.html to the team\n# Copy the model to a shared drive"]],
@@ -76,7 +76,7 @@
                     [[null, "regress body_mass_g flipper_length_mm\nesttab using \"\$tables/body-mass.rtf\", replace\n// Email body-mass.rtf to the team"]],
                     [[null, "regress body_mass_g flipper_length_mm\nfw_publish, estimates slug(penguin-body-mass)"]],
                 ],
-            ], 'Framework packages integrate with Framework Cloud, so you can share versioned artifacts with colleagues and the public. We\'ll make the presentation beautiful.'],
+            ], 'Framework packages integrate with Framework Cloud, so you can share versioned artifacts with colleagues and the public. Each one gets a clean, readable page.'],
             'caching' => ['Cache slow operations', 'Run expensive operations once.', [
                 'r' => [
                     [[null, "if (file.exists(\"cache/fit.rds\")) {\n  fit <- readRDS(\"cache/fit.rds\")\n} else {\n  fit <- run_bootstrap(penguins)\n  saveRDS(fit, \"cache/fit.rds\")\n}"]],
@@ -86,7 +86,7 @@
                     [[null, "import pickle\n\npath = \"cache/fit.pkl\"\nif os.path.exists(path):\n    fit = pickle.load(open(path, \"rb\"))\nelse:\n    fit = run_bootstrap(penguins)\n    pickle.dump(fit, open(path, \"wb\"))"]],
                     [[null, "fit = fw.cache_remember(\n    \"fit\",\n    lambda: run_bootstrap(penguins),\n    expire_after=\"1 day\",\n)"]],
                 ],
-            ], 'Helpers run a slow operation once and reuse the result until it expires.'],
+            ], 'Framework can reuse a cached result until it expires or you refresh it.'],
             'databases' => ['Easy database connections', 'Connect to local or remote databases by name.', [
                 'r' => [
                     [[null, "con <- DBI::dbConnect(RPostgres::Postgres(),\n  host = \"db.example.org\", user = \"analyst\",\n  password = \"hunter2\")\nvisits <- DBI::dbGetQuery(con,\n  \"SELECT * FROM visits\")\nDBI::dbDisconnect(con)"]],
@@ -96,26 +96,26 @@
                     [[null, "conn = psycopg.connect(host=\"db.example.org\",\n    user=\"analyst\", password=\"hunter2\")\nvisits = pd.read_sql(\"SELECT * FROM visits\", conn)\nconn.close()"]],
                     [['settings/connections.yml', "connections:\n  study_db:\n    driver: postgres\n    host: db.example.org\n    user: analyst\n    password: env(\"DB_PASSWORD\")"], [null, "visits = fw.db_query(\"SELECT * FROM visits\",\n                     \"study_db\")"]],
                 ],
-            ], 'Declare your database connections in a settings file. Use `env()` to point to your secrets stored in a .gitignored .env file.'],
+            ], 'Declare each connection once in a settings file, then query it by name from any script or notebook. Keep passwords in .env, which Git ignores, and read them with `env()`.'],
         ],
         'Data safety' => [
-            'integrity' => ['Data change detection', 'Data integrity is checked on every read.', [
+            'integrity' => ['Data change detection', 'Know when an input file changes.', [
                 'r' => [
                     [[null, "sums <- read.csv(\"data/checksums.csv\")\npath <- \"data/raw/penguins.csv\"\nexpected <- sums\$md5[sums\$file == path]\nif (tools::md5sum(path) != expected) {\n  stop(\"penguins.csv changed\")\n}\npenguins <- readr::read_csv(path)"]],
-                    [[null, "penguins <- data_read(\"inputs.raw.penguins\")"]],
+                    [[null, "penguins <- data_read(\"inputs.private.raw.penguins\")"]],
                 ],
                 'py' => [
                     [[null, "import hashlib, json\n\npath = \"data/raw/penguins.csv\"\nwith open(\"data/checksums.json\") as f:\n    expected = json.load(f)[path]\nwith open(path, \"rb\") as f:\n    md5 = hashlib.md5(f.read()).hexdigest()\nif md5 != expected:\n    raise ValueError(\"penguins.csv changed\")\npenguins = pd.read_csv(path)"]],
-                    [[null, "penguins = fw.data_read(\"inputs.raw.penguins\")"]],
+                    [[null, "penguins = fw.data_read(\"inputs.private.raw.penguins\")"]],
                 ],
                 'stata' => [
                     [[null, "checksum \"\$raw/penguins.csv\"\nlocal now = r(checksum)\nfile open fh using \"data/checksums.txt\", read\nfile read fh known\nfile close fh\nassert `now' == `known'\nimport delimited \"\$raw/penguins.csv\", clear"]],
-                    [[null, "fw_use inputs.raw.penguins, clear"]],
+                    [[null, "fw_use inputs.private.raw.penguins, clear"]],
                 ],
             ], [
-                'r' => 'Use `data_read()` to automatically hash your data. Your scripts will warn you or fail if data is changed without your knowledge. Lock an input to stop a changed file from being read. Framework Cloud can share your data\'s fingerprints with collaborators and reviewers. Your data stays on your machine.',
-                'py' => 'Use `fw.data_read()` to automatically hash your data. Your scripts will warn you or fail if data is changed without your knowledge. Lock an input to stop a changed file from being read. Framework Cloud can share your data\'s fingerprints with collaborators and reviewers. Your data stays on your machine.',
-                'stata' => 'Use `fw_use` to automatically hash your data. Your do-files will warn you or fail if data is changed without your knowledge. Lock an input to stop a changed file from being read. Framework Cloud can share your data\'s fingerprints with collaborators and reviewers. Your data stays on your machine.',
+                'r' => '`data_read()` records a fingerprint of each input. Your scripts warn you or stop when a file changes. Lock an input to stop a changed file from being read, and check inputs with `data_verify()`. Framework Cloud can share fingerprints with collaborators and reviewers. Your data stays on your machine.',
+                'py' => '`fw.data_read()` records a fingerprint of each input. Your scripts warn you or stop when a file changes. Lock an input to stop a changed file from being read, and check inputs with `fw.data_verify()`. Framework Cloud can share fingerprints with collaborators and reviewers. Your data stays on your machine.',
+                'stata' => '`fw_use` records a fingerprint of each input. Your do-files warn you or stop when a file changes. Lock an input to stop a changed file from being read. Framework Cloud can share fingerprints with collaborators and reviewers. Your data stays on your machine.',
             ]],
             'git' => ['Private data out of Git', 'Avoid data and secret leakage with out-of-the-box defense in depth.', [
                 '*' => [
@@ -138,11 +138,17 @@
     $order = ['session', 'integrity', 'packages', 'git', 'structure', 'outputs', 'databases', 'caching', 'publish'];
     $topics = array_replace(array_flip($order), array_merge(...array_values($groups)));
     $first = $order[0];
+    // Link each documentation site the header lists, joined as R, Python, Stata, or the command line.
+    $docNames = ['r' => 'R', 'py' => 'Python', 'stata' => 'Stata', 'cli' => 'the command line'];
+    $docLinks = collect($docNames)->only(array_keys(\App\Support\Docs\Products::listed()))
+        ->map(fn (string $name, string $product) => '<a href="'.e(\App\Support\Docs\Products::publicUrl($product)).'" class="text-slate-800 underline decoration-slate-300 underline-offset-4 hover:decoration-slate-600 dark:text-slate-200 dark:decoration-slate-600">'.e($name).'</a>')
+        ->values();
+    $docList = $docLinks->count() > 1 ? $docLinks->slice(0, -1)->implode(', ').($docLinks->count() > 2 ? ',' : '').' or '.$docLinks->last() : $docLinks->implode('');
 @endphp
 <section id="practices" data-practices class="scroll-mt-6 py-14 sm:py-20">
     <div class="mx-auto max-w-3xl text-center">
         <h2 class="text-3xl font-semibold tracking-tight text-balance">Best practices made easy</h2>
-        <p class="mt-4 leading-relaxed text-balance text-slate-600 dark:text-slate-400">Framework's R, Python, and Stata packages give every project a sensible structure. Data safeguards are built in. Framework Cloud makes starting projects and sharing results even easier.</p>
+        <p class="mt-4 leading-relaxed text-balance text-slate-600 dark:text-slate-400">Framework's R, Python, and Stata packages give every project a sensible structure. Scripts start with one line. Data safeguards are built in. Framework Cloud makes starting projects and sharing results even easier.</p>
     </div>
 
     <div class="mt-10">
@@ -196,4 +202,7 @@
             </div>
         </x-landing-frame>
     </div>
+    @if ($docLinks->isNotEmpty())
+        <p class="mt-6 text-center text-sm leading-relaxed text-balance text-slate-600 dark:text-slate-400">Read the documentation for {!! $docList !!} to see everything Framework can do.</p>
+    @endif
 </section>
