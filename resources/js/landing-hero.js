@@ -76,6 +76,39 @@ for (const root of document.querySelectorAll('[data-setup-tabs]')) {
     });
 }
 
+// Best practices: a topic list, and a language choice that carries across topics
+for (const root of document.querySelectorAll('[data-practices]')) {
+    const tabs = [...root.querySelectorAll('[data-practice-tab]')];
+    let language = 'r';
+    const showLanguage = panel => {
+        const codes = [...panel.querySelectorAll('[data-practice-code]')];
+        const pick = codes.some(code => code.dataset.practiceCode === language) ? language : codes[0]?.dataset.practiceCode;
+        codes.forEach(code => setHidden(code, code.dataset.practiceCode !== pick));
+        panel.querySelectorAll('[data-practice-language]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.practiceLanguage === pick)));
+    };
+    const select = tab => {
+        tabs.forEach(other => { const active = other === tab; other.setAttribute('aria-selected', String(active)); other.tabIndex = active ? 0 : -1; });
+        root.querySelectorAll('[data-practice-panel]').forEach(panel => {
+            setHidden(panel, panel.dataset.practicePanel !== tab.dataset.practiceTab);
+            if (panel.dataset.practicePanel === tab.dataset.practiceTab) showLanguage(panel);
+        });
+    };
+    tabs.forEach((tab, index) => {
+        tab.addEventListener('click', () => select(tab));
+        tab.addEventListener('keydown', event => {
+            if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+            event.preventDefault();
+            const step = ['ArrowDown', 'ArrowRight'].includes(event.key) ? 1 : -1;
+            const next = tabs[event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (index + step + tabs.length) % tabs.length];
+            select(next); next.focus();
+        });
+    });
+    onClick(root, '[data-practice-language]', button => {
+        language = button.dataset.practiceLanguage;
+        showLanguage(button.closest('[data-practice-panel]'));
+    });
+}
+
 for (const menu of document.querySelectorAll('[data-site-menu]')) {
     menu.addEventListener('toggle', () => { if (menu.open) document.querySelectorAll('[data-site-menu]').forEach(other => { if (other !== menu) other.open = false; }); });
     menu.addEventListener('keydown', event => { if (event.key === 'Escape') { menu.open = false; menu.querySelector('summary').focus(); } });

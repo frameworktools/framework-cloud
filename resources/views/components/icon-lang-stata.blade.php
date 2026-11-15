@@ -1,0 +1,2 @@
+{{-- The Stata mark, redrawn as an outline to sit with the R and Python marks --}}
+<svg {{ $attributes->merge(['viewBox' => '0 0 24 24', 'fill' => 'currentColor', 'aria-hidden' => 'true']) }}><rect x="2.25" y="2.25" width="19.5" height="19.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 4.5h4v4h-4zm5.5 0h4v4h-4zM4.5 10h4v4h-4zm5.5 0h4v4h-4zm5.5 0h4v4h-4zM4.5 15.5h4v4h-4zm5.5 0h4v4h-4z"/></svg>

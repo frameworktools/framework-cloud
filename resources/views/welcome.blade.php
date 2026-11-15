@@ -30,7 +30,7 @@
                     $tools = collect([
                         'r' => ['R package', 'icon-lang-r'],
                         'py' => ['Python package', 'icon-lang-python'],
-                        'stata' => ['Stata package', 'heroicon-o-chart-bar-square'],
+                        'stata' => ['Stata package', 'icon-lang-stata'],
                         'cli' => ['CLI tool', 'heroicon-o-command-line'],
                     ])->only(array_keys(\App\Support\Docs\Products::listed()));
                 @endphp
@@ -50,16 +50,16 @@
     </div>
 
     <main class="mx-auto max-w-6xl px-6">
-        <x-landing-cloud />
+        <x-landing-practices />
         <span id="features"></span><span id="structure"></span>
         <x-landing-setup />
         <x-landing-workflow />
-        <x-landing-platform />
         <span id="copy"></span><span id="environments"></span>
         <x-landing-safeguards />
+        <x-landing-platform />
         <x-landing-agents />
         <x-landing-ai />
-        <x-landing-tools />
+        <x-landing-cloud />
         <x-landing-start />
     </main>
 

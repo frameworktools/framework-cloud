@@ -8,7 +8,7 @@
             'panels' => [
                 'r' => ['label' => 'R', 'code' => "framework::new_project(\"penguin-study\")\n\n# Signed in to Framework Cloud, the project starts\n# from your saved blueprint: its folders, package\n# list, and notebook settings. Open the files to see them.\n\n# Or use a project created in Cloud\nframework::new_project(key = \"<project token>\")"],
                 'py' => ['label' => 'Python', 'code' => "framework.new_project(\"penguin-study\")\n\n# Signed in to Framework Cloud, the project starts\n# from your saved blueprint: its folders, package\n# list, and notebook settings. Open the files to see them.\n\n# Or use a project created in Cloud\nframework.new_project(key=\"<project token>\")"],
-                'stata' => ['label' => 'Stata', 'code' => "// In a terminal, create the project\nfw new penguin-study --language stata\n\n// Then, in Stata, set the project's paths\nfw_project"],
+                'stata' => ['label' => 'Stata', 'code' => "// In a terminal, create the project\nfw new penguin-study --lang stata\n\n// Then, in Stata, set the project's paths\nfw_project"],
                 'cli' => ['label' => 'CLI', 'code' => "fw new penguin-study\n\n# Or create the repository on GitHub\nfw new penguin-study --github username/penguin-study"],
             ],
         ],
