@@ -2,75 +2,39 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Str;
+use App\Support\Docs\CloudGuide;
+use App\Support\Docs\SearchIndex;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
-use League\CommonMark\Extension\HeadingPermalink\HeadingPermalinkExtension;
 
 /**
- * The Framework Cloud guide at /docs, rendered from docs/guide/*.md so the
- * same pages read well on GitHub and on every server.
+ * The Framework Cloud guide at /docs (CloudGuide reads the pages).
  */
 class GuideController extends Controller
 {
-    /** Sidebar order: section => [slug => title] */
-    public const PAGES = [
-        'Framework Cloud' => [
-            'index' => 'Overview',
-            'getting-started' => 'Getting started',
-            'signing-in' => 'Signing in',
-            'projects-and-blueprints' => 'Projects and blueprints',
-            'github' => 'GitHub integration',
-            'skill-sync' => 'Skill sync',
-            'publishing' => 'Publishing artifacts',
-            'ai-apps' => 'AI apps',
-            'stata' => 'Framework for Stata',
-        ],
-        'Self-hosting' => [
-            'self-hosting' => 'Self-hosting overview',
-            'install-docker' => 'Docker installation',
-            'running-at-home' => 'Local installation',
-            'install-manual' => 'Manual installation',
-            'server-setup' => 'Server setup',
-            'configuration' => 'Configuration reference',
-            'maintenance' => 'Maintenance',
-        ],
-    ];
+    public const PAGES = CloudGuide::PAGES;
 
     public function show(string $page = 'index'): View
     {
-        $title = collect(self::PAGES)->collapse()->get($page);
-        $path = base_path("docs/guide/{$page}.md");
-
-        abort_unless($title !== null && is_file($path), 404);
-
-        $html = Str::markdown(file_get_contents($path), [
-            'html_input' => 'strip',
-            'allow_unsafe_links' => false,
-            'heading_permalink' => [
-                'apply_id_to_heading' => true,
-                'id_prefix' => '',
-                'fragment_prefix' => '',
-                'insert' => 'none',
-            ],
-        ], [new HeadingPermalinkExtension]);
-
-        // Links between guide pages point at .md files so they work on
-        // GitHub; on the site they point at /docs
-        $html = preg_replace_callback(
-            '/href="(?!https?:|#|\/)([a-z0-9-]+)\.md(#[^"]*)?"/',
-            fn ($m) => 'href="'.url($m[1] === 'index' ? '/docs' : '/docs/'.$m[1]).($m[2] ?? '').'"',
-            $html,
-        );
+        $html = CloudGuide::html($page) ?? abort(404);
 
         $html = self::languageTabs($html);
         $html = str_replace(['<table>', '</table>'], ['<div class="overflow-x-auto"><table>', '</table></div>'], $html);
 
         return view('guide', [
-            'title' => $title,
+            'title' => CloudGuide::title($page),
             'page' => $page,
             'pages' => self::PAGES,
             'html' => $html,
         ]);
+    }
+
+    /** Every docs site's search index, for the ⌘K box on framework.pub */
+    public function searchIndex(Request $request): JsonResponse
+    {
+        return response()->json(SearchIndex::payload(cloud: $request->root()))
+            ->header('Cache-Control', 'public, max-age=300');
     }
 
     /**

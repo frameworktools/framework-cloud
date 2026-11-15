@@ -73,6 +73,7 @@
             @endforeach
         </nav>
         <div class="flex items-center gap-3 text-sm">
+            <x-docs-search-button class="mr-1 max-sm:size-10 max-sm:justify-center" />
             <x-theme-toggle class="mr-3 max-xl:hidden" />
             {{-- Below desktop width, one menu holds every section --}}
             <details data-site-menu class="group lg:hidden">
@@ -114,6 +115,7 @@
         </div>
     </div>
 </header>
+<x-docs-search :index="route('guide.search-index', absolute: false)" />
 @once
     @vite('resources/js/landing-hero.js')
 @endonce

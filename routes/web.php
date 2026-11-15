@@ -70,6 +70,7 @@ Route::view('self-hosting', 'self-hosting')->name('self-hosting');
 Route::get('device', [DeviceController::class, 'show'])->middleware('throttle:30,1')->name('device');
 
 // Framework Cloud guide, rendered from docs/guide
+Route::get('docs/search.json', [GuideController::class, 'searchIndex'])->name('guide.search-index');
 Route::get('docs/{page?}', [GuideController::class, 'show'])
     ->where('page', '[a-z0-9-]+')
     ->name('guide');

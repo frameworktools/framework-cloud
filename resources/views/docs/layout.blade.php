@@ -67,7 +67,7 @@
     </footer>
 
     @if ($site)
-        @include('docs.partials.search')
+        <x-docs-search :product="$product" index="/search.json" />
     @endif
 
     <x-code-blocks />

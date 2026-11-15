@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Support\Docs\Products;
 use App\Support\Docs\Search;
+use App\Support\Docs\SearchIndex;
 use App\Support\Docs\Sites;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -76,7 +77,7 @@ class DocsController extends Controller
     {
         $this->site($product);
 
-        return response()->json(Sites::search($product))
+        return response()->json(SearchIndex::payload($product))
             ->header('Cache-Control', 'public, max-age=300');
     }
 

@@ -18,6 +18,7 @@
                 <span class="ml-1 text-sm font-normal text-slate-500">docs</span>
             </a>
             <nav class="flex items-center gap-4 text-sm">
+                <x-docs-search-button />
                 <x-theme-toggle class="max-sm:hidden" />
                 @auth
                     <a href="{{ route('projects') }}" class="rounded-md bg-sky-700 px-4 py-2 font-medium text-white hover:bg-sky-800">Your projects</a>
@@ -81,5 +82,6 @@
         }));
     })();
 </script>
+    <x-docs-search product="cloud" :index="route('guide.search-index', absolute: false)" />
 </body>
 </html>

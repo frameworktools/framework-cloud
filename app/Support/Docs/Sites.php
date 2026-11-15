@@ -2,6 +2,8 @@
 
 namespace App\Support\Docs;
 
+use Illuminate\Support\Facades\Cache;
+
 /**
  * What the docs pages read: the imported site for a product, or, for R
  * until its first import, the site built from the legacy sources.
@@ -31,14 +33,25 @@ class Sites
         return Store::site($product) ?? ($product === 'r' ? LegacyR::compiled()['site'] : null);
     }
 
-    /** @return list<array<string, string>> */
+    /**
+     * A product's search items, built from its site so an index format change
+     * (Search::VERSION) needs no new import.
+     *
+     * @return list<array<string, string>>
+     */
     public static function search(string $product): array
     {
-        if (Store::release($product) !== null) {
-            return Store::search($product) ?? [];
+        $release = Store::release($product);
+        if ($release === null) {
+            static $legacy = null;
+
+            return $product === 'r' ? $legacy ??= Search::build(LegacyR::compiled()['site']) : [];
         }
 
-        return $product === 'r' ? LegacyR::compiled()['search'] : [];
+        return Cache::rememberForever(
+            'docs-search:'.Search::VERSION.":{$product}:".basename($release),
+            fn () => Search::build(Store::site($product)),
+        );
     }
 
     public static function image(string $product, string $path): ?string

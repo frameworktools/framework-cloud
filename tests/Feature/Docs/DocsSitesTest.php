@@ -237,12 +237,58 @@ class DocsSitesTest extends DocsTestCase
         $this->docs('py', '/search?q=audit')->assertSee('AuditResult');
         $this->docs('py', '/search?q=zzzz')->assertSee('Nothing matches');
 
-        $index = $this->docs('py', '/search.json')->assertOk()->json();
+        $index = $this->docs('py', '/search.json')->assertOk()->json('items');
         $this->assertContains('guide', array_column($index, 'type'));
         $this->assertContains('heading', array_column($index, 'type'));
         $this->assertContains('entry', array_column($index, 'type'));
-        $entry = collect($index)->firstWhere('url', '/reference/data_read');
+        $entry = collect($index)->where('product', 'py')->firstWhere('url', '/reference/data_read');
+        $this->assertNotNull($entry);
         $this->assertStringContainsString('delimiter', $entry['keywords']);
+    }
+
+    public function test_the_search_index_covers_every_site_and_the_cloud_guide_with_section_text(): void
+    {
+        $this->import('py');
+        $this->import('cli');
+
+        $payload = $this->docs('cli', '/search.json')->assertOk()->json();
+
+        $this->assertSame('http://'.config('framework.docs_hosts.py'), $payload['origins']['py']);
+        $this->assertSame(rtrim(config('app.url'), '/'), $payload['origins']['cloud']);
+        $this->assertSame('Cloud', $payload['labels']['cloud']);
+        $products = array_unique(array_column($payload['items'], 'product'));
+        $this->assertContains('py', $products);
+        $this->assertContains('cli', $products);
+        $this->assertContains('cloud', $products);
+
+        // Each section carries the text under its heading, without tags
+        $section = collect($payload['items'])->where('product', 'py')->firstWhere('url', '/guides/installation#with-uv');
+        $this->assertNotSame('', $section['body']);
+        $this->assertStringNotContainsString('<', $section['body']);
+
+        // Cloud guide pages and their sections point under /docs
+        $this->assertNotNull(collect($payload['items'])->firstWhere('url', '/docs/self-hosting'));
+        $this->assertNotNull(collect($payload['items'])->first(fn ($item) => str_starts_with($item['url'], '/docs/install-docker#')));
+
+        // framework.pub serves the same index for its own ⌘K box
+        $this->assertSame($payload['items'], $this->get('http://framework.test/docs/search.json')->assertOk()->json('items'));
+    }
+
+    public function test_server_search_finds_words_in_section_text(): void
+    {
+        $this->import('py');
+
+        // "system Python" is only in the text under "With uv"
+        $this->docs('py', '/search?q=system python')->assertOk()->assertSee('/guides/installation#with-uv', false);
+    }
+
+    public function test_every_docs_page_has_the_search_box(): void
+    {
+        $this->import('py');
+
+        $this->docs('py', '/')->assertSee('data-docs-search-open', false)->assertSee('data-index="/search.json"', false)->assertSee('data-product="py"', false);
+        $this->get('http://framework.test/docs')->assertSee('data-docs-search-open', false)->assertSee('data-index="/docs/search.json"', false)->assertSee('data-product="cloud"', false);
+        $this->get('http://framework.test/')->assertSee('data-docs-search-open', false)->assertSee('data-index="/docs/search.json"', false);
     }
 
     public function test_dark_mode_uses_the_app_theme_script(): void

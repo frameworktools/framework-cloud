@@ -6,6 +6,9 @@
 @source '../views/docs';
 @source '../views/components/theme-script.blade.php';
 @source '../views/components/code-blocks.blade.php';
+@source '../views/components/docs-search.blade.php';
+@source '../views/components/docs-search-button.blade.php';
+@source '../js/docs-search.js';
 
 /* Dark mode follows the .dark class that the theme script sets on <html> */
 @custom-variant dark (&:where(.dark, .dark *));
