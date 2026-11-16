@@ -1,6 +1,14 @@
 // Hidden panels arrive as <template data-defer> (App\Support\DeferHidden). A panel's
 // contents join the page the first time it is shown, so click handling is delegated.
-const reveal = el => { const template = el.querySelector(':scope > template[data-defer]'); if (template) template.replaceWith(template.content); };
+// Widgets inside a deferred panel are set up when it is revealed (see onReveal).
+const revealHooks = [];
+const onReveal = hook => revealHooks.push(hook);
+const reveal = el => {
+    const template = el.querySelector(':scope > template[data-defer]');
+    if (!template) return;
+    template.replaceWith(template.content);
+    revealHooks.forEach(hook => hook(el));
+};
 const setHidden = (el, hidden) => { if (!hidden) reveal(el); el.hidden = hidden; };
 const onClick = (root, selector, handler) => root.addEventListener('click', event => {
     const target = event.target.closest(selector);
@@ -29,6 +37,8 @@ for (const root of document.querySelectorAll('[data-landing-demo]')) {
         else root.querySelector('[data-demo-title]').textContent = slides[current].getAttribute('aria-label');
         root.querySelectorAll('[data-demo-view]').forEach(other => other.setAttribute('aria-pressed', String(other === button)));
         root.querySelectorAll('[data-demo-view-panel]').forEach(panel => { setHidden(panel, panel.dataset.demoViewPanel !== button.dataset.demoView); });
+        // The project files open in the language the code tabs show
+        root.querySelector(`[data-project-language="${language === 'python' ? 'py' : language}"]`)?.click();
     });
     const updatePause = () => { pause.setAttribute('aria-label', stopped ? 'Play examples' : 'Pause examples'); pause.setAttribute('aria-pressed', String(stopped)); };
     const stop = () => { stopped = true; status.setAttribute('aria-live', 'polite'); updatePause(); };
@@ -118,7 +128,9 @@ for (const menu of document.querySelectorAll('[data-site-menu]')) {
 // Highlighted, escaped source is shared across examples instead of repeated in the page.
 const projectSources = JSON.parse(document.querySelector('#landing-project-sources')?.textContent || '{}');
 // Each example is a read-only project with language-specific files.
-for (const root of document.querySelectorAll('[data-project-editor]')) {
+const initEditor = root => {
+    if (root.dataset.editorReady) return;
+    root.dataset.editorReady = 'true';
     let language = root.querySelector('[data-project-language]').dataset.projectLanguage;
     let file = 'main';
     const render = () => {
@@ -145,7 +157,9 @@ for (const root of document.querySelectorAll('[data-project-editor]')) {
     onClick(root, '[data-project-open]', button => { file = button.dataset.projectOpen; render(); });
     root.addEventListener('project-variant', event => { root.dataset.projectVariant = event.detail; file = 'main'; render(); });
     render();
-}
+};
+document.querySelectorAll('[data-project-editor]').forEach(initEditor);
+onReveal(el => el.querySelectorAll('[data-project-editor]').forEach(initEditor));
 
 for (const root of document.querySelectorAll('[data-structure-examples]')) {
     const buttons = [...root.querySelectorAll('[data-structure-select]')];
