@@ -27,6 +27,12 @@ class Sites
         return strcasecmp(trim($title), $sectionTitle) === 0 ? 'All '.mb_strtolower($sectionTitle) : $title;
     }
 
+    /** A guide's address: /guides/{id} on a docs host, or the guide's own (the Cloud guide's /docs pages) */
+    public static function guideUrl(array $site, string $id): string
+    {
+        return (string) ($site['guides'][$id]['url'] ?? '/guides/'.$id);
+    }
+
     /** @return array<string, mixed>|null */
     public static function site(string $product): ?array
     {

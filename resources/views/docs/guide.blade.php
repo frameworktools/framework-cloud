@@ -12,13 +12,17 @@
             @if ($section)
                 <p class="font-display text-sm font-medium text-sky-500">{{ $section['title'] }}</p>
             @endif
-            <h1 class="mt-2 text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">{{ $guide['title'] }}</h1>
+            <h1 class="mt-2 text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">{{ $guide['heading'] ?? $guide['title'] }}</h1>
             @if ($guide['description'])
                 <p class="mt-3 text-lg text-slate-600 dark:text-slate-400">{{ $guide['description'] }}</p>
             @endif
         </header>
 
         <div class="docs-prose">{!! $guide['html'] !!}</div>
+
+        @if (! empty($guide['edit_url']))
+            <p class="mt-10 text-sm"><a href="{{ $guide['edit_url'] }}" class="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300">Edit this page on GitHub</a></p>
+        @endif
     </article>
 
     @if ($guide['prev'] || $guide['next'])
@@ -26,13 +30,13 @@
             @if ($guide['prev'])
                 <div>
                     <p class="font-display text-sm font-medium text-slate-900 dark:text-white">Previous</p>
-                    <a href="/guides/{{ $guide['prev']['id'] }}" class="mt-1 block text-base font-semibold text-slate-500 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-300"><span aria-hidden="true">←</span> {{ $guide['prev']['title'] }}</a>
+                    <a href="{{ \App\Support\Docs\Sites::guideUrl($site, $guide['prev']['id']) }}" class="mt-1 block text-base font-semibold text-slate-500 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-300"><span aria-hidden="true">←</span> {{ $guide['prev']['title'] }}</a>
                 </div>
             @endif
             @if ($guide['next'])
                 <div class="ml-auto text-right">
                     <p class="font-display text-sm font-medium text-slate-900 dark:text-white">Next</p>
-                    <a href="/guides/{{ $guide['next']['id'] }}" class="mt-1 block text-base font-semibold text-slate-500 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-300">{{ $guide['next']['title'] }} <span aria-hidden="true">→</span></a>
+                    <a href="{{ \App\Support\Docs\Sites::guideUrl($site, $guide['next']['id']) }}" class="mt-1 block text-base font-semibold text-slate-500 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-300">{{ $guide['next']['title'] }} <span aria-hidden="true">→</span></a>
                 </div>
             @endif
         </nav>

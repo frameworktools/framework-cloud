@@ -53,9 +53,9 @@
                 {{ $siteTitle }}@if (! empty($site['version']) && $site['version'] !== 'docs.db') · version {{ $site['version'] }}@endif
             </div>
             <div class="flex flex-wrap items-center gap-x-5 gap-y-2">
-                @foreach (Products::listed($product) as $other => $label)
+                @foreach (Products::switcher($product) as $other => $label)
                     @if ($other !== $product)
-                        <a href="{{ Products::url($other) }}" class="hover:text-slate-900 dark:hover:text-white">{{ $label }} documentation</a>
+                        <a href="{{ Products::docsUrl($other) }}" class="hover:text-slate-900 dark:hover:text-white">{{ $label }} documentation</a>
                     @endif
                 @endforeach
                 <a href="https://framework.pub" class="hover:text-slate-900 dark:hover:text-white">Framework Public Cloud</a>
@@ -67,7 +67,7 @@
     </footer>
 
     @if ($site)
-        <x-docs-search :product="$product" index="/search.json" />
+        <x-docs-search :product="$product" :index="$site['search_index'] ?? '/search.json'" />
     @endif
 
     <x-code-blocks />
@@ -90,6 +90,26 @@
                 setTimeout(() => { label.textContent = 'Copy'; }, 2000);
             });
         });
+
+        // R or Python tabs on code samples (CloudGuide::languageTabs): every
+        // group follows the last choice, and this browser remembers it
+        (() => {
+            const groups = document.querySelectorAll('[data-code-tabs]');
+            if (!groups.length) return;
+            const show = (lang) => groups.forEach((group) => {
+                group.querySelectorAll('[data-lang]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.lang === lang)));
+                group.querySelectorAll('[data-lang-panel]').forEach((p) => { p.hidden = p.dataset.langPanel !== lang; });
+            });
+            let saved = null;
+            try { saved = localStorage.getItem('docs-language'); } catch {}
+            if (saved === 'python') show('python');
+            groups.forEach((group) => group.addEventListener('click', (event) => {
+                const lang = event.target.closest('[data-lang]')?.dataset.lang;
+                if (!lang) return;
+                show(lang);
+                try { localStorage.setItem('docs-language', lang); } catch {}
+            }));
+        })();
 
         // "On this page": mark the heading being read
         (() => {

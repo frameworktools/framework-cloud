@@ -45,7 +45,7 @@
                 <ul role="list" class="mt-3 space-y-2 border-l-2 border-slate-100 dark:border-slate-800">
                     @foreach ($section['guides'] as $id)
                         <li class="relative">
-                            <a href="/guides/{{ $id }}" @if ($currentGuide === $id) aria-current="page" @endif @class([
+                            <a href="{{ \App\Support\Docs\Sites::guideUrl($site, $id) }}" @if ($currentGuide === $id) aria-current="page" @endif @class([
                                 'block w-full pl-3.5 before:pointer-events-none before:absolute before:top-1/2 before:-left-1 before:h-1.5 before:w-1.5 before:-translate-y-1/2 before:rounded-full',
                                 'font-semibold text-sky-600 before:bg-sky-500 dark:text-sky-400' => $currentGuide === $id,
                                 'text-slate-500 before:hidden before:bg-slate-300 hover:text-slate-600 hover:before:block dark:text-slate-400 dark:before:bg-slate-700 dark:hover:text-slate-300' => $currentGuide !== $id,

@@ -11,7 +11,7 @@
 ])>
     <div class="mx-auto flex max-w-8xl items-center justify-between gap-3 px-6 sm:gap-6 sm:px-8 lg:px-12">
         <div class="flex min-w-0 items-center gap-8">
-            <a href="/" aria-label="{{ $siteTitle }} home" class="flex min-w-0 items-center gap-3">
+            <a href="{{ $site['home'] ?? '/' }}" aria-label="{{ $siteTitle }} home" class="flex min-w-0 items-center gap-3">
                 <img src="/images/logo-80.webp" alt="" width="73" height="80" class="h-8 w-auto shrink-0">
                 {{-- The command-line tool's name is set in monospace, as in running text --}}
                 <span @class(["truncate text-lg font-bold whitespace-nowrap text-slate-900 dark:text-white", "font-mono" => $siteTitle === 'fw'])>{{ $siteTitle }}</span>
@@ -23,7 +23,7 @@
                         @php
                             $items = $section['reference']
                                 ? collect($site['categories'])->map(fn ($c) => ['url' => '/reference#'.$c['id'], 'title' => $c['title'], 'text' => $c['description']])
-                                : collect($section['guides'])->map(fn ($id) => ['url' => '/guides/'.$id, 'title' => \App\Support\Docs\Sites::navTitle($site, $section, $id), 'text' => $site['guides'][$id]['description']]);
+                                : collect($section['guides'])->map(fn ($id) => ['url' => \App\Support\Docs\Sites::guideUrl($site, $id), 'title' => \App\Support\Docs\Sites::navTitle($site, $section, $id), 'text' => $site['guides'][$id]['description']]);
                             $wide = $items->count() > 6;
                         @endphp
                         @continue($items->isEmpty())
@@ -60,8 +60,8 @@
 
         <div class="flex shrink-0 items-center gap-1 sm:gap-2">
             <nav class="hidden items-center gap-0.5 rounded-lg bg-slate-100 p-0.5 text-sm md:flex dark:bg-slate-800" aria-label="Products">
-                @foreach (Products::listed($product) as $other => $label)
-                    <a href="{{ Products::url($other) }}" @if ($other === $product) aria-current="page" @endif
+                @foreach (Products::switcher($product) as $other => $label)
+                    <a href="{{ Products::docsUrl($other) }}" @if ($other === $product) aria-current="page" @endif
                        @class([
                            'rounded-md px-2.5 py-1 font-medium',
                            'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white' => $other === $product,
@@ -86,15 +86,27 @@
                 </a>
             @endif
 
+            {{-- The Cloud guide is on the app's own host, so it links to the account; on a phone, from the menu --}}
+            @if ($product === \App\Support\Docs\CloudGuide::PRODUCT)
+                @auth
+                    <a href="{{ route('projects') }}" class="ml-1 hidden rounded-lg bg-sky-700 px-3 py-1.5 text-sm font-medium whitespace-nowrap text-white hover:bg-sky-800 sm:block">Projects</a>
+                @else
+                    <a href="{{ route('login') }}" class="ml-1 hidden rounded-lg px-2 py-1.5 text-sm font-medium whitespace-nowrap text-slate-700 hover:bg-slate-100 hover:text-slate-900 sm:block dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white">Sign in</a>
+                @endauth
+            @endif
+
             @if ($site)
                 <details class="relative lg:hidden">
                     <summary class="flex size-8 cursor-pointer list-none items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 [&::-webkit-details-marker]:hidden" aria-label="Menu">
                         <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
                     </summary>
                     <div class="absolute right-0 z-50 mt-2 max-h-[75vh] w-72 overflow-y-auto rounded-xl bg-white p-4 text-sm shadow-lg ring-1 ring-slate-900/5 dark:bg-slate-800 dark:ring-white/10">
-                        <div class="mb-4 flex gap-1 md:hidden">
-                            @foreach (Products::listed($product) as $other => $label)
-                                <a href="{{ Products::url($other) }}" @class(['rounded-md px-2.5 py-1 font-medium', 'bg-slate-100 dark:bg-slate-700' => $other === $product, 'text-slate-500' => $other !== $product])>{{ $label }}</a>
+                        @if ($product === \App\Support\Docs\CloudGuide::PRODUCT)
+                            <a href="{{ auth()->check() ? route('projects') : route('login') }}" class="mb-4 block rounded-lg bg-sky-700 px-3 py-2 text-center font-medium text-white hover:bg-sky-800 sm:hidden">{{ auth()->check() ? 'Projects' : 'Sign in' }}</a>
+                        @endif
+                        <div class="mb-4 flex flex-wrap gap-1 md:hidden">
+                            @foreach (Products::switcher($product) as $other => $label)
+                                <a href="{{ Products::docsUrl($other) }}" @class(['rounded-md px-2.5 py-1 font-medium', 'bg-slate-100 dark:bg-slate-700' => $other === $product, 'text-slate-500' => $other !== $product])>{{ $label }}</a>
                             @endforeach
                         </div>
                         @include('docs.partials.sidebar')

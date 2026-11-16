@@ -48,6 +48,25 @@ class Products
         return array_filter(self::LABELS, fn ($product) => $product !== 'stata' || $stata, ARRAY_FILTER_USE_KEY);
     }
 
+    /**
+     * The header's product switcher and the footer: the listed products and
+     * the Framework Cloud guide, which lives on this app's own host.
+     *
+     * @return array<string, string> product => label
+     */
+    public static function switcher(?string $current = null): array
+    {
+        return self::listed($current) + [CloudGuide::PRODUCT => 'Cloud'];
+    }
+
+    /** A switcher product's docs address: a docs host, or the Cloud guide */
+    public static function docsUrl(string $product): string
+    {
+        return $product === CloudGuide::PRODUCT
+            ? rtrim((string) config('app.url'), '/').CloudGuide::path('index')
+            : self::url($product);
+    }
+
     public static function exists(string $product): bool
     {
         return isset(self::LABELS[$product]);
