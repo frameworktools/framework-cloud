@@ -45,7 +45,8 @@ class BlueprintCatalogTest extends TestCase
         $entries = ProjectLayers::entries($set->latestVersion, 'r');
         $synced = collect(end($entries)['layer']['skills'])->filter(fn ($e) => isset($e['sync']));
         $this->assertNotEmpty($synced);
-        $this->assertSame(['https://moved.example.org'], $synced->pluck('sync.server')->unique()->values()->all());
+        $this->assertStringEndsWith('://moved.example.org', url('/'));
+        $this->assertSame([url('/')], $synced->pluck('sync.server')->unique()->values()->all());
     }
 
     public function test_the_catalog_lists_what_each_blueprint_supports_and_where_browsing_starts(): void
