@@ -43,7 +43,7 @@ DB_PASSWORD=secret
 
 ## Object storage connections
 
-Configure S3-compatible buckets under `connections.storage_buckets` in `settings.yml` for use with `publish()`, `storage_test()`, and `framework::gui()`:
+Configure S3-compatible buckets under `connections.storage_buckets` in `settings.yml` for use with `publish()` and `storage_test()`:
 
 ```yaml
 connections:

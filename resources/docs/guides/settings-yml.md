@@ -7,7 +7,7 @@ description: 'Structure and keys of the settings.yml project configuration file'
 ---
 ## Overview
 
-Every Framework project stores its configuration in `settings.yml` at the project root. Edit `settings.yml` directly in a text editor or open the project in `framework::gui()`.
+Every Framework project stores its configuration in `settings.yml` at the project root. Edit `settings.yml` directly in a text editor.
 
 `settings.yml` follows the `config` package layout with a top-level `default:` block and optional named environment blocks such as `production:`.
 

@@ -18,15 +18,11 @@ Each project type includes a tailored `.gitignore` template:
 - **course**: the project rules plus `rendered/` and `.aws/`.
 - **presentation**: the project rules plus `.aws/`.
 
-Edit `.gitignore` templates per project type on Framework Cloud:
-
-![.gitignore Template Editor](/images/gitignore-template-gui.png)
+Edit `.gitignore` templates per project type on Framework Cloud.
 
 ## Commit identity and hooks
 
 Configure Git identity in global Git config and pre-commit hooks in `settings.yml`.
-
-![Git & Hooks GUI](/images/git-hooks-gui.png)
 
 ### Commit identity
 

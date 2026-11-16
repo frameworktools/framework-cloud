@@ -23,8 +23,6 @@ On R blueprints, select package sets and toggle individual **Auto-attach** switc
 
 Configure packages in `settings.yml` or with `package_add()`, which accepts CRAN, GitHub, and Bioconductor packages:
 
-![Default package configuration UI with source selector and auto-attach toggles](/images/packages-defaults.png)
-
 Example `settings.yml`:
 
 ```yaml

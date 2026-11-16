@@ -28,16 +28,6 @@ data:
     type: rds
 ```
 
-## Catalog editor
-
-In `framework::gui()` under **Data**, Framework scans `inputs/` for uncataloged files. Selecting a discovered file prefills its dot-notation key from the path (such as `inputs.public.raw.mtcars`), infers the file type, and stages the entry for review:
-
-![Scanning inputs for uncataloged files in framework::gui()](/images/data-catalog-input-scan.png)
-
-Saved catalog entries provide copy buttons for the relative path, absolute path, and `data_read()` call:
-
-![Copy helpers for catalog entries](/images/data-catalog-copy-tools.png)
-
 ## Supported formats
 
 | Type | Extensions | Reader | Package |

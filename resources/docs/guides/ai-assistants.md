@@ -19,8 +19,6 @@ Framework writes three instruction file formats:
 
 Select target assistants under `ai.assistants` in `settings.yml` or in your Framework Cloud defaults.
 
-![AI Assistants GUI](/images/ai-assistants-gui.png)
-
 ## Canonical context file
 
 `AGENTS.md` is the canonical file (`ai.canonical_file` in `settings.yml`). Framework always creates `AGENTS.md`; `CLAUDE.md` and `.github/copilot-instructions.md` only point to it, so nothing needs synchronization.
