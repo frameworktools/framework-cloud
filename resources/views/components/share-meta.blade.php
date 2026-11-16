@@ -8,7 +8,8 @@
 <meta property="og:title" content="{{ $title }}">
 <meta property="og:description" content="{{ $description }}">
 <meta property="og:url" content="{{ url()->current() }}">
-<meta property="og:image" content="{{ rtrim(config('app.url'), '/') }}/images/og.png">
+{{-- The version changes with the image, so caches and link previews pick up a new one --}}
+<meta property="og:image" content="{{ rtrim(config('app.url'), '/') }}/images/og.png?v={{ substr(md5_file(public_path('images/og.png')), 0, 8) }}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Framework: Structured workflows for statistics and data science, at framework.pub">

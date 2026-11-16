@@ -16,7 +16,7 @@ class ShareImageTest extends TestCase
         foreach (['/', '/docs', '/docs/self-hosting', '/privacy', '/terms'] as $path) {
             $this->get($path)
                 ->assertOk()
-                ->assertSee('<meta property="og:image" content="'.rtrim(config('app.url'), '/').'/images/og.png">', false)
+                ->assertSee('<meta property="og:image" content="'.rtrim(config('app.url'), '/').'/images/og.png?v='.substr(md5_file(public_path('images/og.png')), 0, 8).'">', false)
                 ->assertSee('<meta name="twitter:card" content="summary_large_image">', false);
         }
     }
