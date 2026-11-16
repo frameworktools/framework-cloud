@@ -10,7 +10,7 @@ class DocsShareImageTest extends DocsTestCase
 
         $this->docs('cli', '/guides/install')
             ->assertOk()
-            ->assertSee('<meta property="og:image" content="'.rtrim(config('app.url'), '/').'/images/og.png">', false)
+            ->assertSee('<meta property="og:image" content="'.rtrim(config('app.url'), '/').'/images/og.png?v='.substr(md5_file(public_path('images/og.png')), 0, 8).'">', false)
             ->assertSee('property="og:title" content="Install fw', false);
     }
 }
