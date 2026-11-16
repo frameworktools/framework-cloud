@@ -15,6 +15,36 @@ const onClick = (root, selector, handler) => root.addEventListener('click', even
     if (target && root.contains(target)) handler(target, event);
 });
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+// The headline's last line: the opener, then the applied fields in a fresh random order, then the
+// opener again. It pauses with the code examples' pause button, while hovered, and while unseen.
+for (const root of document.querySelectorAll('[data-hero-words]')) {
+    if (reducedMotion.matches) break;
+    const words = [...root.querySelectorAll('[data-hero-word]')];
+    const pass = () => [...words.keys()].slice(1).sort(() => Math.random() - 0.5);
+    const place = (word, state) => {
+        word.classList.toggle('opacity-0', state !== 'in');
+        word.classList.toggle('translate-y-full', state === 'below');
+        word.classList.toggle('-translate-y-full', state === 'above');
+    };
+    let current = 0, queue = [], paused = false, visible = true;
+    document.addEventListener('landing-motion', event => { paused = event.detail.paused; });
+    new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; }).observe(root);
+    reducedMotion.addEventListener('change', () => { if (reducedMotion.matches) paused = true; });
+    setInterval(() => {
+        if (paused || !visible || document.hidden || root.parentElement.matches(':hover')) return;
+        if (!queue.length) queue = current === 0 ? pass() : [0];
+        const next = queue.shift();
+        place(words[current], 'above');
+        // Start the incoming word below without a transition, then slide it up
+        words[next].style.transition = 'none';
+        place(words[next], 'below');
+        words[next].offsetHeight;
+        words[next].style.transition = '';
+        place(words[next], 'in');
+        current = next;
+    }, 3500);
+}
+
 for (const root of document.querySelectorAll('[data-landing-demo]')) {
     const slides = [...root.querySelectorAll('[data-demo-slide]')];
     const languageTabs = [...root.querySelectorAll('[data-demo-language]')];
@@ -61,7 +91,11 @@ for (const root of document.querySelectorAll('[data-landing-demo]')) {
     onClick(root, '[data-demo-select]', button => { stop(); show(Number(button.dataset.demoSelect)); });
     root.querySelector('[data-demo-previous]').addEventListener('click', () => { stop(); show(current - 1); });
     root.querySelector('[data-demo-next]').addEventListener('click', () => { stop(); show(current + 1); });
-    pause.addEventListener('click', () => { stopped = !stopped; updatePause(); });
+    pause.addEventListener('click', () => {
+        stopped = !stopped; updatePause();
+        // The headline's words pause and play with the examples
+        document.dispatchEvent(new CustomEvent('landing-motion', { detail: { paused: stopped } }));
+    });
     reducedMotion.addEventListener('change', () => { if (reducedMotion.matches) stop(); });
     setInterval(() => { if (!stopped && !document.hidden && !root.matches(':hover') && !root.contains(document.activeElement)) show(current + 1); }, 7000);
     show(current); updatePause();

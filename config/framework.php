@@ -116,9 +116,9 @@ return [
 
     /*
     | Show the Stata package on public pages (header menu, homepage tabs).
-    | Off until the Stata package is released.
+    | On by default now that the Stata package is released.
     */
-    'stata_package' => (bool) env('FW_STATA_PACKAGE', false),
+    'stata_package' => (bool) env('FW_STATA_PACKAGE', true),
 
     /*
     | Hostnames of the docs sites (Route::domain groups), by product: the R

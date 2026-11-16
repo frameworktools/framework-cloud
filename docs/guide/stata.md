@@ -20,7 +20,7 @@ net install framework, from("/path/to/framework-stata") replace
 fw_setup
 ```
 
-`fw_setup` checks Stata, system utilities, optional backends, and the Cloud connection. It prints remediation steps for any missing tool. On Framework Cloud servers, public Stata documentation and switcher links remain hidden unless `FW_STATA_PACKAGE=true` is set or Stata docs have been imported.
+`fw_setup` checks Stata, system utilities, optional backends, and the Cloud connection. It prints remediation steps for any missing tool. On Framework Cloud servers, `FW_STATA_PACKAGE=false` hides public Stata documentation and switcher links until Stata docs have been imported.
 
 | Command | Purpose |
 |---|---|

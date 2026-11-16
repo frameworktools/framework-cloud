@@ -24,7 +24,7 @@ Framework Cloud reads runtime configuration from environment variables, typicall
 | `FW_CONTENT_URL` | none | Separate origin for serving signed published file URLs without session cookies, such as `https://content.example.org`. |
 | `FW_CONTENT_SIGNING_KEY` | none | Key shared with a Cloudflare Worker on `FW_CONTENT_URL` that serves files directly from the bucket through short-lived signed links. Unset, the app serves files itself. |
 | `FW_CONTENT_WORKER_DISK` | `r2` | Disk the content Worker's bucket binding reads. Only files on this disk go through the Worker. |
-| `FW_STATA_PACKAGE` | `false` | Displays Framework for Stata in public navigation and homepage tabs even before Stata docs are imported. |
+| `FW_STATA_PACKAGE` | `true` | Displays Framework for Stata in public navigation and homepage tabs. `false` hides it until Stata docs are imported. |
 | `FW_SPEC_PARITY` | `false` | Emits structured Stata packages, Stata graph schemes, and Matplotlib styles in resolved project layers for newer `fw` and `framework-py` clients. |
 | `FW_SPEC_TOOLS` | `true` | Emits the `tools`, `settings_layout`, and `core_files` keys in resolved project layers. Set `false` while users run clients older than `fw` 0.3, such as `fw` 0.2, which reject these keys. |
 | `FW_SPEC_WORKFLOWS` | `true` | Emits `scaffold.workflow` and the `script` notebook format in resolved project layers. Set `false` while users run clients that predate workflows. |

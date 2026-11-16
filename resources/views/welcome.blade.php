@@ -23,7 +23,17 @@
     <section id="content" tabindex="-1" class="relative focus:outline-none" aria-labelledby="hero-title">
         <div class="relative mx-auto grid max-w-7xl items-start gap-12 px-6 py-14 sm:py-16 lg:grid-cols-[1fr_1.05fr] lg:gap-14">
             <div class="min-w-0 lg:pt-10">
-                <h1 id="hero-title" class="text-4xl font-semibold leading-[1.06] tracking-tight text-balance sm:text-5xl xl:text-[3.5rem]">Structured data science workflows</h1>
+                {{-- The last line opens on statistics and data science, then shows the applied fields in random order and loops (landing-hero.js); readers and reduced motion get the opener only --}}
+                <h1 id="hero-title" class="text-[clamp(1.4rem,calc((100vw_-_3rem)/11.8),2.25rem)] font-semibold leading-[1.06] tracking-tight sm:text-[2.75rem] lg:text-[2.4rem] xl:text-5xl">
+                    {{-- Sized so neither line wraps in the hero column --}}
+                    <span class="whitespace-nowrap">Structured workflows for</span>
+                    <span class="sr-only">statistics and data science</span>
+                    <span data-hero-words aria-hidden="true" class="grid overflow-hidden pb-[0.08em] text-sky-700 dark:text-sky-300">
+                        @foreach (['statistics and data science', 'biostatistics', 'econometrics', 'epidemiology', 'bioinformatics', 'psychometrics', 'social statistics'] as $i => $word)
+                            <span data-hero-word @class(['[grid-area:1/1] whitespace-nowrap transition duration-500 ease-out', 'translate-y-full opacity-0' => $i > 0])>{{ $word }}</span>
+                        @endforeach
+                    </span>
+                </h1>
                 <p class="mt-6 max-w-xl text-lg leading-relaxed text-slate-700 dark:text-slate-200">Framework gives every {{ isset(\App\Support\Docs\Products::listed()['stata']) ? 'R, Python, and Stata' : 'R and Python' }} project a proven structure and built-in data safeguards, with conventions ready for AI agents if you use them. Framework Cloud can start projects and publish results.</p>
                 @php
                     // The tools a visitor can use without Cloud, each linking to its docs site
