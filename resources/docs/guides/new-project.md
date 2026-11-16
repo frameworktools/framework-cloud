@@ -1,53 +1,43 @@
 ---
 id: new-project
-title: Making a New Project
+title: New projects
 section: getting_started
 position: 5
-description: 'Create a new Framework project'
+description: 'Create new Framework projects from R'
 ---
 ## Project setup
 
-After running `setup()`, create a new project from the GUI or command line.
+After configuring defaults on Framework Cloud, create projects from the R console. The local `gui()` interface is retired.
 
-### Graphical interface
+### R console
 
-Click **+ New Project** in the GUI sidebar, or run:
-
-```r
-framework::gui()
-```
-
-![New Project GUI](/images/new-project-gui.png)
-
-### Command line
+Run `new_project()` interactively to enter a project name and target path:
 
 ```r
 framework::new_project()
 ```
 
-This prompts for a project name and location, then creates a fully configured project using your saved defaults.
-
-You can also specify the name and location directly:
+Or pass the project name and directory directly:
 
 ```r
 new_project("my-analysis", "~/code/my-analysis")
 ```
 
-## Project Types
+## Project types
 
-Framework supports four project types, each with its own function:
+Framework provides a constructor function for each built-in project type:
 
-### Standard Project
+### Standard project
 
-The default. Full-featured structure for data analysis:
+Default structure for research and data analysis pipelines:
 
 ```r
 new_project("my-analysis")
 ```
 
-### Sensitive Data Project
+### Sensitive data project
 
-Enhanced privacy controls with separate private/public flows:
+Separated `private/` and `public/` input and output trees with stricter `.gitignore` rules:
 
 ```r
 new_project_sensitive("medical-study")
@@ -55,7 +45,7 @@ new_project_sensitive("medical-study")
 
 ### Presentation
 
-Minimal structure for RevealJS slides:
+Single-deck structure centered on `presentation.qmd`:
 
 ```r
 new_presentation("quarterly-review")
@@ -63,31 +53,19 @@ new_presentation("quarterly-review")
 
 ### Course
 
-Structured for teaching materials with slides, assignments, and modules:
+Teaching layout with directories for slides, assignments, readings, and course documents:
 
 ```r
 new_course("stats-101")
 ```
 
-## Project contents
+## Generated files
 
-When you create a project, Framework:
+Project creation writes these files and directories:
 
-1. Creates the directory structure based on your defaults
-2. Generates a `settings.yml` with your configuration
-3. Sets up `.gitignore` with sensible defaults
-4. Creates IDE workspace files (VS Code/Positron)
-5. Adds AI assistant configuration (CLAUDE.md) if enabled
-6. Initializes git if configured
-   - If git identity isn’t configured, the initial commit is skipped with a note
-   - Set `git config user.name` and `git config user.email` to enable auto-commit
-
----
-
-<div style="display: flex; justify-content: space-between">
-
-[← settings.yml](/docs/settings-yml)
-
-[Core Concepts: scaffold() →](/docs/scaffold)
-
-</div>
+1. Configured project directories from your defaults.
+2. `settings.yml` populated with author metadata, packages, and directory mappings.
+3. `.gitignore` matched to the chosen project type.
+4. Editor workspace files for VS Code, Positron, or RStudio.
+5. AI assistant context files such as `CLAUDE.md` when enabled.
+6. An initialized Git repository and initial commit when `git config user.name` and `git config user.email` are set (otherwise the initial commit is skipped with a notice).

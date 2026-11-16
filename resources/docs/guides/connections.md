@@ -3,15 +3,15 @@ id: connections
 title: Connections
 section: features
 position: 13
-description: 'Connecting to databases and object storage providers'
+description: 'Configure database and S3-compatible object storage connections in settings.yml'
 ---
 ## Overview
 
-Framework provides a unified interface for connecting to databases and object storage. Define connections once in `settings.yml` and Framework handles the rest. For running queries and working with database helpers, see the [Database Integration guide](/docs/database).
+Framework defines database and S3 object-storage profiles in `settings.yml` while reading secret credentials from `.env`. For SQL query helpers, see [Database integration](/docs/database).
 
-## Configuring Connections
+## Database connections
 
-Define database connections in `settings.yml`:
+Declare named database connections under `connections:` in `settings.yml`:
 
 ```yaml
 connections:
@@ -32,9 +32,7 @@ connections:
     database: data/local.db
 ```
 
-The `env()` syntax reads values from environment variables, keeping credentials out of your config files.
-
-Store sensitive values in `.env`:
+`env()` resolves values from environment variables at runtime so credentials stay out of `settings.yml`. Store local secrets in `.env`:
 
 ```bash
 # .env (gitignored)
@@ -43,62 +41,53 @@ DB_USER=analyst
 DB_PASSWORD=secret
 ```
 
-## Object Storage Connections
+## Object storage connections
 
-Define object storage endpoints and buckets in `settings.yml`, then use helpers like `s3_ls()`, `s3_download()`, and `s3_upload()` to browse or sync data:
-
-```yaml
-object_storage:
-  raw_data:
-    provider: s3
-    bucket: env("S3_BUCKET")
-    region: env("AWS_REGION")
-    access_key_id: env("AWS_ACCESS_KEY_ID")
-    secret_access_key: env("AWS_SECRET_ACCESS_KEY")
-```
-
-Both the GUI and the R helpers respect these connection profiles, so you can browse buckets in `framework::gui()` or automate transfers in code.
-
-## Listing Connections
-
-View all configured connections (databases and object storage) with `connections_list()`, or limit to only database entries using `db_list()`:
-
-```r
-connections_list()
-
-db_list()  # Databases only
-```
-
-## Best Practices
-
-### Use env() for Credentials
-
-Never hardcode credentials:
-
-```yaml
-# Good
-password: env("DB_PASSWORD")
-
-# Never do this
-password: "my_secret_password"
-```
-
-### Name Connections Clearly
+Configure S3-compatible buckets under `connections.storage_buckets` in `settings.yml` for use with `publish()`, `storage_test()`, and `framework::gui()`:
 
 ```yaml
 connections:
-  production_analytics:  # Clear purpose
-    ...
-  staging_analytics:     # Environment obvious
-    ...
+  storage_buckets:
+    raw_data:
+      bucket: env("S3_BUCKET")
+      region: env("AWS_REGION")
+      access_key_id: env("AWS_ACCESS_KEY_ID")
+      secret_access_key: env("AWS_SECRET_ACCESS_KEY")
 ```
 
----
+## Connection listing
 
-<div style="display: flex; justify-content: space-between">
+List all configured database and storage connections with `connections_list()` or list database connections alone with `db_list()`:
 
-[← Caching](/docs/caching)
+```r
+connections_list()
+db_list()
+```
 
-[Environment →](/docs/environment)
+## Configuration conventions
 
-</div>
+### Credential references
+
+Always read passwords and access keys through `env()`:
+
+```yaml
+# Recommended
+password: env("DB_PASSWORD")
+
+# Avoid plaintext secrets in settings.yml
+# password: "my_secret_password"
+```
+
+### Explicit connection names
+
+Include the target environment and role in connection names:
+
+```yaml
+connections:
+  production_analytics:
+    driver: postgres
+    host: env("PROD_DB_HOST")
+  staging_analytics:
+    driver: postgres
+    host: env("STAGING_DB_HOST")
+```

@@ -3,29 +3,25 @@ id: framework-db
 title: framework.db
 section: features
 position: 2
-description: 'A lightweight SQLite utility database to help manage your project and ensure data integrity'
+description: 'Local SQLite database for dataset checksums, cache entries, and saved results'
 ---
 ## Overview
 
-Every Framework project includes a `framework.db` SQLite database for internal tracking. This lightweight database stores metadata about your data sources, cached computations, saved outputs, and more.
+Every Framework R project maintains a local `framework.db` SQLite database at the project root. Framework updates `framework.db` automatically during `data_read()`, `data_save()`, `cache_remember()`, and `save_*()` calls.
 
-You generally don't interact with `framework.db` directly—Framework manages it automatically when you use functions like `data_read()`, `cache_remember()`, and `save_table()`.
-
-It is recommended to commit this file to git/GitHub and consider it as part of your project.
-
-## Database Schema
+## Database schema
 
 | Table | Purpose |
-|-------|---------|
-| `data` | Tracks data sources, file paths, types, and integrity hashes |
-| `cache` | Manages cached computation metadata and expiration |
-| `results` | Registry of saved outputs (tables, figures, models) |
-| `connections` | Database connection metadata |
-| `meta` | Key-value store for project metadata |
+|---|---|
+| `data` | Dataset catalog paths, formats, and SHA-256 checksums |
+| `cache` | Cached computation keys, hashes, and expiration timestamps |
+| `results` | Saved output metadata for tables, figures, models, reports, and notebooks |
+| `connections` | Connection profile metadata |
+| `meta` | Project key-value metadata |
 
-## Data Integrity
+## Data integrity
 
-When you read a data file using `data_read()`, Framework stores a hash of the file contents. 
+`data_read()` computes a SHA-256 hash on first read and compares subsequent reads against the stored hash:
 
 ```yaml
 data:
@@ -36,35 +32,25 @@ data:
 
 ```r
 patients <- data_read("inputs.raw.patients")
-
-# First read: computes and stores hash in framework.db
-# Subsequent reads: verifies hash matches, errors if file changed
 ```
 
-If you set `locked` to true in the data catalog, it will ensure your source data hasn't been modified unexpectedly by erring. This is critical for reproducible research.
+When `locked: true` is set in the catalog entry, `data_read()` stops with an error if the file hash changes. Unlocked entries emit a warning.
 
-## Cache Tracking
+## Cache tracking
 
-The cache table tracks what's cached, when it expires, and integrity hashes:
+The `cache` table records creation times, expiration timestamps, and integrity hashes for `.rds` files in the project cache directory:
 
 ```r
 result <- cache_remember("expensive_model", {
   fit_complex_model(data)
-}, expire = "7 days")  # Strings like "7 days" or numeric hours are accepted
-# Metadata stored in framework.db
-# Actual data stored in outputs/cache/expensive_model.rds
+}, expire_after = "7 days")
 ```
 
-Framework uses the database to:
-- Check if a cached result exists and is still valid
-- Track expiration times
-- Verify cached data hasn't been corrupted
+`expire_after` accepts numeric hours (such as `4`) or duration strings (such as `"1 day"` or `"7 days"`).
 
-**Durations:** `expire_after` (or `expire`) accepts numeric hours (e.g., `4`) or strings like `"1 day"` or `"7 days"`.
+## Results registry
 
-## Results Registry
-
-When you save outputs, Framework automatically records them:
+`save_*()` functions record each saved output in the `results` table:
 
 ```r
 save_table(results, "analysis_results")
@@ -72,57 +58,38 @@ save_figure(plot, "summary_chart")
 save_model(model, "regression_v1")
 ```
 
-The results table tracks:
-- Output name and type (table, figure, model, report, notebook)
-- Whether it's public or private (for sensitive projects)
-- File hash for integrity
-- Creation and update timestamps
+Each row records the output name, artifact type (`table`, `figure`, `model`, `report`, or `notebook`), visibility (`public` or `private`), SHA-256 file hash, and creation and modification timestamps.
 
-Use `result_list()` to query saved results:
+Query tracked outputs with `result_list()`:
 
 ```r
-result_list()                        # All results
-result_list(type = "figure")         # Only figures
+result_list()                               # All saved results
+result_list(type = "figure")                # Figures only
 result_list(type = "table", public = TRUE)  # Public tables only
 ```
 
-See [Saving Work](/docs/saving-work) and [Viewing Work](/docs/viewing-work) for complete documentation on saving and tracking outputs.
+See [Saving work](/docs/saving-work) and [Viewing work](/docs/viewing-work) for output helpers.
 
-## Querying the Database
+## SQL queries
 
-For advanced use, you can query `framework.db` directly using the built-in "framework" connection:
+Query `framework.db` directly with `db_query()` using the built-in `"framework"` connection:
 
 ```r
-# View cached items
 cache_entries <- db_query("SELECT name, expire_at FROM cache", "framework")
-
-# Check data registry
 data_registry <- db_query("SELECT name, path, hash, locked FROM data", "framework")
-
-# List saved results
 results <- db_query("SELECT name, type, created_at FROM results", "framework")
 ```
 
-## Location
+## File location
 
-The database lives at your project root:
+`framework.db` resides at the project root:
 
 ```
 my-project/
-├── framework.db          # Project database
+├── framework.db          # Local metadata database
 ├── settings.yml
 ├── notebooks/
 └── ...
 ```
 
-It's typically gitignored since it contains local state that may differ between collaborators.
-
----
-
-<div style="display: flex; justify-content: space-between">
-
-[← scaffold()](/docs/scaffold)
-
-[Packages →](/docs/packages)
-
-</div>
+Default `.gitignore` templates ignore `framework.db` so local cache paths and machine-specific timestamps stay out of version control.

@@ -1,34 +1,25 @@
 # Docker installation
 
-Framework Cloud releases are published as a Docker image,
-`ghcr.io/frameworktools/framework-cloud`. A Compose file runs it as four
-containers:
+Framework Cloud releases are published as `ghcr.io/frameworktools/framework-cloud`. The standard `compose.yml` stack runs five services:
 
-- **app**: the web server. FrankenPHP serves the app and gets an HTTPS
-  certificate from Let's Encrypt for your domain.
-- **worker**: runs background jobs, such as creating GitHub repositories and
-  sending email.
-- **scaffolder**: builds projects that people download as a zip. It runs
-  `fw`, the framework R package, and framework-py, and only the app can
-  reach it. Its image, `ghcr.io/frameworktools/framework-scaffolder`, has the
-  same version tags as the app's.
-- **postgres**: the database.
+- **app**: FrankenPHP web server that serves the application and provisions Let's Encrypt TLS certificates for `SERVER_NAME`.
+- **worker**: background queue worker (`php artisan queue:work`) for GitHub repository creation and updates.
+- **scheduler**: cron worker (`php artisan schedule:work`) that purges expired Trash items and stale agent sign-ins and records finished GitHub scaffold runs.
+- **scaffolder**: read-only internal service (`ghcr.io/frameworktools/framework-scaffolder`) running `fw`, the `framework` R package, and `framework-py` to build `.zip` project downloads.
+- **postgres**: PostgreSQL 17 database.
 
-Published notebooks, logs, certificates, and the database are kept in Docker
-volumes, so they survive restarts and upgrades.
+Published artifacts, TLS certificates, and database files persist in named Docker volumes across container restarts and image upgrades.
 
 ## Requirements
 
-- Docker with the Compose plugin
-- A domain whose DNS points at the machine, with ports 80 and 443 open
+- Docker Engine with the Compose plugin.
+- A domain name resolving to the host with ports 80 and 443 open.
 
-For a single-user server on your own computer, see
-[Local installation](running-at-home.md).
+For a private single-user setup on `localhost`, see [Local installation](running-at-home.md).
 
 ## Installation
 
-Make a folder for the server and download the Compose file and the settings
-template:
+Create a directory for the deployment and download `compose.yml` and `.env.example`:
 
 ```sh
 mkdir framework-cloud && cd framework-cloud
@@ -36,64 +27,54 @@ curl -fsSLO https://raw.githubusercontent.com/frameworktools/framework-cloud/mai
 curl -fsSL https://raw.githubusercontent.com/frameworktools/framework-cloud/main/docker/selfhost/.env.example -o .env
 ```
 
-Generate an application key:
+Generate an application encryption key:
 
 ```sh
 docker run --rm ghcr.io/frameworktools/framework-cloud php artisan key:generate --show
 ```
 
-Put the printed key in `.env` as `APP_KEY`. Keep a copy with your backups,
-because values saved on the Server setup page are encrypted with it.
+Set `APP_KEY` in `.env` to the printed value and store a backup copy. Credentials saved in **Server administration** are encrypted with `APP_KEY`.
 
-Then set these in `.env`:
+Configure the required settings in `.env`:
 
-- `APP_URL`: the address people use, such as `https://framework.example.edu`
-- `SERVER_NAME`: the domain alone, such as `framework.example.edu`
-- `FW_ADMIN_EMAIL`: your email address
-- `DB_PASSWORD`: a long random string, such as the output of
-  `openssl rand -hex 24`
-- `FRAMEWORK_CLOUD_VERSION`: optional, a release such as `1.2.0`. Without it,
-  the server uses the newest release.
+- `APP_URL`: external HTTPS URL, such as `https://framework.example.edu`.
+- `SERVER_NAME`: bare hostname for TLS provisioning, such as `framework.example.edu`.
+- `FW_ADMIN_EMAIL`: email address for the initial administrator account.
+- `DB_PASSWORD`: random database password, such as `openssl rand -hex 24`.
+- `FRAMEWORK_CLOUD_VERSION`: optional version tag such as `1.2.0` (`latest` when omitted).
 
-Start the server:
+Start the stack:
 
 ```sh
 docker compose up -d
 ```
 
-The first start downloads the images, creates the database tables, and adds
-the built-in blueprints and your admin account. Check progress with
-`docker compose ps` and `docker compose logs -f app`.
+On first boot, `app` runs database migrations, seeds built-in blueprints and structures, and creates the administrator account before `worker` and `scheduler` start. Inspect container status with `docker compose ps` and `docker compose logs -f app`.
 
 ## Reverse proxy configuration
 
-If another web server already handles HTTPS on the machine, such as nginx,
-Traefik, or Nginx Proxy Manager, let it pass requests to Framework Cloud over
-plain HTTP. Set these in `.env`:
+When an existing reverse proxy (such as nginx, Caddy, or Traefik) terminates HTTPS on the host, configure Framework Cloud to listen on plain HTTP behind it:
 
 ```sh
 SERVER_NAME=:80
 HTTP_PORT=8080
+HTTP_BIND=127.0.0.1
 TRUSTED_PROXIES=*
 ```
 
-Point the proxy at port 8080. `TRUSTED_PROXIES` lets the app read the
-proxy's forwarded host and scheme, so it builds `https://` links. Use `*` only
-when nothing but the proxy can reach the port. Otherwise list the proxy's
-address, such as `TRUSTED_PROXIES=192.168.1.10`.
+Forward traffic from the proxy to port 8080. `TRUSTED_PROXIES` instructs Laravel to honor `X-Forwarded-Proto` and `X-Forwarded-For` headers when generating HTTPS URLs. Set `TRUSTED_PROXIES=*` only when firewall or binding rules prevent direct external connections to `HTTP_PORT`. Otherwise specify the proxy IP address or CIDR range.
 
 ## Sign-in
 
-Email isn't set up yet, so print a sign-in link on the server:
+Before configuring outbound email, generate a one-time administrator sign-in link:
 
 ```sh
 docker compose exec app php artisan fw:login-link you@example.edu
 ```
 
-Open the link. As an admin you see **Server setup** in the sidebar. Continue
-with [Server setup](server-setup.md).
+Open the printed URL in your browser. Administrator accounts display **Server administration** in the sidebar. Continue with [Server setup](server-setup.md).
 
-You can also set a password and sign in with it:
+You can also assign a password directly from the CLI:
 
 ```sh
 docker compose exec app php artisan fw:password you@example.edu
@@ -101,9 +82,7 @@ docker compose exec app php artisan fw:password you@example.edu
 
 ## Account registration
 
-By default anyone who can reach the server can create an account. To stop new
-sign-ups, set `FW_REGISTRATION=closed` and restart. Admins can still create
-accounts:
+Open registration (`FW_REGISTRATION=open`) is enabled by default so anyone who can reach the server can register. Set `FW_REGISTRATION=closed` in `.env` and run `docker compose up -d` to restrict sign-ups. Administrators can still provision accounts manually:
 
 ```sh
 docker compose exec app php artisan fw:login-link someone@example.edu --create
@@ -111,18 +90,17 @@ docker compose exec app php artisan fw:login-link someone@example.edu --create
 
 ## Next steps
 
-- [Server setup](server-setup.md): email, GitHub, and storage
-- [Maintenance](maintenance.md): upgrades and backups
-- [Configuration reference](configuration.md)
+- [Server setup](server-setup.md): configure email, GitHub, artifact storage, and connected agents.
+- [Maintenance](maintenance.md): run upgrades, backups, and CLI commands.
+- [Configuration reference](configuration.md): review environment variables.
 
 ## Custom Docker images
 
-To run code that isn't in a release, such as your own changes, build the image
-from a clone of the repository:
+To deploy local modifications from a repository checkout, layer `compose.build.yml` on top of `compose.yml`. It builds the app image and the scaffolder from source, and `app`, `worker`, and `scheduler` all run the local app image:
 
 ```sh
 git clone https://github.com/frameworktools/framework-cloud.git
 cd framework-cloud/docker/selfhost
-cp .env.example .env    # then fill it in as above
+cp .env.example .env    # populate required variables
 docker compose -f compose.yml -f compose.build.yml up -d --build
 ```

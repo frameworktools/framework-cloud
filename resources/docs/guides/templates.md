@@ -3,58 +3,52 @@ id: templates
 title: Templates
 section: features
 position: 6
-description: 'Customizing notebook, script, and project templates'
+description: 'Customize starter templates for notebooks, scripts, slides, and gitignore files'
 ---
 ## Overview
 
-Framework uses templates to generate new notebooks, scripts, and project files. You can customize these templates to match your workflow.
+Framework generates new notebooks, scripts, and presentations from customizable templates.
 
-## Graphical interface
+## Template functions
 
-The easiest way to edit templates is through the GUI. Run `setup()` and click **Templates** in the sidebar:
+Read, edit, or restore templates with `read_framework_template()`, `write_framework_template()`, and `reset_framework_template()`:
 
 ```r
-framework::setup()
+read_framework_template("notebook")
 ```
 
-![Templates GUI](/images/templates-gui.png)
+## Template variables
 
-The GUI provides a code editor for each template type with syntax highlighting and a **Reset to default** button if you want to start over.
-
-## Available Variables
-
-Templates support variable substitution. When you create a new file, these placeholders are replaced with actual values:
+Framework substitutes these placeholders when generating files:
 
 | Variable | Description |
-|----------|-------------|
-| `{{title}}` | File or project title |
+|---|---|
+| `{{title}}` | Document or project title |
 | `{{author}}` | Author name |
 | `{{email}}` | Author email |
 | `{{affiliation}}` | Author affiliation |
-| `{{date}}` | Current date |
-| `{{github_username}}` | GitHub username |
-| `{{github_email}}` | GitHub email |
+| `{{date}}` | Creation date |
 
-## Template Types
+Both spaced (`{{ title }}`) and unspaced (`{{title}}`) placeholders are supported.
 
-Framework manages several template types:
+## Template types
 
-- **notebook**: Quarto notebooks (`.qmd`)
-- **script**: R scripts (`.R`)
-- **presentation**: RevealJS slides
-- **gitignore**: `.gitignore` files per project type
-- **ai_canonical**: AI assistant instruction files (CLAUDE.md, etc.)
+- **notebook**: Quarto notebooks (`.qmd`).
+- **script**: R scripts (`.R`).
+- **presentation**: Quarto RevealJS slide decks.
+- **gitignore**: `.gitignore` rules per project type (kept for older settings; project creation does not read it).
+- **ai_canonical**: AI assistant instruction files (`CLAUDE.md` and `AGENTS.md`) (kept for older settings; project creation does not read it).
 
-## Template locations
+## Template storage
 
-Templates are stored in `~/.config/framework/templates/`. Framework copies default templates here on first use, then uses your customized versions.
+Custom templates reside in `templates/` inside `fw_config_dir()`. Framework writes a template to this directory on first edit:
 
 ```
-~/.config/framework/
+<fw_config_dir()>/
 └── templates/
     ├── notebook-default.qmd
     ├── script-default.R
-    ├── presentation-default.qmd
+    ├── notebook-revealjs.qmd
     ├── gitignore-project
     ├── gitignore-sensitive
     ├── gitignore-course
@@ -64,11 +58,11 @@ Templates are stored in `~/.config/framework/templates/`. Framework copies defau
     └── ai-context.course.md
 ```
 
-## Customizing Templates
+## Template customization
 
-### Notebook Template
+### Notebook template
 
-Edit `~/.config/framework/templates/notebook-default.qmd`:
+Edit `templates/notebook-default.qmd` inside `fw_config_dir()`:
 
 ````qmd
 ---
@@ -89,14 +83,12 @@ scaffold()
 
 ## Overview
 
-Your analysis starts here.
+Analysis notes.
 ````
 
-Variables like `{{ title }}` and `{{ author }}` are replaced when creating new files. Framework also accepts the compact `{{title}}` style, so either spacing works in custom templates.
+### Script template
 
-### Script Template
-
-Edit `~/.config/framework/templates/script-default.R`:
+Edit `templates/script-default.R` inside `fw_config_dir()`:
 
 ```r
 # {{ title }}
@@ -105,13 +97,11 @@ Edit `~/.config/framework/templates/script-default.R`:
 
 library(framework)
 scaffold()
-
-# Your code here
 ```
 
-## Using Templates
+## File generation
 
-Templates are used automatically when you create new files:
+Generator helpers apply your active templates automatically:
 
 ```r
 make_notebook("01-exploration")
@@ -119,18 +109,6 @@ make_script("process-data")
 make_presentation("quarterly-review")
 ```
 
-## Resetting Templates
+## Default restoration
 
-To restore a template to its default, delete it from `~/.config/framework/templates/`. Framework will recreate it from the default on next use.
-
-You can also use the **Reset to default** button in the GUI.
-
----
-
-<div style="display: flex; justify-content: space-between">
-
-[← Functions](/docs/functions)
-
-[Quarto Integration →](/docs/quarto)
-
-</div>
+Delete a customized file from `templates/` inside `fw_config_dir()` or run `reset_framework_template()` to restore the built-in template.

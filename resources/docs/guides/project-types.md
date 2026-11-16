@@ -1,60 +1,51 @@
 ---
 id: project-types
-title: Project Types Overview
+title: Project types
 section: project_types
 position: 10
-description: 'Understanding the different project types in Framework'
+description: 'Built-in Framework project layouts for research, sensitive data, courses, and slides'
 ---
 ## Overview
 
-Framework supports four project types, each optimized for different workflows:
+Framework includes four built-in project types tailored to distinct workflows:
 
-| Type | Best For |
-|------|----------|
-| **Standard Project** | Data analysis, research, reporting |
-| **Privacy Sensitive Project** | Research with private/public data separation |
-| **Course/Teaching** | Academic courses with lectures and assignments |
-| **Presentation** | Slides and presentations |
+| Type | Target workflow |
+|---|---|
+| **Standard Project** | General data analysis, pipelines, and reporting |
+| **Privacy Sensitive Project** | Studies requiring separated `private/` and `public/` directories |
+| **Course/Teaching** | Academic courses with lecture slides, readings, and assignments |
+| **Presentation** | Standalone RevealJS slide decks and reports |
 
-## Project types
+## Project layouts
 
-### Standard Project (Default)
+### Standard project
 
-Full-featured with organized data, work, and output directories.
+General layout with dedicated input, notebook, script, function, and output directories:
 
-Use for most data analysis work:
-- Research projects
-- Data pipelines
-- Exploratory data analysis
-
-**Default structure:**
 ```
 my-analysis/
+├── docs/
 ├── functions/
 ├── inputs/
 │   ├── raw/
 │   ├── intermediate/
 │   └── final/
+├── logs/
 ├── notebooks/
 ├── outputs/
 │   └── notebooks/
+├── scratch/
 ├── scripts/
 └── settings.yml
 ```
 
-Optional directories available in the GUI: `docs/`, `scratch/`
+### Privacy sensitive project
 
-### Privacy Sensitive Project
+Isolated `private/` and `public/` subdirectories with `.gitignore` exclusions on private paths:
 
-Enhanced privacy controls with separate private/public flows.
-
-Use for research involving sensitive or protected data:
-- Research with sensitive data, such as protected health information
-- Projects requiring clear public/private separation
-
-**Default structure:**
 ```
 my-study/
+├── docs/
 ├── functions/
 ├── inputs/
 │   ├── private/
@@ -65,90 +56,80 @@ my-study/
 │       ├── raw/
 │       ├── intermediate/
 │       └── final/
+├── logs/
 ├── notebooks/
 ├── outputs/
 │   └── private/
 │       └── notebooks/
+├── scratch/
 ├── scripts/
 └── settings.yml
 ```
 
-Optional directories available in the GUI: `docs/`, `scratch/`
+### Course
 
-### Course/Teaching
+Academic teaching layout for lecture decks, assignments, readings, and syllabi:
 
-Simplified structure for teaching materials, such as lecture slides, student assignments, and course materials
-
-**Default structure:**
 ```
 my-course/
 ├── assignments/
+├── cache/
 ├── course_docs/
 ├── data/
+├── functions/
+├── modules/
 ├── readings/
+├── scripts/
 ├── slides/
 └── settings.yml
 ```
 
-Optional directories available in the GUI: `functions/`, `modules/`, `scripts/`
-
 ### Presentation
 
-Minimal structure for slides and presentations.
+Single-document layout centered on `presentation.qmd`:
 
-**Default structure:**
 ```
 my-presentation/
+├── cache/
+├── data/
+├── functions/
+├── outputs/
+├── scripts/
 ├── presentation.qmd
 └── settings.yml
 ```
-
-Optional directories available in the GUI: `data/`, `functions/`, `outputs/`, `scripts/`
 
 ## Project creation
 
 ### Graphical interface
 
-The easiest way to create projects is through the GUI:
+Open the setup application and select **New Project**:
 
 ```r
 framework::setup()
 ```
 
-Navigate to **New Project** and follow the wizard.
-
-### Programmatic Creation
+### R console
 
 ```r
-# Create a standard project
+# Standard project
 new_project("sales-analysis", "~/projects/sales-analysis")
 
-# Create a privacy sensitive project
+# Privacy-sensitive project
 new_project_sensitive("medical-study", "~/projects/medical")
 
-# Create a course
+# Course
 new_course("data-science-101", "~/teaching/ds101")
 
-# Create a presentation
+# Presentation
 new_presentation("q4-report", "~/presentations/q4")
 ```
 
-## Shared Features
+## Shared components
 
-All project types include:
+Every project type includes:
 
-- **Configuration** (`settings.yml`) - Project settings
-- **Git integration** - Version control ready with appropriate `.gitignore`
-- **Quarto support** - Modern document rendering
-- **AI assistant context** - Optional CLAUDE.md/AGENTS.md generation
-
-
----
-
-<div style="display: flex; justify-content: space-between">
-
-[← Publishing](/docs/publishing)
-
-[Standard Project →](/docs/standard-project)
-
-</div>
+- `settings.yml` configuration.
+- Git initialization and type-specific `.gitignore` templates.
+- Quarto configuration files.
+- Optional AI assistant context files (`CLAUDE.md` and `AGENTS.md`).

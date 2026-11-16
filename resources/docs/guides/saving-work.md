@@ -1,122 +1,114 @@
 ---
 id: saving-work
-title: Saving Work
+title: Saved outputs
 section: features
 position: 9
-description: 'Save outputs with automatic tracking to framework.db'
+description: 'Save tables, figures, models, reports, and notebooks with metadata tracking'
 ---
 ## Overview
 
-Framework provides a unified system for saving your work. When you save tables, figures, models, reports, or notebooks, they're automatically logged to `framework.db` with metadata for easy retrieval later.
+Framework's `save_*()` functions write tables, figures, models, reports, and rendered notebooks to configured output directories and record each file in `framework.db`.
 
-## Saving Outputs
+## Output functions
 
 ### Tables
 
-Save data frames in various formats:
+Write data frames to `outputs/tables/`:
 
 ```r
 # CSV (default)
 save_table(results, "analysis_results")
 
-# Other formats
+# Explicit formats
 save_table(results, "analysis_results", format = "rds")
 save_table(results, "analysis_results", format = "parquet")
 save_table(results, "analysis_results", format = "xlsx")
 
-# Public output (for sensitive projects)
+# Public output in privacy-sensitive projects
 save_table(summary_stats, "public_summary", public = TRUE)
 ```
 
 ### Figures
 
-Save ggplot2 or base R graphics:
+Write `ggplot2` or base R plots to `outputs/figures/`:
 
 ```r
-# Basic save
+# Default dimensions and PNG format
 save_figure(my_plot, "revenue_chart")
 
-# With dimensions
+# Explicit width, height, and resolution
 save_figure(my_plot, "revenue_chart", width = 10, height = 6, dpi = 300)
 
-# Different formats
+# Vector formats
 save_figure(my_plot, "revenue_chart", format = "pdf")
 save_figure(my_plot, "revenue_chart", format = "svg")
 ```
 
 ### Models
 
-Save fitted model objects:
+Serialize fitted model objects to `outputs/models/`:
 
 ```r
-# Save a model
 model <- lm(y ~ x, data = df)
 save_model(model, "regression_v1")
-
-# Save with specific format
-save_model(model, "regression_v1", format = "rds")
 ```
 
-### Reports & Notebooks
+### Reports and notebooks
 
-Save rendered documents:
+Copy, move, or render documents into output directories:
 
 ```r
-# Copy a rendered report to outputs
+# Copy a rendered HTML report
 save_report("outputs/analysis.html", "quarterly_report")
 
-# Move instead of copy
+# Move instead of copying
 save_report("outputs/analysis.html", "quarterly_report", move = TRUE)
 
-# Render and save a Quarto notebook
+# Render a Quarto document and save to outputs/notebooks/
 save_notebook("notebooks/analysis.qmd", "final_analysis")
 ```
 
-## Automatic Tracking
+## Metadata tracking
 
-Every `save_*` function automatically logs to the `results` table in `framework.db`:
+Every `save_*()` call updates the `results` table in `framework.db`:
 
 | Field | Description |
-|-------|-------------|
-| `name` | The name you provided |
-| `type` | Output type (table, figure, model, report, notebook) |
-| `public` | Whether saved to public or private directory |
-| `hash` | File integrity hash |
-| `created_at` | When first saved |
-| `updated_at` | When last modified |
+|---|---|
+| `name` | Project-relative path of the saved file |
+| `type` | Artifact type (`table`, `figure`, `model`, `report`, or `notebook`) |
+| `public` | Public or private destination flag |
+| `hash` | SHA-256 checksum of the saved file |
+| `created_at` | Initial creation timestamp |
+| `updated_at` | Latest modification timestamp |
 
-No extra steps needed—tracking happens automatically.
+## Public and private outputs
 
-## Public vs Private Outputs
-
-For Privacy Sensitive projects, the `public` parameter controls output location:
+In privacy-sensitive projects, `public` selects between gitignored `outputs/private/` and shareable `outputs/public/`:
 
 ```r
-# Private (default) - goes to outputs/private/tables/
+# Writes to outputs/private/tables/
 save_table(detailed_results, "patient_outcomes")
 
-# Public - goes to outputs/public/tables/
+# Writes to outputs/public/tables/
 save_table(aggregated_stats, "summary", public = TRUE)
 ```
 
-Private outputs are gitignored; public outputs can be shared and committed.
+In standard projects, outputs write directly under `outputs/` regardless of `public`.
 
-For Standard projects, the `public` parameter still works but outputs go to a single `outputs/` directory structure.
+## Output directory layout
 
-## Output Directories
-
-Framework organizes outputs by type:
+Standard projects:
 
 ```
 outputs/
-├── tables/           # save_table() output
-├── figures/          # save_figure() output
-├── models/           # save_model() output
-├── reports/          # save_report() output
-└── notebooks/        # save_notebook() output
+├── tables/           # save_table()
+├── figures/          # save_figure()
+├── models/           # save_model()
+├── reports/          # save_report()
+└── notebooks/        # save_notebook()
 ```
 
-For Privacy Sensitive projects:
+Privacy-sensitive projects:
 
 ```
 outputs/
@@ -129,13 +121,3 @@ outputs/
     ├── figures/
     └── ...
 ```
-
----
-
-<div style="display: flex; justify-content: space-between">
-
-[← Viewing Work](/docs/viewing-work)
-
-[Git Integration →](/docs/git)
-
-</div>

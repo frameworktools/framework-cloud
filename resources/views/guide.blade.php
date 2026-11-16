@@ -3,9 +3,9 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $page === 'index' ? 'Documentation' : $title }} — Framework Cloud</title>
+    <title>{{ $page === 'index' ? 'Documentation' : $title }} · Framework Cloud</title>
     <link rel="icon" type="image/png" href="/images/favicon.png">
-    <x-share-meta :title="($page === 'index' ? 'Documentation' : $title).' — Framework Cloud'" />
+    <x-share-meta :title="($page === 'index' ? 'Documentation' : $title).' · Framework Cloud'" />
     <x-theme-script />
     @vite(['resources/css/app.css'])
 </head>
@@ -21,7 +21,7 @@
                 <x-docs-search-button />
                 <x-theme-toggle class="max-sm:hidden" />
                 @auth
-                    <a href="{{ route('projects') }}" class="rounded-md bg-sky-700 px-4 py-2 font-medium text-white hover:bg-sky-800">Your projects</a>
+                    <a href="{{ route('projects') }}" class="rounded-md bg-sky-700 px-4 py-2 font-medium text-white hover:bg-sky-800">Projects</a>
                 @else
                     <a href="{{ route('login') }}" class="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">Sign in</a>
                 @endauth

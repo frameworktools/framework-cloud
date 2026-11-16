@@ -3,38 +3,33 @@ id: caching
 title: Caching
 section: features
 position: 12
-description: 'Caching expensive computations for faster iteration'
+description: 'Cache long-running R computations to disk with expiration and hash tracking'
 ---
 ## Overview
 
-Framework's caching system lets you save the results of expensive computations and reuse them in future sessions. This dramatically speeds up iterative analysis work.
+Framework's cache helpers serialize computation outputs as `.rds` files in the project cache directory and record creation timestamps, expiration rules, and SHA-256 checksums in `framework.db`. For external data sources used inside cached expressions, see [Connections](/docs/connections).
 
-Cached items are stored as RDS files in your project's cache directory. Framework tracks creation time, expiration, and a hash for integrity verification.
+| Project type | Default cache directory |
+|---|---|
+| `project` | `outputs/cache` |
+| `project_sensitive` | `outputs/private/cache` |
+| `course` | `cache` |
+| `presentation` | `cache` |
 
-**Default cache directories by project type:**
-
-| Project Type | Cache Directory |
-|--------------|-----------------|
-| project | `outputs/cache` |
-| project_sensitive | `outputs/private/cache` |
-| course | `cache` |
-| presentation | `cache` |
-
-Cache directories are created lazily—they don't exist until you first cache something. You can customize the cache directory per project type in the GUI under **Project Defaults**, or in `settings.yml`:
+Framework creates the cache directory on the first cache write. Override the path in `framework::setup()` under **Project Defaults** or in `settings.yml`:
 
 ```yaml
 directories:
   cache: my/cache/path
 ```
 
-## Basic Caching
+## Memoized evaluation
 
-Use `cache_remember()` to cache a computation:
+Wrap an expression in `cache_remember()` to evaluate and save on the first call and read from disk on subsequent calls:
 
 ```r
-# First run: executes the code and caches result
+# First call evaluates the block and writes outputs/cache/my_analysis.rds
 processed_data <- cache_remember("my_analysis", {
-  # Expensive operation
   raw_data |>
     mutate(date = parse_date(date_string)) |>
     filter(valid == TRUE) |>
@@ -42,120 +37,112 @@ processed_data <- cache_remember("my_analysis", {
     summarize(total = sum(amount))
 })
 
-# Subsequent runs: returns cached result instantly
+# Subsequent calls return the stored value without evaluating the block
 processed_data <- cache_remember("my_analysis", {
-  # This code won't run - cached result returned
+  raw_data |>
+    mutate(date = parse_date(date_string)) |>
+    filter(valid == TRUE) |>
+    group_by(category) |>
+    summarize(total = sum(amount))
 })
 ```
 
-## Cache Expiration
+## Cache expiration
 
-Set an expiration time for cached data. You can pass hours as a number, or human-readable strings:
+Pass `expire_after` as numeric hours or a duration string to invalidate stale entries:
 
 ```r
-# Cache expires after 1 hour
+# Expires after 1 hour
 fresh_data <- cache_remember("live_data", {
   fetch_from_api()
 }, expire_after = 1)
 
-# Human-readable strings also work
+# Duration strings
 cache_remember("daily", expr, expire_after = "1 day")
 cache_remember("weekly", expr, expire_after = "7 days")
 ```
 
-## Force Refresh
+## Forced recomputation
 
-Force re-computation even if cached:
+Pass `refresh = TRUE` to ignore an existing entry and overwrite it:
 
 ```r
-# Ignore cache and recompute
 updated <- cache_remember("my_analysis", {
-  # This runs even if cached
   expensive_computation()
 }, refresh = TRUE)
 ```
 
+## Direct cache storage
 
-## Cache storage
+Store an already-computed R object with `cache()`:
 
 ```r
-# Manually cache a value
 cache("processed_results", my_data)
-
-# With expiration (hours)
 cache("temp_results", my_data, expire_after = 24)
 ```
 
 ## Cache retrieval
 
+Read a cached object by key with `cache_get()`, which returns `NULL` when absent or expired:
+
 ```r
-# Get cached value (returns NULL if not found or expired)
 cached <- cache_get("processed_results")
 ```
 
 ## Cache deletion
 
+Delete one cache entry with `cache_forget()`:
+
 ```r
-# Remove a specific cache
 cache_forget("my_analysis")
 ```
 
 ## Cache inventory
 
+List cached entries with creation times, expiration timestamps, and status:
+
 ```r
 cache_list()
-# Returns data frame with name, expire_at, created_at, status
 ```
-
 
 ## Cache cleanup
 
+Remove all cached files and metadata entries in the project:
+
 ```r
-# Remove all cached items
 cache_flush()
 ```
 
-## Best Practices
+## Usage conventions
 
-### 1. Cache names
+### Descriptive keys
+
+Name cache keys after the dataset, scope, and step:
 
 ```r
-# Good
+# Specific key
 cache_remember("sales_2024_by_region", ...)
 
-# Avoid
+# Ambiguous key
 cache_remember("data1", ...)
 ```
 
-### 2. Cache scope
+### Target workloads
 
-Cache expensive operations, not simple ones:
+Reserve caching for multi-second queries, simulations, or model fits rather than trivial arithmetic:
 
 ```r
-# Good: Cache expensive database query
 results <- cache_remember("quarterly_report", {
-  query_get("complex_aggregation")
+  db_query("SELECT region, SUM(total) FROM orders GROUP BY region", "analytics")
 })
-
-# Avoid: Don't cache simple operations
-# x <- cache_remember("add", { 1 + 1 })
 ```
 
-### 3. Live data expiration
+### External data expiration
+
+Set `expire_after` whenever caching mutable upstream APIs or live tables:
 
 ```r
-# Good: External data should expire
 api_data <- cache_remember("exchange_rates", {
   fetch_rates_from_api()
 }, expire_after = "1 hour")
 ```
-
----
-
-<div style="display: flex; justify-content: space-between">
-
-[← AI Assistants](/docs/ai-assistants)
-
-[Database Connections →](/docs/connections)
-
-</div>

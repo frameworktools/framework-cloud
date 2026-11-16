@@ -1,38 +1,33 @@
 # GitHub integration
 
-GitHub integration lets you sign in with GitHub and create projects as GitHub
-repositories. It is free on Framework Public Cloud. On your own server, an admin sets
-it up first (see [Server setup](server-setup.md#github)).
+GitHub integration enables GitHub sign-in and creates scaffolded project repositories on GitHub. Framework Public Cloud includes GitHub integration. Self-hosted servers require a GitHub App configured by an administrator in [Server setup](server-setup.md#github).
 
 ## Account connection
 
-1. Open **Account > GitHub** and connect your GitHub account. If you signed
-   up with GitHub, it is already connected.
-2. Install the Framework app on your GitHub account and on any organization
-   where you want new repositories. GitHub asks which repositories the app may
-   reach. The app can only work in repositories it creates or that you give
-   it.
+1. Open **Account > GitHub connection** and connect your GitHub account. GitHub sign-in does not connect your account for repositories.
+2. Install the Framework GitHub App on your personal account and on any organization where you plan to create repositories. GitHub prompts you to choose repository access. Framework operates only on repositories it creates or repositories you explicitly grant.
 
 ## GitHub projects
 
-1. Open **Projects > New project** and choose a blueprint.
-2. Under **Delivery method**, choose **On GitHub**.
-3. Pick the account or organization, name the repository, and choose whether
-   it is private. Blueprints for restricted data require a private
-   repository.
-4. Click **Create on GitHub**.
+1. Open **Projects > New project**, choose a language and blueprint, and continue to **Review**.
+2. Choose **Destination > GitHub repository**.
+3. Select the owner account or organization, enter the repository name, and set repository visibility. Sensitive-data blueprints require a private repository.
+4. Select **Create on GitHub**.
 
-Framework Cloud creates the repository, and a one-time GitHub Action builds
-the project files in it. The action runs the framework R package for R
-projects and `fw` for Stata projects. The project page shows when it is done. Then clone
-the repository and start working:
+Framework Cloud creates the repository and triggers a one-time GitHub Action to generate the project files. The workflow runs the `framework` R package for R projects, `framework-py` for Python projects, and `fw` for Stata projects. The server pins each tool with `GITHUB_FRAMEWORK_SHA`, `GITHUB_FRAMEWORK_PY_SHA`, and `GITHUB_FW_VERSION`, which default to tested versions. An empty or invalid `GITHUB_FRAMEWORK_SHA` turns repository creation off. An empty or invalid `GITHUB_FRAMEWORK_PY_SHA` or `GITHUB_FW_VERSION` turns it off for Python or Stata. In those cases **GitHub repository** appears disabled with the reason. When the project page reports completion, clone the repository:
 
 ```sh
 git clone https://github.com/you/your-project.git
 ```
 
+## Repository updates
+
+A project's **GitHub & Pages** tab shows the repository and its status. When the project setup changes after the repository was created, select **Update on GitHub**. Framework Cloud rebuilds its own files from the current setup and opens an **Update Framework setup** pull request on a `framework/update-*` branch. Only `.framework/spec.json`, `settings.yml`, `settings/*.yml`, and installed skills are considered. Notebooks, scripts, data, and README files stay unchanged. Files edited since Framework's last commit, or matched by `.gitignore`, are left alone and listed in the pull request. Updates never push to the default branch. Updating requires a connected GitHub account, the Framework app installed on the repository owner, and the server's `scaffolder` service.
+
+## GitHub Pages
+
+Under **GitHub Pages** on the same tab, select **Publish with GitHub Pages** to turn on Pages and commit `.github/workflows/framework-pages.yml`. The workflow deploys the repository's `published/` folder on each push to the default branch that changes it. The site is public even when the repository is private. Pages on a private repository requires a paid GitHub plan. Select **Turn off** to disable Pages and remove the workflow. The `published/` folder stays in the repository.
+
 ## Disconnection
 
-**Account > GitHub > Disconnect** removes the connection. Your repositories
-stay on GitHub. To remove the app's access completely, uninstall it in your
-GitHub settings under **Applications**.
+Open **Account > GitHub connection** and select **Disconnect** to unlink your GitHub account from Framework Cloud. Existing repositories remain on GitHub. To revoke repository permissions altogether, uninstall the Framework app in GitHub under **Settings > Applications**.

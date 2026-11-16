@@ -1,25 +1,22 @@
-# Self-hosting Framework Cloud with Docker
+# Docker self-hosting
 
-This folder holds the files for running Framework Cloud with Docker:
+This directory holds the files for running Framework Cloud with Docker:
 
-- `compose.yml` runs the published image as three containers: the web server,
-  a queue worker, and PostgreSQL.
-- `.env.example` is the settings template.
-- `compose.build.yml` builds the image from this repository instead of pulling
-  a release.
-- `Dockerfile`, `entrypoint.sh`, and `php.ini` define the image.
+- `compose.yml` runs five services (`app`, `worker`, `scheduler`, `scaffolder`, and `postgres`).
+- `.env.example` provides the environment configuration template.
+- `compose.build.yml` builds the images from this repository rather than pulling a release. `app`, `worker`, and `scheduler` all run the local build.
+- `Dockerfile`, `entrypoint.sh`, and `php.ini` define the application image.
 
-Releases are published as `ghcr.io/frameworktools/framework-cloud`.
+Releases are published as `ghcr.io/frameworktools/framework-cloud` and `ghcr.io/frameworktools/framework-scaffolder`.
 
-## Install
+## Installation
 
-You only need `compose.yml` and `.env.example`. The guide covers each step:
+A deployment requires `compose.yml` and `.env.example`. Two guides cover the setup steps:
 
-- [Install with Docker](../../docs/guide/install-docker.md) for a shared server
-- [Run it on your own computer](../../docs/guide/running-at-home.md) for one
-  person, in single-user mode
+- [Docker installation](../../docs/guide/install-docker.md) for a shared server.
+- [Local installation](../../docs/guide/running-at-home.md) for single-user mode on one computer.
 
-In short:
+Download the files, generate an application key, and start the containers:
 
 ```sh
 mkdir framework-cloud && cd framework-cloud
@@ -31,24 +28,20 @@ docker compose up -d
 docker compose exec app php artisan fw:login-link you@example.edu
 ```
 
-## Build from source
+## Source builds
 
-From this folder in a clone:
+Run these commands from this directory in a repository clone:
 
 ```sh
 cp .env.example .env    # then fill it in
 docker compose -f compose.yml -f compose.build.yml up -d --build
 ```
 
-## Publishing a release
+## Release publishing
 
-`.github/workflows/docker-image.yml` builds the image for `linux/amd64` and
-`linux/arm64` and pushes it to GitHub's container registry.
+`.github/workflows/docker-image.yml` and `scaffolder-image.yml` build the images for `linux/amd64` and `linux/arm64` and pushes them to the GitHub container registry.
 
 - Push a tag such as `v1.2.0` to publish `1.2.0`, `1.2`, and `latest`.
-- Run the workflow by hand to publish an image tagged with the branch name,
-  for testing.
+- Trigger the workflow manually to publish a test image tagged with the branch name.
 
-The first time the image is published, make the package public in the
-organization's package settings on GitHub, so people can pull it without
-signing in.
+After the first publish, set package visibility to public in the GitHub organization package settings. Public visibility allows pulls without authentication.

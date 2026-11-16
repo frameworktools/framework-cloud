@@ -1,137 +1,141 @@
 # Configuration reference
 
-Framework Cloud reads its settings from environment variables, usually in the
-`.env` file. With Docker, it sits next to `compose.yml`. After changing it,
-restart with `docker compose up -d`. Without Docker, run
-`php artisan config:cache`.
+Framework Cloud reads runtime configuration from environment variables, typically defined in `.env`. In Docker deployments, `.env` sits alongside `compose.yml`. Apply Docker edits with `docker compose up -d`. In manual deployments, apply edits with `php artisan config:cache` and `php artisan queue:restart`. Manual installs start from `.env.server.example`, which runs in production mode.
 
 ## Server
 
 | Variable | Default | Description |
 |---|---|---|
-| `APP_KEY` | none | Encryption key. Required. Generate it once and back it up. |
-| `APP_PREVIOUS_KEYS` | none | Old keys, comma-separated, so saved credentials stay readable after you change `APP_KEY`. |
-| `APP_URL` | none | The address people use, such as `https://framework.example.edu`. |
-| `FW_MODE` | `self` | `self` for your own server, where every feature is on. `hosted` is for Framework Public Cloud (framework.pub). |
-| `FW_ADMIN_EMAIL` | none | The admin account, created on first start. |
-| `FW_ADMIN_NAME` | from the email | The admin's name when the account is created. |
-| `FW_REGISTRATION` | `open` | `closed` stops new sign-ups. Admins can still create accounts with `fw:login-link --create`. |
-| `FW_DOCUMENTS_DISK` | `local` | Storage for published artifacts. Becomes `bucket` when a bucket is saved on the setup page. |
-| `FW_ARTIFACTS_DISK` | `local` | Private storage for new artifacts. Must not have public bucket or web access. Use shared storage for multiple app nodes. |
-| `FW_AGENTS` | `true` | `false` turns off AI agents: the MCP server at `/mcp`, its OAuth sign-in, and the agent page. Existing connections stop working until it is turned on again. Without it, Server administration can turn agents off. See [AI apps](ai-apps.md). |
-| `FW_AGENT_PLUGIN` | unset | Shows the Framework Cloud plugin in the agent setup steps. Unset, it shows on framework.pub only, since the plugin connects there. |
-| `FW_TRASH_DAYS` | `30` | Days deleted projects, artifacts, reports, and skills stay in the Trash before they are deleted forever, artifact files included. `0` keeps them until emptied by hand. Docker runs the daily cleanup in the `scheduler` service. |
-| `FW_CONTENT_URL` | none | A host of its own for published files, such as `https://content.example.org`, pointing at this app. It serves only signed file links and sets no cookies. Unset, the app serves files. |
-| `TRUSTED_PROXIES` | loopback | Proxies trusted to report the visitor's address and https. `cloudflare` trusts Cloudflare's edge; `*` trusts any; or a comma-separated list. |
+| `APP_KEY` | none | Required application encryption key. Generate once and store in backups. |
+| `APP_PREVIOUS_KEYS` | none | Comma-separated prior `APP_KEY` values retained during key rotation. |
+| `APP_URL` | none | Canonical public URL, such as `https://framework.example.edu`. |
+| `FW_CLIENT_URL` | `APP_URL` | Server URL printed in R, Python, and `fw` setup commands when client routing differs from `APP_URL`. |
+| `FW_MODE` | `self` | `self` runs a self-hosted server with unlimited publishing. `hosted` runs Framework Public Cloud (`framework.pub`). |
+| `FW_ADMIN_EMAIL` | none | Email address of the initial administrator account seeded at startup. |
+| `FW_ADMIN_NAME` | derived from email | Display name for the seeded administrator account. |
+| `FW_REGISTRATION` | `open` | `open` allows public sign-up. `closed` restricts account creation to `fw:login-link --create` and `fw:password --create`. |
+| `FW_DOCUMENTS_DISK` | `local` | Filesystem disk for document storage. Switches to `bucket` when a bucket is saved in **Server administration**. |
+| `FW_ARTIFACTS_DISK` | `local` | Private filesystem disk for artifacts. Must have no public bucket or web-root access. Run `fw:move-artifacts` after changing it. |
+| `FW_PUBLISH_STORAGE_LIMIT_BYTES` | `1073741824` when `FW_MODE=hosted`, none when `self` | Per-account artifact storage limit in bytes, across all versions and Trash. Applies in both modes when set. `0` removes the limit. |
+| `FW_AGENTS` | `true` | `false` disables `/mcp`, OAuth agent sign-in, and the sidebar agent pages, overriding **Server administration**. See [AI apps](ai-apps.md). |
+| `FW_AGENT_PLUGIN` | unset | Displays `frameworktools/plugins` installation steps on the agent setup page (`framework.pub` only when unset). |
+| `FW_TRASH_DAYS` | `30` | Retention window in days before the `scheduler` service permanently deletes trashed items and artifact files (`0` disables automatic purge). |
+| `FW_REVISIONS_KEPT` | `200` | Revisions kept of each account's settings document. Older revisions are deleted on save. |
+| `FW_CONTENT_URL` | none | Separate origin for serving signed published file URLs without session cookies, such as `https://content.example.org`. |
+| `FW_CONTENT_SIGNING_KEY` | none | Key shared with a Cloudflare Worker on `FW_CONTENT_URL` that serves files directly from the bucket through short-lived signed links. Unset, the app serves files itself. |
+| `FW_CONTENT_WORKER_DISK` | `r2` | Disk the content Worker's bucket binding reads. Only files on this disk go through the Worker. |
+| `FW_STATA_PACKAGE` | `false` | Displays Framework for Stata in public navigation and homepage tabs even before Stata docs are imported. |
+| `FW_SPEC_PARITY` | `false` | Emits structured Stata packages, Stata graph schemes, and Matplotlib styles in resolved project layers for newer `fw` and `framework-py` clients. |
+| `FW_SPEC_TOOLS` | `true` | Emits the `tools`, `settings_layout`, and `core_files` keys in resolved project layers. Set `false` while users run clients older than `fw` 0.3, such as `fw` 0.2, which reject these keys. |
+| `FW_SPEC_WORKFLOWS` | `true` | Emits `scaffold.workflow` and the `script` notebook format in resolved project layers. Set `false` while users run clients that predate workflows. |
+| `FW_HOMEPAGE_EXAMPLE_URL` | none | Public artifact shown as the homepage's worked example, published by `fw:homepage-example`. Unset, the homepage shows a preview image. |
+| `FW_STARTER_REPOSITORY` | none | Public starter repository (`owner/name`) shown on the homepage's GitHub card. |
+| `TRUSTED_PROXIES` | loopback | Reverse proxies trusted for `X-Forwarded-*` headers: `cloudflare`, `*`, or comma-separated IPs and CIDRs. |
+| `MONITORING_METRICS_TOKEN` | none | Bearer token required by `GET /api/metrics` for Prometheus scraping. Unset, the endpoint returns 401. |
 
 ## Sign-in
 
 | Variable | Default | Description |
 |---|---|---|
-| `FW_PASSWORDS` | `true` when `FW_MODE=self` | Allows password sign-in alongside email links, passkeys, and GitHub. |
-| `FW_SINGLE_USER` | `false` | Signs every local request in as the admin. See [Local installation](running-at-home.md). |
-| `FW_SINGLE_USER_NETWORKS` | `127.0.0.1/32,::1/128` | Addresses that count as this computer in single-user mode, comma-separated. The Docker setup adds its network's gateway when this is unset. |
+| `FW_PASSWORDS` | `true` when `FW_MODE=self` | Enables email-and-password sign-in alongside email links, passkeys, and GitHub. |
+| `FW_SINGLE_USER` | `false` | Automatically signs local requests in as the administrator. See [Local installation](running-at-home.md). |
+| `FW_SINGLE_USER_NETWORKS` | `127.0.0.1/32,::1/128` | Comma-separated CIDRs permitted in single-user mode (Docker appends its bridge gateway when unset). |
+| `SESSION_LIFETIME` | `120` | Idle minutes before a sign-in marked **This is a shared computer** ends. Other sign-ins last one year. |
+| `GITHUB_REDIRECT_URI` | `/auth/github/callback` | OAuth callback for the GitHub App's account connection. |
+| `GITHUB_LOGIN_REDIRECT_URI` | `/auth/github/login/callback` | OAuth callback for the GitHub sign-in OAuth App. |
+| `PASSPORT_PRIVATE_KEY`, `PASSPORT_PUBLIC_KEY` | none | PEM keys that sign OAuth tokens for connected AI apps. Unset, the app creates `storage/oauth-private.key` (mode 0600) and `storage/oauth-public.key` the first time an agent signs in. Docker creates them on first start. |
 
 ## Docker
 
-These apply only to the Docker setup.
+These variables configure `docker/selfhost/compose.yml` across its five services (`app`, `worker`, `scheduler`, `scaffolder`, and `postgres`):
 
 | Variable | Default | Description |
 |---|---|---|
-| `FRAMEWORK_CLOUD_VERSION` | `latest` | The release to run, such as `1.2.0`. |
-| `SERVER_NAME` | none | The domain to get an HTTPS certificate for. `:80` serves plain HTTP. |
-| `HTTP_PORT` | `80` | The machine's port for HTTP. |
-| `HTTPS_PORT` | `443` | The machine's port for HTTPS. |
-| `HTTP_BIND` | `0.0.0.0` | The address the ports listen on. `127.0.0.1` makes the server reachable only from this machine. |
-| `TRUSTED_PROXIES` | loopback only | Reverse proxies whose forwarded host and scheme the app trusts: `*`, or a comma-separated list of addresses and CIDR ranges. |
-| `DB_PASSWORD` | none | The database password. Required. |
-| `FW_PREPARE_DATABASE` | `true` | Runs migrations and seeding on start. |
+| `FRAMEWORK_CLOUD_VERSION` | `latest` | Image tag for `framework-cloud` and `framework-scaffolder`, such as `1.2.0`. |
+| `SERVER_NAME` | none | Caddy site hostname for automatic HTTPS or `:80` for plain HTTP behind an external proxy. |
+| `HTTP_PORT` | `80` | Host port mapped to container port 80. |
+| `HTTPS_PORT` | `443` | Host TCP and UDP port mapped to container port 443. |
+| `HTTP_BIND` | `0.0.0.0` | Host bind IP (`127.0.0.1` restricts access to the local machine). |
+| `DB_PASSWORD` | none | Required PostgreSQL password. |
+| `FW_PREPARE_DATABASE` | `true` | Runs migrations and production seeding during `app` container startup (`false` on `worker` and `scheduler`). |
 
 ## Database
 
-`DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, and
-`DB_PASSWORD`. Framework Cloud is built for PostgreSQL. The Docker setup fills
-in the connection details for its own database container.
+Configure `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, and `DB_PASSWORD`. Framework Cloud targets PostgreSQL. `compose.yml` wires the `postgres` service automatically. In Docker, `.env.example` sets `DB_DATABASE` and `DB_USERNAME` to `framework_cloud`, and the `postgres` service uses the same names when they are unset. The [backup commands](maintenance.md#backups) assume these names. Outside Docker, unset values fall back to `laravel` and `root`, so set both explicitly.
 
 ## Server credentials
 
-Each of these can be set here or on the Server setup page. A variable that is
-set wins. See [Server setup](server-setup.md#credential-storage).
+Credentials listed below can be set in `.env` or in **Server administration**. Non-empty environment variables take precedence. See [Server setup](server-setup.md#credential-storage).
 
-| Credential | Variables |
+| Integration | Environment variables |
 |---|---|
 | GitHub App | `GITHUB_APP_ID`, `GITHUB_APP_SLUG`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_WEBHOOK_SECRET`, `GITHUB_APP_PRIVATE_KEY` |
-| GitHub sign-in | `GITHUB_LOGIN_CLIENT_ID`, `GITHUB_LOGIN_CLIENT_SECRET`: a GitHub OAuth app that only reads email addresses. Setting both shows Sign in and Sign up with GitHub. Its callback is `/auth/github/login/callback`. Connecting GitHub from account settings uses the GitHub App either way. |
-| Notebook storage | `FW_BUCKET_NAME`, `FW_BUCKET_ENDPOINT`, `FW_BUCKET_REGION`, `FW_BUCKET_KEY`, `FW_BUCKET_SECRET`, `FW_DOCUMENTS_BASE_URL` |
+| GitHub sign-in OAuth App | `GITHUB_LOGIN_CLIENT_ID`, `GITHUB_LOGIN_CLIENT_SECRET` (optional email-only OAuth App with callback `/auth/github/login/callback` for login and registration, while repository linking always uses the GitHub App) |
+| Artifact storage | `FW_BUCKET_NAME`, `FW_BUCKET_ENDPOINT`, `FW_BUCKET_REGION`, `FW_BUCKET_KEY`, `FW_BUCKET_SECRET`, `FW_DOCUMENTS_BASE_URL` |
 | Email | `MAIL_MAILER`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION` |
 
 ## GitHub scaffolding
 
-The scaffold workflow installs a pinned version of the tool that builds the
-project, so every repository scaffolded from the same server gets the same
-result.
+GitHub repository scaffolding pins exact tool versions so projects created on a server build deterministically:
 
 | Variable | Default | Description |
 |---|---|---|
-| `GITHUB_FRAMEWORK_SHA` | a tested commit | The framework R package commit that builds R projects. A full 40-character SHA. Empty turns GitHub scaffolding off. |
-| `GITHUB_FRAMEWORK_PY_SHA` | a tested commit | The framework-py commit that builds Python projects. A full 40-character SHA. Empty turns off Python projects on GitHub. |
-| `GITHUB_FW_VERSION` | a tested release | The `fw` release that builds Stata projects, such as `0.3.0`. Empty turns off Stata projects on GitHub. They can still be set up on a computer. |
-| `GITHUB_FW_SHA256` | release checksums file | Optional SHA-256 checksum of the `fw` Linux download. Empty makes the workflow verify the download against the release's checksums file. |
+| `GITHUB_FRAMEWORK_SHA` | tested commit | Full 40-character commit SHA of `frameworktools/framework` for R repositories. Empty or invalid disables GitHub scaffolding. |
+| `GITHUB_FRAMEWORK_PY_SHA` | tested commit | Full 40-character commit SHA of `frameworktools/framework-py` for Python repositories. Empty or invalid disables Python GitHub scaffolding. |
+| `GITHUB_FW_VERSION` | tested release | Release version of `fw` (such as `0.3.0`) for Stata repositories. Empty or invalid disables Stata GitHub scaffolding. |
+| `GITHUB_FW_SHA256` | release checksums | Optional 64-character SHA-256 hash of the Linux `fw` archive. Empty verifies against the release checksums file. |
+
+When scaffolding is off, **GitHub repository** on **Projects > New project** appears disabled with the reason. Administrators also see the variable to change.
 
 ## Private storage
 
-`FW_LOCAL_STORAGE_ROOT` sets the private local filesystem directory. The default
-is `storage/app/private`. Atomic deployments need a persistent directory outside
-individual releases. Copy existing private files into that directory before
-changing the setting. Back it up with the database. Keep it outside the web root.
+`FW_LOCAL_STORAGE_ROOT` sets the root path of the private `local` disk (`storage/app/private` by default). Zero-downtime release deployments must point `FW_LOCAL_STORAGE_ROOT` to a shared persistent directory outside individual release folders. Migrate existing files before switching, exclude the path from the web root, and include it in backups.
+
+`FW_ARTIFACTS_DISK` and `FW_DOCUMENTS_DISK` accept these disks:
+
+| Disk | Storage | Variables |
+|---|---|---|
+| `local` | Private local directory | `FW_LOCAL_STORAGE_ROOT` |
+| `bucket` | S3-compatible bucket from **Server administration** | `FW_BUCKET_NAME`, `FW_BUCKET_ENDPOINT`, `FW_BUCKET_REGION`, `FW_BUCKET_KEY`, `FW_BUCKET_SECRET` |
+| `r2` | Cloudflare R2 bucket | `R2_BUCKET` (default `framework-pub`), `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` |
+| `s3` | Amazon S3 bucket | `AWS_BUCKET`, `AWS_DEFAULT_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_ENDPOINT`, `AWS_USE_PATH_STYLE_ENDPOINT` |
+
+After changing `FW_ARTIFACTS_DISK`, run `php artisan fw:move-artifacts` to copy existing artifact files to the new disk. See [Maintenance](maintenance.md#administration-commands).
 
 ## Downloads
 
-People can download a new project as a zip. The scaffolder container builds
-it with the same tools that build projects on GitHub and on people's own
-computers. The Docker install runs it for you.
+The `scaffolder` service generates `.zip` archives for **ZIP download** on **Projects > New project** and runs automatically in `compose.yml`.
 
 | Variable | Default | Description |
 |---|---|---|
-| `SCAFFOLDER_URL` | `http://scaffolder:8000` with Docker, otherwise empty | Scaffolder address. Empty disables downloads. |
-| `SCAFFOLDER_TOKEN` | empty | A shared secret the app sends to the scaffolder. Set the same value for both when the scaffolder is reachable from other machines. |
-| `SCAFFOLDER_TIMEOUT` | `200` | Seconds the app waits for a build. |
+| `SCAFFOLDER_URL` | `http://scaffolder:8000` in Docker, empty otherwise | Internal HTTP URL of the scaffolder service. Empty disables `.zip` downloads, and **ZIP download** appears disabled with the reason. |
+| `SCAFFOLDER_TOKEN` | empty | Shared bearer secret between `app` and `scaffolder`. |
+| `SCAFFOLDER_TIMEOUT` | `200` | Maximum seconds `app` waits for a `.zip` build. |
 
 ## Documentation sites
 
-The server can also serve the documentation sites for the R package, the
-Python package, and the `fw` command line tool, each on its own host name.
-Requests to any other host name get Framework Cloud as usual. A site has
-content once it is imported with `php artisan fw:docs-import`, which reads
-`docs-site.tar.gz` from a file, a folder, or a GitHub release
-(`--release`). Until then, the R site shows the guides and reference that
-come with Framework Cloud, and the other two show a page saying the
-documentation is not published yet.
+Framework Cloud can serve product documentation for R, Python, Stata, and the `fw` CLI on dedicated virtual hosts while serving the Cloud web app on `APP_URL`. Import documentation archives (`docs-site.tar.gz`) from local files, directories, or GitHub releases with `php artisan fw:docs-import {product} --release`. Before import, the R host serves the bundled fallback guides and reference, while Python, Stata, and CLI hosts display an unavailable notice.
 
 | Variable | Default | Description |
 |---|---|---|
-| `FW_DOCS_HOST_R` | `r.framework.test` | The host name of the R package documentation, such as `r.framework.pub`. |
-| `FW_DOCS_HOST` | none | The older name for `FW_DOCS_HOST_R`. It is used when `FW_DOCS_HOST_R` is not set. |
-| `FW_DOCS_HOST_PY` | `py.framework.test` | The host name of the Python package documentation. |
-| `FW_DOCS_HOST_CLI` | `cli.framework.test` | The host name of the `fw` documentation. |
-| `FW_DOCS_REPO_R`, `FW_DOCS_REPO_PY`, `FW_DOCS_REPO_CLI` | `frameworktools/framework`, `frameworktools/framework-py`, `frameworktools/framework-cli` | The GitHub repository whose releases `fw:docs-import --release` reads. |
-| `FW_DOCS_PRERELEASE_R`, `FW_DOCS_PRERELEASE_PY`, `FW_DOCS_PRERELEASE_CLI` | `fallback` | Release selection for `--release`. `fallback` takes the newest release with `docs-site.tar.gz`, and a pre-release only when no other release has the file. `always` takes the newest release of either kind. `never` skips pre-releases. |
-| `FW_DOCS_PATH` | `storage/app/docs` | Imported documentation directory. |
+| `FW_DOCS_HOST_R` | `r.framework.test` | Hostname for Framework for R documentation (falls back to `FW_DOCS_HOST` when unset). |
+| `FW_DOCS_HOST_PY` | `py.framework.test` | Hostname for Framework for Python documentation. |
+| `FW_DOCS_HOST_CLI` | `cli.framework.test` | Hostname for `fw` CLI documentation. |
+| `FW_DOCS_HOST_STATA` | `stata.framework.test` | Hostname for Framework for Stata documentation. |
+| `FW_DOCS_REPO_R`, `FW_DOCS_REPO_PY`, `FW_DOCS_REPO_CLI`, `FW_DOCS_REPO_STATA` | `frameworktools/*` | GitHub repositories queried by `fw:docs-import --release`. |
+| `FW_DOCS_PRERELEASE_R`, `FW_DOCS_PRERELEASE_PY`, `FW_DOCS_PRERELEASE_CLI`, `FW_DOCS_PRERELEASE_STATA` | `fallback` | Release filter: `fallback` prefers stable releases and falls back to pre-releases, `always` picks newest overall, and `never` ignores pre-releases. |
+| `FW_DOCS_PATH` | `storage/app/docs` | Storage directory for imported documentation releases. |
 
-Each host name needs a DNS record that points at the server and a
-certificate that covers it.
+Configure DNS records and TLS certificates for each documentation hostname you expose.
 
 ## Package server selection
 
-The R and Python packages find the server in this order:
+R and Python packages resolve the target Framework Cloud server in this order:
 
-1. The `url` argument, as in `cloud_login("<token>", url = "https://framework.example.edu")`.
-2. For commands that work on a project, such as `publish()`: the
-   `FW_CLOUD_URL` line in the project's `.env` file. Setting up a project
-   writes it, so a project always goes back to the server that created it.
-3. The `FW_CLOUD_URL` environment variable.
-4. For your own commands, such as `cloud_status()` and `new()`: the server
-   you last connected with `cloud_login()`.
+1. Explicit `url` argument, such as `cloud_login("<token>", url = "https://framework.example.edu")`.
+2. Project `.env` `FW_CLOUD_URL` entry for project-scoped commands such as `publish()`.
+3. Process `FW_CLOUD_URL` environment variable.
+4. Last server authenticated via `cloud_login()` for account-scoped commands such as `cloud_status()` and `new_project()`.
 5. `https://framework.pub`.
 
-Each server has its own token. `cloud_logout(url = ...)` removes one.
+Credentials are stored per server URL. Run `cloud_logout(url = ...)` to remove the token for one server.

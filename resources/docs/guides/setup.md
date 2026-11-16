@@ -3,64 +3,44 @@ id: setup
 title: Setup
 section: getting_started
 position: 2
-description: 'Configure Framework defaults using the GUI'
+description: 'Configure global Framework defaults on Framework Cloud'
 ---
-## Setup interface
+## Global defaults
 
-Framework ships with a graphical user interface (GU) to help manage your settings and projects. This GUI is powered by a lightweight [plumber](https://www.rplumber.io/) server and [VueJS](https://vuejs.org) web application. 
-
-After installing Framework, configure your defaults by running:
+The local setup interface is retired. Configure global defaults on Framework Cloud under **Settings > Project defaults** after signing in from R:
 
 ```r
-framework::setup()
+framework::cloud_login()
 ```
 
-This opens the web interface where you can set **global defaults for new projects**. Any settings you configure here are applied automatically when you create a project in the GUI or with `new_project()`. You can always override them per-project.
+Settings saved there become your global defaults when creating projects with `new_project()`. Individual projects can override any global default in their own `settings.yml`.
 
-When using the GUI, you can always access the global settings by clicking **New Project Defaults** in the left sidebar.
+## Settings sections
 
-![Framework Setup GUI](/images/setup-gui.png)
-
-## Settings Sections
-
-- **Basics**: projects directory, editor support, notebook format, author info
-- **Project Structure**: default directories for notebooks, inputs, outputs
-- **Packages**: default R packages and renv settings
-- **Quarto**: HTML and RevealJS rendering defaults
-- **Git & Hooks**: version control and automation
-- **AI Assistants**: Claude and AI tool configuration
-- **Scaffold Behavior**: seed, theme, and function sourcing
-- **Templates**: notebook and script templates
-- **Connections**: database and S3 connection templates
-- **.env Defaults**: environment variable templates
-
-Click **Save Changes** to persist your defaults.
+- **Basics**: default projects directory, editor workspace files, notebook format, and author details.
+- **Project structure**: default directories for notebooks, scripts, inputs, and outputs.
+- **Packages**: default R packages and `renv` options.
+- **Quarto**: HTML document and RevealJS slide defaults.
+- **Git and hooks**: Git initialization and pre-commit hooks.
+- **AI assistants**: context files for Claude Code, GitHub Copilot, and multi-agent tools.
+- **Scaffold behavior**: random seed, `ggplot2` theme, and function sourcing.
+- **Templates**: starter templates for notebooks, scripts, and slides.
+- **Connections**: database and S3 object-storage profiles.
+- **Environment defaults**: starter `.env` variables.
 
 ## Settings storage
 
-Global default settings are stored in `~/.config/framework/`:
+Framework stores local global settings in the folder returned by `fw_config_dir()` (by default `tools::R_user_dir("framework", "config")`):
 
 ```
-~/.config/framework/
-├── templates/             # Template files are stored here
-├── settings.yml           # Your defaults from setup()
-├── projects.yml           # Registry of your Framework projects
-└── .env                   # Global environment variables
+<config folder>/
+├── templates/             # Starter template files
+├── settings.yml           # Global defaults
+└── projects.yml           # Local project registry
 ```
 
-- **templates/**: All default template files
-- **settings.yml**: All default settings
-- **projects.yml**: List of projects you've created, used by `project_open()`
-- **.env**: Environment variable defaults
+- **templates/**: customized starter templates.
+- **settings.yml**: global default settings.
+- **projects.yml**: local project paths used by `project_list()`.
 
-These files are created automatically when you first run `setup()`. You can edit them directly, but the GUI is the recommended way to manage global settings.
-
----
-
-<div style="display: flex; justify-content: space-between">
-
-[← Installation](/docs/installation)
-
-[Conventions →](/docs/conventions)
-
-</div>
+Framework creates `settings.yml` and `projects.yml` on first use. You can edit these files directly.

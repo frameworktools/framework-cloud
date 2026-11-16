@@ -1,33 +1,35 @@
 ---
 id: database
-title: Database Integration
+title: Database integration
 section: features
 position: 14
-description: 'Querying databases with Framework helpers'
+description: 'Run SQL queries and statements against configured database connections'
 ---
 ## Overview
 
-Once your connections are defined (see the [Connections guide](/docs/connections)), Framework makes it easy to run database queries, execute statements, and tap into the internal `framework.db`. Use the high-level helpers to avoid hand-managing DBI connections.
+Framework's database helpers run SQL queries and statements against profiles defined in `settings.yml` (see [Connections](/docs/connections)) as well as the local `framework.db` SQLite database.
 
-## Running Queries
+## SQL execution
 
 ### Query results
 
+Run a `SELECT` query and return a data frame with `db_query()`:
+
 ```r
-# Query and return results
 users <- db_query("SELECT * FROM users WHERE active = true", "analytics")
 ```
 
-### SQL execution
+### Non-query statements
+
+Run `INSERT`, `UPDATE`, `DELETE`, or DDL statements with `db_execute()`:
 
 ```r
-# Execute without returning data
 db_execute("UPDATE stats SET last_run = NOW()", "analytics")
 ```
 
-### Manual Connections
+### Direct DBI handles
 
-Need direct DBI access? Grab a connection and clean up afterward:
+Open a raw `DBI` connection with `db_connect()` when calling `DBI` methods directly. Close it with `DBI::dbDisconnect()`:
 
 ```r
 conn <- db_connect("analytics")
@@ -35,25 +37,23 @@ DBI::dbListTables(conn)
 DBI::dbDisconnect(conn)
 ```
 
-Prefer `db_query()` and `db_execute()` when possible—they open and close connections automatically.
+`db_query()` and `db_execute()` open and close connections automatically on each call.
 
-## Supported Databases
+## Supported drivers
 
-Framework supports the following database drivers out of the box:
+| Driver | R package | Target database |
+|---|---|---|
+| `postgres` / `postgresql` | `RPostgres` | PostgreSQL |
+| `sqlite` | `RSQLite` | Local SQLite files |
+| `duckdb` | `duckdb` | DuckDB files and Parquet queries |
+| `mysql` / `mariadb` | `RMariaDB` | MySQL and MariaDB |
+| `sqlserver` / `mssql` | `odbc` | Microsoft SQL Server |
 
-| Driver | Package | Use Case |
-|--------|---------|----------|
-| `postgres` / `postgresql` | RPostgres | PostgreSQL databases |
-| `sqlite` | RSQLite | Local SQLite files |
-| `duckdb` | duckdb | Analytical workloads, Parquet files |
-| `mysql` / `mariadb` | RMariaDB | MySQL/MariaDB |
-| `sqlserver` / `mssql` | odbc | SQL Server |
+S3-compatible object storage profiles are documented under [Object storage connections](/docs/connections#object-storage-connections).
 
-Object storage connectors (S3-compatible endpoints) are covered in the [Connections guide](/docs/connections#object-storage-connections).
+### DuckDB options
 
-### DuckDB Configuration
-
-DuckDB supports additional options in `settings.yml`:
+DuckDB profiles accept `read_only`, `memory_limit`, and `threads` in `settings.yml`:
 
 ```yaml
 connections:
@@ -65,18 +65,12 @@ connections:
     threads: 4
 ```
 
-## The Framework Database
+## Internal project database
 
-Every project includes a local SQLite database (`framework.db`) for internal tracking:
+Query the project's local `framework.db` SQLite database using the default `"framework"` connection:
 
 ```r
 cache_entries <- db_query("SELECT * FROM cache", "framework")
 ```
 
-This tracks:
-
-- Data integrity hashes
-- Cache metadata
-- Results registry
-
-Use regular SQL to inspect or export these tables, just like any other connection.
+`framework.db` stores dataset checksums (`data`), cache records (`cache`), and saved artifact metadata (`results`).

@@ -1,80 +1,50 @@
 ---
 id: ai-assistants
-title: AI Assistants
+title: AI assistants
 section: features
 position: 11
-description: 'Configuring AI coding assistants in Framework projects'
+description: 'Generate and synchronize project context files for AI coding assistants'
 ---
 ## Overview
 
-Framework generates and maintains context files for AI coding assistants, giving them project-specific knowledge about your Framework environment, data catalog, and directory structure.
+Framework generates and updates instruction files for AI coding assistants with your project's directory layout, data catalog entries, and installed packages.
 
-## Supported Assistants
+## Supported assistants
 
-Framework supports three AI assistant configurations:
+Framework writes three instruction file formats:
 
-- **Claude Code**: Anthropic's IDE-focused assistant (`CLAUDE.md`)
-- **GitHub Copilot**: Complements VS Code and JetBrains editors (`.github/copilot-instructions.md`)
-- **Multi-Agent**: Shared instructions for OpenAI Codex, Cursor, and other orchestrators (`AGENTS.md`)
+- **Claude Code**: `CLAUDE.md` (points to `AGENTS.md`)
+- **GitHub Copilot**: `.github/copilot-instructions.md` (points to `AGENTS.md`)
+- **Multi-agent tools** (Codex, Cursor, and others): `AGENTS.md`
 
-Configure which assistants receive context files in the GUI under **AI Assistants**:
-
-```r
-framework::setup()
-```
+Select target assistants under `ai.assistants` in `settings.yml` or in your Framework Cloud defaults.
 
 ![AI Assistants GUI](/images/ai-assistants-gui.png)
 
-## Canonical Context File
+## Canonical context file
 
-The canonical file is your source of truth. Choose one format as primary—Framework mirrors its content to other assistant files when sync hooks run.
+`AGENTS.md` is the canonical file (`ai.canonical_file` in `settings.yml`). Framework always creates `AGENTS.md`; `CLAUDE.md` and `.github/copilot-instructions.md` only point to it, so nothing needs synchronization.
 
-Options: `CLAUDE.md`, `AGENTS.md`, or `.github/copilot-instructions.md`
+## Context templates
 
-By default, Framework creates `CLAUDE.md` even if you haven't listed assistants, so `ai_regenerate_context()` works immediately. Change the canonical file in settings if you prefer a different file.
+Generated context files document:
 
-## Context Templates
+- Framework function conventions (`scaffold()`, `data_read()`, and `save_*()`).
+- Project directory paths.
+- Data catalog keys and file formats from `settings.yml`.
+- Configured packages.
+- Project-type rules, such as `private/` and `public/` boundaries.
 
-Framework provides a default template that gives AI assistants deep knowledge of your project. The template includes:
+Sections marked with `@framework:regenerate` update when you run `ai_regenerate_context()` (and `package_add()` refreshes the packages section) while leaving custom notes outside those sections intact.
 
-- Framework conventions and best practices
-- Your project's directory structure
-- Data catalog entries from `settings.yml`
-- Installed packages and their purposes
-- Project-type-specific guidance
+## File synchronization
 
-Sections marked with `@framework:regenerate` are automatically updated when your project changes, while your custom notes are preserved.
+The 1.x `ai_sync` hook was removed in Framework 2.0, and `ai_sync_context()` is deprecated. Leftover `ai_sync` settings are ignored.
 
-You can customize the template under **Templates** in the GUI, but the default is designed to make assistants highly effective with Framework projects out of the box.
+## Context regeneration
 
-## Keeping Files in Sync
-
-If you enable multiple assistants, use the **Sync AI Files Before Commit** hook to keep them synchronized:
-
-```yaml
-git:
-  hooks:
-    ai_sync: true
-```
-
-When you commit, Framework copies content from your canonical file to the others, ensuring all assistants have identical instructions.
-
-## Regenerating Context
-
-Update the auto-generated sections when your project changes:
+Refresh `@framework:regenerate` sections manually in R after modifying directories, packages, or data catalog entries:
 
 ```r
 ai_regenerate_context()
 ```
-
-This refreshes directory structure, data catalog entries, and package lists while preserving any custom notes you've added.
-
----
-
-<div style="display: flex; justify-content: space-between">
-
-[← Git Integration](/docs/git)
-
-[Caching →](/docs/caching)
-
-</div>

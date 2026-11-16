@@ -3,34 +3,32 @@ id: conventions
 title: Conventions
 section: getting_started
 position: 3
-description: 'Framework conventions and project organization'
+description: 'Project layout, package attachment, and data conventions'
 ---
-## Philosophy
+## Design principles
 
-Framework favors **convention over configuration**, providing sensible defaults that work for most projects.  If you have needs or preferences that differ from the defaults, nearly everything about how Framework structures projects is customizable.
+Framework favors **convention over configuration** and supplies standard directory layouts and defaults for research projects. Every directory path, package list, and template remains configurable globally or per project.
 
-Once you have your settings configured, you should be able to create new projects without thinking about organizational details, saving time and providing consistency across your work.
-
-We will on this page explain basic features and conventions that guide the design of Framework.
+Configured defaults apply automatically whenever you create a new project, keeping directory structures and scripts consistent across analyses.
 
 ## scaffold()
 
-Most notebooks or scripts in your project will start with:
+Start each notebook or script by calling `scaffold()`:
 
 ```r
 library(framework)
 scaffold()
 ```
 
-If you prefer fully namespacing things, you simply write `framework::scaffold()`.
+You can also call `framework::scaffold()` directly without attaching `framework`.
 
-The `scaffold()` function ensures all packages your project uses are installed, attaches specified packages to the environment, loads a function library from the `functions/` directory, and performs a handful of other quality of life features, such as setting a random seed or `ggplot2` theme, depending on your configuration.
+`scaffold()` locates the project root, loads `.env`, parses `settings.yml`, applies optional seed and `ggplot2` theme settings, installs missing project packages, attaches configured packages, sources every `.R` file in `functions/`, and runs `scaffold.R`.
 
-## Package Loading
+## Package loading
 
-Scaffold will call `library()` on auto-attached packages. We recommend fully namespacing functions in packages not commonly used across your project. Alternatively, you can call `library()` for these uncommon packages after `scaffold()`. 
+`scaffold()` calls `library()` on packages configured with `auto_attach: true`. Packages configured with `auto_attach: false` are installed without being attached. Call their functions with `pkg::fn()` or attach them explicitly with `library()`.
 
-With an example `settings.yml`:
+Example `settings.yml`:
 
 ```yaml
 packages:
@@ -40,7 +38,7 @@ packages:
     auto_attach: false
 ```
 
-Your code would look like:
+Corresponding R script:
 
 ```r
 library(framework)
@@ -51,13 +49,11 @@ df <- readr::read_csv("data.csv") |>
   mutate(y = x * 2)
 ```
 
-Here `dplyr` functions (`filter`, `mutate`) work directly because `auto_attach: true`. But `readr` is namespaced explicitly since it's installed but not auto-loaded.
+Here `dplyr` verbs (`filter` and `mutate`) are attached directly while `readr::read_csv()` uses explicit namespacing.
 
-## Functions and Auto-Loading
+## Function auto-loading
 
-Framework automatically sources all `.R` files in your `functions/` directory when `scaffold()` runs.
-
-For example, consider this `functions/` directory:
+`scaffold()` sources every `.R` file in `functions/` automatically:
 
 ```
 functions/
@@ -66,11 +62,9 @@ functions/
 └── plotting_helpers.R
 ```
 
-Every file is sourced on scaffold, giving you access to all your functions without manual loading.
+Keep only function definitions inside `functions/*.R`. Top-level statements outside `function()` blocks execute every time `scaffold()` runs.
 
-**Important:** Only include function definitions in these files. Any code outside a `function()` block will execute every time `scaffold()` runs.
-
-This approach eliminates the need to manually source files:
+Auto-loading removes manual `source()` calls from scripts and notebooks:
 
 ```r
 source("helpers/cleaning.R")
@@ -78,95 +72,91 @@ source("helpers/plotting.R")
 source("utils/text_processing.R")
 ```
 
-With auto-loading, you can reorganize your functions directory — rename files, move functions between files, add new files — without updating any notebooks or scripts that use them.
+You can rename files or reorganize functions across files in `functions/` without editing downstream notebooks. Disable function auto-loading in settings when manual `source()` control is required. See [Functions](/docs/functions) for configuration details.
 
-This behavior can be turned off in global settings if you prefer manual control.
+## Inputs and outputs
 
-See [Functions](/docs/functions) for full documentation.
-
-## Inputs and Outputs
-
-Framework separates **inputs** (read-only data) from **outputs** (generated files).
+Framework separates read-only input data in `inputs/` from generated artifacts in `outputs/`.
 
 ### Inputs
 
-Data you consume lives in `inputs/`, organized by stage:
+Input datasets live under `inputs/` by processing stage:
 
 ```
 inputs/
-├── raw/           # External data, untouched
-├── intermediate/  # Mid-pipeline transformations
+├── raw/           # Unmodified external source data
+├── intermediate/  # Cleaned or transformed intermediate files
 └── final/         # Analysis-ready datasets
 ```
 
-- **raw/**: Data from outside sources, never modified
-- **intermediate/**: Cleaned or transformed data mid-pipeline
-- **final/**: Analysis-ready datasets
+- **raw/**: original external files kept unmodified.
+- **intermediate/**: intermediate pipeline datasets.
+- **final/**: final datasets consumed by models, tables, and figures.
 
-### Data Catalog
+### Data catalog
 
-Framework tracks your data files in a catalog stored in `settings.yml`. As you work, register files with `data_add()`:
+Framework records datasets in the `data` section of `settings.yml`. Register existing files with `data_add()`:
 
 ```r
 data_add("inputs/raw/survey_2024.csv", name = "raw.survey")
 data_add("inputs/final/analysis.rds", name = "final.analysis")
 ```
 
-Or save and register in one step:
+Write and register derived datasets in one call with `data_save()`:
 
 ```r
-data_save(clean_df, "intermediate.survey_clean")
+data_save(clean_df, "inputs.intermediate.survey_clean")
 ```
 
-The catalog becomes a manifest that tells collaborators what data files exist and where they live. Load data by name:
+Read cataloged datasets by dot-separated key with `data_read()`:
 
 ```r
 survey <- data_read("raw.survey")
 ```
 
-See [Data Management](/docs/data-management) for full documentation.
+See [Data management](/docs/data-management) for format options and integrity locks.
 
 ### Outputs
 
-Files your project creates live in `outputs/`, organized by type:
+Generated artifacts live under `outputs/` by artifact type:
 
 ```
 outputs/
-├── tables/    # Data tables, CSVs
-├── figures/   # Plots, charts
-├── models/    # Saved model objects
-└── notebooks/ # Rendered notebooks
+├── tables/    # Exported tables and CSVs
+├── figures/   # Saved plots and charts
+├── models/    # Serialized model objects
+└── notebooks/ # Rendered HTML and PDF notebooks
 ```
 
-- **tables/**: `save_table()` writes here
-- **figures/**: `save_figure()` writes here
-- **models/**: `save_model()` writes here
-- **notebooks/**: `save_notebook()` renders and saves here
+- **tables/**: target directory for `save_table()`.
+- **figures/**: target directory for `save_figure()`.
+- **models/**: target directory for `save_model()`.
+- **notebooks/**: target directory for `save_notebook()`.
 
-Use `save_notebook("notebooks/analysis.qmd")` to render and save in one step. This keeps generated HTML/PDF files separate from source `.qmd` files, making it easy to `.gitignore` outputs and keep the project organized.
+`save_notebook("notebooks/analysis.qmd")` renders the source `.qmd` document into `outputs/notebooks/`, keeping generated HTML and PDF files separate from source files.
 
-## Work Directories
+## Work directories
 
-- **notebooks/**: Quarto/R Markdown analysis files
-- **scripts/**: Standalone R scripts
-- **functions/**: Reusable R functions (auto-loaded by `scaffold()`)
-- **scratch/**: One-off experiments, throwaway code
+- **notebooks/**: Quarto and R Markdown source documents.
+- **scripts/**: standalone R scripts.
+- **functions/**: reusable R helper functions sourced by `scaffold()`.
+- **scratch/**: exploratory scripts excluded from production pipelines.
 
-## Sensitive Data Projects
+## Sensitive data projects
 
-For projects with privacy requirements, inputs split into:
+Privacy-sensitive projects divide `inputs/` and `outputs/` into `private/` and `public/` subdirectories:
 
 ```
 inputs/
-├── private/    # Sensitive data (gitignored)
+├── private/    # Restricted data (gitignored)
 └── public/     # Shareable data
 ```
 
-This makes the privacy boundary explicit in your directory structure.
+`.gitignore` rules block `inputs/private/` and `outputs/private/` from version control.
 
-## Data Integrity
+## Data integrity
 
-Framework automatically tracks data integrity. When you use `data_read()`, file hashes are stored in `framework.db`. If a file changes unexpectedly, you'll get a warning:
+`data_read()` and `data_save()` store SHA-256 file hashes in `framework.db`. When a file changes between runs, `data_read()` stops with an error for locked entries (saved with `locked = TRUE` or marked `locked: true`) and warns for unlocked entries, the default:
 
 ```
 Warning: File hash changed for 'inputs/raw/survey.csv'
@@ -174,24 +164,13 @@ Previous hash: a1b2c3...
 Current hash:  d4e5f6...
 ```
 
-This helps catch accidental data modifications and ensures reproducibility.
-
 ## Customization
 
-All project types are fully customizable:
+Framework provides four customizable project types:
 
-- **Standard projects**: Default, general purpose data projects and pipelines
-- **Courses**: Structured for lectures, assignments, and course documents
-- **Presentations**: Minimal structure for RevealJS slides
+- **Standard project**: general-purpose data analysis and pipelines.
+- **Privacy sensitive project**: isolated `private/` and `public/` directories.
+- **Course**: directories for slides, assignments, readings, and course documents.
+- **Presentation**: minimal layout for Quarto RevealJS slide decks.
 
-Configure defaults globally in `framework::setup()` or per-project in `settings.yml`.
-
----
-
-<div style="display: flex; justify-content: space-between">
-
-[← Setup](/docs/setup)
-
-[settings.yml →](/docs/settings-yml)
-
-</div>
+Configure global defaults on Framework Cloud or project overrides in `settings.yml`.

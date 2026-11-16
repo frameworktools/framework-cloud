@@ -1,70 +1,62 @@
 ---
 id: standard-project
-title: Standard Project
+title: Standard project
 section: project_types
 position: 11
-description: 'Full-featured project with organized data, work, and output directories'
+description: 'Default project structure for data analysis, pipelines, and reporting'
 ---
 ## Overview
 
-The **Standard Project** is Framework's default and most versatile project structure. It's designed for data analysis, research, and reporting workflows.
+The **Standard Project** is Framework's default structure for data analysis, statistical modeling, and reporting.
 
-## Directory Structure
-
-An example project might look like:
+## Directory structure
 
 ```
 my-project/
-├── functions/           # Custom R functions (auto-loaded)
+├── functions/           # Custom R functions (sourced by scaffold())
 │   └── helpers.R
-├── inputs/              # Data inputs
-│   ├── raw/             # Original data (never modify)
-│   ├── intermediate/    # Cleaned/processed data
+├── inputs/              # Read-only and staged datasets
+│   ├── raw/             # Unmodified external files
+│   ├── intermediate/    # Cleaned intermediate datasets
 │   └── final/           # Analysis-ready datasets
-├── notebooks/           # Analysis notebooks
+├── notebooks/           # Quarto or R Markdown documents
 │   ├── 01-exploration.qmd
 │   └── 02-modeling.qmd
 ├── outputs/
-│   └── notebooks/       # Rendered notebooks
-├── scripts/             # Automation scripts
+│   └── notebooks/       # Rendered HTML and PDF notebooks
+├── scripts/             # Standalone R scripts
 │   └── data-pipeline.R
-├── framework.db         # Metadata database
+├── framework.db         # Local metadata database
 └── settings.yml         # Project configuration
 ```
 
-Additional directories are created on first use:
-- `outputs/cache` - Cached computations
-- `outputs/tables` - Saved tables
-- `outputs/figures` - Saved figures
+Additional output directories (`outputs/cache`, `outputs/tables`, and `outputs/figures`) are created automatically on first save.
 
 ## Workflow
 
-### 1. Environment setup
+### Environment initialization
 
-Start each session by running scaffold:
+Start each notebook or script with `scaffold()`:
 
 ```r
 library(framework)
 scaffold()
 ```
 
-This loads:
-- Required packages from `settings.yml`
-- Custom functions from `functions/`
-- Project configuration
+`scaffold()` attaches configured packages from `settings.yml`, sources `.R` files in `functions/`, and loads project configuration.
 
-### 2. Notebooks
+### Notebooks
 
-Create analysis notebooks:
+Create numbered or subdirectory notebooks with `make_notebook()`:
 
 ```r
 make_notebook("exploration")
 make_notebook("modeling", subdir = "analysis")
 ```
 
-### 3. Data management
+### Data catalog
 
-Define data in `settings.yml`:
+Register datasets in `settings/data.yml`:
 
 ```yaml
 data:
@@ -73,15 +65,15 @@ data:
     type: csv
 ```
 
-Load and process:
+Load datasets by key in R:
 
 ```r
 sales <- data_read("inputs.raw.sales")
 ```
 
-### 4. Cached results
+### Computation cache
 
-Cache expensive computations:
+Cache long-running steps with `cache_remember()`:
 
 ```r
 model_results <- cache_remember("sales_model", {
@@ -89,11 +81,12 @@ model_results <- cache_remember("sales_model", {
 })
 ```
 
-## Best Practices
+## Organization conventions
 
-### Notebook organization
+### Notebook numbering
 
-Number notebooks to indicate order:
+Prefix notebook filenames with two-digit numbers to record execution order:
+
 ```
 notebooks/
 ├── 01-data-import.qmd
@@ -105,28 +98,20 @@ notebooks/
 
 ### Subdirectories
 
-For complex projects:
+Group large notebook collections into topic subdirectories:
+
 ```r
 make_notebook("eda", subdir = "exploration")
 make_notebook("regression", subdir = "modeling")
 ```
 
-### Raw and processed data
+### Data stages
 
-Never modify raw data:
+Keep `inputs/raw/` read-only and write cleaned or joined datasets to `inputs/intermediate/` and `inputs/final/`:
+
 ```
 inputs/
-├── raw/          # NEVER modify
-├── intermediate/ # Cleaned versions
-└── final/        # Ready for analysis
+├── raw/          # Unmodified source files
+├── intermediate/ # Cleaned intermediate files
+└── final/        # Final analysis datasets
 ```
-
----
-
-<div style="display: flex; justify-content: space-between">
-
-[← Project Types Overview](/docs/project-types)
-
-[Privacy Sensitive Project →](/docs/privacy-sensitive-project)
-
-</div>

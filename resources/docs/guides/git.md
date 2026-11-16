@@ -1,90 +1,74 @@
 ---
 id: git
-title: Git Integration
+title: Git integration
 section: features
 position: 10
-description: 'Version control and git hooks in Framework'
+description: 'Git repository initialization, gitignore templates, pre-commit hooks, and R helpers'
 ---
 ## Overview
 
-Framework automatically initializes git repositories when you create new projects. It also manages commit identity, runs pre-commit hooks for security, and provides helper functions for common git operations.
+Framework initializes Git repositories during project creation, applies type-specific `.gitignore` templates, runs optional pre-commit safety hooks, and provides R helper functions for routine Git commands.
 
-## .gitignore Templates
+## .gitignore templates
 
-Framework generates `.gitignore` files based on project type. Each project type has its own template with sensible defaults for that workflow:
+Each project type includes a tailored `.gitignore` template:
 
-- **project**: Standard research project ignores
-- **project_sensitive**: Stricter rules for sensitive data
-- **course**: Ignores student submissions, grade files
-- **presentation**: Minimal ignores for slide decks
+- **project**: excludes `.env`, `framework.db`, caches, and temporary R files.
+- **project_sensitive**: additionally excludes `inputs/private/` and `outputs/private/`.
+- **course**: the project rules plus `rendered/` and `.aws/`.
+- **presentation**: the project rules plus `.aws/`.
 
-Customize templates under **Project Defaults** in the GUI, where each project type has its own `.gitignore Patterns` section:
+Edit `.gitignore` templates per project type on Framework Cloud:
 
 ![.gitignore Template Editor](/images/gitignore-template-gui.png)
 
-Templates use pattern-based rules that work regardless of your directory structure customization.
+## Commit identity and hooks
 
-## Commit Identity, Hooks & Settings
-
-Configure git settings through the GUI by running `setup()` and clicking **Git & Hooks**:
-
-```r
-framework::setup()
-```
+Configure Git identity in global Git config and pre-commit hooks in `settings.yml`.
 
 ![Git & Hooks GUI](/images/git-hooks-gui.png)
 
-### Commit Identity
+### Commit identity
 
-Framework manages your git identity directly. Configure the name and email you want on commits once in the GUI (or via git config), and Framework reuses that for project initialization. If the identity is missing, Framework skips the initial auto-commit and prints guidance—set `user.name` and `user.email` to enable auto-commits.
+Configure `user.name` and `user.email` in global Git config so Framework can create the initial project commit automatically. When Git identity is unset, Framework initializes the repository, skips the initial commit, and prints a note.
 
-### Git Hooks
+### Pre-commit hooks
 
-Pre-commit hooks run automatically before each commit. Enable them in the GUI or in `settings.yml`:
+Enable pre-commit hooks with `git_hooks_enable()` or in `settings.yml`:
 
 ```yaml
 git:
   hooks:
-    ai_sync: true
     data_security: true
     check_sensitive_dirs: true
+    check_notebook_outputs: true
 ```
 
-**Sync AI Files Before Commit**: Updates non-canonical AI assistant files so all assistants share the same instructions. If your canonical file is `CLAUDE.md`, this syncs changes to `AGENTS.md` and other AI config files.
+- **`data_security`**: runs `git_security_audit()` and blocks the commit when a check fails, such as tracked private data, tracked `.env` files, or passwords written into tracked connection settings.
+- **`check_sensitive_dirs`** (or `warn_unignored_sensitive`): warns when directories named like `private`, `sensitive`, `cache`, or `scratch` are missing from `.gitignore`, and asks before continuing in an interactive terminal.
+- **`check_notebook_outputs`**: blocks staged `.ipynb` notebooks that still contain cell outputs.
 
-**Check for Secrets**: Scans staged files for API keys, credentials, and other secrets before allowing a commit. Helps prevent accidentally committing sensitive data.
+The 1.x `ai_sync` hook was removed in Framework 2.0.
 
-**Warn About Unignored Sensitive Directories**: Blocks commits if directories with sensitive names (like `outputs/private/`) aren't properly gitignored. Catches misconfigured projects before data leaks. (Alias `warn_unignored_sensitive` is also accepted.)
+## R helper functions
 
-## Git Helper Functions
-
-Run common git operations from R without leaving your session:
+Run Git operations directly from the R console:
 
 ```r
 git_status()
 git_add()
 git_add("file.R")
-git_commit("Fix bug")
+git_commit("Fix missing value filter")
 git_push()
 git_pull()
 git_diff()
 git_log()
 ```
 
-Quick workflow:
+Stage, commit, and push changes in sequence:
 
 ```r
 git_add()
 git_commit("Add data cleaning step")
 git_push()
 ```
-
----
-
-<div style="display: flex; justify-content: space-between">
-
-[← Saving Work](/docs/saving-work)
-
-[AI Assistants →](/docs/ai-assistants)
-
-</div>

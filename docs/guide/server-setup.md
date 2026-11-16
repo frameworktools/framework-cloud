@@ -1,89 +1,68 @@
 # Server setup
 
-Admins see **Server administration** in the sidebar. It holds the server's three
-credentials: email, GitHub, and storage for published content. Each one is
-optional, but sign-in links need email.
+Administrators open **Server administration** in the sidebar to configure GitHub, artifact storage, email, and connected AI agents. Every integration is optional, though email sign-in links and password resets require working email delivery.
 
 ## Email
 
-Sign-in links and password resets are sent by email, so set this up first.
+Configure email delivery so users can receive sign-in links and password reset emails:
 
-1. Choose **SMTP** (Postmark, Mailgun, Resend, or your institution's mail
-   server) or **Amazon SES**.
-2. Enter the sender address and the account details, and save.
-3. Click **Send a test email**.
+1. Under **Email**, select **SMTP** (Postmark, Mailgun, Resend, or an institutional mail server) or **Amazon SES**.
+2. Enter the sender address, sender name, and provider credentials. Select **Save**.
+3. Select **Send a test email** to verify delivery to your administrator address.
 
-Until email works, sign in with `php artisan fw:login-link` or a password.
+Before email is active, administrators can issue links with `php artisan fw:login-link` or assign passwords with `php artisan fw:password`.
 
 ## GitHub
 
-GitHub lets people sign in with GitHub and create projects as repositories.
+GitHub integration enables GitHub sign-in and repository creation on GitHub:
 
-1. Click **Create GitHub App**. GitHub opens with the app's name,
-   permissions, sign-in callback, and webhook already filled in.
-2. Choose whether the app belongs to your account or an organization, and
-   confirm. GitHub sends you back with the app saved.
-3. Install the app on the accounts or organizations where projects should go.
+1. In the **GitHub** panel, select **Create GitHub App** (optionally entering a GitHub organization login). GitHub opens with the application name, permissions, callback URL, and webhook URL prefilled.
+2. Confirm creation on GitHub to return to **Server administration** with the app credentials saved automatically. Select **Or enter an app you already have** to paste existing credentials manually.
+3. Select **Install the app** to authorize it on your GitHub account or organization.
 
-Each user then connects their own GitHub account in **Account > GitHub**.
+Individual users then link their GitHub accounts in **Account > GitHub connection**.
 
 ## Published artifacts
 
-New artifacts are stored on the private `local` filesystem disk by default.
-Framework Cloud serves their reader pages, originals, and supporting files
-through application routes so passwords apply to every request. Uploaded HTML
-runs with a sandbox policy that isolates it from the application's origin.
+New artifacts write to the private `local` filesystem disk by default. Framework Cloud streams reader pages, original files, and bundle assets through authenticated application routes so password protection applies to every request. Sandboxed headers isolate uploaded HTML from application cookies.
 
-`FW_ARTIFACTS_DISK` selects another disk defined in `config/filesystems.php`.
-It must be private, without a public bucket endpoint or web-accessible storage
-directory. For multiple application nodes, use shared private storage. Back up
-this disk together with the database. The database holds metadata and version
-history. The disk holds the outputs.
+Set `FW_ARTIFACTS_DISK` in `.env` to target another private disk defined in `config/filesystems.php`. The chosen disk must remain private without public bucket access or direct web-root exposure. Multi-node deployments require shared private storage. Back up the artifact disk alongside PostgreSQL, which stores metadata, version histories, collections, and reports.
 
-The storage credentials in Server administration configure the older
-`FW_DOCUMENTS_DISK` path. They do not change `FW_ARTIFACTS_DISK`.
+The **Artifact storage** panel in **Server administration** configures the `FW_DOCUMENTS_DISK` object-storage bucket rather than `FW_ARTIFACTS_DISK`.
 
-### Notebook bucket
+### Artifact bucket
 
-By default, published artifacts are stored on the server's disk. For more
-than a few people, use an S3-compatible bucket: Amazon S3, Cloudflare R2,
-MinIO, or Backblaze B2.
+To store `FW_DOCUMENTS_DISK` files in S3-compatible object storage (Amazon S3, Cloudflare R2, MinIO, or Backblaze B2) rather than local disk:
 
-1. Enter the bucket name, endpoint, region, and access keys.
-2. Click **Test connection**. It writes, reads, and deletes a small file.
-3. Save.
+1. Under **Artifact storage**, enter the bucket name, region, endpoint URL (leave blank for Amazon S3), access key ID, and secret access key.
+2. Select **Test connection** to write, read back, and delete a verification object.
+3. Select **Save**.
 
-### Notebook domain
+### Artifact domain
 
-A published notebook is a web page that someone uploaded, and it can contain
-scripts. On a server that more than one person uses, serve notebooks from a
-separate domain, such as `files.example.edu`. Attach that domain to the
-bucket and enter it as the **Public address**. Notebooks then load from that
-domain instead of the server's own.
+Uploaded HTML artifacts can include scripts. On multi-user servers, attach a dedicated domain such as `https://files.example.edu` to the bucket or configure `FW_CONTENT_URL` so user-authored scripts execute on a separate origin from Framework Cloud session cookies. Enter a public bucket domain in **Public address** under **Artifact storage** when applicable.
+
+## Connected agents
+
+The **Connected agents** panel in **Server administration** toggles the `/mcp` server across the deployment. When set to **Off** (or when `FW_AGENTS=false` is set in `.env`), new agent connections are refused, existing agent tokens stop working, and the sidebar agent item is hidden until re-enabled. See [AI apps](ai-apps.md).
+
+## User accounts
+
+Administrators open **Users** (`/admin/users`) in the sidebar to review every account on the server, newest first. The page counts accounts, sign-ups in the past week, verified email addresses, and finished guided setups. Search by name or email. Each row shows the sign-up date, last activity, project count, and **Admin**, **Unverified**, **Setup not finished**, or **Publishing** badges. The page is read-only. Use `fw:login-link`, `fw:password`, and `fw:publishing` to act on accounts. See [Maintenance](maintenance.md#administration-commands).
 
 ## Credential storage
 
-Each credential has an environment variable, and the setup page shows its
-name next to the field. The server looks for a credential in this order:
+Each field in **Server administration** maps to an environment variable displayed beside its input. Framework Cloud resolves settings in precedence order:
 
-1. **An environment variable that is set.** The setup page shows it as
-   read-only.
-2. **The value saved on the setup page.** Saved values are encrypted with
-   `APP_KEY`.
+1. **Environment variables.** Any non-empty environment variable overrides database values and renders as read-only in **Server administration**.
+2. **Saved database credentials.** Values saved in **Server administration** are encrypted at rest with `APP_KEY`.
 
-You can run entirely on environment variables, entirely from the setup page,
-or with a mix. The variables are listed in the
-[Configuration reference](configuration.md#server-credentials).
+You can configure all credentials through `.env`, all through **Server administration**, or a combination of both. See [Configuration reference](configuration.md#server-credentials) for variable names.
 
-Saving on the setup page takes effect right away and restarts the queue
-worker. After you change an environment variable, restart the containers, or
-run `php artisan config:cache` without Docker.
+Saving changes in **Server administration** applies immediately and signals queue workers to restart. Changing `.env` requires restarting Docker containers (`docker compose up -d`) or refreshing the configuration cache (`php artisan config:cache`).
 
 ## Application key protection
 
-Values saved on the setup page are encrypted with `APP_KEY`. If the key
-changes, saved values can't be read. The setup page then lists them so you can
-enter them again.
+Credentials stored in **Server administration** are encrypted with `APP_KEY`. If `APP_KEY` changes without preserving the old key, stored credentials cannot be decrypted and **Server administration** flags the unreadable fields for re-entry.
 
-To change the key without losing saved values, put the old key in
-`APP_PREVIOUS_KEYS`.
+When rotating `APP_KEY`, list previous keys in `APP_PREVIOUS_KEYS` (comma-separated) so existing encrypted values remain readable.

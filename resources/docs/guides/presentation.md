@@ -3,29 +3,32 @@ id: presentation
 title: Presentation
 section: project_types
 position: 14
-description: 'Minimal structure for slides and presentations'
+description: 'Single-deck project structure for Quarto RevealJS slides and standalone reports'
 ---
 ## Overview
 
-The **Presentation** type is a minimal structure for focused, single-output work like conference presentations, standalone reports, or one-off analyses.
+The **Presentation** project type provides a compact layout centered on `presentation.qmd` for conference talks, seminars, and standalone reports.
 
-## Directory Structure
+## Directory structure
 
 ```
 my-presentation/
-├── presentation.qmd     # Main document
-└── settings.yml         # Configuration
+├── cache/               # Cached computations
+├── data/                # Datasets
+├── functions/           # Helper functions
+├── outputs/             # Saved figures and tables
+├── scripts/             # Data preparation scripts
+├── presentation.qmd     # Primary Quarto document
+└── settings.yml         # Project configuration
 ```
 
-Optional directories available in the GUI: `data/`, `functions/`, `outputs/`, `scripts/`
+## Project creation
 
-## Presentation setup
+Create a presentation project with `new_presentation()`:
 
 ```r
 new_presentation("quarterly-report", "~/presentations/q4")
 ```
-
-This creates a streamlined structure with a main `presentation.qmd` file.
 
 ## Configuration
 
@@ -47,16 +50,18 @@ default:
 
 ## Workflow
 
-### 1. Project setup
+### Environment initialization
+
+Load project packages and settings inside your setup chunk:
 
 ```r
 library(framework)
 scaffold()
 ```
 
-### 2. Presentation content
+### Slide authoring
 
-Work directly in `presentation.qmd`:
+Edit `presentation.qmd`:
 
 ````qmd
 ---
@@ -76,51 +81,53 @@ sales_plot
 ```
 ````
 
-### 3. Rendering
+### Document rendering
+
+Render from the terminal:
 
 ```bash
 quarto render presentation.qmd
 ```
 
-Or in R:
+Or render from R:
 
 ```r
 quarto::quarto_render("presentation.qmd")
 ```
 
-## Output Formats
+## Output formats
 
-Change the format in the YAML header:
+Set `format` in the document YAML frontmatter:
 
-### Reveal.js Slides
+### RevealJS slides
 ```yaml
 format: revealjs
 ```
 
-### HTML Document
+### HTML document
 ```yaml
 format: html
 ```
 
-### PDF Report
+### PDF report
 ```yaml
 format: pdf
 ```
 
-### Word Document
+### Word document
 ```yaml
 format: docx
 ```
 
-## Best Practices
+## Conventions
 
-### Presentation scope
+### Scope
 
-The presentation type is for single deliverables. For multi-document projects, use the standard **Project** type.
+Use **Presentation** for single-deliverable slide decks or reports. Use **Standard Project** when an analysis spans multiple notebooks, staged datasets, and saved model artifacts.
 
-### Reusable functions
+### Helper functions
 
-Even in minimal projects, extract reusable code by enabling the `functions/` directory:
+Use `functions/` to move plotting and formatting helpers out of slide chunks:
 
 ```r
 # functions/plots.R
@@ -131,36 +138,12 @@ create_revenue_chart <- function(data) {
 }
 ```
 
-### Cached computations
+### Cached chunks
 
-Speed up rendering:
+Wrap slow computations in `cache_remember()` to keep slide renders responsive:
 
 ```r
-# In presentation.qmd
 summary_stats <- cache_remember("summary", {
   expensive_calculations()
 })
 ```
-
-## Use cases
-
-**Good for:**
-- Conference talks
-- Committee presentations
-- Executive summaries
-- One-time reports
-- Quick analyses
-
-**Consider Standard Project for:**
-- Ongoing analyses
-- Multiple deliverables
-- Complex data pipelines
-- Collaborative work
-
----
-
-<div style="display: flex; justify-content: space-between">
-
-[← Course/Teaching](/docs/course-teaching)
-
-</div>

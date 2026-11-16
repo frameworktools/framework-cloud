@@ -2,24 +2,18 @@
 
 ## Upgrades
 
-With Docker, from the folder with `compose.yml`:
+In Docker deployments, pull updated images and recreate the five services (`app`, `worker`, `scheduler`, `scaffolder`, and `postgres`) from the directory containing `compose.yml`:
 
 ```sh
 docker compose pull
 docker compose up -d
 ```
 
-This moves to the newest release, unless `FRAMEWORK_CLOUD_VERSION` in `.env`
-names a version. To move to a pinned version, change that line first. Read
-the release notes on
-[GitHub](https://github.com/frameworktools/framework-cloud/releases) before
-upgrading. If you build the image yourself, run `git pull` and then
-`docker compose -f compose.yml -f compose.build.yml up -d --build`.
+When `FRAMEWORK_CLOUD_VERSION` is unset, `docker compose pull` fetches `latest`. When `FRAMEWORK_CLOUD_VERSION` is pinned, update it in `.env` first. Review the [GitHub release notes](https://github.com/frameworktools/framework-cloud/releases) before upgrading. Source-built deployments upgrade with `git pull` followed by `docker compose -f compose.yml -f compose.build.yml up -d --build`.
 
-Each start runs new database migrations and updates the built-in blueprints.
-A built-in blueprint that hasn't changed gets no new version.
+Container startup runs pending database migrations and updates built-in blueprints. Unchanged built-in blueprints retain their current version number.
 
-Without Docker:
+In manual deployments, pull the release commit, rebuild assets, migrate, seed, cache config, and restart workers:
 
 ```sh
 git pull
@@ -33,13 +27,15 @@ php artisan queue:restart
 
 ## Backups
 
-Back up three things:
+Include these items in every backup:
 
-- the database
-- published artifacts, if they are stored on the server's disk
-- `APP_KEY`, which decrypts the credentials saved on the Server setup page
+- PostgreSQL database dump.
+- Local storage files (`storage/app` or `FW_LOCAL_STORAGE_ROOT`) holding private artifacts and imported docs.
+- Object-storage bucket contents, when `FW_ARTIFACTS_DISK` or `FW_DOCUMENTS_DISK` names a bucket disk. Saving a bucket in **Server administration** switches `FW_DOCUMENTS_DISK` to `bucket` unless the variable is set.
+- OAuth signing keys for connected AI apps: `PASSPORT_PRIVATE_KEY` and `PASSPORT_PUBLIC_KEY`, or the `storage/oauth-private.key` and `storage/oauth-public.key` files.
+- `APP_KEY` (and `APP_PREVIOUS_KEYS` if set), required to decrypt credentials saved in **Server administration**.
 
-With Docker, from the folder with `compose.yml`:
+In Docker deployments, dump PostgreSQL and archive the `storage` volume from the directory containing `compose.yml`. The volume includes the OAuth key files. The commands assume the default `DB_USERNAME` and `DB_DATABASE` of `framework_cloud`:
 
 ```sh
 docker compose exec postgres pg_dump -U framework_cloud framework_cloud > backup.sql
@@ -47,10 +43,9 @@ docker run --rm -v framework-cloud_storage:/data -v "$PWD":/backup alpine \
   tar czf /backup/storage.tgz -C /data .
 ```
 
-Without Docker, use `pg_dump` and copy the `storage/app` folder.
+In manual deployments, run `pg_dump` and archive `storage/app` (plus any custom `FW_LOCAL_STORAGE_ROOT`). The OAuth key files sit in `storage/`, outside `storage/app`, so copy them separately.
 
-To restore with Docker, start only the database, load the dump, and restore
-the storage volume:
+To restore a Docker backup, start `postgres`, load the SQL dump, extract the storage archive, and start the remaining services:
 
 ```sh
 docker compose up -d postgres
@@ -60,20 +55,21 @@ docker run --rm -v framework-cloud_storage:/data -v "$PWD":/backup alpine \
 docker compose up -d
 ```
 
-## Admin commands
+## Administration commands
 
-Run these with `php artisan` on the server. With Docker, put
-`docker compose exec app` in front.
+Run Artisan commands directly on manual hosts or prefix them with `docker compose exec app` in Docker deployments:
 
 | Command | Description |
 |---|---|
-| `fw:login-link <email>` | Prints a one-time sign-in link. `--create` creates the account first. |
-| `fw:password <email>` | Sets an account's password. `--create` creates the account first. |
-| `fw:publishing <email>` | Lets an account publish on a hosted server. `--off` takes it away. Self-hosted servers don't need it. |
-| `queue:restart` | Restarts the queue worker after a change. |
+| `fw:login-link <email>` | Prints a single-use sign-in URL (`--create` provisions the account if absent). |
+| `fw:password <email>` | Prompts to set an account password (`--create` provisions the account if absent). |
+| `fw:publishing <email>` | Grants publishing access in `hosted` mode (`--off` revokes it, and `FW_MODE=self` already grants it). |
+| `fw:docs-import <product>` | Imports a documentation bundle (`--release` downloads from GitHub Releases). |
+| `fw:move-artifacts` | Copies stored artifact files, including trashed versions, to `FW_ARTIFACTS_DISK` (`--to` names another disk). Run it after changing `FW_ARTIFACTS_DISK`. `--dry-run` lists the moves, and `--delete-source` removes each version's old files after it moves. |
+| `fw:purge-trash` | Permanently deletes items in Trash longer than `FW_TRASH_DAYS` (`--days` overrides it for one run). The `scheduler` runs it daily. |
+| `fw:refresh-scaffolds` | Records finished GitHub scaffold runs whose webhook did not arrive. The `scheduler` runs it every minute. |
+| `queue:restart` | Signals running queue workers to stop after completing their current job. |
 
 ## Logs
 
-With Docker, `docker compose logs -f app` shows the web server and the app,
-and `docker compose logs -f worker` shows background jobs. Without Docker,
-the app writes to `storage/logs`.
+In Docker deployments, inspect logs per service with `docker compose logs -f app`, `docker compose logs -f worker`, and `docker compose logs -f scheduler`. In manual deployments, application logs write to `storage/logs/`.

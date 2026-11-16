@@ -1,41 +1,29 @@
 # Framework Cloud documentation
 
-Framework Cloud is the web companion to the
-[Framework](https://framework.table1.org) packages for R, Python, and Stata. It holds
-your blueprints, your author details, and your project definitions. It can
-create projects on GitHub and host published artifacts and collections.
+Framework Cloud is the web companion to the [Framework](https://framework.table1.org) packages for R, Python, and Stata. It stores blueprints, author details, and project definitions. It also creates GitHub repositories and hosts published artifacts, collections, and reports.
 
-Framework Cloud is open source. You can use it in two ways:
+Framework Cloud is open source and runs in two modes:
 
-- **Framework Public Cloud (framework.pub).** Create a free account and start
-  working. Each account includes free publishing with 1 GB of artifact storage.
-- **Your own server.** Run Framework Cloud for yourself, a lab, or an
-  institution. Every feature is included.
+- **Framework Public Cloud (framework.pub).** Create a free account and start working. Each account includes 1 GB of artifact storage.
+- **Self-hosted server.** Run Framework Cloud for yourself, a lab, or an institution. Every feature is included.
 
 ## Framework Cloud
 
-- [Getting started](getting-started.md): create an account, connect R, Python,
-  Stata, or fw, and start your first project.
+- [Getting started](getting-started.md): create an account, connect local tools, and set up a project.
 - [Signing in](signing-in.md): email links, passkeys, GitHub, and passwords.
-- [Projects and blueprints](projects-and-blueprints.md): set up projects,
-  and build, borrow, and remix blueprints.
-- [GitHub integration](github.md): sign in with GitHub and create projects as
-  repositories.
-- [Publishing artifacts](publishing.md): share reports, figures, tables, model
-  outputs, and collections with version histories and optional passwords.
-- [Framework for Stata](stata.md): install the Stata package, choose a
-  backend, and publish estimation results.
+- [Projects and blueprints](projects-and-blueprints.md): configure defaults, build blueprints, and create projects.
+- [GitHub integration](github.md): sign in with GitHub and create projects as repositories.
+- [Skill sync](skill-sync.md): synchronize local agent skills with your account.
+- [Publishing artifacts](publishing.md): share reports, figures, tables, model outputs, and collections with version histories and optional passwords.
+- [AI apps](ai-apps.md): connect Claude, ChatGPT, Claude Code, and Codex through MCP.
+- [Framework for Stata](stata.md): install the Stata package, select a backend, and publish estimation results.
 
 ## Self-hosting
 
-- [Self-hosting overview](self-hosting.md): setup options and requirements.
-- [Docker installation](install-docker.md): the recommended way to run a
-  server for a group.
-- [Local installation](running-at-home.md): a private,
-  single-user server with no sign-in screen.
-- [Manual installation](install-manual.md): PHP, PostgreSQL, and a web
-  server you manage.
-- [Server setup](server-setup.md): email, GitHub, and storage for published
-  artifacts.
-- [Configuration reference](configuration.md): every environment variable.
-- [Maintenance](maintenance.md): upgrades, backups, and admin commands.
+- [Self-hosting overview](self-hosting.md): architecture, setup options, and requirements.
+- [Docker installation](install-docker.md): containerized setup for a shared server.
+- [Local installation](running-at-home.md): private single-user mode on one computer.
+- [Manual installation](install-manual.md): deployment on PHP, PostgreSQL, and a web server.
+- [Server setup](server-setup.md): email, GitHub, artifact storage, and agent connections.
+- [Configuration reference](configuration.md): environment variables and client server selection.
+- [Maintenance](maintenance.md): upgrades, backups, and administration commands.

@@ -1,58 +1,60 @@
 ---
 id: course-teaching
-title: Course/Teaching
+title: Course and teaching
 section: project_types
 position: 13
-description: 'Simplified structure for teaching materials'
+description: 'Project layout for lecture slides, assignments, readings, and course documents'
 ---
 ## Overview
 
-The **Course/Teaching** type is designed for educators creating academic courses. It provides organized directories for slides, assignments, and course materials.
+The **Course/Teaching** project type organizes academic course materials, including Quarto RevealJS slides, student assignments, shared datasets, and syllabi.
 
-## Directory Structure
+## Directory structure
 
 ```
 my-course/
-├── assignments/         # Student assignments
-├── course_docs/         # Course documentation
-├── data/                # Shared datasets
-├── readings/            # Assigned readings
-├── slides/              # Lecture presentations
-├── framework.db         # Metadata database
+├── assignments/         # Student assignment notebooks
+├── cache/               # Cached computations
+├── course_docs/         # Syllabi and schedules
+├── data/                # Shared course datasets
+├── functions/           # Shared R functions
+├── modules/             # Default make_notebook() directory
+├── readings/            # Reading lists and notes
+├── scripts/             # Standalone scripts
+├── slides/              # Lecture slide decks
+├── framework.db         # Local metadata database
 └── settings.yml         # Course configuration
 ```
 
-Optional directories available in the GUI: `functions/`, `modules/`, `scripts/`
-
-## Course content
+## Course materials
 
 ### Slides
 
-Create lecture slides with Quarto RevealJS:
+Create lecture decks with `make_notebook()`:
 
 ```r
-make_notebook("intro-to-r", subdir = "slides/week-01")
+make_notebook("intro-to-r", dir = "slides/week-01")
 ```
 
 ### Assignments
 
-Create assignment notebooks:
+Create assignment documents in `assignments/`:
 
 ```r
-make_notebook("assignment-01", subdir = "assignments")
+make_notebook("assignment-01", dir = "assignments")
 ```
 
-### Course Documents
+### Course documents
 
-Create syllabi and schedules:
+Create syllabi and schedules in `course_docs/`:
 
 ```r
-make_notebook("syllabus", subdir = "course_docs")
+make_notebook("syllabus", dir = "course_docs")
 ```
 
 ## Configuration
 
-Example `settings.yml` for a course:
+Example `settings.yml`:
 
 ```yaml
 default:
@@ -74,9 +76,9 @@ default:
       auto_attach: false
 ```
 
-## Organizing Content
+## Content organization
 
-### By Week
+### Weekly directories
 
 ```
 slides/
@@ -86,7 +88,7 @@ slides/
 └── week-04-visualization/
 ```
 
-### By Module
+### Topic modules
 
 ```
 slides/
@@ -95,47 +97,48 @@ slides/
 └── visualization/
 ```
 
-## Teaching Workflow
+## Course workflow
 
-### 1. Lecture preparation
+### Lecture preparation
 
-Create slides in `slides/`:
+Create lecture `.qmd` files under `slides/`:
 
 ```r
-make_notebook("data-wrangling", subdir = "slides/week-03")
+make_notebook("data-wrangling", dir = "slides/week-03")
 ```
 
-### 2. Assignments
+### Assignment folders
 
-Build assignments with instructions:
+Separate student instructions from instructor answer keys:
 
 ```
 assignments/assignment-01/
-├── instructions.qmd  # Student-facing
-└── solution.qmd      # Answer key
+├── instructions.qmd  # Distributed to students
+└── solution.qmd      # Instructor solution key
 ```
 
-### 3. Rendering
+### Quarto rendering
 
-Slides render to `rendered/slides/`, assignments to `rendered/assignments/`.
+Slides render to `rendered/slides/` and assignments render to `rendered/assignments/`:
 
 ```bash
 quarto render slides/week-01/lecture.qmd
 ```
 
-## Best Practices
+## Conventions
 
-### Consistent Naming
+### Prefix naming
 
-Use consistent prefixes:
+Use zero-padded numeric prefixes so weeks and assignments sort chronologically:
+
 ```
 week-01-*, week-02-*, ...
 assignment-01, assignment-02, ...
 ```
 
-### Reusable Functions
+### Shared R helpers
 
-Enable and use `functions/` for common code:
+Use `functions/` for shared course utilities:
 
 ```r
 # functions/grading.R
@@ -143,13 +146,3 @@ calculate_grade <- function(scores, weights) {
   sum(scores * weights) / sum(weights)
 }
 ```
-
----
-
-<div style="display: flex; justify-content: space-between">
-
-[← Privacy Sensitive Project](/docs/privacy-sensitive-project)
-
-[Presentation →](/docs/presentation)
-
-</div>

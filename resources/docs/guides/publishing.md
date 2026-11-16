@@ -1,19 +1,18 @@
 ---
 id: publishing
-title: Publishing
+title: S3 publishing
 section: features
 position: 15
-description: 'Publishing notebooks, data, and files to S3 storage'
+description: 'Publish rendered notebooks, datasets, and directories to S3-compatible object storage'
 ---
 ## Overview
 
-Framework provides functions for publishing notebooks, data, and files to S3-compatible storage (AWS S3, MinIO, DigitalOcean Spaces, etc.). Share rendered reports, datasets, and analysis outputs with colleagues or the public.
+Framework's S3 publishing helpers render and upload Quarto notebooks, data frames, and output directories to S3-compatible object storage (Amazon S3, Cloudflare R2, MinIO, and DigitalOcean Spaces).
 
-## Configuring S3
+## S3 configuration
 
-Define S3 connections in `settings.yml` (either format works):
+Define storage buckets under `connections.storage_buckets` in `settings.yml`:
 
-**Preferred (connections.storage_buckets):**
 ```yaml
 connections:
   storage_buckets:
@@ -32,154 +31,129 @@ connections:
   default_storage_bucket: default
 ```
 
-Store credentials in `.env`:
+Store access keys in `.env`:
 
 ```bash
 S3_ACCESS_KEY=AKIA...
 S3_SECRET_KEY=...
 ```
 
-### Configuration Options
+### Bucket options
 
 | Option | Description |
-|--------|-------------|
-| `bucket` | S3 bucket name |
-| `region` | AWS region (default: us-east-1) |
-| `prefix` | Path prefix for all uploads |
-| `endpoint` | Custom endpoint for S3-compatible services |
-| `access_key` | AWS access key (use `env()`) |
-| `secret_key` | AWS secret key (use `env()`) |
-| `static_hosting` | If true, uploads notebooks as `dest/index.html` |
-| `default` | (connections format) Mark this bucket as the default |
+|---|---|
+| `bucket` | Target bucket name |
+| `region` | Bucket region (`us-east-1` by default) |
+| `prefix` | Key prefix prepended to all uploads |
+| `endpoint` | Custom HTTPS endpoint for S3-compatible services |
+| `access_key` | Access key ID referenced via `env()` |
+| `secret_key` | Secret access key referenced via `env()` |
+| `static_hosting` | Uploads rendered notebooks as `<dest>/index.html` when `true` |
+| `default` | Marks a bucket entry as default when `default_storage_bucket` is omitted |
 
-Set a default bucket with `default_storage_bucket` (or `default: true` on a bucket). If no default is set, Framework falls back to the first bucket defined.
+When no default bucket is marked, Framework selects the first defined bucket.
 
-## Publishing Notebooks
+## Notebook publishing
 
-Render and upload Quarto notebooks in one step:
+Render and upload a Quarto notebook with `publish_notebook()`:
 
 ```r
-# Publish a notebook
+# Default bucket and destination
 publish_notebook("notebooks/analysis.qmd")
-# -> https://bucket.s3.amazonaws.com/prefix/analysis.html
 
-# Custom destination
+# Explicit destination path
 publish_notebook("notebooks/analysis.qmd", dest = "reports/q4-2024")
 
-# Use specific connection
+# Named bucket connection
 publish_notebook("notebooks/analysis.qmd", connection = "backup")
 ```
 
-### Static Hosting Mode
+### Static hosting paths
 
-When `static_hosting: true`, notebooks are uploaded as `index.html` files for clean URLs:
+With `static_hosting: true`, `publish_notebook()` writes `<dest>/index.html` for directory-style URLs:
 
 ```r
 publish_notebook("analysis.qmd", dest = "reports/q4")
 # Uploads to: reports/q4/index.html
-# Access at:  https://bucket.s3.amazonaws.com/reports/q4/
 ```
 
-Without static hosting, files keep their extension:
+With `static_hosting: false`, `publish_notebook()` preserves the `.html` extension:
 
 ```r
 publish_notebook("analysis.qmd", dest = "reports/q4")
 # Uploads to: reports/q4.html
-# Access at:  https://bucket.s3.amazonaws.com/reports/q4.html
 ```
 
-### Self-Contained vs Multi-File
+### Resource embedding
 
-By default, notebooks are rendered as self-contained HTML with all resources embedded:
+`self_contained = TRUE` (the default) embeds scripts, stylesheets, and images into a single HTML file. `self_contained = FALSE` uploads companion asset directories alongside `index.html` and requires `static_hosting: true`:
 
 ```r
-# Self-contained (default) - single file, portable
 publish_notebook("analysis.qmd", self_contained = TRUE)
-
-# Multi-file - smaller HTML, separate assets (requires static_hosting)
 publish_notebook("analysis.qmd", self_contained = FALSE)
 ```
 
-## Publishing Data
+## Data publishing
 
-Upload data frames or existing files:
+Upload data frames or saved data files with `publish_data()`:
 
 ```r
-# Publish a data frame as CSV
+# Serialize data frame as CSV
 publish_data(my_results, "datasets/results.csv")
 
-# Publish as other formats
+# Parquet or RDS formats
 publish_data(my_results, "datasets/results.parquet", format = "parquet")
 publish_data(my_results, "datasets/results.rds", format = "rds")
 
-# Publish with compression
+# Gzipped CSV (results.csv.gz)
 publish_data(my_results, "datasets/results.csv", compress = TRUE)
-# -> uploads as results.csv.gz
 
-# Publish an existing file
+# Existing local file
 publish_data("outputs/model.rds", "models/v2/model.rds")
 ```
 
-## Publishing Directories
+## Directory publishing
 
-Upload entire directories:
+Upload local directories recursively with `publish_dir()`:
 
 ```r
-# Upload a directory
 publish_dir("outputs/dashboard/")
-
-# Custom destination
 publish_dir("outputs/dashboard/", dest = "dashboards/v2/")
-
-# Filter files
 publish_dir("outputs/", pattern = "\\.html$")
 ```
 
-## Generic Publish
+## Generic file publishing
 
-For any file or directory:
+Upload single files or directories with `publish()`:
 
 ```r
-# Single file
 publish("outputs/report.html")
-
-# With custom destination
 publish("outputs/report.html", dest = "reports/final.html")
-
-# Directory
 publish("outputs/charts/", dest = "visualizations/")
 ```
 
-## Workflow Example
-
-A typical publishing workflow:
+## Example workflow
 
 ```r
 library(framework)
 scaffold()
 
-# Run analysis
 results <- analyze_data(my_data)
 summary_plot <- create_visualization(results)
 
-# Save outputs locally
 save_table(results, "final_results")
 save_figure(summary_plot, "summary")
-
-# Render notebook
 save_notebook("notebooks/analysis.qmd")
 
-# Publish to S3
 publish_notebook("notebooks/analysis.qmd", dest = "reports/q4-analysis")
 publish_data(results, "data/q4-results.csv")
-
-# Share the URL
-# https://my-bucket.s3.amazonaws.com/reports/q4-analysis/
 ```
 
-## Best Practices
+## Storage conventions
 
-### Storage prefixes
+### Key prefixes
+
+Set `prefix` per project so shared buckets stay partitioned by team and project:
 
 ```yaml
 connections:
@@ -189,40 +163,11 @@ connections:
   default_storage_bucket: default
 ```
 
-This keeps your bucket organized:
+### Versioned paths
 
-```
-team-name/project-name/reports/...
-team-name/project-name/data/...
-```
-
-### Output versions
-
-Include dates or versions in destinations:
+Include release tags or ISO dates in `dest` paths when preserving historical snapshots in S3:
 
 ```r
 publish_notebook("analysis.qmd", dest = "reports/analysis-2024-01-15")
 publish_data(results, "data/results-v2.csv")
 ```
-
-### Static report hosting
-
-Enable `static_hosting: true` for cleaner URLs when sharing reports:
-
-```
-# With static hosting
-https://bucket.s3.amazonaws.com/reports/q4/
-
-# Without
-https://bucket.s3.amazonaws.com/reports/q4.html
-```
-
----
-
-<div style="display: flex; justify-content: space-between">
-
-[← Environment](/docs/environment)
-
-[Project Types →](/docs/project-types)
-
-</div>

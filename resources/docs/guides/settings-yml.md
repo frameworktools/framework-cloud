@@ -3,17 +3,17 @@ id: settings-yml
 title: settings.yml
 section: getting_started
 position: 4
-description: 'Understanding the settings.yml configuration file'
+description: 'Structure and keys of the settings.yml project configuration file'
 ---
 ## Overview
 
-Every Framework project has a `settings.yml` file that controls project-specific settings. You can edit it directly in your project root or through the GUI, by selecting the project after running `framework::gui()`.
+Every Framework project stores its configuration in `settings.yml` at the project root. Edit `settings.yml` directly in a text editor or open the project in `framework::gui()`.
 
-Settings use the config package's environment format with a `default:` key (and optional environment overrides like `production:`).
+`settings.yml` follows the `config` package layout with a top-level `default:` block and optional named environment blocks such as `production:`.
 
-## Split Files
+## Split files
 
-For larger projects, split complex sections into separate files. Replace inline content with a file path:
+Large projects can split sections of `settings.yml` into dedicated files under `settings/` by referencing file paths:
 
 ```yaml
 default:
@@ -21,30 +21,32 @@ default:
   data: settings/data.yml
 ```
 
-Then create the referenced files:
+Create each referenced YAML file:
 
 **settings/connections.yml:**
 ```yaml
-db:
-  driver: postgresql
-  host: env("DB_HOST")
-  database: mydb
+connections:
+  db:
+    driver: postgresql
+    host: env("DB_HOST")
+    database: mydb
 ```
 
 **settings/data.yml:**
 ```yaml
-raw.survey:
-  path: inputs/raw/survey.csv
-  type: csv
+data:
+  raw.survey:
+    path: inputs/raw/survey.csv
+    type: csv
 ```
 
-**Note:** Root `settings.yml` values win if they conflict with a split file (Framework warns when this happens; `options` are merged).
+Inline keys in root `settings.yml` take precedence over split files and emit a warning on conflict, except `options` entries which merge.
 
 ## Sections
 
 ### Basics
 
-Project type and author information.
+Project type and author metadata:
 
 ```yaml
 project_type: project  # project, project_sensitive, course, or presentation
@@ -55,9 +57,9 @@ author:
   affiliation: "Your Institution"
 ```
 
-### Project Structure
+### Project structure
 
-Maps logical directory names to paths. All paths are relative to the project root.
+Maps logical directory keys to project-relative paths:
 
 ```yaml
 directories:
@@ -70,22 +72,25 @@ directories:
   inputs_raw: inputs/raw
   inputs_intermediate: inputs/intermediate
   inputs_final: inputs/final
-  inputs_reference: inputs/reference
+  docs: docs
 
   # Derived outputs (write-only)
-  outputs_private: outputs/private
-  outputs_public: outputs/public
+  outputs_tables: outputs/tables
+  outputs_figures: outputs/figures
+  outputs_models: outputs/models
+  outputs_reports: outputs/reports
 
   # Cache and scratch space
-  cache: outputs/private/cache
-  scratch: outputs/private/scratch
+  cache: outputs/cache
+  scratch: scratch
+  logs: logs
 ```
 
-Access with `settings("notebooks")` or `settings("directories.notebooks")`.
+Query configured paths in R with `settings("notebooks")` or `settings("directories.notebooks")`.
 
 ### Packages
 
-R packages to install and optionally load with `scaffold()`:
+R packages installed and optionally attached by `scaffold()`:
 
 ```yaml
 packages:
@@ -99,13 +104,13 @@ packages:
     auto_attach: false  # Install only, namespace explicitly
 ```
 
-See [Packages](/docs/packages) for details on version pinning and GitHub packages.
+See [Packages](/docs/packages) for version pinning and GitHub remotes.
 
-### Data Catalog
+### Data catalog
 
-The data catalog maps logical names to file paths. You can use three notation styles:
+Maps dataset names to paths and file types using nested or dot-notation keys:
 
-**Hierarchical** (nested structure):
+**Nested YAML:**
 ```yaml
 data:
   raw:
@@ -122,7 +127,7 @@ data:
       type: rds
 ```
 
-**Mixed** (dots in keys):
+**Dot-notation keys:**
 ```yaml
 data:
   raw.survey:
@@ -133,54 +138,41 @@ data:
     type: rds
 ```
 
-**Flat** (full dot-notation keys):
-```yaml
-data.raw.survey:
-  path: inputs/raw/survey.csv
-  type: csv
-data.final.analysis:
-  path: inputs/final/analysis.rds
-  type: rds
-```
-
-All three styles are accessed the same way:
+`data_read()` resolves both forms identically:
 
 ```r
 data_read("raw.survey")
 data_read("final.analysis")
 ```
 
-See [Data Management](/docs/data-management) for full documentation.
+See [Data management](/docs/data-management) for supported formats and locked datasets.
 
-### Git & Hooks
+### Git and hooks
 
-Git hook configuration:
+Pre-commit hook settings:
 
 ```yaml
 git:
   hooks:
-    ai_sync: false        # Sync AI assistant files before commit
     data_security: false  # Check for secrets before commit
 ```
 
-See [Git Integration](/docs/git) for details.
+See [Git integration](/docs/git) for hook behavior.
 
-### AI Assistants
+### AI assistants
 
-AI assistant configuration:
+Canonical instruction file selection:
 
 ```yaml
 ai:
-  canonical_file: "CLAUDE.md"  # CLAUDE.md, AGENTS.md, or .github/copilot-instructions.md
+  canonical_file: "AGENTS.md"  # AGENTS.md, CLAUDE.md, or .github/copilot-instructions.md
 ```
 
-The canonical file is the source of truth for AI instructions. Other AI files are synced from it when using git hooks.
-
-See [AI Assistants](/docs/ai-assistants) for details.
+Framework 2.0 removed the `ai_sync` hook; `CLAUDE.md` references `@AGENTS.md` instead. See [AI assistants](/docs/ai-assistants).
 
 ### Connections
 
-Database connections use `env()` to read credentials from [environment variables](#environment-variables):
+Database profiles read credentials from [environment variables](#environment-variables) with `env()`:
 
 ```yaml
 connections:
@@ -192,22 +184,22 @@ connections:
     password: env("DB_PASS")
 ```
 
-See [Database Connections](/docs/connections) for full documentation.
+See [Connections](/docs/connections) for database and S3 configuration.
 
-### Random Seeds
+### Random seeds
 
-Control random seed behavior for reproducibility:
+Deterministic seed settings for `scaffold()`:
 
 ```yaml
 seed: 123                 # Default seed value
 seed_on_scaffold: false   # Set seed automatically when scaffold() runs
 ```
 
-When `seed_on_scaffold: true`, Framework calls `set.seed()` during `scaffold()`. This is off by default.
+Setting `seed_on_scaffold: true` calls `set.seed(seed)` inside `scaffold()`.
 
-## Environment Variables
+## Environment variables
 
-Use `env()` to read environment variables in your settings:
+Reference environment variables in `settings.yml` with `env()` and optional fallback defaults:
 
 ```yaml
 connections:
@@ -216,16 +208,16 @@ connections:
     password: env("DB_PASS", "default_value")  # With default
 ```
 
-Store actual values in `.env` (which is gitignored):
+Store local values in the gitignored `.env` file:
 
-```
+```bash
 DB_HOST=localhost
 DB_PASS=secret123
 ```
 
-## Environment-Specific Settings
+## Environment-specific settings
 
-For different settings per environment, add named environment blocks:
+Add top-level environment blocks to override `default:` values per deployment environment:
 
 ```yaml
 default:
@@ -239,13 +231,15 @@ production:
       database: prod_database
 ```
 
-Activate with:
+Select an active environment in R with `R_CONFIG_ACTIVE`:
 
 ```r
 Sys.setenv(R_CONFIG_ACTIVE = "production")
 ```
 
-## Accessing Settings
+## Settings lookup in R
+
+Read configuration keys from R with `settings()`:
 
 ```r
 settings("author.name")
@@ -254,9 +248,7 @@ settings("notebooks")           # Shorthand for directories.notebooks
 settings("missing.key", default = "fallback")
 ```
 
-## Complete Structure
-
-Here's the full structure of a project's `settings.yml`:
+## Complete example
 
 ```yaml
 default:
@@ -284,21 +276,23 @@ default:
     inputs_raw: inputs/raw
     inputs_intermediate: inputs/intermediate
     inputs_final: inputs/final
-    inputs_reference: inputs/reference
-    outputs_private: outputs/private
-    outputs_public: outputs/public
-    cache: outputs/private/cache
-    scratch: outputs/private/scratch
+    docs: docs
+    outputs_tables: outputs/tables
+    outputs_figures: outputs/figures
+    outputs_models: outputs/models
+    outputs_reports: outputs/reports
+    cache: outputs/cache
+    scratch: scratch
+    logs: logs
 
   seed: 123
   seed_on_scaffold: false
 
   ai:
-    canonical_file: "CLAUDE.md"
+    canonical_file: "AGENTS.md"
 
   git:
     hooks:
-      ai_sync: false
       data_security: false
 
   data:
@@ -307,13 +301,3 @@ default:
   connections:
     # Database connections
 ```
-
----
-
-<div style="display: flex; justify-content: space-between">
-
-[← Conventions](/docs/conventions)
-
-[Making a New Project →](/docs/new-project)
-
-</div>

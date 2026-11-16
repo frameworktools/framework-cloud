@@ -1,14 +1,12 @@
 # Local installation
 
-Framework Cloud can run on your own computer for one person. Your
-blueprints, settings, and published artifacts stay on your machine.
+Framework Cloud can run locally on a personal computer so blueprints, project definitions, and published artifacts stay on your machine.
 
-Single-user mode removes the sign-in screen. Every visit from your own
-computer is signed in as you.
+Single-user mode bypasses the sign-in screen and authenticates local browser requests automatically as the administrator account.
 
 ## Docker installation
 
-Download the Compose file and the settings template, and generate a key:
+Download `compose.yml` and `.env.example`, then generate an encryption key:
 
 ```sh
 mkdir framework-cloud && cd framework-cloud
@@ -17,7 +15,7 @@ curl -fsSL https://raw.githubusercontent.com/frameworktools/framework-cloud/main
 docker run --rm ghcr.io/frameworktools/framework-cloud php artisan key:generate --show
 ```
 
-Put the key in `.env` as `APP_KEY`, then set these:
+Set `APP_KEY` in `.env` to the generated key and configure local single-user settings:
 
 ```sh
 APP_URL=http://localhost:8080
@@ -30,16 +28,16 @@ FW_REGISTRATION=closed
 
 FW_SINGLE_USER=true
 
-DB_PASSWORD=<a long random string>
+DB_PASSWORD=<random-password>
 ```
 
-Start it and open http://localhost:8080:
+Start the five Compose services (`app`, `worker`, `scheduler`, `scaffolder`, and `postgres`) and open `http://localhost:8080`:
 
 ```sh
 docker compose up -d
 ```
 
-Create a token on the **API tokens** page and connect R or Python:
+Create a personal token in **Account > Computers & API tokens** (or approve a browser login) to connect R and Python:
 
 ```r
 framework::cloud_login("<your token>", url = "http://localhost:8080")
@@ -51,27 +49,21 @@ import framework
 framework.cloud_login("<your token>", url="http://localhost:8080")
 ```
 
-Both packages allow plain `http` only for localhost addresses.
+Both packages allow unencrypted `http://` URLs exclusively for `localhost` and loopback addresses.
 
 ### Network binding
 
-Inside Docker, requests from your browser arrive from the Docker network's
-gateway instead of from 127.0.0.1. The container finds that address when it
-starts and treats it as your computer. The app log shows it:
+Inside Docker, host browser connections arrive from the Docker bridge gateway IP rather than `127.0.0.1`. At container startup, Framework Cloud detects the bridge gateway and appends it to the allowed single-user networks. Container logs record the detected address:
 
 ```text
 Single-user mode: signing in requests from 192.168.148.1
 ```
 
-Anything that reaches the port arrives from that same address, so
-`HTTP_BIND=127.0.0.1` keeps other machines out. Keep it set whenever
-single-user mode is on. Check it with `docker compose ps`, which should show
-`127.0.0.1:8080->80/tcp`.
+Because every connection forwarded to the container shares that gateway source IP, `HTTP_BIND=127.0.0.1` is essential to block LAN access when `FW_SINGLE_USER=true`. Verify the port binding with `docker compose ps`, which must list `127.0.0.1:8080->80/tcp`.
 
 ## Manual installation
 
-Install the app as in [Manual installation](install-manual.md), then set
-these in `.env`:
+Follow the build steps in [Manual installation](install-manual.md), then configure `.env` for local single-user operation:
 
 ```sh
 APP_URL=http://localhost:8000
@@ -80,31 +72,25 @@ FW_REGISTRATION=closed
 FW_SINGLE_USER=true
 ```
 
-Create your account and start the server:
+Seed the administrator account and start the local PHP server:
 
 ```sh
 php artisan db:seed --class='Database\Seeders\ProductionSeeder' --force
 php artisan serve
 ```
 
-`php artisan serve` listens only on 127.0.0.1, so the default networks are
-enough. Run `php artisan queue:work` in a second terminal for background jobs.
+`php artisan serve` binds to `127.0.0.1` by default. Run `php artisan queue:work` and `php artisan schedule:work` in separate processes if you use background jobs or scheduled Trash cleanup.
 
 ## Single-user authentication
 
-A request is signed in automatically only when all of these are true:
+Framework Cloud signs a request in automatically only when every condition holds:
 
 - `FW_SINGLE_USER` is `true`.
-- `APP_URL` is a localhost address, such as `http://localhost:8080`.
-- The connection comes from one of `FW_SINGLE_USER_NETWORKS`. The default is
-  127.0.0.1 and ::1, plus the Docker gateway in the Docker setup.
-- The request has no proxy headers, such as `X-Forwarded-For`. Requests that
-  come through a tunnel, such as Expose or ngrok, are never signed in.
-- The request is addressed to `localhost` or 127.0.0.1.
+- `APP_URL` uses a `localhost` or loopback host.
+- The client IP matches `FW_SINGLE_USER_NETWORKS` (`127.0.0.1/32` and `::1/128` by default, plus the Docker gateway in the container entrypoint).
+- No forwarded proxy headers such as `X-Forwarded-For` are present, preventing automatic sign-in across tunnels such as Cloudflare Tunnel, Expose, or ngrok.
+- The HTTP `Host` header resolves to `localhost` or `127.0.0.1`.
 
-The account it signs in is `FW_ADMIN_EMAIL`, or the first admin if that isn't
-set. In single-user mode, **Sign out** is hidden, because the next page would
-sign you back in.
+Requests sign in as `FW_ADMIN_EMAIL` (or the first administrator record when unset). **Sign out** is hidden while single-user mode is active.
 
-To share the server with other people later, turn single-user mode off, give
-the server a domain, and follow [Docker installation](install-docker.md).
+To convert a local installation into a shared multi-user server later, set `FW_SINGLE_USER=false`, configure a domain and TLS settings, and follow [Docker installation](install-docker.md).

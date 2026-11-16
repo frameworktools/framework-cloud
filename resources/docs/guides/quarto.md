@@ -1,39 +1,32 @@
 ---
 id: quarto
-title: Quarto Integration
+title: Quarto integration
 section: features
 position: 7
-description: 'Quarto integration for notebooks and presentations'
+description: 'Quarto configuration, render directories, and document authoring'
 ---
 ## Overview
 
-Framework thoughtfully integrates with [Quarto](https://quarto.org), the open-source scientific publishing system. This integration provides automatic configuration, render directory management, sensible defaults for both notebooks and presentations, and a graphical user interface for managing these settings.
+Framework integrates with [Quarto](https://quarto.org) to configure HTML documents and RevealJS presentations, separate `.qmd` source files from rendered outputs, and provide starter templates.
 
-## Render Directories
+## Render directories
 
-A key design principle in Framework is the separation of source files from rendered output. When you create a notebook or presentation, the `.qmd` source stays in its directory while rendered HTML/PDF output goes to a dedicated render directory.
+Framework keeps `.qmd` source files in authoring directories and writes rendered HTML or PDF outputs to dedicated render directories that `.gitignore` can exclude.
 
-**Source and output separation**
-- Keep your working directories clean
-- Rendered files are typically gitignored (they're regenerated)
-- Easy to find rendered output in a consistent location
-- Multiple formats can coexist without clutter
+### Directory mappings
 
-### Rendering workflow
-
-When you enable notebooks in a project, Framework creates both directories:
-
-| Project Type | Source Directory | Render Directory |
-|--------------|------------------|------------------|
+| Project type | Source directory | Render directory |
+|---|---|---|
 | Standard Project | `notebooks/` | `outputs/notebooks/` |
 | Privacy Sensitive | `notebooks/` | `outputs/private/notebooks/` |
 | Course/Teaching | `slides/` | `rendered/slides/` |
 
-Each source directory gets a `_quarto.yml` that tells Quarto where to put output:
+The root `_quarto.yml` specifies `output-dir`, and Quarto keeps each source directory's path beneath it:
 
 ```yaml
 project:
-  output-dir: ../outputs/notebooks
+  type: default
+  output-dir: outputs
 
 format:
   html:
@@ -42,141 +35,119 @@ format:
     toc: true
 ```
 
-## Quarto Configuration
+## Quarto configuration
 
-Framework generates `_quarto.yml` files with sensible defaults. These files are **yours to customize**. Framework only creates them once and won't overwrite your changes.
+Framework generates `_quarto.yml` files once at project creation and leaves subsequent edits untouched.
 
-### Graphical interface
+### Global defaults
 
-Configure Quarto defaults through the GUI. Run `setup()` and navigate to **Settings** → **Quarto**:
+Configure global Quarto defaults under `quarto` in Framework's global settings file, which `framework::setup()` creates:
 
 ```r
 framework::setup()
 ```
 
-![Quarto Settings GUI](/images/quarto-settings-gui.png)
+Configurable options cover:
 
-The GUI lets you configure:
+- **HTML documents**: theme, `embed-resources`, table of contents and depth, code folding, code tools, and syntax highlighting style.
+- **RevealJS presentations**: theme, incremental bullets, slide numbers, and slide transitions.
 
-**HTML Rendering (notebooks, documentation):**
-- Theme selection
-- Embed resources (standalone HTML files)
-- Table of contents and depth
-- Code folding and tools
-- Syntax highlighting style
-
-**Presentations (revealjs):**
-- Theme selection
-- Incremental bullets
-- Slide numbers
-- Transitions
-
-### Generated Files
-
-Framework generates `_quarto.yml` in each source directory:
+### Generated files
 
 ```
 my-project/
 ├── _quarto.yml              # Root project config
 ├── notebooks/
-│   ├── _quarto.yml          # Notebook-specific config
 │   └── analysis.qmd
 └── outputs/
-    └── notebooks/           # Rendered output appears here
+    └── notebooks/           # Rendered HTML and PDF files
 ```
 
-### Customizing After Generation
+### _quarto.yml overrides
 
-Edit any `_quarto.yml` directly—Framework won't touch it after creation:
+Edit `_quarto.yml` directly in any directory:
 
 ```yaml
-# notebooks/_quarto.yml
+# _quarto.yml
 project:
-  output-dir: ../outputs/notebooks
+  type: default
+  output-dir: outputs
 
 format:
   html:
-    theme: cosmo              # Changed from default
+    theme: cosmo
     toc: true
-    toc-depth: 4              # Deeper TOC
-    code-fold: true           # Enable code folding
-    code-tools: true          # Show code tools
+    toc-depth: 4
+    code-fold: true
+    code-tools: true
     embed-resources: true
     highlight-style: github
 ```
 
-## Creating Quarto Files
+## File creation
 
 ### Notebooks
 
-Create new notebooks with `make_notebook()`:
+Create `.qmd` notebooks from your template with `make_notebook()`:
 
 ```r
 make_notebook("exploration")
 make_notebook("modeling", subdir = "analysis")
 ```
 
-This creates a `.qmd` file from your notebook template in the configured notebooks directory.
-
 ### Presentations
 
-For presentation projects or course slides:
+Create RevealJS slide decks with `make_presentation()`:
 
 ```r
 make_presentation("quarterly-review")
 ```
 
-Presentations use RevealJS format by default with appropriate settings for slides.
+## Document rendering
 
-## Rendering
-
-### From R
+### R console
 
 ```r
-# Render a single file
+# Render a single document with Quarto
 quarto::quarto_render("notebooks/analysis.qmd")
 
-# Render and save to outputs
+# Render and record in framework.db
 save_notebook("notebooks/analysis.qmd")
 ```
 
-### From Terminal
+### Terminal
 
 ```bash
-# Render in place (uses _quarto.yml settings)
+# Render a single file
 quarto render notebooks/analysis.qmd
 
-# Render entire project
+# Render the entire Quarto project
 quarto render
 ```
 
-## Format-Specific Settings
+## Format defaults
 
-### HTML Documents
-
-Default settings optimized for analysis notebooks:
+### HTML documents
 
 ```yaml
 format:
   html:
     theme: default
-    embed-resources: true    # Standalone files
-    toc: true                # Table of contents
+    embed-resources: true
+    toc: true
     toc-depth: 3
     code-fold: false
     code-tools: false
     highlight-style: github
 ```
 
-### RevealJS Presentations
-
-Default settings for slides:
+### RevealJS presentations
 
 ```yaml
 format:
   revealjs:
     theme: default
-    incremental: false       # All bullets at once
+    incremental: false
     slide-number: true
     transition: slide
     background-transition: fade
@@ -186,18 +157,6 @@ format:
     highlight-style: github
 ```
 
-## Regenerating Configurations
+## Configuration regeneration
 
-If you need to regenerate `_quarto.yml` files (for example, after changing global defaults), use the GUI's **Regenerate Quarto Configs** button.
-
-**Warning:** This overwrites any manual customizations. Framework backs up existing files to `.quarto_backups/` before regenerating.
-
----
-
-<div style="display: flex; justify-content: space-between">
-
-[← Templates](/docs/templates)
-
-[Viewing Work →](/docs/viewing-work)
-
-</div>
+Run `quarto_regenerate(".", overwrite = TRUE)` to rewrite `_quarto.yml` files from current settings. Existing `_quarto.yml` files are backed up to `.framework/backups/<timestamp>/` before replacement.

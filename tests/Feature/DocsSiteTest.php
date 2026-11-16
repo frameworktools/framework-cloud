@@ -125,8 +125,8 @@ class DocsSiteTest extends DocsTestCase
             ->assertSee('href="/guides/connections"', false)
             ->assertDontSee('href="/docs/', false);
 
-        $this->docs('r', '/guides/setup')->assertSee('src="/images/setup-gui.png"', false);
-        $this->docs('r', '/images/setup-gui.png')->assertOk();
+        $this->docs('r', '/guides/viewing-work')->assertSee('src="/images/view-dataframe.png"', false);
+        $this->docs('r', '/images/view-dataframe.png')->assertOk();
     }
 
     public function test_unknown_guide_404s(): void

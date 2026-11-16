@@ -1,21 +1,21 @@
 ---
 id: viewing-work
-title: Viewing Work
+title: Object and result inspection
 section: features
 position: 8
-description: 'Browse your work interactively with view() and the GUI'
+description: 'Inspect R objects, saved results, and project directories with view() and the GUI'
 ---
 ## Overview
 
-Framework provides tools for interactively exploring your data, viewing saved results, and browsing your project structure.
+Framework includes interactive viewers for inspecting R data frames and nested lists alongside query functions for saved project outputs.
 
-## Interactive Viewing
+## Interactive object viewer
 
-Use `view()` to open objects in an interactive HTML viewer in your browser.
+Call `view()` to open an R object in an interactive browser view.
 
-### Data Frames
+### Data frames
 
-For data frames, you get a searchable, sortable, filterable table:
+Data frames open in a searchable, sortable, and filterable table:
 
 ```r
 view(mtcars)
@@ -23,92 +23,63 @@ view(mtcars)
 
 ![Data frame viewer](/images/view-dataframe.png)
 
-Features:
-- Search across all columns
-- Filter individual columns
-- Sort by clicking headers
-- Export to Copy, CSV, or Excel
-- Pagination for large datasets
+Table controls support full-table search, per-column filters, header sorting, pagination, and clipboard, CSV, or Excel export.
 
-### Complex Objects
+### Nested lists
 
-For lists and other complex objects, `view()` displays a structured view with YAML and R tabs:
+Lists and hierarchical R objects display YAML and R structure tabs:
 
 ```r
 x <- list(a = 1, b = c(2, 3), c = list("D", "E", list(F = "G")))
 view(x)
 ```
 
-<div style="display: flex; gap: 1rem;">
-<img src="/images/view-list-yaml.png" alt="List viewer - YAML tab" style="max-width: 48%;">
-<img src="/images/view-list-r.png" alt="List viewer - R tab" style="max-width: 48%;">
-</div>
+![List viewer - YAML tab](/images/view-list-yaml.png)
 
-### Options
+![List viewer - R tab](/images/view-list-r.png)
+
+### Viewer options
 
 ```r
-# Custom title
+# Custom window title
 view(df, title = "Survey Results")
 
-# Limit rows for very large datasets
+# Row cap for large tables
 view(large_df, max_rows = 1000)
 ```
 
-Aliases `view_create()` and `view_detail()` also work.
 
-## Listing Results
+## Results queries
 
-Query saved results with `result_list()`:
+List outputs recorded in `framework.db` with `result_list()`:
 
 ```r
-# All results
+# All saved outputs
 result_list()
 
-# Filter by type
+# Filter by artifact type
 result_list(type = "figure")
 result_list(type = "table")
 result_list(type = "model")
 
-# Filter by public status
+# Filter by public visibility
 result_list(public = TRUE)
 result_list(public = FALSE)
 
-# Combine filters
+# Combined filters
 result_list(type = "table", public = TRUE)
 ```
 
-Returns a data frame with all tracked results and their metadata.
+`result_list()` returns a data frame of tracked outputs and their metadata.
 
-## Project Info
+## Project summary
 
-View your project structure and output mappings:
+Print the project name and type, directory mappings, cache path, and `save_*()` output folders with `project_info()`:
 
 ```r
 project_info()
 ```
 
-This displays:
-- Project type and root directory
-- Configured directories
-- Output directory mappings
-- Data catalog summary
+## Graphical browser
 
-## GUI Integration
-
-The Framework GUI provides visual access to your work. Run `setup()` and navigate to the **Project** section to see:
-
-- **Inputs**: Browse files in your input directories
-- **Outputs**: Browse saved output files
-- **Results**: View tracked results from `framework.db`
-
-![Input directory browser with tabs for Raw, Intermediate, Final, and Reference inputs](/images/view-inputs-tabs.png)
-
----
-
-<div style="display: flex; justify-content: space-between">
-
-[← Quarto Integration](/docs/quarto)
-
-[Saving Work →](/docs/saving-work)
-
-</div>
+`framework::gui()` is deprecated, and the local project browser is retired.

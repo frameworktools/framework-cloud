@@ -1,26 +1,26 @@
 ---
 id: privacy-sensitive-project
-title: Privacy Sensitive Project
+title: Privacy-sensitive project
 section: project_types
 position: 12
-description: 'Enhanced privacy controls with separate private/public flows'
+description: 'Separated private and public directories with gitignore safeguards'
 ---
 ## Overview
 
-The **Privacy Sensitive Project** is designed for research involving sensitive or protected data. It provides enhanced privacy controls with separate private and public directories, and stricter `.gitignore` rules that prevent private data from being committed.
+The **Privacy Sensitive Project** isolates restricted data and outputs from shareable artifacts using separate `private/` and `public/` directories alongside stricter `.gitignore` rules.
 
-## Directory Structure
+## Directory structure
 
 ```
 my-study/
-├── functions/           # Custom R functions (auto-loaded)
+├── functions/           # Custom R functions (sourced by scaffold())
 │   └── helpers.R
 ├── inputs/
-│   ├── private/         # Sensitive data (gitignored)
+│   ├── private/         # Restricted data (gitignored)
 │   │   ├── raw/
 │   │   ├── intermediate/
 │   │   └── final/
-│   └── public/          # Non-sensitive data
+│   └── public/          # Shareable data
 │       ├── raw/
 │       ├── intermediate/
 │       └── final/
@@ -28,94 +28,90 @@ my-study/
 ├── outputs/
 │   └── private/
 │       └── notebooks/   # Rendered notebooks (gitignored)
-├── scripts/             # Automation scripts
-├── framework.db         # Metadata database
+├── scripts/             # Standalone R scripts
+├── framework.db         # Local metadata database
 └── settings.yml         # Project configuration
 ```
 
-Additional directories are created on first use:
-- `outputs/private/cache` - Cached computations
-- `outputs/private/figures` - Private figures
-- `outputs/private/tables` - Private tables
-- `outputs/public/` - Shareable results
+Additional directories are created on first use: `outputs/private/cache`, `outputs/private/figures`, `outputs/private/tables`, and `outputs/public/`.
 
-## Privacy Controls
+## Privacy controls
 
 ### Git exclusions
 
-The privacy sensitive `.gitignore` template excludes:
-- `inputs/private/` - All private input data
-- `outputs/private/` - All private outputs
-- `.env` - Environment variables with credentials
-- `framework.db` - May contain data hashes
+The privacy-sensitive `.gitignore` template excludes:
 
-### Public vs Private Outputs
+- `inputs/private/`
+- `outputs/private/`
+- `.env`
+- `framework.db`
 
-Use the `public` parameter when saving outputs:
+### Public and private outputs
+
+`save_*()` functions write to `outputs/private/` by default. Pass `public = TRUE` to write aggregated or de-identified outputs to `outputs/public/`:
 
 ```r
-# Save to private (default)
+# Writes to outputs/private/tables/
 save_table(results, "analysis_results")
 
-# Save to public for sharing
+# Writes to outputs/public/tables/
 save_table(summary_stats, "summary", public = TRUE)
 ```
 
 ## Workflow
 
-### 1. Environment setup
+### Environment initialization
 
 ```r
 library(framework)
 scaffold()
 ```
 
-### 2. Data classification
+### Data classification
 
-Place sensitive data in private directories:
+Catalog restricted and public datasets under their respective paths in `settings/data.yml`:
 
 ```yaml
 data:
-  # Private: contains PHI
+  # Restricted: contains PHI
   inputs.private.raw.patients:
     path: inputs/private/raw/patients.csv
     type: csv
     locked: true
 
-  # Public: aggregated, de-identified
+  # Shareable: aggregated summary
   inputs.public.final.demographics:
     path: inputs/public/final/demographics.csv
     type: csv
 ```
 
-### 3. Private data analysis
+### De-identification pipeline
+
+Read restricted inputs, aggregate records, and write shareable summaries to `inputs/public/`:
 
 ```r
-# Load private data
 patients <- data_read("inputs.private.raw.patients")
 
-# Process and de-identify
 demographics <- patients |>
   group_by(age_group, region) |>
   summarize(n = n())
 
-# Save de-identified data to public
 data_save(demographics, "inputs.public.final.demographics")
 ```
 
-### 4. Public outputs
+### Output export
 
 ```r
-# Private analysis output
+# Private figure
 save_figure(detailed_plot, "patient_outcomes")
 
-# Public summary for publication
+# Public figure
 save_figure(summary_plot, "figure_1", public = TRUE)
 ```
 
 ## Configuration
 
-Example `settings.yml` for a privacy sensitive project:
+Example `settings.yml`:
 
 ```yaml
 default:
@@ -146,29 +142,28 @@ default:
       locked: true
 ```
 
-## Best Practices
+## Safeguards
 
-### Source data protection
+### Locked source files
 
-Use `locked: true` to ensure source data hasn't changed:
+Set `locked: true` on raw restricted datasets so `data_read()` stops with an error if the underlying file hash changes:
 
 ```yaml
 data:
   inputs.private.raw.patients:
     path: inputs/private/raw/patients.csv
     type: csv
-    locked: true  # Error if file changes
+    locked: true
 ```
 
-### De-identification
+### Aggregation before public export
 
-Always aggregate or de-identify data before moving to public directories:
+Aggregate and de-identify records before passing `public = TRUE`:
 
 ```r
-# Never do this
-save_table(raw_patient_data, "patients", public = TRUE)
+# Avoid writing row-level records to public outputs
+# save_table(raw_patient_data, "patients", public = TRUE)
 
-# Do this instead
 public_summary <- raw_patient_data |>
   group_by(category) |>
   summarize(mean_value = mean(value), n = n())
@@ -176,20 +171,10 @@ public_summary <- raw_patient_data |>
 save_table(public_summary, "summary", public = TRUE)
 ```
 
-### Commit review
+### Pre-commit inspection
 
-Check `git status` before committing to ensure no private data is staged:
+Inspect staged paths with `git_status()` before committing:
 
 ```r
 git_status()
 ```
-
----
-
-<div style="display: flex; justify-content: space-between">
-
-[← Standard Project](/docs/standard-project)
-
-[Course/Teaching →](/docs/course-teaching)
-
-</div>

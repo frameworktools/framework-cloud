@@ -1,17 +1,17 @@
 ---
 id: data-management
-title: Data Management
+title: Data management
 section: features
 position: 4
-description: 'Managing data files with the declarative data catalog'
+description: 'Catalog datasets, resolve formats, and verify SHA-256 checksums'
 ---
 ## Overview
 
-Framework provides a declarative approach to data management. Instead of hardcoding file paths throughout your code, you define a data catalog in `settings.yml` and reference data using dot notation like `inputs.raw.sales`. Framework resolves paths, selects the correct reader, and tracks file integrity automatically.
+Framework manages datasets through a declarative catalog in `settings.yml`. Reference datasets by dot-separated keys such as `inputs.raw.sales`, and Framework resolves file paths, selects the file reader, and verifies SHA-256 checksums.
 
-## The Data Catalog
+## Data catalog
 
-Define your data sources in `settings.yml` using dot notation keys:
+Register datasets under `data:` in `settings.yml`:
 
 ```yaml
 data:
@@ -28,120 +28,105 @@ data:
     type: rds
 ```
 
-## Editing the Catalog
+## Catalog editor
 
-The GUI makes catalog maintenance fast. In `framework::gui()` under **Data**, Framework scans your input directories and shows files that aren’t yet in the catalog. Click to add them and Framework will:
-
-- Prefill dot notation keys from the path (e.g., `inputs/public/raw/mtcars.csv` → `inputs.public.raw.mtcars`)
-- Guess the file type
-- Stage the change so you can review and save
+In `framework::gui()` under **Data**, Framework scans `inputs/` for uncataloged files. Selecting a discovered file prefills its dot-notation key from the path (such as `inputs.public.raw.mtcars`), infers the file type, and stages the entry for review:
 
 ![Scanning inputs for uncataloged files in framework::gui()](/images/data-catalog-input-scan.png)
 
-You can also view existing entries, copy their paths (relative or full), or copy the `data_read()` command directly.
-
-Once an entry is saved, it appears with dedicated copy buttons for the relative path, absolute path, and a ready-to-run `data_read()` helper so you can drop the same reference into scripts, notebooks, or tests without hunting for file names.
+Saved catalog entries provide copy buttons for the relative path, absolute path, and `data_read()` call:
 
 ![Copy helpers for catalog entries](/images/data-catalog-copy-tools.png)
 
-
-## Supported Formats
-
-Framework supports these data formats:
+## Supported formats
 
 | Type | Extensions | Reader | Package |
-|------|------------|--------|---------|
-| `csv` | .csv | `readr::read_delim()` | readr |
-| `tsv` | .tsv, .txt, .dat | `readr::read_delim()` | readr |
-| `rds` | .rds | `readRDS()` | base R |
-| `excel` | .xlsx, .xls | `readxl::read_excel()` | readxl |
-| `stata` | .dta | `haven::read_dta()` | haven |
-| `spss` | .sav, .zsav | `haven::read_sav()` | haven |
-| `spss_por` | .por | `haven::read_por()` | haven |
-| `sas` | .sas7bdat, .sas7bcat | `haven::read_sas()` | haven |
-| `sas_xpt` | .xpt | `haven::read_xpt()` | haven |
-| `parquet` | .parquet | `arrow::read_parquet()` | arrow |
+|---|---|---|---|
+| `csv` | `.csv` | `readr::read_delim()` | `readr` |
+| `tsv` | `.tsv`, `.txt`, `.dat` | `readr::read_delim()` | `readr` |
+| `rds` | `.rds` | `readRDS()` | `base` |
+| `excel` | `.xlsx`, `.xls` | `readxl::read_excel()` | `readxl` |
+| `stata` | `.dta` | `haven::read_dta()` | `haven` |
+| `spss` | `.sav`, `.zsav` | `haven::read_sav()` | `haven` |
+| `spss_por` | `.por` | `haven::read_por()` | `haven` |
+| `sas` | `.sas7bdat`, `.sas7bcat` | `haven::read_sas()` | `haven` |
+| `sas_xpt` | `.xpt` | `haven::read_xpt()` | `haven` |
+| `parquet` | `.parquet` | `arrow::read_parquet()` | `arrow` |
 
-For Stata, SPSS, and SAS files, Framework strips variable labels and formats by default for cleaner data frames. Use `keep_attributes = TRUE` to preserve them.
+For Stata, SPSS, and SAS files, `data_read()` strips variable labels and format attributes by default. Pass `keep_attributes = TRUE` to retain them. Reading `.parquet` files requires the `arrow` package.
 
-Parquet support requires the `arrow` package.
+## Data reading
 
-## Reading Data
-
-Use `data_read()` to load data by its catalog name:
+Load cataloged datasets with `data_read()`:
 
 ```r
-# Load from catalog
 sales <- data_read("inputs.raw.sales")
 customers <- data_read("inputs.raw.customers")
-
-# The function automatically:
-# - Resolves the path from config
-# - Uses the correct reader (read.csv, arrow::read_parquet, etc.)
-# - Tracks data lineage
 ```
 
-## Saving Data
+## Data saving
 
-Save data to the catalog with `data_save()`:
+Write derived datasets and register them in the catalog with `data_save()`:
 
 ```r
-# Process and save
 merged <- sales |>
   left_join(customers, by = "customer_id")
 
-data_save(merged, "inputs.final.merged")  # Automatically registers in the catalog
+data_save(merged, "inputs.final.merged")
 ```
 
-## Data Integrity
+## Data integrity
 
-Framework automatically tracks data integrity using file hashes. When you read or save data, Framework computes a SHA-256 hash of the file and stores it in the project database.
+`data_read()` and `data_save()` compute a SHA-256 hash of each file and store it in `framework.db`:
 
-**Data workflow:**
+1. First read records the file's SHA-256 hash.
+2. Subsequent reads compare the current file hash against the recorded hash.
+3. Mismatches emit a warning unless the entry is locked. Entries are unlocked unless `data_add()` or `data_save()` gets `locked = TRUE`.
 
-1. On first read, Framework records the file's hash
-2. On subsequent reads, it compares the current hash against the stored hash
-3. If the hashes differ, Framework warns you that the file has changed
-
-**Locked data:** Mark critical files as `locked: true` in your catalog. If a locked file changes, Framework will error instead of warning—preventing accidental use of corrupted or modified source data.
+Set `locked: true` on immutable source files so hash mismatches raise an error rather than a warning:
 
 ```yaml
 data:
   inputs.raw.survey:
     path: inputs/raw/survey_results.csv
     type: csv
-    locked: true  # Error if file changes unexpectedly
+    locked: true
 ```
 
+`data_save()` does not change locked data. Saving the same contents again works and keeps the lock. New contents stop with an error before the file is written. Save derived data under another name, or pass `unlock = TRUE` to replace locked data on purpose. The new file is unlocked unless you also pass `locked = TRUE`:
 
-## Data Info
+```r
+data_save(final, "inputs.final.analysis", locked = TRUE)
+data_save(corrected, "inputs.raw.survey.csv", unlock = TRUE, locked = TRUE)
+data_save(cleaned, "inputs.intermediate.cleaned", unlock = TRUE)
+```
 
-Get information about a data entry:
+## Catalog inspection
+
+Inspect a catalog entry's path, type, lock flag, and privacy status with `data_info()`:
 
 ```r
 data_info("inputs.raw.sales")
-# Returns path, type, and metadata
 ```
 
-## Organization Best Practices
+## Key and directory conventions
 
-### Directory Structure
+### Directory stages
 
 ```
 inputs/
-├── raw/          # Original, untouched data
-├── intermediate/ # Cleaned/transformed data
+├── raw/          # Unmodified external data
+├── intermediate/ # Cleaned intermediate files
 ├── final/        # Analysis-ready datasets
-└── reference/    # Lookup tables, constants
+└── reference/    # Lookup tables and crosswalks
 ```
 
-### Naming Convention
+### Dot-notation keys
 
-Use dot notation for logical grouping:
+Match catalog keys to directory stages (`inputs.<stage>.<name>`):
 
 ```yaml
 data:
-  # Source.stage.name pattern
   inputs.raw.sales_2024:
     path: inputs/raw/sales_2024.csv
 
@@ -151,13 +136,3 @@ data:
   inputs.final.sales_ready:
     path: inputs/final/sales_ready.rds
 ```
-
----
-
-<div style="display: flex; justify-content: space-between">
-
-[← Packages](/docs/packages)
-
-[Functions →](/docs/functions)
-
-</div>
