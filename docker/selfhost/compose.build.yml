@@ -1,22 +1,23 @@
 # Build the Framework Cloud image from this repository instead of pulling a
-# release. Every service that runs app code (app, worker, scheduler) uses the
-# same local image. From docker/selfhost in a clone:
+# release. app builds it; worker and scheduler run the same local image.
+# From docker/selfhost in a clone:
 #
 #   docker compose -f compose.yml -f compose.build.yml up -d --build
 
-x-build: &build
-  build:
-    context: ../..
-    dockerfile: docker/selfhost/Dockerfile
-  image: framework-cloud:local
-
 services:
   app:
-    <<: *build
+    build:
+      context: ../..
+      dockerfile: docker/selfhost/Dockerfile
+    image: framework-cloud:local
+  # Building the same tag from three services at once fails with
+  # "image already exists", so these two only run what app built
   worker:
-    <<: *build
+    image: framework-cloud:local
+    pull_policy: never
   scheduler:
-    <<: *build
+    image: framework-cloud:local
+    pull_policy: never
   scaffolder:
     build:
       context: ../scaffolder

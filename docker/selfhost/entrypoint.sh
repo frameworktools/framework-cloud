@@ -6,10 +6,10 @@ cd /app
 rm -f /tmp/framework-cloud-ready
 
 if [ -z "$APP_KEY" ]; then
-    echo "APP_KEY is not set. Generate one and put it in docker/selfhost/.env:" >&2
-    echo "  docker compose run --rm --no-deps app php artisan key:generate --show" >&2
     # Let key:generate itself run without a key
     case "$*" in *key:generate*) exec "$@" ;; esac
+    echo "APP_KEY is not set. Generate one and put it in .env next to compose.yml:" >&2
+    echo "  docker compose run --rm --no-deps app php artisan key:generate --show" >&2
     exit 1
 fi
 
