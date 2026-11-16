@@ -54,7 +54,7 @@ class Credentials
     ];
 
     /** Variables whose presence decides something without being a credential */
-    public const EXTRA_ENV = ['FW_DOCUMENTS_DISK'];
+    public const EXTRA_ENV = ['FW_DOCUMENTS_DISK', 'FW_ARTIFACTS_DISK'];
 
     /** @var array{values: array<string, string>, broken: list<string>}|null */
     private static ?array $saved = null;
@@ -80,10 +80,15 @@ class Credentials
             }
         }
 
-        // A bucket saved on the setup page becomes where documents go,
-        // unless the environment picks a disk itself
-        if (! self::envSet('FW_DOCUMENTS_DISK') && filled(config('filesystems.disks.bucket.bucket'))) {
-            config(['framework.documents_disk' => 'bucket']);
+        // A bucket saved on the setup page holds new artifacts (and older
+        // documents), unless the environment picks a disk itself. Each
+        // artifact version records its disk, so earlier ones stay readable.
+        if (filled(config('filesystems.disks.bucket.bucket'))) {
+            foreach (['FW_ARTIFACTS_DISK' => 'framework.artifacts_disk', 'FW_DOCUMENTS_DISK' => 'framework.documents_disk'] as $var => $path) {
+                if (! self::envSet($var)) {
+                    config([$path => 'bucket']);
+                }
+            }
         }
     }
 

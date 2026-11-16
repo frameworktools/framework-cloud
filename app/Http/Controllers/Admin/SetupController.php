@@ -79,11 +79,11 @@ class SetupController extends Controller
             'fields' => $fields,
             'status' => [
                 'github' => Scaffolder::enabled() && filled(config('services.github.client_secret')) && filled(config('services.github.app_slug')),
-                'storage' => config('framework.documents_disk'),
+                'storage' => config('framework.artifacts_disk'),
                 'mail' => config('mail.default'),
                 'agents' => Agents::enabled(),
             ],
-            'documentsDiskFromEnv' => Credentials::envSet('FW_DOCUMENTS_DISK'),
+            'artifactsDiskFromEnv' => Credentials::envSet('FW_ARTIFACTS_DISK'),
             'broken' => collect(array_keys(Credentials::REGISTRY))->filter(fn ($k) => Credentials::source($k) === 'broken')->values(),
             'github' => [
                 'manifest' => $this->manifest($request),

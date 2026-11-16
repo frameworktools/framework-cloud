@@ -14,8 +14,8 @@ Framework Cloud reads runtime configuration from environment variables, typicall
 | `FW_ADMIN_EMAIL` | none | Email address of the initial administrator account seeded at startup. |
 | `FW_ADMIN_NAME` | derived from email | Display name for the seeded administrator account. |
 | `FW_REGISTRATION` | `open` | `open` allows public sign-up. `closed` restricts account creation to `fw:login-link --create` and `fw:password --create`. |
-| `FW_DOCUMENTS_DISK` | `local` | Filesystem disk for document storage. Switches to `bucket` when a bucket is saved in **Server administration**. |
-| `FW_ARTIFACTS_DISK` | `local` | Private filesystem disk for artifacts. Must have no public bucket or web-root access. Run `fw:move-artifacts` after changing it. |
+| `FW_DOCUMENTS_DISK` | `local` | Filesystem disk for older artifact versions saved without a recorded disk. Switches to `bucket` when a bucket is saved in **Server administration**. |
+| `FW_ARTIFACTS_DISK` | `local` | Private filesystem disk for new artifacts. Must have no public bucket or web-root access. Switches to `bucket` when a bucket is saved in **Server administration**. Run `fw:move-artifacts` after changing it. |
 | `FW_PUBLISH_STORAGE_LIMIT_BYTES` | `1073741824` when `FW_MODE=hosted`, none when `self` | Per-account artifact storage limit in bytes, across all versions and Trash. Applies in both modes when set. `0` removes the limit. |
 | `FW_AGENTS` | `true` | `false` disables `/mcp`, OAuth agent sign-in, and the sidebar agent pages, overriding **Server administration**. See [AI apps](ai-apps.md). |
 | `FW_AGENT_PLUGIN` | unset | Displays `frameworktools/plugins` installation steps on the agent setup page (`framework.pub` only when unset). |

@@ -31,14 +31,14 @@ Include these items in every backup:
 
 - PostgreSQL database dump.
 - Local storage files (`storage/app` or `FW_LOCAL_STORAGE_ROOT`) holding private artifacts and imported docs.
-- Object-storage bucket contents, when `FW_ARTIFACTS_DISK` or `FW_DOCUMENTS_DISK` names a bucket disk. Saving a bucket in **Server administration** switches `FW_DOCUMENTS_DISK` to `bucket` unless the variable is set.
+- Object-storage bucket contents, when `FW_ARTIFACTS_DISK` or `FW_DOCUMENTS_DISK` names a bucket disk. Saving a bucket in **Server administration** switches both variables to `bucket` unless `.env` sets them.
 - OAuth signing keys for connected AI apps: `PASSPORT_PRIVATE_KEY` and `PASSPORT_PUBLIC_KEY`, or the `storage/oauth-private.key` and `storage/oauth-public.key` files.
 - `APP_KEY` (and `APP_PREVIOUS_KEYS` if set), required to decrypt credentials saved in **Server administration**.
 
 In Docker deployments, dump PostgreSQL and archive the `storage` volume from the directory containing `compose.yml`. The volume includes the OAuth key files. The commands assume the default `DB_USERNAME` and `DB_DATABASE` of `framework_cloud`:
 
 ```sh
-docker compose exec postgres pg_dump -U framework_cloud framework_cloud > backup.sql
+docker compose exec -T postgres pg_dump -U framework_cloud framework_cloud > backup.sql
 docker run --rm -v framework-cloud_storage:/data -v "$PWD":/backup alpine \
   tar czf /backup/storage.tgz -C /data .
 ```

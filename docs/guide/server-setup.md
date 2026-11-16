@@ -10,7 +10,9 @@ Configure email delivery so users can receive sign-in links and password reset e
 2. Enter the sender address, sender name, and provider credentials. Select **Save**.
 3. Select **Send a test email** to verify delivery to your administrator address.
 
-Before email is active, administrators can issue links with `php artisan fw:login-link` or assign passwords with `php artisan fw:password`.
+Before email is active, the sign-in and sign-up forms say the server can't send email, and no accounts are created through them. Administrators can issue links with `php artisan fw:login-link` or assign passwords with `php artisan fw:password`, and `--create` makes the account.
+
+Setting `MAIL_MAILER` in `.env` overrides the **Email** panel, so leave it unset to configure email here.
 
 ## GitHub
 
@@ -26,21 +28,23 @@ Individual users then link their GitHub accounts in **Account > GitHub connectio
 
 New artifacts write to the private `local` filesystem disk by default. Framework Cloud streams reader pages, original files, and bundle assets through authenticated application routes so password protection applies to every request. Sandboxed headers isolate uploaded HTML from application cookies.
 
-Set `FW_ARTIFACTS_DISK` in `.env` to target another private disk defined in `config/filesystems.php`. The chosen disk must remain private without public bucket access or direct web-root exposure. Multi-node deployments require shared private storage. Back up the artifact disk alongside PostgreSQL, which stores metadata, version histories, collections, and reports.
-
-The **Artifact storage** panel in **Server administration** configures the `FW_DOCUMENTS_DISK` object-storage bucket rather than `FW_ARTIFACTS_DISK`.
+The artifact disk must stay private, without public bucket access or direct web-root exposure. Multi-node deployments require shared private storage. Back up the artifact disk alongside PostgreSQL, which stores metadata, version histories, collections, and reports.
 
 ### Artifact bucket
 
-To store `FW_DOCUMENTS_DISK` files in S3-compatible object storage (Amazon S3, Cloudflare R2, MinIO, or Backblaze B2) rather than local disk:
+To store new artifacts in S3-compatible object storage (Amazon S3, Cloudflare R2, MinIO, or Backblaze B2) rather than local disk:
 
 1. Under **Artifact storage**, enter the bucket name, region, endpoint URL (leave blank for Amazon S3), access key ID, and secret access key.
 2. Select **Test connection** to write, read back, and delete a verification object.
 3. Select **Save**.
 
+A saved bucket becomes the `bucket` disk for `FW_ARTIFACTS_DISK` and `FW_DOCUMENTS_DISK`, unless `.env` sets either variable. Each artifact version records its disk, so earlier artifacts stay readable where they are. Run `php artisan fw:move-artifacts` to copy them to the bucket. See [Maintenance](maintenance.md#administration-commands).
+
+To use another private disk defined in `config/filesystems.php`, set `FW_ARTIFACTS_DISK` in `.env`.
+
 ### Artifact domain
 
-Uploaded HTML artifacts can include scripts. On multi-user servers, attach a dedicated domain such as `https://files.example.edu` to the bucket or configure `FW_CONTENT_URL` so user-authored scripts execute on a separate origin from Framework Cloud session cookies. Enter a public bucket domain in **Public address** under **Artifact storage** when applicable.
+Uploaded HTML artifacts can include scripts. On multi-user servers, set `FW_CONTENT_URL` to a dedicated domain such as `https://files.example.edu` so user-authored scripts execute on a separate origin from Framework Cloud session cookies. See [Configuration reference](configuration.md#server).
 
 ## Connected agents
 

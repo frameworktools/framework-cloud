@@ -124,18 +124,20 @@ class ServerSetupTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page->where('broken', ['storage.secret']));
     }
 
-    public function test_a_saved_bucket_becomes_the_documents_disk(): void
+    public function test_a_saved_bucket_holds_new_artifacts_and_documents(): void
     {
         $this->actingAs($this->admin())->put('/admin/setup/storage', ['storage__bucket' => 'docs']);
-        config(['framework.documents_disk' => 'local', 'filesystems.disks.bucket.bucket' => null]);
+        config(['framework.documents_disk' => 'local', 'framework.artifacts_disk' => 'local', 'filesystems.disks.bucket.bucket' => null]);
 
         Credentials::apply();
         $this->assertSame('bucket', config('framework.documents_disk'));
+        $this->assertSame('bucket', config('framework.artifacts_disk'));
 
         // ...unless the environment picks the disk
-        config(['framework.env_set' => ['FW_DOCUMENTS_DISK'], 'framework.documents_disk' => 'r2']);
+        config(['framework.env_set' => ['FW_DOCUMENTS_DISK', 'FW_ARTIFACTS_DISK'], 'framework.documents_disk' => 'r2', 'framework.artifacts_disk' => 'local']);
         Credentials::apply();
         $this->assertSame('r2', config('framework.documents_disk'));
+        $this->assertSame('local', config('framework.artifacts_disk'));
     }
 
     public function test_the_github_manifest_flow_saves_the_new_app(): void

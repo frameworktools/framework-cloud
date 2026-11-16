@@ -17,7 +17,7 @@ const props = defineProps({
     mode: String,
     fields: Object,
     status: Object,
-    documentsDiskFromEnv: Boolean,
+    artifactsDiskFromEnv: Boolean,
     broken: Array,
     github: Object,
     adminEmail: String,
@@ -218,10 +218,15 @@ const pill = (ready) => (ready
                 <div class="-mt-4 flex flex-col gap-2 text-sm text-slate-600 dark:text-slate-400">
                     <p>
                         Published artifacts use this server’s disk by default. For shared storage, use an S3-compatible bucket:
-                        Amazon S3, Cloudflare R2, MinIO, or Backblaze B2.
+                        Amazon S3, Cloudflare R2, MinIO, or Backblaze B2. Keep the bucket private. This server streams every artifact, so
+                        passwords apply.
                     </p>
-                    <p v-if="documentsDiskFromEnv">
-                        <span class="font-mono">FW_DOCUMENTS_DISK</span> is set, so the environment picks the disk. A bucket saved here is used only if it names <span class="font-mono">bucket</span>.
+                    <p>
+                        A saved bucket holds new artifacts. Earlier artifacts stay on their disk until you run
+                        <span class="font-mono">php artisan fw:move-artifacts</span>.
+                    </p>
+                    <p v-if="artifactsDiskFromEnv">
+                        <span class="font-mono">FW_ARTIFACTS_DISK</span> is set, so the environment picks the disk. A bucket saved here is used only if it names <span class="font-mono">bucket</span>.
                     </p>
                 </div>
 
@@ -241,14 +246,16 @@ const pill = (ready) => (ready
                         <CredentialField v-model="forms.storage.storage__key" :field="field('storage.key')" placeholder="Access key ID" :error="forms.storage.errors.storage__key" />
                         <CredentialField v-model="forms.storage.storage__secret" :field="field('storage.secret')" placeholder="Paste the secret access key" :error="forms.storage.errors.storage__secret" />
                     </div>
-                    <CredentialField
-                        v-model="forms.storage.storage__public_url" :field="field('storage.public_url')"
-                        placeholder="https://files.example.org (optional)" :error="forms.storage.errors.storage__public_url"
-                    />
-                    <p class="-mt-2 text-xs text-slate-500 dark:text-slate-400">
-                        Optional: a public domain attached to the bucket. Artifacts then load from there, a separate site from this one, which keeps
-                        scripts in published pages away from people's sign-ins. Without it, this server streams them.
-                    </p>
+                    <template v-if="field('storage.public_url').set">
+                        <CredentialField
+                            v-model="forms.storage.storage__public_url" :field="field('storage.public_url')"
+                            placeholder="https://files.example.org (optional)" :error="forms.storage.errors.storage__public_url"
+                        />
+                        <p class="-mt-2 text-xs text-slate-500 dark:text-slate-400">
+                            Only older artifacts saved without a recorded disk load from this address. To serve published HTML from a
+                            separate domain, set <span class="font-mono">FW_CONTENT_URL</span>.
+                        </p>
+                    </template>
                 </form>
 
                 <template v-if="!allEnv('storage')" #actions>
