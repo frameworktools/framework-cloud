@@ -3,11 +3,14 @@
     // collaborator gets. Formatted is Framework's model view; Raw output is what the tool itself printed,
     // so readers can check the translation. resources/examples/landing/publish.json holds real values:
     // the model JSON each package wrote for the same regression, and a trimmed excerpt of its printout.
-    // "View model" opens the real page from php artisan fw:homepage-example (published from R).
+    // "View model" opens the model each language published (php artisan fw:homepage-example);
+    // the command line's tab publishes R's saved model.
     $example = config('framework.homepage_example_url');
-    $exampleUrl = $example ? url(parse_url($example, PHP_URL_PATH) ?: '/') : null;
-    $shown = preg_replace('#^https?://#', '', $exampleUrl ?? 'https://framework.pub/@examples/penguin-study/penguin-body-mass');
     $slug = 'penguin-body-mass';
+    $exampleUrl = fn (string $language) => $example
+        ? url(parse_url(\App\Console\Commands\HomepageExampleCommand::projectUrl($example, $language), PHP_URL_PATH).'/'.$slug)
+        : null;
+    $shown = fn (string $language) => preg_replace('#^https?://#', '', $exampleUrl($language) ?? 'https://framework.pub/@examples/'.(\App\Console\Commands\HomepageExampleCommand::PROJECTS[$language] ?? 'penguin-study').'/'.$slug);
     $languages = json_decode(file_get_contents(resource_path('examples/landing/publish.json')), true);
     $number = fn (float $value, int $decimals = 3) => str_replace('-', '−', number_format($value, $decimals, '.', ''));
     $slugCode = '<span class="text-sky-300 underline decoration-sky-400/70 decoration-2 underline-offset-4">'.$slug.'</span>';
@@ -35,7 +38,7 @@
     <div class="flex items-center gap-2 border-y border-emerald-500/20 bg-emerald-50 px-5 py-2 font-mono text-xs text-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-200">
         <x-heroicon-m-arrow-turn-down-right class="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
         @foreach ($languages as $key => $language)
-            <span data-pd-lang="{{ $key }}" @unless ($loop->first) hidden @endunless class="min-w-0 truncate">{{ $language['message'] }}{{ substr($shown, 0, -strlen($slug)) }}<span class="font-semibold underline decoration-emerald-500/60 decoration-2 underline-offset-4">{{ $slug }}</span></span>
+            <span data-pd-lang="{{ $key }}" @unless ($loop->first) hidden @endunless class="min-w-0 truncate">{{ $language['message'] }}{{ substr($shown($key), 0, -strlen($slug)) }}<span class="font-semibold underline decoration-emerald-500/60 decoration-2 underline-offset-4">{{ $slug }}</span></span>
         @endforeach
     </div>
 
@@ -45,16 +48,21 @@
             <div class="min-w-0">
                 <p class="flex flex-wrap items-center gap-2">
                     <span class="font-semibold tracking-tight">Penguin body mass model</span>
-                    <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-white/10 dark:text-slate-300">Version 2</span>
+                    {{-- R's model was published twice; Python's and Stata's once --}}
+                    @foreach ($languages as $key => $language)
+                        <span data-pd-lang="{{ $key }}" @unless ($loop->first) hidden @endunless class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-white/10 dark:text-slate-300">Version {{ in_array($key, ['python', 'stata'], true) ? 1 : 2 }}</span>
+                    @endforeach
                 </p>
                 @foreach ($languages as $key => $language)
                     <p data-pd-lang="{{ $key }}" @unless ($loop->first) hidden @endunless class="mt-1 font-mono text-xs text-slate-500 dark:text-slate-400"><span class="text-sky-700 dark:text-sky-400">{{ $language['source'] }}</span> · {{ $language['formula'] }}</p>
                 @endforeach
             </div>
             <div class="flex items-center gap-4">
-                @if ($exampleUrl)
-                    <a href="{{ $exampleUrl }}" target="_blank" rel="noopener" class="shrink-0 text-sm font-medium text-sky-700 hover:text-sky-900 dark:text-sky-400 dark:hover:text-sky-300">View model <span aria-hidden="true">↗</span></a>
+                @foreach ($languages as $key => $language)
+                @if ($exampleUrl($key))
+                    <a data-pd-lang="{{ $key }}" @unless ($loop->first) hidden @endunless href="{{ $exampleUrl($key) }}" target="_blank" rel="noopener" class="shrink-0 text-sm font-medium text-sky-700 hover:text-sky-900 dark:text-sky-400 dark:hover:text-sky-300">View model <span aria-hidden="true">↗</span></a>
                 @endif
+                @endforeach
             </div>
         </div>
 

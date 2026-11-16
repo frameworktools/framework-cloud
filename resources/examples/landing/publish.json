@@ -50,7 +50,7 @@
   "label": "Python",
   "path": "scripts/analysis.py",
   "code": "fw.publish(model, slug=\"ZZSLUGZZ\")",
-  "message": "Published version 2: ",
+  "message": "Published version 1: ",
   "source": "Python · statsmodels OLS",
   "formula": "body_mass_g ~ flipper_length_mm + species",
   "rows": [
@@ -97,7 +97,7 @@
   "label": "Stata",
   "path": "analysis.do",
   "code": "fw_publish, estimates slug(ZZSLUGZZ)",
-  "message": "Published to cloud (version 2): ",
+  "message": "Published to cloud (version 1): ",
   "source": "Stata · regress",
   "formula": "regress body_mass_g flipper_length_mm i.species_id",
   "rows": [
