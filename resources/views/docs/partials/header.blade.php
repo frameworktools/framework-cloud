@@ -11,15 +11,11 @@
 ])>
     <div class="mx-auto flex max-w-8xl items-center justify-between gap-3 px-6 sm:gap-6 sm:px-8 lg:px-12">
         <div class="flex min-w-0 items-center gap-8">
-            {{-- Framework leads back to framework.pub; the product name, to this site's home --}}
-            <div class="flex min-w-0 items-center gap-2 text-lg font-bold whitespace-nowrap">
-                <a href="{{ rtrim((string) config('app.url'), '/') }}/" class="flex shrink-0 items-center gap-3 text-slate-900 hover:text-sky-700 dark:text-white dark:hover:text-sky-300">
-                    <img src="/images/logo-80.webp" alt="" width="73" height="80" class="h-8 w-auto shrink-0">
-                    <span class="max-sm:sr-only">Framework</span>
-                </a>
-                <span class="text-slate-300 max-sm:hidden dark:text-slate-600" aria-hidden="true">/</span>
-                <a href="{{ $site['home'] ?? '/' }}" aria-label="{{ $siteTitle }} home" class="truncate text-slate-900 hover:text-sky-700 dark:text-white dark:hover:text-sky-300">{{ Products::switcher($product)[$product] ?? $siteTitle }}</a>
-            </div>
+            {{-- The brand leads back to framework.pub; the product switcher shows which docs these are --}}
+            <a href="{{ rtrim((string) config('app.url'), '/') }}/" aria-label="Framework home" class="flex shrink-0 items-center gap-3 text-lg font-bold whitespace-nowrap text-slate-900 dark:text-white">
+                <img src="/images/logo-80.webp" alt="" width="73" height="80" class="h-8 w-auto shrink-0">
+                <span>Framework</span>
+            </a>
 
             @if ($site)
                 <nav class="hidden xl:flex xl:items-center xl:gap-1" aria-label="Sections">
