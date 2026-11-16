@@ -192,11 +192,40 @@ class ProjectDownloadTest extends TestCase
         config(['services.github.fw_version' => null]);
         $this->actingAs($user)->get('/projects/create')->assertInertia(fn ($page) => $page->where('downloads', true)
             ->where('githubUnavailable.stata', fn ($reason) => filled($reason))->missing('githubUnavailable.r'));
-        $this->actingAs($user)->get('/projects/nhanes-study')->assertInertia(fn ($page) => $page->where('downloads', true));
+        $this->actingAs($user)->get('/projects/nhanes-study')->assertInertia(fn ($page) => $page->where('downloads', true)->where('downloadUnavailable', null));
 
         config(['services.scaffolder.url' => null]);
         $this->actingAs($user)->get('/projects/create')->assertInertia(fn ($page) => $page->where('downloads', false));
+        // The project page keeps the ZIP card and says why it's off
+        $this->actingAs($user)->get('/projects/nhanes-study')->assertInertia(fn ($page) => $page->where('downloads', false)
+            ->where('downloadUnavailable', ProjectZip::UNAVAILABLE));
         $this->assertFalse(ProjectZip::enabled());
+    }
+
+    public function test_unavailable_destinations_say_why_and_admins_see_what_to_set(): void
+    {
+        config(['services.scaffolder.url' => null, 'services.github.client_id' => null, 'services.github.framework_py_sha' => '']);
+        $user = User::factory()->create();
+        $admin = User::factory()->create(['is_admin' => true]);
+
+        $this->actingAs($user)->get('/projects/create')->assertInertia(fn ($page) => $page
+            ->where('unavailable.download', ProjectZip::UNAVAILABLE)
+            ->where('unavailable.github', 'This server is not set up to create GitHub repositories.')
+            ->where('githubUnavailable.python', 'This server is not set up to scaffold Python projects on GitHub yet.'));
+
+        $this->actingAs($admin)->get('/projects/create')->assertInertia(fn ($page) => $page
+            ->where('unavailable.download', fn ($text) => str_contains($text, 'SCAFFOLDER_URL'))
+            ->where('unavailable.github', fn ($text) => str_contains($text, 'Server setup page'))
+            ->missing('githubUnavailable.r'));
+
+        // With GitHub set up, the language that's off names its setting
+        config(['services.github.client_id' => 'Iv1.test', 'services.scaffolder.url' => 'http://scaffolder:8000']);
+        $this->actingAs($admin)->get('/projects/create')->assertInertia(fn ($page) => $page
+            ->missing('unavailable.download')->missing('unavailable.github')
+            ->where('githubUnavailable.python', fn ($text) => str_contains($text, 'GITHUB_FRAMEWORK_PY_SHA'))
+            ->missing('githubUnavailable.r'));
+        $this->actingAs($user)->get('/projects/create')->assertInertia(fn ($page) => $page
+            ->where('githubUnavailable.python', fn ($text) => ! str_contains($text, 'GITHUB_FRAMEWORK_PY_SHA')));
     }
 
     public function test_gitignore_check_follows_the_last_line_about_env(): void

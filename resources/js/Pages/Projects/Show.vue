@@ -24,11 +24,11 @@ import ProjectToken from '@/Components/ProjectToken.vue';
 import PublishExamples from '@/Components/PublishExamples.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import { ChevronRightIcon } from '@heroicons/vue/24/outline';
-import { usePythonServerArg, useServerArg, useServerFlag } from '@/cloud.js';
+import { useServerFlag, useSetupCommand } from '@/cloud.js';
 import { languageNames } from '@/library.js';
 import { statusLabel, statusVariant, typeName } from '@/projects.js';
 
-const props = defineProps({ project: Object, section: String, setup: Object, githubSetup: Object, downloads: Boolean, canPublish: Boolean });
+const props = defineProps({ project: Object, section: String, setup: Object, githubSetup: Object, downloads: Boolean, downloadUnavailable: String, canPublish: Boolean });
 const publishing = ref(false);
 
 const sectionTitles = { overview: 'Overview', setup: 'Project setup', github: 'GitHub & Pages', published: 'Artifacts', computers: 'Computers & tokens' };
@@ -41,8 +41,7 @@ const hookNames = { data_security: 'Check for secrets', check_sensitive_dirs: 'W
 
 const page = usePage();
 
-const serverArg = useServerArg();
-const pythonServerArg = usePythonServerArg();
+const setupCommand = useSetupCommand();
 const serverFlag = useServerFlag();
 // The language the flashed token was issued for
 const tokenLanguage = computed(() => page.props.flash.token_language ?? props.project.language);
@@ -73,7 +72,7 @@ const localText = computed(() => ({
     stata: 'In a terminal, run fw login, then fw new with the project name. Framework sets up Git.',
     python: 'Get a project token and pass it to framework.new(key=...) in Python, or to fw new in a terminal.',
 }[props.project.language] ?? 'Get a project token and pass it to framework::setup() in R, or to fw new in a terminal.'));
-const installCards = computed(() => 2 + (props.downloads ? 1 : 0));
+const installCards = 3;
 
 const pagesBusy = ref(false);
 const enablePages = async () => {
@@ -184,10 +183,10 @@ const artifactMenu = (doc) => [
                         <p v-if="!github?.repo" class="text-sm text-slate-600 dark:text-slate-400">Framework creates a repository on your GitHub account and sets the project up there. Clone it to work on it.</p>
                         <ProjectGitHub :project="project" :setup="githubSetup" collapsed @open="githubOpen = true" />
                     </section>
-                    <section v-if="downloads" class="flex min-w-0 flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900" aria-labelledby="install-zip">
+                    <section class="flex min-w-0 flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900" aria-labelledby="install-zip">
                         <h3 id="install-zip" class="font-medium text-slate-900 dark:text-white">ZIP download</h3>
-                        <p class="flex-1 text-sm text-slate-600 dark:text-slate-400">Framework builds the project and your browser downloads it. Unzip it and open the folder. You need no Git and no Framework packages.</p>
-                        <div><UiButton variant="ghost" size="sm" :disabled="preparing" @click="download">{{ preparing ? 'Preparing…' : 'Download zip' }}</UiButton></div>
+                        <p class="flex-1 text-sm text-slate-600 dark:text-slate-400">{{ downloads ? 'Framework builds the project and your browser downloads it. Unzip it and open the folder. You need no Git and no Framework packages.' : downloadUnavailable }}</p>
+                        <div><UiButton variant="ghost" size="sm" :disabled="preparing || !downloads" @click="download">{{ preparing ? 'Preparing…' : 'Download zip' }}</UiButton></div>
                     </section>
                 </div>
             </UiPanel>
@@ -413,8 +412,8 @@ const artifactMenu = (doc) => [
                     <UiButton variant="outline" size="sm" @click="issueToken">Get token</UiButton>
                 </template>
                 <div v-if="!pullToken" class="text-sm">
-                    <CodeChip v-if="project.language === 'r'">framework::setup("&lt;project-token&gt;"{{ serverArg }})</CodeChip>
-                    <CodeChip v-else-if="project.language === 'python'">framework.new(key="&lt;project-token&gt;"{{ pythonServerArg }})</CodeChip>
+                    <CodeChip v-if="project.language === 'r'">{{ setupCommand('r', '<project-token>') }}</CodeChip>
+                    <CodeChip v-else-if="project.language === 'python'">{{ setupCommand('python', '<project-token>') }}</CodeChip>
                     <span v-else class="flex flex-wrap items-center gap-2 text-slate-600 dark:text-slate-400">
                         <CodeChip>fw login{{ serverFlag }}</CodeChip>
                         <span>then</span>

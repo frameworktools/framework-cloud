@@ -1,8 +1,8 @@
 import { computed } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 
-// The R package talks to framework.pub unless told otherwise, so commands
-// shown on any other server name it: cloud_login("…", url = "<server>").
+// Logging in defaults to framework.pub, so login commands shown on any other
+// server name it: cloud_login("…", url = "<server>").
 export const DEFAULT_SERVER = 'https://framework.pub';
 
 // The address R, Python, and fw reach this server at: FW_CLIENT_URL, or APP_URL
@@ -33,14 +33,15 @@ export function usePythonServerArg() {
     return computed(() => (clientUrl(page) === DEFAULT_SERVER ? '' : `, url="${clientUrl(page)}"`));
 }
 
+// Token commands always name the server, framework.pub included: the clients
+// never send a project token to a server the user didn't choose.
 export function useSetupCommand() {
-    const arg = useServerArg();
-    const pyArg = usePythonServerArg();
-    const flag = useServerFlag();
+    const page = usePage();
 
     return (language, token) => {
-        if (language === 'stata') return `fw new --pull-token${flag.value}`;
-        if (language === 'python') return `framework.new(key="${token}"${pyArg.value})`;
-        return `framework::setup("${token}"${arg.value})`;
+        const url = clientUrl(page);
+        if (language === 'stata') return `fw new --pull-token --url ${url}`;
+        if (language === 'python') return `framework.new(key="${token}", url="${url}")`;
+        return `framework::setup("${token}", url = "${url}")`;
     };
 }

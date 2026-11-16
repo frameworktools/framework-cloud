@@ -116,6 +116,8 @@ class ProjectsController extends Controller
         return Inertia::render('Projects/Show', [
             'section' => $section,
             'downloads' => ProjectZip::enabled(),
+            // Why the ZIP download is off, with what to configure for admins
+            'downloadUnavailable' => ProjectZip::enabled() ? null : self::withHint($request->user(), ProjectZip::UNAVAILABLE, ProjectZip::SETUP_HINT),
             'canPublish' => $request->user()->canPublish(),
             'setup' => fn () => $section === 'setup' ? self::setup($project) : null,
             // Creating the repository from the project page, when it has none yet
@@ -202,12 +204,20 @@ class ProjectsController extends Controller
 
         return [
             'enabled' => $enabled,
-            'unavailable' => $enabled ? Scaffolder::unavailableFor($project->language ?? 'r') : null,
+            'unavailable' => $enabled ? self::withHint($user, Scaffolder::unavailableFor($project->language ?? 'r'), Scaffolder::setupHint($project->language ?? 'r')) : null,
+            // What an admin configures to turn GitHub on
+            'hint' => ! $enabled && $user->is_admin ? Scaffolder::setupHint() : null,
             'login' => $account?->login,
             'owners' => $account && $enabled ? Installations::for($account) : [],
             'install_url' => Installations::installUrl(),
             'sensitive' => ProjectLayers::isSensitive(ProjectLayers::for($project)['layers'] ?? []),
         ];
+    }
+
+    /** Why an option is unavailable, followed for admins by what to configure. */
+    private static function withHint(User $user, ?string $reason, ?string $hint): ?string
+    {
+        return $reason !== null && $user->is_admin && filled($hint) ? $reason.' '.$hint : $reason;
     }
 
     /** What the project list and the sidebar show for one project. */
@@ -273,8 +283,13 @@ class ProjectsController extends Controller
                 'destination' => in_array($request->query('destination'), ['download', 'github', 'local'], true) ? $request->query('destination') : null,
             ],
             'downloads' => ProjectZip::enabled(),
+            // Destinations this server can't offer, and why; admins also see what to configure
+            'unavailable' => array_filter([
+                'download' => ProjectZip::enabled() ? null : self::withHint($user, ProjectZip::UNAVAILABLE, ProjectZip::SETUP_HINT),
+                'github' => Scaffolder::enabled() ? null : self::withHint($user, 'This server is not set up to create GitHub repositories.', Scaffolder::setupHint()),
+            ]),
             // Languages GitHub can't scaffold here, and why
-            'githubUnavailable' => collect(Project::LANGUAGES)->mapWithKeys(fn (string $l) => [$l => Scaffolder::unavailableFor($l)])->filter()->all(),
+            'githubUnavailable' => collect(Project::LANGUAGES)->mapWithKeys(fn (string $l) => [$l => self::withHint($user, Scaffolder::unavailableFor($l), Scaffolder::setupHint($l))])->filter()->all(),
             'github' => [
                 'enabled' => Scaffolder::enabled(),
                 'login' => $account?->login,
@@ -324,7 +339,7 @@ class ProjectsController extends Controller
         }
 
         if (($validated['destination'] ?? null) === 'download' && ! ProjectZip::enabled()) {
-            return back()->withErrors(['destination' => 'This server is not set up to build downloads.']);
+            return back()->withErrors(['destination' => ProjectZip::UNAVAILABLE]);
         }
 
         $sensitive = ProjectLayers::isSensitive($resolved['envelope']['layers']);

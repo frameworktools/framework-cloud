@@ -83,7 +83,7 @@ const show = () => { open.value = true; emit('open'); };
         </div>
 
         <template v-if="canCreate">
-            <p v-if="!setup.enabled" class="text-slate-600 dark:text-slate-400">This server is not set up to create GitHub repositories.</p>
+            <p v-if="!setup.enabled" class="text-slate-600 dark:text-slate-400">This server is not set up to create GitHub repositories.<template v-if="setup.hint"> {{ setup.hint }}</template></p>
             <p v-else-if="setup.unavailable" class="text-slate-600 dark:text-slate-400">{{ setup.unavailable }}</p>
             <p v-else-if="!setup.login" class="text-slate-600 dark:text-slate-400"><UiLink href="/account/github">Connect GitHub</UiLink> first.</p>
             <p v-else-if="setup.owners === null" class="text-slate-600 dark:text-slate-400">GitHub could not be reached. Reload to try again.</p>

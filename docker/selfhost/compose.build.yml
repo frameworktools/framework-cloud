@@ -1,5 +1,6 @@
 # Build the Framework Cloud image from this repository instead of pulling a
-# release. From docker/selfhost in a clone:
+# release. Every service that runs app code (app, worker, scheduler) uses the
+# same local image. From docker/selfhost in a clone:
 #
 #   docker compose -f compose.yml -f compose.build.yml up -d --build
 
@@ -13,6 +14,8 @@ services:
   app:
     <<: *build
   worker:
+    <<: *build
+  scheduler:
     <<: *build
   scaffolder:
     build:

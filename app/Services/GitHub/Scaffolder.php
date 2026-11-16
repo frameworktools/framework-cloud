@@ -40,6 +40,31 @@ class Scaffolder
         };
     }
 
+    /**
+     * What an admin changes so GitHub can scaffold projects (in this
+     * language), or null when nothing needs changing.
+     */
+    public static function setupHint(?string $language = null): ?string
+    {
+        if (blank(config('services.github.client_id'))) {
+            return 'Create the GitHub App on the Server setup page.';
+        }
+
+        if (! self::enabled()) {
+            return 'Remove GITHUB_FRAMEWORK_SHA from the environment, or set it to a full framework commit SHA.';
+        }
+
+        if ($language === null || self::unavailableFor($language) === null) {
+            return null;
+        }
+
+        return match ($language) {
+            'python' => 'Remove GITHUB_FRAMEWORK_PY_SHA from the environment, or set it to a full framework-py commit SHA.',
+            'stata' => 'Remove GITHUB_FW_VERSION from the environment, or set it to an fw release such as 0.6.3.',
+            default => null,
+        };
+    }
+
     /** The workflow file for a project's language, pinned to this deployment's tool version. */
     public static function workflow(string $language = 'r'): string
     {

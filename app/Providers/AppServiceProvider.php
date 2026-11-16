@@ -6,6 +6,7 @@ use App\Http\Controllers\OAuth\ApproveMcpAuthorizationController;
 use App\Models\McpApprovedApp;
 use App\Support\ContentHost;
 use App\Support\Credentials;
+use App\Support\OAuthKeys;
 use App\Support\TrustedProxies;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Events\DiagnosingHealth;
@@ -21,6 +22,8 @@ use Inertia\Inertia;
 use Laravel\Passport\Passport;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\GithubProvider;
+use League\OAuth2\Server\AuthorizationServer;
+use League\OAuth2\Server\ResourceServer;
 use RuntimeException;
 
 class AppServiceProvider extends ServiceProvider
@@ -33,6 +36,11 @@ class AppServiceProvider extends ServiceProvider
         // The hosted MCP server registers only the OAuth routes it needs, in
         // routes/ai.php.
         Passport::ignoreRoutes();
+
+        // A manual install never runs passport:keys: make the keys the first
+        // time OAuth needs them
+        $this->app->beforeResolving(AuthorizationServer::class, fn () => OAuthKeys::ensure());
+        $this->app->beforeResolving(ResourceServer::class, fn () => OAuthKeys::ensure());
     }
 
     /**
@@ -85,7 +93,7 @@ class AppServiceProvider extends ServiceProvider
         Passport::refreshTokensExpireIn(now()->addDays(30));
 
         // Keys from PASSPORT_PRIVATE_KEY and PASSPORT_PUBLIC_KEY (Forge), or
-        // storage/oauth-*.key files made by passport:keys.
+        // storage/oauth-*.key files (OAuthKeys makes them when missing).
         Passport::authorizationView(function (array $parameters) {
             $redirectHost = parse_url((string) $parameters['request']->query('redirect_uri'), PHP_URL_HOST) ?: null;
 

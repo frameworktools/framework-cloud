@@ -19,6 +19,10 @@ use ZipArchive;
  */
 class ProjectZip
 {
+    public const UNAVAILABLE = 'This server is not set up to build ZIP downloads.';
+
+    public const SETUP_HINT = 'Set SCAFFOLDER_URL and SCAFFOLDER_TOKEN to the scaffolder container.';
+
     public static function enabled(): bool
     {
         return filled(config('services.scaffolder.url'));
@@ -32,7 +36,7 @@ class ProjectZip
     public function build(Project $project): string
     {
         if (! self::enabled()) {
-            throw new ProjectZipFailed('This server is not set up to build downloads.');
+            throw new ProjectZipFailed(self::UNAVAILABLE);
         }
 
         $envelope = ProjectLayers::for($project);

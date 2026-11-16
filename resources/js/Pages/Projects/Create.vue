@@ -25,7 +25,7 @@ import { connectionLanguages, copyConnections, variablesOnly } from '@/connectio
 
 const props = defineProps({
     blueprints: Array, catalog: Object, defaults: Object, selected: Number, start: Object,
-    stage: String, tab: String, github: Object, downloads: Boolean, githubUnavailable: Object,
+    stage: String, tab: String, github: Object, downloads: Boolean, unavailable: Object, githubUnavailable: Object,
     ggplotThemes: Array, stataSchemes: Array, matplotlibStyles: Array, quartoChoices: Object,
     // An existing project to edit: its id, slug, name, description, language, blueprint_id, and stored choices
     editing: { type: Object, default: null },
@@ -372,19 +372,23 @@ const destinations = computed(() => {
                 ? 'Framework issues a project token. Pass it to framework.new(key=...) in Python, or to fw new in a terminal. Framework sets up Git.'
                 : 'Framework issues a project token. Pass it to framework::setup() in R, or to fw new in a terminal. Framework sets up Git.',
     };
-    const download = props.downloads ? [{
+    // A destination this server can't offer stays visible, disabled, with the reason
+    const download = {
         key: 'download',
         title: 'ZIP download',
-        text: 'Framework builds the project and your browser downloads it. Unzip it and open the folder. You need no Git and no Framework packages.',
-    }] : [];
-    const github = props.github.enabled ? [{
+        text: props.unavailable?.download ?? 'Framework builds the project and your browser downloads it. Unzip it and open the folder. You need no Git and no Framework packages.',
+        disabled: !props.downloads,
+    };
+    const githubOff = props.github.enabled ? githubBlocked.value : props.unavailable?.github;
+    const github = {
         key: 'github',
         title: 'GitHub repository',
-        text: githubBlocked.value ?? 'Framework creates a repository on your GitHub account and sets the project up there. Open it in VS Code, Positron, or RStudio by cloning it.',
-        disabled: !!githubBlocked.value,
-    }] : [];
+        text: githubOff ?? 'Framework creates a repository on your GitHub account and sets the project up there. Open it in VS Code, Positron, or RStudio by cloning it.',
+        disabled: !props.github.enabled || !!githubBlocked.value,
+    };
 
-    return githubReady.value ? [local, ...github, ...download] : [local, ...download, ...github];
+    // Unavailable ones last
+    return (githubReady.value ? [local, github, download] : [local, download, github]).sort((a, b) => !!a.disabled - !!b.disabled);
 });
 const submitLabel = computed(() => (editing ? 'Save changes' : ({ download: 'Create and download', github: 'Create on GitHub' })[form.destination] ?? 'Create project'));
 const destinationName = computed(() => destinations.value.find((d) => d.key === form.destination)?.title ?? '');
