@@ -11,7 +11,7 @@
 <header class="border-b border-slate-800/10 dark:border-white/15">
     <div class="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3 px-6 py-4">
         <a href="{{ config('app.url') }}" class="inline-flex items-center gap-2 text-sm font-semibold tracking-tight"><img src="{{ asset('images/logo-80.webp') }}" alt="" width="73" height="80" class="h-6 w-auto">Framework <span class="font-normal text-slate-400">/ Blueprint</span></a>
-        <div class="flex items-center gap-3"><x-present-link :target="$blueprint" /><x-theme-toggle /></div>
+        <div class="flex items-center gap-3"><x-present-link :target="$blueprint" :title="$blueprint->name" /><x-theme-toggle /></div>
     </div>
 </header>
 <main class="mx-auto max-w-4xl px-6 py-10">
