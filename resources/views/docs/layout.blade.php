@@ -80,6 +80,13 @@
             });
         });
 
+        // Header menus, as on the home page: one open at a time; Escape or a click elsewhere closes it
+        document.querySelectorAll('[data-site-menu]').forEach((menu) => {
+            menu.addEventListener('toggle', () => { if (menu.open) document.querySelectorAll('[data-site-menu]').forEach((other) => { if (other !== menu) other.open = false; }); });
+            menu.addEventListener('keydown', (event) => { if (event.key === 'Escape') { menu.open = false; menu.querySelector('summary').focus(); } });
+            document.addEventListener('click', (event) => { if (!menu.contains(event.target)) menu.open = false; });
+        });
+
         // Copy buttons on code blocks
         document.querySelectorAll('[data-copy]').forEach((button) => {
             button.addEventListener('click', async () => {

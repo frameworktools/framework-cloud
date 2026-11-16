@@ -20,11 +20,11 @@ class CloudGuide
     public const REPOSITORY = 'https://github.com/frameworktools/framework-cloud';
 
     /** Bump when rendered pages change shape, so cached pages are rebuilt */
-    private const VERSION = 2;
+    private const VERSION = 3;
 
     /** Sidebar order: section => [slug => title] */
     public const PAGES = [
-        'Framework Cloud' => [
+        'Guides' => [
             'index' => 'Overview',
             'getting-started' => 'Getting started',
             'signing-in' => 'Signing in',

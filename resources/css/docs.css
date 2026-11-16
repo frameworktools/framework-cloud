@@ -123,15 +123,6 @@ html.dark {
 .docs-prose blockquote.callout :where(code) {
     @apply bg-white/60 dark:bg-slate-900/40;
 }
-
-/* Hover dropdowns in the top bar; focus-within keeps them usable by keyboard */
-.docs-menu > .docs-menu-panel {
-    @apply pointer-events-none invisible scale-95 opacity-0 transition duration-100 ease-out;
-}
-.docs-menu:hover > .docs-menu-panel,
-.docs-menu:focus-within > .docs-menu-panel {
-    @apply pointer-events-auto visible scale-100 opacity-100;
-}
 }
 
 /* R and Python tabs on guide code samples (CloudGuide::languageTabs) */

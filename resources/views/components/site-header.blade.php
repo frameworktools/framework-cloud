@@ -2,12 +2,18 @@
 @php
     $docsUrl = fn ($product, $path = '/') => \App\Support\Docs\Products::publicUrl($product, $path);
     $menus = [
+        // One menu per product: the Cloud guide and its self-hosting pages; a null link is a group label
         'Cloud' => [
             ['Overview', route('home').'#framework-cloud'],
-            ['Dashboard', route('dashboard')],
+            ['Documentation', route('guide')],
             ['Projects and blueprints', route('guide', ['page' => 'projects-and-blueprints'])],
-            ['Research publishing', route('guide', ['page' => 'publishing'])],
-            ['AI skills and sync', route('guide', ['page' => 'skill-sync'])],
+            ['Publishing artifacts', route('guide', ['page' => 'publishing'])],
+            ['Skill sync', route('guide', ['page' => 'skill-sync'])],
+            ['Self-hosting', null],
+            ['Overview', route('self-hosting')],
+            ['Docker installation', route('guide', ['page' => 'install-docker'])],
+            ['Configuration', route('guide', ['page' => 'configuration'])],
+            ['Backups and upgrades', route('guide', ['page' => 'maintenance'])],
         ],
         'R' => [
             ['Overview', $docsUrl('r')],
@@ -42,19 +48,6 @@
             ['AI agents', $docsUrl('cli', '/guides/agents')],
             ['Command reference', $docsUrl('cli', '/reference')],
         ],
-        'Docs' => [
-            ['Framework Cloud', route('guide')],
-            ['Projects and blueprints', route('guide', ['page' => 'projects-and-blueprints'])],
-            ['Artifacts and collections', route('guide', ['page' => 'publishing'])],
-            ['Skill synchronization', route('guide', ['page' => 'skill-sync'])],
-        ],
-        'Self-hosting' => [
-            ['Overview', route('self-hosting')],
-            ['Docker installation', route('guide', ['page' => 'install-docker'])],
-            ['Server setup', route('guide', ['page' => 'server-setup'])],
-            ['Configuration', route('guide', ['page' => 'configuration'])],
-            ['Backups and upgrades', route('guide', ['page' => 'maintenance'])],
-        ],
     ];
 @endphp
 <header @class(['relative z-30 text-slate-900 dark:text-slate-50', 'bg-white dark:bg-slate-950' => ! $overlay, 'border-b border-sky-700/40 bg-white/90 dark:border-sky-400/30 dark:bg-slate-950/90' => $overlay])>
@@ -66,6 +59,10 @@
                     <summary class="flex cursor-pointer list-none items-center gap-1 rounded-md px-1.5 py-2 text-xs font-medium text-slate-600 hover:bg-slate-800/5 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-sky-500 sm:px-2.5 sm:text-sm dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-white [&::-webkit-details-marker]:hidden">{{ $label }}<x-heroicon-o-chevron-down class="size-3 opacity-50 transition group-open:rotate-180" /></summary>
                     <div class="absolute left-0 top-full z-50 mt-2 min-w-52 rounded-xl border border-slate-800/10 bg-white p-2 shadow-xl shadow-slate-900/10 max-sm:fixed max-sm:inset-x-6 max-sm:top-[115px] dark:border-white/15 dark:bg-slate-900 dark:shadow-black/30">
                         @foreach ($links as [$title, $href])
+                            @if ($href === null)
+                                <p class="mt-2 border-t border-slate-800/10 px-3 pt-3 pb-1 text-xs font-semibold tracking-wide text-slate-500 uppercase dark:border-white/15 dark:text-slate-400">{{ $title }}</p>
+                                @continue
+                            @endif
                             <a href="{{ $href }}" class="block rounded-md px-3 py-2.5 text-sm text-slate-600 hover:bg-slate-800/5 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-white">{{ $title }}</a>
                         @endforeach
                     </div>
@@ -95,6 +92,10 @@
                             <div>
                                 <p class="mb-1 text-xs font-semibold tracking-wide text-slate-900 uppercase dark:text-white">{{ $label }}</p>
                                 @foreach ($links as [$title, $href])
+                                    @if ($href === null)
+                                        <p class="mt-3 mb-1 text-xs font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400">{{ $title }}</p>
+                                        @continue
+                                    @endif
                                     <a href="{{ $href }}" class="block py-1.5 text-sm text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">{{ $title }}</a>
                                 @endforeach
                             </div>

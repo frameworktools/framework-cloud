@@ -11,11 +11,15 @@
 ])>
     <div class="mx-auto flex max-w-8xl items-center justify-between gap-3 px-6 sm:gap-6 sm:px-8 lg:px-12">
         <div class="flex min-w-0 items-center gap-8">
-            <a href="{{ $site['home'] ?? '/' }}" aria-label="{{ $siteTitle }} home" class="flex min-w-0 items-center gap-3">
-                <img src="/images/logo-80.webp" alt="" width="73" height="80" class="h-8 w-auto shrink-0">
-                {{-- The command-line tool's name is set in monospace, as in running text --}}
-                <span @class(["truncate text-lg font-bold whitespace-nowrap text-slate-900 dark:text-white", "font-mono" => $siteTitle === 'fw'])>{{ $siteTitle }}</span>
-            </a>
+            {{-- Framework leads back to framework.pub; the product name, to this site's home --}}
+            <div class="flex min-w-0 items-center gap-2 text-lg font-bold whitespace-nowrap">
+                <a href="{{ rtrim((string) config('app.url'), '/') }}/" class="flex shrink-0 items-center gap-3 text-slate-900 hover:text-sky-700 dark:text-white dark:hover:text-sky-300">
+                    <img src="/images/logo-80.webp" alt="" width="73" height="80" class="h-8 w-auto shrink-0">
+                    <span class="max-sm:sr-only">Framework</span>
+                </a>
+                <span class="text-slate-300 max-sm:hidden dark:text-slate-600" aria-hidden="true">/</span>
+                <a href="{{ $site['home'] ?? '/' }}" aria-label="{{ $siteTitle }} home" class="truncate text-slate-900 hover:text-sky-700 dark:text-white dark:hover:text-sky-300">{{ Products::switcher($product)[$product] ?? $siteTitle }}</a>
+            </div>
 
             @if ($site)
                 <nav class="hidden xl:flex xl:items-center xl:gap-1" aria-label="Sections">
@@ -24,17 +28,19 @@
                             $items = $section['reference']
                                 ? collect($site['categories'])->map(fn ($c) => ['url' => '/reference#'.$c['id'], 'title' => $c['title'], 'text' => $c['description']])
                                 : collect($section['guides'])->map(fn ($id) => ['url' => \App\Support\Docs\Sites::guideUrl($site, $id), 'title' => \App\Support\Docs\Sites::navTitle($site, $section, $id), 'text' => $site['guides'][$id]['description']]);
-                            $wide = $items->count() > 6;
+                            // Two columns only for long menus with descriptions; a plain list stays narrow
+                            $wide = $items->count() > 6 && $items->contains(fn ($item) => filled($item['text']));
                         @endphp
                         @continue($items->isEmpty())
-                        <div class="docs-menu relative">
-                            <button type="button" aria-haspopup="true" class="flex items-center gap-1 rounded-lg px-4 py-2 text-sm font-medium whitespace-nowrap text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white">
-                                {{ $section['title'] }} {!! $chevron !!}
-                            </button>
+                        {{-- Click to open, as on the home page; opening one closes the others (docs layout script) --}}
+                        <details data-site-menu class="group relative">
+                            <summary class="flex cursor-pointer list-none items-center gap-1 rounded-lg px-4 py-2 text-sm font-medium whitespace-nowrap text-slate-700 hover:bg-slate-100 hover:text-slate-900 group-open:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white dark:group-open:bg-slate-800 [&::-webkit-details-marker]:hidden">
+                                {{ $section['title'] }} <span class="transition group-open:rotate-180">{!! $chevron !!}</span>
+                            </summary>
                             <div @class([
-                                'docs-menu-panel absolute top-full left-1/2 z-50 -translate-x-1/2 origin-top pt-1',
+                                'absolute top-full left-1/2 z-50 -translate-x-1/2 pt-1',
                                 'w-[600px]' => $wide,
-                                'w-72' => ! $wide,
+                                'w-64' => ! $wide,
                             ])>
                                 <div class="rounded-xl bg-white p-2 shadow-lg ring-1 ring-slate-900/5 dark:bg-slate-800 dark:ring-white/10">
                                     <div @class(['grid gap-1', 'grid-cols-2' => $wide])>
@@ -52,7 +58,7 @@
                                     @endif
                                 </div>
                             </div>
-                        </div>
+                        </details>
                     @endforeach
                 </nav>
             @endif
