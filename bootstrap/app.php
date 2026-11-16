@@ -13,6 +13,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use League\OAuth2\Server\Exception\OAuthServerException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -67,4 +68,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*', 'mcp', 'oauth/token', 'oauth/register', 'oauth/revoke') || $request->expectsJson(),
         );
+        // Passport reports every bad or expired bearer token on /mcp. The
+        // request already gets a 401, so these aren't server errors.
+        $exceptions->dontReport(OAuthServerException::class);
     })->create();

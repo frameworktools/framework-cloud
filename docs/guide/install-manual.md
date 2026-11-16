@@ -4,9 +4,9 @@ Manual installation deploys Framework Cloud onto a host running PHP, PostgreSQL,
 
 ## Requirements
 
-- PHP 8.4 with `pdo_pgsql`, `intl`, `mbstring`, `xml`, `curl`, `zip`, and `bcmath`.
+- PHP 8.4 with `pdo_pgsql`, `intl`, `mbstring`, `xml`, `curl`, `zip`, and `bcmath`. `pcntl` is recommended so queue workers stop cleanly.
 - Composer 2.
-- PostgreSQL 15 or later.
+- PostgreSQL 15 or later, with the client tools (`pg_dump`) on the app host for backups.
 - Node.js 20.19 or later for building frontend assets.
 - HTTPS web server such as Caddy or nginx with PHP-FPM.
 - Process supervisor such as Supervisor or `systemd` for background workers.
@@ -39,6 +39,8 @@ php artisan migrate --force
 php artisan db:seed --class='Database\Seeders\ProductionSeeder' --force
 php artisan config:cache
 ```
+
+After any later `.env` change, run `php artisan config:cache` again. The cached configuration ignores `.env` until it is rebuilt.
 
 Configure your web server document root to point to `public/`. The web server user needs write access to `storage/` and `bootstrap/cache/`. The app creates the OAuth signing keys for connected AI apps in `storage/` the first time an agent signs in. `PASSPORT_PRIVATE_KEY` and `PASSPORT_PUBLIC_KEY` override them.
 

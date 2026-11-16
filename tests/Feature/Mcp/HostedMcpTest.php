@@ -18,6 +18,7 @@ use Database\Seeders\BlueprintSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Inertia\Testing\AssertableInertia;
@@ -155,6 +156,15 @@ class HostedMcpTest extends TestCase
         $response = $this->postJson('/mcp', ['jsonrpc' => '2.0', 'id' => 1, 'method' => 'initialize'])->assertUnauthorized();
 
         $this->assertStringContainsString('resource_metadata="'.url('/.well-known/oauth-protected-resource/mcp').'"', $response->headers->get('WWW-Authenticate'));
+    }
+
+    public function test_a_bad_bearer_token_gets_a_401_without_an_error_report(): void
+    {
+        Exceptions::fake();
+
+        $this->withToken('not-a-real-token')->postJson('/mcp', ['jsonrpc' => '2.0', 'id' => 1, 'method' => 'initialize'])->assertUnauthorized();
+
+        Exceptions::assertNothingReported();
     }
 
     public function test_a_client_without_a_json_accept_header_still_gets_a_401(): void

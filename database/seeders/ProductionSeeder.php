@@ -23,7 +23,7 @@ class ProductionSeeder extends Seeder
         // Passwordless: the admin signs in with a magic link (or
         // `php artisan fw:login-link`), then registers a passkey in the UI.
         // Nothing secret is needed at seed time.
-        $email = env('FW_ADMIN_EMAIL');
+        $email = config('framework.admin_email');
 
         if (blank($email)) {
             $this->command?->warn('FW_ADMIN_EMAIL not set — blueprints seeded, no admin user created.');
@@ -36,7 +36,7 @@ class ProductionSeeder extends Seeder
         $user = User::firstOrCreate(
             ['email' => strtolower($email)],
             [
-                'name' => env('FW_ADMIN_NAME') ?: ucfirst(strtok($email, '@')),
+                'name' => config('framework.admin_name') ?: ucfirst(strtok($email, '@')),
                 'password' => null,
             ],
         );

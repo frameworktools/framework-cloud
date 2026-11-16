@@ -72,9 +72,10 @@ FW_REGISTRATION=closed
 FW_SINGLE_USER=true
 ```
 
-Seed the administrator account and start the local PHP server:
+Rebuild the configuration cache so the app reads these settings, then seed the administrator account and start the local PHP server:
 
 ```sh
+php artisan config:cache
 php artisan db:seed --class='Database\Seeders\ProductionSeeder' --force
 php artisan serve
 ```

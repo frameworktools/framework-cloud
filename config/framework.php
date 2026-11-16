@@ -220,6 +220,7 @@ return [
     ))),
 
     'admin_email' => env('FW_ADMIN_EMAIL'),
+    'admin_name' => env('FW_ADMIN_NAME'),
 
     /*
     | One-click sign-in buttons on the login page, as a test user or the

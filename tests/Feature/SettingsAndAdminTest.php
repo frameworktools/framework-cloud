@@ -135,38 +135,10 @@ class SettingsAndAdminTest extends TestCase
             ->assertSessionHasErrors('orcid');
     }
 
-    /**
-     * Sets environment variables the way env() reads them. A .env file copied
-     * from .env.example holds FW_ADMIN_EMAIL= in $_ENV, which would hide a
-     * value set with putenv() alone. Each value is restored after the test.
-     *
-     * @param  array<string, string>  $values
-     */
-    private function setEnv(array $values): void
-    {
-        foreach ($values as $key => $value) {
-            $before = [getenv($key), $_ENV[$key] ?? null, $_SERVER[$key] ?? null];
-            putenv("{$key}={$value}");
-            $_ENV[$key] = $_SERVER[$key] = $value;
-            $this->beforeApplicationDestroyed(function () use ($key, $before) {
-                $before[0] === false ? putenv($key) : putenv("{$key}={$before[0]}");
-                if ($before[1] === null) {
-                    unset($_ENV[$key]);
-                } else {
-                    $_ENV[$key] = $before[1];
-                }
-                if ($before[2] === null) {
-                    unset($_SERVER[$key]);
-                } else {
-                    $_SERVER[$key] = $before[2];
-                }
-            });
-        }
-    }
-
     public function test_production_seeder_creates_admin(): void
     {
-        $this->setEnv(['FW_ADMIN_EMAIL' => 'admin@example.com']);
+        // Read from config, so a cached config still names the admin
+        config(['framework.admin_email' => 'admin@example.com']);
 
         $this->seed(ProductionSeeder::class);
 
@@ -181,7 +153,7 @@ class SettingsAndAdminTest extends TestCase
     public function test_reseeding_on_every_start_leaves_the_admin_as_edited(): void
     {
         // Docker runs the seeder on every start, with FW_ADMIN_NAME often blank
-        $this->setEnv(['FW_ADMIN_EMAIL' => 'ada@example.com', 'FW_ADMIN_NAME' => '']);
+        config(['framework.admin_email' => 'ada@example.com', 'framework.admin_name' => '']);
 
         $this->seed(ProductionSeeder::class);
         $user = User::where('email', 'ada@example.com')->first();
