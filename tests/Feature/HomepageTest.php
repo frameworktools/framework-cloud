@@ -15,7 +15,7 @@ class HomepageTest extends TestCase
     {
         $this->get('/')
             ->assertOk()
-            ->assertSee('Structured data science workflows')
+            ->assertSee('Structured workflows for statistics and data science')
             ->assertSee('Start your project')
             ->assertSee('Conduct your analysis')
             ->assertSee('Publish your work')

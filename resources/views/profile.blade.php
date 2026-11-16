@@ -49,7 +49,7 @@
     </main>
 
     <footer class="mx-auto max-w-3xl border-t border-slate-200 px-6 py-8 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">
-        <a href="/" class="hover:underline">Framework Cloud</a> · Structured data science workflows in R, Python, and Stata
+        <a href="/" class="hover:underline">Framework Cloud</a> · Structured workflows for statistics and data science in R, Python, and Stata
     </footer>
 </body>
 </html>

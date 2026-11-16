@@ -60,7 +60,7 @@ class DocsSitesTest extends DocsTestCase
     {
         $this->get('http://framework.test/')
             ->assertOk()
-            ->assertSee('Structured data science workflows');
+            ->assertSee('Structured workflows for statistics and data science');
     }
 
     public function test_fw_docs_host_is_still_the_r_host(): void
