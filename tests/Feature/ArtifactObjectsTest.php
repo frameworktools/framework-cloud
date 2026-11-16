@@ -97,7 +97,7 @@ class ArtifactObjectsTest extends TestCase
         $this->get($version->url())->assertOk()
             ->assertSee('R &middot; <span class="font-mono">glm()</span>', false)
             ->assertSee('Generalized linear model, binomial family, logit link')
-            ->assertSee('Coefficient forest plot')
+            ->assertSee('Coefficient plot')
             ->assertSee('data-scale="ratio"', false)->assertSee('Log odds')
             ->assertSee('Odds ratio (95% CI)')
             ->assertSee('data-coefficient-specs', false);
@@ -121,7 +121,7 @@ class ArtifactObjectsTest extends TestCase
 
         $this->get($version->url())->assertOk()
             ->assertSee('Python &middot; <span class="font-mono">XGBClassifier</span>', false)
-            ->assertSee('Feature importance')->assertSee("each feature's gain", false)->assertDontSee('Coefficient forest plot')
+            ->assertSee('Feature importance')->assertSee("each feature's gain", false)->assertDontSee('Coefficient plot')
             ->assertSee('Trees')->assertSee('Learning rate');
     }
 

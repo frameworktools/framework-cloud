@@ -146,7 +146,7 @@ export function mountTable(container) {
         const url = URL.createObjectURL(new Blob([tableCsv(table, rows)], { type: 'text/csv;charset=utf-8' }));
         const link = document.createElement('a');
         link.href = url;
-        link.download = 'table-preview.csv';
+        link.download = exportButton.dataset.tableExport === 'preview' ? 'table-preview.csv' : 'table.csv';
         link.click();
         setTimeout(() => URL.revokeObjectURL(url), 1000);
     });
@@ -161,16 +161,21 @@ export function mountTable(container) {
     render();
 }
 
-// Switches a forest plot between ratios and the model's own scale. phiz redraws when data-phiz changes.
+// Switches a coefficient plot between ratios and the model's own scale, and shows or hides the
+// intercept. Specs are keyed "model", "ratio", and "model:intercept". phiz redraws when data-phiz changes.
 function mountCoefficientPlot(section) {
     const specs = JSON.parse(section.querySelector('[data-coefficient-specs]').textContent);
     const chart = section.querySelector('[data-coefficient-chart]');
-    section.querySelectorAll('[data-scale]').forEach((button) => button.addEventListener('click', () => {
-        const scale = button.dataset.scale;
-        chart.setAttribute('data-phiz', JSON.stringify(specs[scale]));
-        section.querySelectorAll('[data-scale]').forEach((other) => other.setAttribute('aria-pressed', String(other === button)));
-        section.querySelectorAll('[data-scale-note]').forEach((note) => { note.hidden = note.dataset.scaleNote !== scale; });
-    }));
+    const state = { scale: section.querySelector('[data-scale][aria-pressed="true"]')?.dataset.scale ?? 'model', intercept: false };
+    const draw = () => {
+        chart.setAttribute('data-phiz', JSON.stringify(specs[state.scale + (state.intercept ? ':intercept' : '')] ?? specs[state.scale]));
+        section.querySelectorAll('[data-scale]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.scale === state.scale)));
+        section.querySelectorAll('[data-intercept]').forEach((button) => button.setAttribute('aria-pressed', String((button.dataset.intercept === '1') === state.intercept)));
+        section.querySelectorAll('[data-scale-note]').forEach((note) => { note.hidden = note.dataset.scaleNote !== state.scale; });
+        section.querySelectorAll('[data-intercept-note]').forEach((note) => { note.hidden = state.intercept; });
+    };
+    section.querySelectorAll('[data-scale]').forEach((button) => button.addEventListener('click', () => { state.scale = button.dataset.scale; draw(); }));
+    section.querySelectorAll('[data-intercept]').forEach((button) => button.addEventListener('click', () => { state.intercept = button.dataset.intercept === '1'; draw(); }));
 }
 
 if (typeof document !== 'undefined') {

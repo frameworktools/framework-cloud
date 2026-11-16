@@ -24,7 +24,8 @@ function tableView(table, index, model) {
     const footer = el('footer'); const status = el('span', '', 'fw-number fw-muted'); status.dataset.tableStatus = ''; status.setAttribute('aria-live', 'polite'); footer.append(status);
     const controls = el('div', null, 'fw-controls'); const precisionLabel = el('label', 'Decimal places '); const precision = el('input'); precision.type = 'number'; precision.min = '0'; precision.max = '15'; precision.value = '3'; precision.dataset.tablePrecision = ''; precisionLabel.append(precision); controls.append(precisionLabel);
     for (const [caption, marker] of [['−', 'precisionDecrease'], ['+', 'precisionIncrease']]) { const button = el('button', caption); button.type = 'button'; button.dataset[marker] = ''; button.setAttribute('aria-label', caption === '+' ? 'Increase decimal places' : 'Decrease decimal places'); controls.append(button); }
-    const csv = el('button', 'Export preview CSV'); csv.type = 'button'; csv.dataset.tableExport = ''; controls.append(csv);
+    const partial = table.truncated || table.total_rows > table.rows.length;
+    const csv = el('button', partial ? 'Export preview CSV' : 'Export CSV'); csv.type = 'button'; csv.dataset.tableExport = partial ? 'preview' : ''; controls.append(csv);
     const sizeLabel = el('label', 'Rows per page '); const size = el('select'); size.dataset.tableSize = ''; for (const value of [25, 50, 100]) { const option = el('option', value); option.value = String(value); size.append(option); } sizeLabel.append(size); controls.append(sizeLabel);
     for (const [caption, marker] of [['Previous', 'tablePrevious'], ['Next', 'tableNext']]) { const button = el('button', caption); button.type = 'button'; button.dataset[marker] = ''; controls.append(button); }
     footer.append(controls); const data = el('script'); data.type = 'application/json'; data.dataset.tableValues = ''; data.textContent = JSON.stringify(table);
@@ -75,7 +76,7 @@ function forestPlot(table) {
     draw('line', { x1:x(0), x2:x(0), y1:10, y2:height-40, stroke:'currentColor', 'stroke-dasharray':'3 3', opacity:'.4' });
     rows.forEach((row, i) => { const y = i * 36 + 25; draw('text', { x:150, y:y+4, 'text-anchor':'end', fill:'currentColor', 'font-size':12 }, String(row[ti] ?? i + 1).slice(0, 30)); draw('line', { x1:x(row[li]), x2:x(row[hi]), y1:y, y2:y, stroke:'#0284c7', 'stroke-width':2 }); const point = draw('circle', { cx:x(row[ei]), cy:y, r:4, fill:'#0284c7' }); const title = document.createElementNS(svg.namespaceURI, 'title'); title.textContent = `${row[ti]}: ${row[ei]} [${row[li]}, ${row[hi]}]`; point.append(title); });
     for (const value of [...new Set([min, 0, max])]) draw('text', { x:x(value), y:height-15, 'text-anchor':'middle', fill:'currentColor', 'font-size':11, 'font-family':'monospace' }, displayValue(value));
-    const section = el('section', null, 'fw-plot'); section.append(el('h2', 'Coefficient estimates'), el('p', 'Points are estimates. Lines show the supplied confidence intervals. The intercept is omitted.', 'fw-muted'), svg); return section;
+    const section = el('section', null, 'fw-plot'); section.append(el('h2', 'Coefficient plot'), el('p', 'Points are estimates. Lines show the supplied confidence intervals. The intercept is omitted.', 'fw-muted'), svg); return section;
 }
 function testView(test) {
     const section = el('section', null, 'fw-metrics'); section.append(el('h2', test.method || 'Statistical test'));

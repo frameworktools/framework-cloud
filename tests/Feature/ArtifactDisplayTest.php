@@ -32,15 +32,15 @@ class ArtifactDisplayTest extends TestCase
             'file' => UploadedFile::fake()->createWithContent('model.json', json_encode($this->model())),
         ]);
         $response = $this->get($version->url())->assertOk()
-            ->assertSee('Coefficient forest plot')->assertSee('95% confidence interval (Wald t)')->assertSee('data-phiz=', false)->assertSee('vega-embed', false)->assertSee('Observations')
+            ->assertSee('Coefficient plot')->assertSee('95% confidence interval (Wald t)')->assertSee('data-phiz=', false)->assertSee('vega-embed', false)->assertSee('Observations')
             ->assertSee('R²')->assertSee('Sample and degrees of freedom')->assertSee('Model fit')->assertSee('scope="rowgroup"', false)->assertSee('outcome ~ treatment')->assertSee('CI lower')->assertSee('Decimal places')->assertSee('data-table-precision type="number"', false)
-            ->assertSee('data-table-search', false)->assertSee('Export preview CSV')
+            ->assertSee('data-table-search', false)->assertSee('Export CSV')->assertDontSee('Export preview CSV')
             ->assertDontSee('data-table-sort=', false)->assertDontSee('aria-sort=', false)
             ->assertSee('Download JSON')->assertDontSee('Open original')->assertSee('<h1', false)
             ->assertSee('lm()')->assertDontSee('Source details')
             ->assertDontSee('</script><script>window.intruded=true</script>', false);
         $this->assertStringContainsString('\\u003C\/script\\u003E', $response->getContent());
-        $this->get($version->url().'?embed=1')->assertOk()->assertSee('Coefficient forest plot')
+        $this->get($version->url().'?embed=1')->assertOk()->assertSee('Coefficient plot')
             ->assertDontSee('Published with Framework Cloud')->assertDontSee('Open original');
     }
 
@@ -73,7 +73,7 @@ class ArtifactDisplayTest extends TestCase
     {
         Storage::fake('local');
         $project = Project::factory()->create();
-        foreach (['stata-regress' => ['Stata', 'regress', 'Linear model', 'Coefficient forest plot', 'R²'],
+        foreach (['stata-regress' => ['Stata', 'regress', 'Linear model', 'Coefficient plot', 'R²'],
             'stata-logit' => ['Stata', 'logit', 'Odds ratio'],
             'stata-mixed' => ['Stata', 'mixed', 'Mixed-effects model', 'Random effects', 'Residual'],
             'stata-stcox' => ['Stata', 'stcox', 'Survival model', 'Hazard ratio']] as $fixture => $expected) {

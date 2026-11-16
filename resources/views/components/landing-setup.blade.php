@@ -5,7 +5,8 @@
     // resources/examples/landing/setup hold the trimmed output; the figures are each language's own plot.
     // php artisan fw:homepage-example publishes the four linked artifacts.
     $example = config('framework.homepage_example_url');
-    $base = $example ? preg_replace('#/[^/]+$#', '', $example) : null;
+    // Each language's tab links to the artifacts that language published; the command line, to R's
+    $base = fn ($language) => $example ? \App\Console\Commands\HomepageExampleCommand::projectUrl($example, $language) : null;
     $published = [
         ['kind' => 'Data', 'slug' => 'penguins', 'icon' => 'heroicon-o-circle-stack'],
         ['kind' => 'Table', 'slug' => 'mass-by-species', 'icon' => 'heroicon-o-table-cells'],
@@ -93,11 +94,11 @@
                             <ul>
                                 @foreach ($published as $item)
                                     <li>
-                                        <a @if ($base) href="{{ $base }}/{{ $item['slug'] }}" target="_blank" rel="noopener" @endif class="group flex items-center gap-2.5 border-t border-slate-200 px-3 py-1.5 text-[11px] hover:bg-slate-100 dark:border-white/5 dark:hover:bg-white/5">
+                                        <a @if ($base($key)) href="{{ $base($key) }}/{{ $item['slug'] }}" target="_blank" rel="noopener" @endif class="group flex items-center gap-2.5 border-t border-slate-200 px-3 py-1.5 text-[11px] hover:bg-slate-100 dark:border-white/5 dark:hover:bg-white/5">
                                             <x-dynamic-component :component="$item['icon']" class="size-3.5 shrink-0 text-slate-500 dark:text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-300" />
                                             <span class="w-12 shrink-0 text-slate-500 dark:text-slate-400">{{ $item['kind'] }}</span>
                                             <span class="truncate font-mono text-slate-800 group-hover:text-slate-950 dark:text-slate-200 dark:group-hover:text-white">{{ $item['slug'] }}</span>
-                                            @if ($base)<span class="ml-auto shrink-0 text-slate-500 dark:text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-300">View</span>@endif
+                                            @if ($base($key))<span class="ml-auto shrink-0 text-slate-500 dark:text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-300">View</span>@endif
                                         </a>
                                     </li>
                                 @endforeach

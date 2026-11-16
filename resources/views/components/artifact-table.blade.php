@@ -79,7 +79,12 @@
                     </div>
                 </div>
             </div>
-            <button data-table-export type="button" class="{{ $controlClass }}" title="Export all loaded rows matching the current search, in the current sort order">Export preview CSV</button>
+            {{-- "Preview" only when the page holds part of the table; otherwise the export is the whole table --}}
+            @if ($table['truncated'] ?? false)
+                <button data-table-export="preview" type="button" class="{{ $controlClass }}" title="Export the loaded rows matching the current search, in the current sort order. Download the original for the complete data.">Export preview CSV</button>
+            @else
+                <button data-table-export type="button" class="{{ $controlClass }}" title="Export the rows matching the current search, in the current sort order">Export CSV</button>
+            @endif
             <label @if(count($rows) <= 25) hidden @endif class="flex items-center gap-2" for="{{ $id }}-size">Rows per page
                 <select id="{{ $id }}-size" data-table-size class="{{ $controlClass }}"><option>25</option><option>50</option><option>100</option><option>250</option></select>
             </label>

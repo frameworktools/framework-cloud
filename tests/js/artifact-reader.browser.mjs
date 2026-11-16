@@ -78,7 +78,7 @@ try {
     const downloadPending = page.waitForEvent('download');
     await page.locator('[data-table-export]').click();
     const download = await downloadPending;
-    assert.equal(download.suggestedFilename(), 'table-preview.csv');
+    assert.match(download.suggestedFilename(), /^table(-preview)?\.csv$/);
     const chunks = [];
     for await (const chunk of await download.createReadStream()) chunks.push(chunk);
     const csv = Buffer.concat(chunks).toString('utf8');
