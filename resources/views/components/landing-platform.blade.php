@@ -46,7 +46,7 @@
 @endphp
 <section id="framework-cloud" data-cloud-screens class="scroll-mt-6 border-t border-slate-800/10 py-14 sm:py-20 dark:border-white/10">
     <div class="mx-auto max-w-3xl text-center">
-        <h2 class="text-3xl font-semibold tracking-tight">Framework Cloud</h2>
+        <h2 class="text-3xl font-semibold tracking-tight text-balance">Framework Cloud Helps You Manage All Your Projects</h2>
         <p class="mt-4 text-lg leading-relaxed text-balance text-slate-700 dark:text-slate-300">Framework Cloud is a companion web app for Framework. It stores your blueprints, AI skills, and project settings. It also lets you share your work securely.</p>
         <p class="mt-3 text-balance text-slate-600 dark:text-slate-400">Use it for free at <a href="https://framework.pub" class="text-slate-800 underline decoration-slate-300 underline-offset-4 dark:text-slate-200 dark:decoration-slate-600">framework.pub</a> or host it on your own server.</p>
     </div>
