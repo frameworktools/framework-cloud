@@ -3,10 +3,15 @@
 namespace Tests\Feature;
 
 use App\Models\Blueprint;
+use App\Models\BlueprintVersion;
+use App\Models\Facet;
+use App\Models\FacetVersion;
 use App\Models\User;
 use App\Support\ProjectDefaults;
+use App\Support\ProjectLayers;
 use Database\Seeders\BlueprintSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\URL;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -23,6 +28,24 @@ class BlueprintCatalogTest extends TestCase
     private function system(string $key): Blueprint
     {
         return Blueprint::whereNull('user_id')->where('key', $key)->firstOrFail();
+    }
+
+    public function test_a_new_server_address_makes_no_new_versions_and_layers_name_the_current_one(): void
+    {
+        $count = fn () => [BlueprintVersion::count(), FacetVersion::count()];
+        $before = $count();
+
+        URL::forceRootUrl('https://moved.example.org');
+        $this->seed(BlueprintSeeder::class);
+        $this->assertSame($before, $count());
+
+        $set = Facet::whereNull('user_id')->where('kind', 'skill_set')->get()
+            ->first(fn (Facet $f) => collect($f->latestVersion->language_layers['r']['skills'] ?? [])->contains(fn ($e) => isset($e['sync'])));
+        $this->assertNotNull($set);
+        $entries = ProjectLayers::entries($set->latestVersion, 'r');
+        $synced = collect(end($entries)['layer']['skills'])->filter(fn ($e) => isset($e['sync']));
+        $this->assertNotEmpty($synced);
+        $this->assertSame(['https://moved.example.org'], $synced->pluck('sync.server')->unique()->values()->all());
     }
 
     public function test_the_catalog_lists_what_each_blueprint_supports_and_where_browsing_starts(): void

@@ -198,6 +198,9 @@ class BlueprintSeeder extends Seeder
                         // Resolve cloud members now so the published facet is an immutable snapshot.
                         $skill = Skill::whereNull('user_id')->where('key', $key)->firstOrFail();
                         $layer['skills'][$key] = $skill->layerEntry($language ?: null);
+                        // The address is added when a layer is sent, so a
+                        // changed APP_URL doesn't make a new version
+                        unset($layer['skills'][$key]['sync']['server']);
                     }
                 }
                 unset($layer);

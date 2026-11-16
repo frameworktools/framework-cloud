@@ -146,14 +146,30 @@ class ProjectLayers
             'kind' => $facet->layerKind(),
             'key' => $facet->handle,
             'version' => $version->version,
-            'layer' => $layer,
+            'layer' => self::withServer($layer),
         ]];
 
         if ($extra = $version->language_layers[$language] ?? null) {
-            $entries[] = ['kind' => 'facet', 'key' => "{$facet->handle}-{$language}", 'version' => $version->version, 'layer' => $extra];
+            $entries[] = ['kind' => 'facet', 'key' => "{$facet->handle}-{$language}", 'version' => $version->version, 'layer' => self::withServer($extra)];
         }
 
         return $entries;
+    }
+
+    /**
+     * Inline skills name the server to sync with. A stored piece may have
+     * been snapshotted under another address, or without one, so the server
+     * sending the layer names itself.
+     */
+    public static function withServer(array $layer): array
+    {
+        foreach ($layer['skills'] ?? [] as $key => $entry) {
+            if (is_array($entry) && isset($entry['sync'])) {
+                $layer['skills'][$key]['sync']['server'] = url('/');
+            }
+        }
+
+        return $layer;
     }
 
     /**
