@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -43,6 +44,17 @@ class MagicLinkController extends Controller
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255'],
             'name' => ['sometimes', 'required', 'string', 'max:255'],
         ]);
+
+        // A production server whose mail goes only to the log can't deliver
+        // the link, so say so instead of "check your email". The answer is
+        // the same for every address.
+        if (self::mailUnavailable()) {
+            throw ValidationException::withMessages(['email' => isset($validated['name'])
+                ? 'This server can’t send email yet, so new accounts can’t be created here. Ask its administrator to set up email or to create your account.'
+                : (config('framework.passwords')
+                    ? 'This server can’t send email yet. Sign in with your password, or ask its administrator for a sign-in link.'
+                    : 'This server can’t send email yet. Ask its administrator for a sign-in link.')]);
+        }
 
         // Set for every request, so the response says nothing about whether
         // the account exists. A browser keeps its value, so an earlier link
@@ -114,6 +126,12 @@ class MagicLinkController extends Controller
         $request->session()->put(LoginToken::CODE_SESSION_KEY, $issued['id']);
 
         return to_route('magic-link.sent');
+    }
+
+    /** Mail goes only to the log, in production, so no sign-in link can arrive. */
+    public static function mailUnavailable(): bool
+    {
+        return app()->isProduction() && config('mail.default') === 'log';
     }
 
     /** "Check your email": the same for every address. */

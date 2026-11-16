@@ -82,7 +82,7 @@ docker compose exec app php artisan fw:password you@example.edu
 
 ## Account registration
 
-Open registration (`FW_REGISTRATION=open`) is enabled by default so anyone who can reach the server can register. Set `FW_REGISTRATION=closed` in `.env` and run `docker compose up -d` to restrict sign-ups. Administrators can still provision accounts manually:
+Open registration (`FW_REGISTRATION=open`) is enabled by default so anyone who can reach the server can register once [email](server-setup.md#email) works. Set `FW_REGISTRATION=closed` in `.env` and run `docker compose up -d` to restrict sign-ups. Administrators can still provision accounts manually:
 
 ```sh
 docker compose exec app php artisan fw:login-link someone@example.edu --create

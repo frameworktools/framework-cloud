@@ -89,6 +89,10 @@ class PasswordController extends Controller
     {
         $request->validate(['email' => ['required', 'string', 'lowercase', 'email']]);
 
+        if (MagicLinkController::mailUnavailable()) {
+            throw ValidationException::withMessages(['email' => 'This server can’t send email yet. Ask its administrator to set a new password for you.']);
+        }
+
         Password::sendResetLink($request->only('email'));
 
         return back()->with('status', 'reset-link-sent');
