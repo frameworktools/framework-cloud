@@ -11,15 +11,20 @@
 # them; all three are public repositories under github.com/frameworktools.
 
 ARG FW_REF=baca79d982531279a3b89590e3dc4b98294149d7
+# The release FW_REF is tagged as, so fw --version reports it
+ARG FW_VERSION=0.6.5
 ARG FRAMEWORK_REF=0f12d4155e03966a019b7edb24ab4dd49ed6573c
 ARG FRAMEWORK_PY_REF=e0d707fc394ed5c3d2959669b930357ced438c27
 
 # 1. fw, built from source at its pin
 FROM golang:1.27 AS fw
 ARG FW_REF
+ARG FW_VERSION
 RUN git clone --filter=blob:none https://github.com/frameworktools/framework-cli /src \
     && cd /src && git checkout --quiet "$FW_REF" \
-    && CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o /fw ./cmd/fw
+    && CGO_ENABLED=0 go build -trimpath \
+       -ldflags "-s -w -X github.com/frameworktools/framework-cli/internal/cli.version=${FW_VERSION} -X github.com/frameworktools/framework-cli/internal/cli.commit=$(git rev-parse --short=12 HEAD)" \
+       -o /fw ./cmd/fw
 
 # 2. R with the framework package and renv, plus Python with framework-py
 FROM rocker/r-ver:4.5
