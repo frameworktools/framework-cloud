@@ -17,14 +17,22 @@
         ])
         ->filter(fn ($group) => $group['items'] !== [])
         ->values();
+    // The install command, or labeled options such as the latest version and CRAN.
+    // Colored at import; sites imported before that are colored here.
+    $installs = collect(is_array($site['install']) ? $site['install'] : ($site['install'] ? [['code' => $site['install']]] : []))
+        ->map(fn ($option, $i) => [
+            'title' => $option['title'] ?? null,
+            'note' => $option['note'] ?? null,
+            'code' => $option['code'],
+            'html' => (is_array($site['install_html'] ?? null) ? $site['install_html'][$i] ?? null : ($site['install_html'] ?? null))
+                ?? \App\Support\Docs\CodeBlocks::install($option['code'], $site['product'] ?? $product),
+            'id' => $i ? 'docs-install-'.($i + 1) : 'docs-install',
+        ]);
     $toc = [
         ...($site['install'] ? [['level' => 2, 'id' => 'install', 'text' => 'Install']] : []),
+        ...$installs->filter(fn ($o) => $o['title'])->map(fn ($o) => ['level' => 3, 'id' => \Illuminate\Support\Str::slug($o['title']), 'text' => $o['title']])->values()->all(),
         ...$groups->map(fn ($g) => ['level' => 2, 'id' => $g['id'], 'text' => $g['title']])->all(),
     ];
-    // Colored at import; sites imported before that are colored here
-    $installHtml = $site['install']
-        ? ($site['install_html'] ?? \App\Support\Docs\CodeBlocks::install($site['install'], $site['product'] ?? $product))
-        : null;
 @endphp
 
 @section('content')
@@ -38,15 +46,23 @@
         </header>
 
         <div class="docs-prose">
-            @if ($site['install'])
+            @if ($installs->isNotEmpty())
                 <h2 id="install">Install</h2>
-                {{-- One dark panel: the command scrolls in its own column, and Copy sits beside it --}}
-                <div data-has-copy class="my-6 flex items-start rounded-xl bg-slate-900 shadow-sm dark:bg-slate-800/60 dark:ring-1 dark:ring-slate-300/10">
-                    <pre class="my-0! min-w-0 flex-1 rounded-none! bg-transparent! pr-3! shadow-none! ring-0!"><code id="docs-install">@if ($installHtml){!! $installHtml !!}@else{{ $site['install'] }}@endif</code></pre>
-                    <div class="shrink-0 pt-2.5 pr-2.5 pl-2">
-                        <button type="button" data-copy="docs-install" class="rounded-lg bg-slate-700 px-3 py-1 text-xs font-medium text-slate-100 ring-1 ring-white/10 hover:bg-slate-600 hover:text-white"><span data-copy-label>Copy</span></button>
+                @foreach ($installs as $option)
+                    @if ($option['title'])
+                        <h3 id="{{ \Illuminate\Support\Str::slug($option['title']) }}">{{ $option['title'] }}</h3>
+                    @endif
+                    @if ($option['note'])
+                        <p>{{ $option['note'] }}</p>
+                    @endif
+                    {{-- One dark panel: the command scrolls in its own column, and Copy sits beside it --}}
+                    <div data-has-copy class="my-6 flex items-start rounded-xl bg-slate-900 shadow-sm dark:bg-slate-800/60 dark:ring-1 dark:ring-slate-300/10">
+                        <pre class="my-0! min-w-0 flex-1 rounded-none! bg-transparent! pr-3! shadow-none! ring-0!"><code id="{{ $option['id'] }}">@if ($option['html']){!! $option['html'] !!}@else{{ $option['code'] }}@endif</code></pre>
+                        <div class="shrink-0 pt-2.5 pr-2.5 pl-2">
+                            <button type="button" data-copy="{{ $option['id'] }}" class="rounded-lg bg-slate-700 px-3 py-1 text-xs font-medium text-slate-100 ring-1 ring-white/10 hover:bg-slate-600 hover:text-white"><span data-copy-label>Copy</span></button>
+                        </div>
                     </div>
-                </div>
+                @endforeach
                 <p>
                     @if ($first)
                         <a href="/guides/{{ $first }}">Read {{ $site['guides'][$first]['title'] }}</a> for the requirements and setup.

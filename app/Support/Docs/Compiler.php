@@ -156,7 +156,12 @@ class Compiler
             'tagline' => $site['tagline'] ?? '',
             'repository' => $site['repository'] ?? null,
             'install' => $site['install'] ?? null,
-            'install_html' => isset($site['install']) ? CodeBlocks::install($site['install'], $product) : null,
+            // One command, or a list of labeled options ({title, note, code}); colored here
+            'install_html' => match (true) {
+                is_string($site['install'] ?? null) => CodeBlocks::install($site['install'], $product),
+                is_array($site['install'] ?? null) => array_map(fn ($option) => CodeBlocks::install($option['code'], $product), $site['install']),
+                default => null,
+            },
             'version' => $reference['version'] ?? null,
             'imported_at' => now()->toIso8601String(),
             'sections' => $sections,
