@@ -1,6 +1,7 @@
 <script setup>
 import UiRadioCards from '@/Components/UiRadioCards.vue';
 import ShareQr from '@/Components/ShareQr.vue';
+import ShareDialog from '@/Components/ShareDialog.vue';
 import { ask } from '@/confirm.js';
 import { pageClass } from '@/ui.js';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
@@ -19,7 +20,7 @@ import UiLink from '@/Components/UiLink.vue';
 import UiCallout from '@/Components/UiCallout.vue';
 import { artifactKind } from '@/report-artifacts.js';
 import { EyeIcon, ArrowTopRightOnSquareIcon, LockClosedIcon, TrashIcon, CheckIcon } from '@heroicons/vue/20/solid';
-import { ClipboardDocumentIcon, Square2StackIcon, Square3Stack3DIcon } from '@heroicons/vue/24/outline';
+import { ClipboardDocumentIcon, CodeBracketIcon, Square2StackIcon, Square3Stack3DIcon } from '@heroicons/vue/24/outline';
 
 const props = defineProps({ share: { type: Object, default: null }, artifact: Object, project: Object, versions: Array, usedIn: Array, mergeSources: Array, handle: String, linkedProjects: { type: Array, default: () => [] }, linkableProjects: { type: Array, default: () => [] } });
 
@@ -63,6 +64,10 @@ const size = (bytes) => {
     return `${bytes.toFixed(i ? 1 : 0)} ${units[i]}`;
 };
 const date = (value) => value ? new Date(value).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
+// The share dialog, opened on its Embed view: the link and HTML for other sites
+const shareTarget = ref(null);
+const openEmbed = () => { shareTarget.value = { type: 'artifact', id: props.artifact.id, title: props.artifact.title, view: 'embed', onSettings: () => { tab.value = 'sharing'; } }; };
+
 const copied = ref(null);
 async function copy(key, url) {
     await navigator.clipboard?.writeText(url);
@@ -169,6 +174,9 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public', privat
                     <div class="flex shrink-0 items-center gap-2">
                         <UiButton v-if="hasUrl" variant="ghost" @click="copy('share', artifact.url)">
                             <component :is="copied === 'share' ? CheckIcon : ClipboardDocumentIcon" class="text-slate-500 dark:text-slate-400" aria-hidden="true" />{{ copied === 'share' ? 'Copied' : 'Copy link' }}
+                        </UiButton>
+                        <UiButton v-if="!external" variant="ghost" @click="openEmbed">
+                            <CodeBracketIcon class="text-slate-500 dark:text-slate-400" aria-hidden="true" />Embed
                         </UiButton>
                         <UiButton v-if="hasUrl" variant="primary" :href="artifact.url" external><ArrowTopRightOnSquareIcon aria-hidden="true" />View</UiButton>
                     </div>
@@ -332,5 +340,6 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public', privat
                 </div>
             </div>
         </div>
+        <ShareDialog :target="shareTarget" @close="shareTarget = null" />
     </AppLayout>
 </template>

@@ -8,6 +8,7 @@ use App\Models\Collection;
 use App\Models\Document;
 use App\Models\Project;
 use App\Models\Report;
+use App\Support\ArtifactEmbed;
 use App\Support\Share;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
@@ -18,6 +19,7 @@ use Illuminate\Validation\ValidationException;
 /**
  * GET /share/{type}/{id}: one of your things' short link and QR code, for
  * the share dialog lists open from their "…" menus. Private things say so.
+ * An artifact also gets its embed links, or the reason it has none.
  */
 class ShareController extends Controller
 {
@@ -70,6 +72,7 @@ class ShareController extends Controller
     private function respond(string $type, Model $model): JsonResponse
     {
         return response()->json([
+            ...($model instanceof Document ? $this->embed($model) : []),
             'share' => Share::for($model),
             'visibility' => $model instanceof Project ? null : $model->visibility,
             'reason' => Share::shareable($model) ? null : match ($type) {
@@ -78,6 +81,35 @@ class ShareController extends Controller
                 default => 'It\'s private. To share it, make it public or open it to anyone with the link.',
             },
         ]);
+    }
+
+    /**
+     * What the share dialog's Embed view offers: links to paste into a site
+     * plugin, the web component's src, and the kind it will draw as.
+     *
+     * @return array{embed: array<string, mixed>|null, embed_reason: string|null}
+     */
+    private function embed(Document $document): array
+    {
+        if (! ArtifactEmbed::embeddable($document)) {
+            return ['embed' => null, 'embed_reason' => match (true) {
+                ($document->driver ?? 'cloud') !== 'cloud' => 'Artifacts published to other destinations can\'t be embedded.',
+                $document->visibility === 'private' => 'Private artifacts can\'t be embedded.',
+                $document->isPasswordProtected() => 'Password-protected artifacts can\'t be embedded.',
+                default => 'This artifact can\'t be embedded.',
+            }];
+        }
+        $version = $document->latestVersion();
+
+        return ['embed' => [
+            'key' => $document->key,
+            'kind' => ArtifactEmbed::kind($version),
+            'link' => $document->readableUrl() ?? $document->publicUrl(),
+            'version_link' => ArtifactEmbed::pageUrl($version),
+            'latest_version' => $version->number,
+            'snippet_src' => route('embed.artifact', ['key' => $document->key]),
+            'version_snippet_src' => ArtifactEmbed::embedUrl($version),
+        ], 'embed_reason' => null];
     }
 
     private function find(Request $request, string $type, int $id): Model
