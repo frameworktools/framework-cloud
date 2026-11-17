@@ -19,11 +19,27 @@ A link to a version always shows that version. A link without a version shows th
 
 ## CMS plugins
 
-Plugins for WordPress, Drupal, and Statamic are coming with the `framework-embed` release. Each plugin turns a pasted artifact link, or a block, into a drawn model, table, test, figure, chart, or link card. They render through the same PHP renderer and stylesheet.
+Plugins for WordPress, Drupal, and Statamic live in the open-source [framework-embed](https://github.com/frameworktools/framework-embed) repository. Each plugin turns a pasted artifact link, a block, or a field into a drawn model, table, test, figure, chart, or link card. They render through the same PHP renderer and stylesheet.
+
+| CMS | Install |
+|---|---|
+| WordPress | Upload `framework-embed-0.2.0.zip` from the [latest release](https://github.com/frameworktools/framework-embed/releases/latest) under Plugins → Add New → Upload. |
+| Drupal | Install the `drupal/` module with Composer from the repository. See its README. |
+| Statamic | Install the `statamic/` addon with Composer from the repository. See its README. |
+
+A block or field stores the artifact with the page and draws it from that copy. A pasted link fetches in the background and draws once the copy arrives.
 
 ## Web component
 
-The `framework-embed` JavaScript and CSS bundle defines the `<framework-artifact>` element. The element fetches an embed document and draws it on the page. Vega-Lite charts are drawn with vega-embed. Without JavaScript, the element shows a link to the artifact. The bundle is coming with the `framework-embed` release.
+The `framework-embed` JavaScript and CSS bundle defines the `<framework-artifact>` element. The element fetches an embed document and draws it on the page. Vega-Lite charts are drawn with vega-embed. Without JavaScript, the element shows a link to the artifact. The bundle's files are attached to each [release](https://github.com/frameworktools/framework-embed/releases/latest).
+
+```html
+<link rel="stylesheet" href="framework-embed.css">
+<script src="framework-embed.iife.js" defer></script>
+<framework-artifact src="https://framework.pub/d/KEY">
+  <a href="https://framework.pub/d/KEY">View the artifact</a>
+</framework-artifact>
+```
 
 ## Embed API
 
