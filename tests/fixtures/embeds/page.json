@@ -1,0 +1,28 @@
+{
+    "schema": "framework.embed/v1",
+    "key": "page000000000000",
+    "version": 1,
+    "latest_version": 1,
+    "kind": "page",
+    "title": "Annual report",
+    "description": "Rendered Quarto report.",
+    "alt": "Annual report",
+    "url": "https://framework.pub/@ada/admissions/page/versions/1",
+    "embed_url": "https://framework.pub/api/embed/v1/artifacts/page000000000000/versions/1",
+    "published_at": "2026-11-16T12:00:00Z",
+    "author": {
+        "name": "Ada Example",
+        "url": "https://framework.pub/@ada"
+    },
+    "provider": {
+        "name": "Framework",
+        "url": "https://framework.pub"
+    },
+    "attribution": {
+        "text": "Framework",
+        "url": "https://framework.pub/@ada/admissions/page/versions/1"
+    },
+    "data": null,
+    "spec": null,
+    "image": null
+}

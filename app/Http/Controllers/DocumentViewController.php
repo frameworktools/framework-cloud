@@ -6,6 +6,7 @@ use App\Models\Document;
 use App\Models\DocumentVersion;
 use App\Models\User;
 use App\Support\ArtifactContentAccess;
+use App\Support\ArtifactEmbed;
 use App\Support\ArtifactPreview;
 use App\Support\BundleExtractor;
 use App\Support\ChartPage;
@@ -219,6 +220,9 @@ class DocumentViewController extends Controller
             'version' => $version,
             'latest' => $latest,
             'preview' => ArtifactPreview::forVersion($version),
+            // Discovery links for sites that embed artifacts (oEmbed and the embed API)
+            'embedLinks' => ArtifactEmbed::embeddable($document)
+                ? ['oembed' => ArtifactEmbed::oembedUrl($version), 'embed' => ArtifactEmbed::embedUrl($version)] : null,
             'versions' => $versions->map(fn ($v) => ['number' => $v->number, 'date' => $v->created_at, 'url' => $link($v->number)]),
         ])->header('Cache-Control', 'private, no-store');
     }

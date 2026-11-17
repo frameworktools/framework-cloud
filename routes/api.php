@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\EmbedController;
 use App\Http\Controllers\Api\GitHubWebhookController;
 use App\Http\Controllers\Api\V1\ArtifactsController;
 use App\Http\Controllers\Api\V1\BlueprintDesignController;
@@ -50,6 +51,21 @@ Route::match(['put', 'post'], 'v1/uploads/{token}', [ArtifactsController::class,
 // A project upload link's raw file, committed to the project's repository; see ProjectRepositoryController::createUpload.
 Route::match(['put', 'post'], 'v1/project-uploads/{token}', [ProjectRepositoryController::class, 'receiveUpload'])
     ->where('token', '[A-Za-z0-9]{48}')->middleware('throttle:30,1')->name('api.project-uploads.store');
+
+// Artifact embeds: public, cookie-free, and stateless (docs/plans/2026-11-16-artifact-embeds.md).
+// One limit per IP across all of them; see AppServiceProvider.
+Route::middleware('throttle:embed')->group(function () {
+    Route::prefix('embed/v1')->name('embed.')->group(function () {
+        Route::get('/resolve', [EmbedController::class, 'resolve'])->name('resolve');
+        Route::get('/artifacts/{key}', [EmbedController::class, 'show'])
+            ->where('key', '[A-Za-z0-9]+')->name('artifact');
+        Route::get('/artifacts/{key}/versions/{number}', [EmbedController::class, 'showVersion'])
+            ->where(['key' => '[A-Za-z0-9]+', 'number' => '[0-9]{1,9}'])->name('version');
+        Route::get('/artifacts/{key}/versions/{number}/image', [EmbedController::class, 'image'])
+            ->where(['key' => '[A-Za-z0-9]+', 'number' => '[0-9]{1,9}'])->name('image');
+    });
+    Route::get('/oembed', [EmbedController::class, 'oembed'])->name('embed.oembed');
+});
 
 Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::get('/me', MeController::class);

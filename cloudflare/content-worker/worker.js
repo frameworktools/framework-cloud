@@ -22,6 +22,10 @@ const TYPES = {
 // A Vega-Lite chart page (App\\Support\\ChartPage::CSP): the pinned chart libraries, no network
 const CHART_CSP = "sandbox allow-scripts; default-src 'none'; script-src https://cdn.jsdelivr.net 'unsafe-inline' 'unsafe-eval'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:";
 
+// An embed figure (claim c: 'embed'), hotlinked by other sites through <img>:
+// opened directly, an SVG runs nothing. Images, not frames, so no frame-ancestors.
+const EMBED_CSP = "default-src 'none'; style-src 'unsafe-inline'; sandbox";
+
 const typeOf = (path) => TYPES[(path.split('.').pop() || '').toLowerCase()] || 'application/octet-stream';
 
 const fromBase64Url = (s) => {
@@ -82,18 +86,22 @@ export default {
         if (object === null) return fail(404, 'Not found');
 
         const app = env.APP_ORIGIN || 'https://framework.pub';
+        const embed = claims.c === 'embed';
+        const maxAge = Math.max(0, Math.floor(claims.e - Date.now() / 1000));
         const headers = new Headers({
             'Content-Type': type || 'application/octet-stream',
             'X-Content-Type-Options': 'nosniff',
-            'Content-Security-Policy': `${claims.c === 'chart' ? CHART_CSP : 'sandbox allow-scripts allow-downloads'}; frame-ancestors 'self' ${app}`,
+            'Content-Security-Policy': embed ? EMBED_CSP : `${claims.c === 'chart' ? CHART_CSP : 'sandbox allow-scripts allow-downloads'}; frame-ancestors 'self' ${app}`,
             'Referrer-Policy': 'no-referrer',
             'Access-Control-Allow-Origin': '*',
-            // Each link is signed and short-lived; browsers may keep it until it expires
-            'Cache-Control': `private, max-age=${Math.max(0, Math.floor(claims.e - Date.now() / 1000))}`,
+            // Each link is signed and short-lived; browsers may keep it until it expires.
+            // Embed figures are public, so shared caches may keep them as long.
+            'Cache-Control': `${embed ? 'public' : 'private'}, max-age=${maxAge}`,
             'Accept-Ranges': 'bytes',
             ETag: object.httpEtag,
         });
-        if (claims.a) headers.set('Content-Disposition', disposition(String(claims.a)));
+        if (embed) headers.set('Cross-Origin-Resource-Policy', 'cross-origin');
+        else if (claims.a) headers.set('Content-Disposition', disposition(String(claims.a)));
 
         // Conditional request answered from the cache, or a range
         if (!('body' in object)) return new Response(null, { status: 304, headers });

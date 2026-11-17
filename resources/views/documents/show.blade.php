@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex">
     <title>{{ $document->title }}</title>
+    @if ($embedLinks ?? null)
+        <link rel="alternate" type="application/json+oembed" href="{{ $embedLinks['oembed'] }}" title="{{ $document->title }}">
+        <link rel="alternate" type="application/vnd.framework.embed+json" href="{{ $embedLinks['embed'] }}">
+    @endif
     <x-theme-script />
     @vite(['resources/css/app.css'])
     @if (in_array($preview['type'], ['table', 'representation']))

@@ -117,6 +117,9 @@ class AppServiceProvider extends ServiceProvider
             ]);
         });
 
+        // One counter per IP across every embed route
+        RateLimiter::for('embed', fn (Request $request) => Limit::perMinute(300)->by('embed:'.$request->ip()));
+
         RateLimiter::for('mcp-oauth', fn (Request $request) => Limit::perMinute(20)->by('mcp-oauth:'.$request->ip()));
 
         RateLimiter::for('mcp', function (Request $request) {

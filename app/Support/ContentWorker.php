@@ -13,12 +13,20 @@ use App\Models\DocumentVersion;
  * A link is https://content.framework.pub/c/{token}/{path}. The token is
  * base64url(JSON) "." base64url(HMAC-SHA256), keyed by FW_CONTENT_SIGNING_KEY,
  * and names the object (k), whether it is a bundle folder (b), its type (t),
- * an attachment filename (a), and when it expires (e). The Worker source is
- * cloudflare/content-worker/worker.js.
+ * an attachment filename (a), a header mode (c: chart or embed), and when it
+ * expires (e). The Worker source is cloudflare/content-worker/worker.js.
  */
 class ContentWorker
 {
     private const LIFETIME_SECONDS = 3600;
+
+    /**
+     * Embed figure links expire at the end of the next whole hour: one to two
+     * hours away. Within an hour every redirect names the same link, so
+     * browsers and shared caches reuse it, and it always outlives the
+     * redirect's own five-minute cache.
+     */
+    public const EMBED_BUCKET_SECONDS = 3600;
 
     /** Whether the Worker serves files at all. */
     public static function on(): bool
@@ -64,6 +72,19 @@ class ContentWorker
         return self::link(['k' => $path, 't' => 'text/html; charset=utf-8', 'c' => 'chart'], 'chart.html');
     }
 
+    /**
+     * An image artifact's figure for other sites to hotlink: public caching,
+     * cross-origin, no download name, and a sandbox so an SVG runs nothing.
+     */
+    public static function embedImage(DocumentVersion $version): string
+    {
+        $type = strtolower(trim(explode(';', (string) $version->content_type)[0])) ?: 'application/octet-stream';
+        $bucket = self::EMBED_BUCKET_SECONDS;
+        $expires = intdiv(now()->timestamp, $bucket) * $bucket + 2 * $bucket;
+
+        return self::link(['k' => $version->disk_path, 't' => $type, 'c' => 'embed'], $version->contentFilename(), $expires);
+    }
+
     /** A download of an object in the Worker's bucket, saved under its name. */
     public static function download(string $path, string $filename, string $type): string
     {
@@ -78,9 +99,9 @@ class ContentWorker
     }
 
     /** @param  array<string, mixed>  $claims */
-    private static function link(array $claims, string $path): string
+    private static function link(array $claims, string $path, ?int $expires = null): string
     {
-        $claims['e'] = now()->timestamp + self::LIFETIME_SECONDS;
+        $claims['e'] = $expires ?? now()->timestamp + self::LIFETIME_SECONDS;
         $payload = self::encode(json_encode($claims, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES));
         $signature = self::encode(hash_hmac('sha256', $payload, (string) config('framework.content_signing_key'), true));
         $path = implode('/', array_map(rawurlencode(...), explode('/', ltrim($path, '/'))));

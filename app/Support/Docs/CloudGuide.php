@@ -32,6 +32,7 @@ class CloudGuide
             'github' => 'GitHub integration',
             'skill-sync' => 'Skill sync',
             'publishing' => 'Publishing artifacts',
+            'embedding' => 'Embedding artifacts',
             'ai-apps' => 'AI apps',
             'stata' => 'Framework for Stata',
         ],

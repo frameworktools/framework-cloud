@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\SetupController;
 use App\Http\Controllers\Admin\UsersController;
+use App\Http\Controllers\Api\EmbedController;
 use App\Http\Controllers\App\AgentsController;
 use App\Http\Controllers\App\BlueprintsController;
 use App\Http\Controllers\App\CollectionsController;
@@ -59,6 +60,10 @@ foreach (array_unique(array_filter(config('framework.docs_hosts', []))) as $docs
             ->where('path', '[A-Za-z0-9_./-]+')->name('image');
     });
 }
+
+// Embed discovery for other sites. Without the web group, so it sets no cookies.
+Route::get('/.well-known/framework.json', [EmbedController::class, 'discovery'])
+    ->withoutMiddleware('web')->middleware('throttle:embed')->name('embed.discovery');
 
 Route::get('/', HomeController::class)->name('home');
 
