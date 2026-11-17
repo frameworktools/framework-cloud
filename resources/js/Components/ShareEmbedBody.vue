@@ -91,12 +91,12 @@ async function downloadAsImage() {
             <div class="mt-2 overflow-auto rounded-lg border border-slate-800/10 px-4 text-slate-900 focus-visible:outline-2 focus-visible:outline-sky-500 dark:border-white/15 dark:text-slate-100"
                 :class="expanded ? '' : 'max-h-64'" tabindex="0" role="region" :aria-label="`Embed preview of ${title}`" :data-theme="dark ? 'dark' : 'light'">
                 <p v-if="status === 'loading'" class="py-4 text-sm text-slate-500 dark:text-slate-400">Loading preview…</p>
-                <p v-else-if="status === 'error'" class="py-4 text-sm text-slate-500 dark:text-slate-400">The preview didn't load. The link and HTML still work.</p>
+                <p v-else-if="status === 'error'" class="py-4 text-sm text-slate-500 dark:text-slate-400">Could not load preview.</p>
                 <div ref="preview" class="embed-preview" />
             </div>
         </section>
 
-        <UiSwitch v-model="pinnedSwitch" :label="`Pin to version ${embed.latest_version}`" description="When off, embeds update when you publish again." />
+        <UiSwitch v-model="pinnedSwitch" :label="`Pin to version ${embed.latest_version}`" description="When off, the link and HTML follow the newest version." />
 
         <div class="flex min-w-0 flex-col gap-2">
             <p class="text-sm text-slate-600 dark:text-slate-300">
@@ -110,21 +110,21 @@ async function downloadAsImage() {
         </div>
 
         <div class="flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
-            <p class="text-sm text-slate-600 dark:text-slate-300"><span class="font-medium text-slate-800 dark:text-white">Image.</span> For Substack, email, and slides.</p>
+            <p class="text-sm text-slate-600 dark:text-slate-300"><span class="font-medium text-slate-800 dark:text-white">Image.</span> Copy or download a PNG for Substack, email, and slides.</p>
             <div class="flex items-center gap-2">
-                <span class="text-sm text-slate-500 dark:text-slate-400" role="status">{{ imageState === 'saved' ? 'Saved.' : imageState === 'error' ? 'The image could not be made.' : '' }}</span>
-                <UiButton size="sm" :disabled="status !== 'ready' || imageState === 'working'" @click="copyAsImage">{{ imageState === 'working' ? 'Making image…' : imageState === 'copied' ? 'Copied' : 'Copy image' }}</UiButton>
-                <UiButton size="sm" variant="ghost" :disabled="status !== 'ready' || imageState === 'working'" @click="downloadAsImage">Download</UiButton>
+                <span class="text-sm text-slate-500 dark:text-slate-400" role="status">{{ imageState === 'saved' ? 'Downloaded' : imageState === 'error' ? 'Could not create image.' : '' }}</span>
+                <UiButton size="sm" :disabled="status !== 'ready' || imageState === 'working'" @click="copyAsImage">{{ imageState === 'working' ? 'Generating image…' : imageState === 'copied' ? 'Copied' : 'Copy image' }}</UiButton>
+                <UiButton size="sm" variant="ghost" :disabled="status !== 'ready' || imageState === 'working'" @click="downloadAsImage">Download PNG</UiButton>
             </div>
         </div>
 
         <details class="group min-w-0">
-            <summary class="cursor-pointer text-sm text-slate-600 marker:text-slate-400 dark:text-slate-300"><span class="font-medium text-slate-800 dark:text-white">HTML.</span> For any other web page.</summary>
+            <summary class="cursor-pointer text-sm text-slate-600 marker:text-slate-400 dark:text-slate-300"><span class="font-medium text-slate-800 dark:text-white">HTML.</span> Paste into any page that accepts HTML.</summary>
             <div class="mt-2"><CopyBlock :value="html" label="embed HTML" /></div>
         </details>
 
         <p class="text-xs text-slate-500 dark:text-slate-400">
-            The <UiLink href="/docs/embedding" external>embedding guide</UiLink> covers each platform.
+            See <UiLink href="/docs/embedding" external>Embedding artifacts</UiLink> for setup instructions.
         </p>
     </div>
 </template>

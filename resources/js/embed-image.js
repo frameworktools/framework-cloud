@@ -98,7 +98,7 @@ export async function embedImage(renderer, doc, link) {
         }
 
         const blob = await toBlob(stage, { pixelRatio: 2, backgroundColor: '#ffffff', width: stage.offsetWidth, height: stage.offsetHeight, style: { left: '0', position: 'static' } });
-        if (!blob) throw new Error('The image could not be made.');
+        if (!blob) throw new Error('Could not create image.');
         return blob;
     } finally {
         stage.remove();

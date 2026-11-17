@@ -72,12 +72,12 @@ class ShareEmbedTest extends TestCase
         $document = $this->publish(['visibility' => 'private'])->document;
         $this->actingAs($this->user)->getJson("/share/artifact/{$document->id}")->assertOk()
             ->assertJsonPath('embed', null)
-            ->assertJsonPath('embed_reason', "Private artifacts can't be embedded.");
+            ->assertJsonPath('embed_reason', 'Private artifacts cannot be embedded. Make this artifact public or allow anyone with the link.');
 
         $document->forceFill(['visibility' => 'unlisted', 'password_hash' => Hash::make('secret-password')])->save();
         $this->actingAs($this->user)->getJson("/share/artifact/{$document->id}")->assertOk()
             ->assertJsonPath('embed', null)
-            ->assertJsonPath('embed_reason', "Password-protected artifacts can't be embedded.");
+            ->assertJsonPath('embed_reason', 'Password-protected artifacts cannot be embedded. Remove the password in sharing settings.');
     }
 
     public function test_opening_a_private_artifact_returns_its_embed_links(): void

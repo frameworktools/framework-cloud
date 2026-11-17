@@ -71,7 +71,7 @@ class ArtifactEmbedTest extends TestCase
         $response->assertJson([
             'schema' => 'framework.embed/v1', 'key' => $key, 'version' => 1, 'latest_version' => 1,
             'kind' => 'model', 'title' => 'Transmission model', 'description' => 'Manual transmission by weight and horsepower.',
-            'alt' => 'Logistic regression of am with 3 terms. Odds ratios available.',
+            'alt' => 'Logistic regression of am with 3 terms and odds ratios.',
             'url' => "http://localhost/d/{$key}/versions/1",
             'embed_url' => "http://localhost/api/embed/v1/artifacts/{$key}/versions/1",
             'author' => ['name' => 'Ada Example', 'url' => 'http://localhost/@ada'],

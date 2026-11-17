@@ -18,7 +18,7 @@ export function embedSnippet({ src, href, title }) {
         `<link rel="stylesheet" href="${EMBED_ASSETS}/framework-embed.css">`,
         `<script src="${EMBED_ASSETS}/framework-embed.iife.js" defer></script>`,
         `<framework-artifact src="${escape(src)}">`,
-        `  <a href="${escape(href)}">${escape(title || 'View the artifact')}</a>`,
+        `  <a href="${escape(href)}">${escape(title || 'View artifact')}</a>`,
         '</framework-artifact>',
     );
     return lines.join('\n');

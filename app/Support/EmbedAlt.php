@@ -38,35 +38,26 @@ class EmbedAlt
         if (filled($model['response'] ?? null)) {
             $label .= ' of '.$model['response'];
         }
+        $details = [];
         $coefficients = collect($data['tables'])->firstWhere('role', 'coefficients') ?? ($data['tables'][0] ?? null);
         if ($coefficients !== null) {
             $terms = (int) $coefficients['row_count'];
-            $label .= ' with '.$terms.' '.Str::plural('term', $terms);
+            $details[] = $terms.' '.Str::plural('term', $terms);
         }
-        $text = $label.'.';
         if (filled($model['exponentiate'] ?? null)) {
-            $text .= ' '.Str::ucfirst(Str::plural($model['exponentiate'])).' available.';
+            $ratio = (string) $model['exponentiate'];
+            $details[] = preg_match('/^[A-Z0-9]+$/', $ratio) ? $ratio : Str::lower(Str::plural($ratio));
+        }
+        if ($details !== []) {
+            $label .= ' with '.implode(' and ', $details);
         }
 
-        return $text;
+        return $label.'.';
     }
 
     private static function modelLabel(array $model): string
     {
-        $type = $model['type'] ?? null;
-        $family = strtolower($model['family'] ?? '');
-        $link = strtolower($model['link'] ?? '');
-        if ($type === 'glm' && $family === 'binomial' && in_array($link, ['logit', ''], true)) {
-            return 'Logistic regression';
-        }
-        if ($type === 'glm' && $family === 'binomial' && $link === 'probit') {
-            return 'Probit regression';
-        }
-        if ($type === 'glm' && $family === 'poisson') {
-            return 'Poisson regression';
-        }
-
-        return self::MODEL_TYPES[$type] ?? 'Model';
+        return ModelName::for($model) ?? self::MODEL_TYPES[$model['type'] ?? ''] ?? 'Model';
     }
 
     private static function table(array $data): ?string
@@ -85,8 +76,9 @@ class EmbedAlt
         $list = count($names) > 2
             ? implode(', ', array_slice($names, 0, -1)).', and '.end($names)
             : implode(' and ', $names);
+        $summary = 'Table with '.number_format($rows).' '.Str::plural('row', $rows).' and '.number_format($columns).' '.Str::plural('column', $columns);
 
-        return 'Table with '.number_format($rows).' '.Str::plural('row', $rows).' and '.$columns.' '.Str::plural('column', $columns).': '.$list.'.';
+        return $list === '' ? $summary.'.' : $summary.': '.$list.'.';
     }
 
     private static function test(array $data): ?string

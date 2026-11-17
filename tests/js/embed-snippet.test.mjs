@@ -21,5 +21,5 @@ test('another server names itself as an allowed host', () => {
 test('titles are escaped and an empty title still gives the link text', () => {
     const html = embedSnippet({ src: 'https://framework.pub/api/embed/v1/artifacts/abc', href: 'https://framework.pub/d/abc?a=1&b="2"', title: '<b>A & B</b>' });
     assert.ok(html.includes('<a href="https://framework.pub/d/abc?a=1&amp;b=&quot;2&quot;">&lt;b&gt;A &amp; B&lt;/b&gt;</a>'));
-    assert.ok(embedSnippet({ src: 'https://framework.pub/api/embed/v1/artifacts/abc', href: 'https://framework.pub/d/abc', title: '' }).includes('>View the artifact</a>'));
+    assert.ok(embedSnippet({ src: 'https://framework.pub/api/embed/v1/artifacts/abc', href: 'https://framework.pub/d/abc', title: '' }).includes('>View artifact</a>'));
 });

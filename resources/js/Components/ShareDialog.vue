@@ -30,7 +30,7 @@ const request = async (method, body) => {
         body: body ? JSON.stringify(body) : undefined,
     });
     const data = await response.json();
-    if (!response.ok) throw new Error(Object.values(data.errors ?? {})[0]?.[0] ?? data.message ?? 'That did not work. Try again.');
+    if (!response.ok) throw new Error(Object.values(data.errors ?? {})[0]?.[0] ?? data.message ?? 'Sharing request failed. Try again.');
     return data;
 };
 
@@ -78,10 +78,10 @@ watch(show, (open) => { if (!open) emit('close'); });
                     <!-- A password-protected artifact is already open; its password is removed in its settings -->
                     <template v-else-if="!embedding || state.visibility === 'private'">
                         <UiButton size="sm" :disabled="state.saving" @click="open('public')">Make public</UiButton>
-                        <UiButton size="sm" variant="ghost" :disabled="state.saving" @click="open('unlisted')">Anyone with the link</UiButton>
+                        <UiButton size="sm" variant="ghost" :disabled="state.saving" @click="open('unlisted')">Allow anyone with the link</UiButton>
                     </template>
-                    <UiButton v-if="target?.onSettings" variant="ghost" size="sm" @click="target.onSettings(); show = false">Sharing settings</UiButton>
-                    <UiButton v-else-if="target?.settings" :href="target.settings" variant="ghost" size="sm">Sharing settings</UiButton>
+                    <UiButton v-if="target?.onSettings" variant="ghost" size="sm" @click="target.onSettings(); show = false">Open sharing settings</UiButton>
+                    <UiButton v-else-if="target?.settings" :href="target.settings" variant="ghost" size="sm">Open sharing settings</UiButton>
                 </div>
                 <p v-if="state.error" class="text-sm text-red-600 dark:text-red-400">{{ state.error }}</p>
             </div>

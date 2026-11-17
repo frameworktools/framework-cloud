@@ -93,10 +93,10 @@ class ShareController extends Controller
     {
         if (! ArtifactEmbed::embeddable($document)) {
             return ['embed' => null, 'embed_reason' => match (true) {
-                ($document->driver ?? 'cloud') !== 'cloud' => 'Artifacts published to other destinations can\'t be embedded.',
-                $document->visibility === 'private' => 'Private artifacts can\'t be embedded.',
-                $document->isPasswordProtected() => 'Password-protected artifacts can\'t be embedded.',
-                default => 'This artifact can\'t be embedded.',
+                ($document->driver ?? 'cloud') !== 'cloud' => 'Artifacts published to external destinations cannot be embedded.',
+                $document->visibility === 'private' => 'Private artifacts cannot be embedded. Make this artifact public or allow anyone with the link.',
+                $document->isPasswordProtected() => 'Password-protected artifacts cannot be embedded. Remove the password in sharing settings.',
+                default => 'This artifact cannot be embedded.',
             }];
         }
         $version = $document->latestVersion();
