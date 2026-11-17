@@ -304,7 +304,7 @@ for (const root of document.querySelectorAll('[data-cloud-screens]')) {
 // for good when a step button is used or motion is reduced; the post stays shown then.
 for (const root of document.querySelectorAll('[data-share-demo]')) {
     const tabs = [...root.querySelectorAll('[data-share-tab]')];
-    const durations = [2400, 2400, 4000];
+    const durations = [1800, 1800, 3200];
     let host = tabs[0].dataset.shareTab, scene = 2, playing = !reducedMotion.matches, visible = false, hovered = false, timers = [];
     const later = (fn, ms) => timers.push(setTimeout(fn, ms));
     const panel = () => root.querySelector(`[data-share-panel="${host}"]`);
@@ -346,7 +346,7 @@ for (const root of document.querySelectorAll('[data-share-demo]')) {
                 page.offsetHeight;
                 const end = () => `translateY(-${Math.max(0, page.scrollHeight - page.parentElement.clientHeight)}px)`;
                 if (reducedMotion.matches || !playing) { page.style.transform = end(); return; }
-                later(() => { page.style.transition = 'transform 1.1s ease-in-out'; page.style.transform = end(); }, Number(page.dataset.scroll));
+                later(() => { page.style.transition = 'transform 0.9s ease-in-out'; page.style.transform = end(); }, Number(page.dataset.scroll));
             });
             const reveal = el.querySelector('[data-reveal]');
             if (reveal) {

@@ -218,14 +218,14 @@
             {{-- Substack, after its real editor and post pages: always light, as Substack is. The pasted
                  image is the actual PNG Framework's Copy image makes for this model. The editor and the
                  post are taller than the frame, so each scrolls to the image once it is in view. --}}
-            <div role="tabpanel" id="share-panel-substack" aria-labelledby="share-tab-substack" data-share-panel="substack" data-share-durations="[2400,3600,4400]" inert class="{{ $panel('substack') }} grid min-w-0 [grid-area:1/1]">
+            <div role="tabpanel" id="share-panel-substack" aria-labelledby="share-tab-substack" data-share-panel="substack" data-share-durations="[1800,2600,3600]" inert class="{{ $panel('substack') }} grid min-w-0 [grid-area:1/1]">
                 {{-- 1. Framework's Share dialog: Copy image --}}
                 <div data-share-scene="0" aria-hidden="true" class="{{ $scene(0) }} flex items-center justify-center bg-slate-900/5 p-5 font-sans dark:bg-black/30">
                     <x-landing-shared.copy :image="$image" :title="$embed['title']" />
                 </div>
                 {{-- 2. Substack's post editor: the image pasted in and selected --}}
                 <div data-share-scene="1" aria-hidden="true" class="{{ $scene(1) }} relative overflow-hidden bg-white {{ $ssSans }} text-[#363737]">
-                    <div data-scroll="1100" class="absolute inset-x-0 top-0">
+                    <div data-scroll="900" class="absolute inset-x-0 top-0">
                         <div class="flex items-center gap-2 px-3 pt-2.5 text-xs">
                             <x-heroicon-m-chevron-left class="size-4 text-[#363737]" />
                             <span class="flex items-center gap-1.5 rounded border border-[#e6e6e6] px-1.5 py-0.5 text-[11px]"><span class="size-1.5 rounded-full bg-[#00c876]"></span>Saved</span>
@@ -268,7 +268,7 @@
                 </div>
                 {{-- 3. The published post --}}
                 <div data-share-scene="2" class="{{ $scene(2) }} relative overflow-hidden bg-white {{ $ssSans }} text-[#363737]">
-                    <div data-scroll="1400" class="absolute inset-x-0 top-0">
+                    <div data-scroll="1000" class="absolute inset-x-0 top-0">
                         <div class="flex items-center border-b border-[#e6e6e6] px-4 py-3">
                             <span class="flex size-7 items-center justify-center rounded-md bg-[#363737] text-[11px] font-bold text-white" aria-hidden="true">AN</span>
                             <span class="flex-1 text-center text-base font-bold">Ada's Notebook</span>
@@ -340,7 +340,7 @@
                 </div>
             </div>
             {{-- Bluesky: the copied image, attached to a post --}}
-            <div role="tabpanel" id="share-panel-bluesky" aria-labelledby="share-tab-bluesky" data-share-panel="bluesky" data-share-durations="[2400,2600,4000]" inert class="{{ $panel('bluesky') }} grid min-w-0 [grid-area:1/1]">
+            <div role="tabpanel" id="share-panel-bluesky" aria-labelledby="share-tab-bluesky" data-share-panel="bluesky" data-share-durations="[1800,2000,3200]" inert class="{{ $panel('bluesky') }} grid min-w-0 [grid-area:1/1]">
                 {{-- 1. Framework's Share dialog: Copy image --}}
                 <div data-share-scene="0" aria-hidden="true" class="{{ $scene(0) }} flex items-center justify-center bg-slate-900/5 p-5 font-sans dark:bg-black/30">
                     <x-landing-shared.copy :image="$image" :title="$embed['title']" />
@@ -375,7 +375,7 @@
                 </div>
                 {{-- 3. The post in the feed --}}
                 <div data-share-scene="2" class="{{ $scene(2) }} relative overflow-hidden font-sans text-slate-900 dark:text-slate-100">
-                    <div data-scroll="1200" class="absolute inset-x-0 top-0 mx-auto flex max-w-xl gap-3 px-5 py-4 sm:px-8">
+                    <div data-scroll="900" class="absolute inset-x-0 top-0 mx-auto flex max-w-xl gap-3 px-5 py-4 sm:px-8">
                         <span class="{{ $avatar }}">AE</span>
                         <div class="min-w-0 flex-1">
                             <p class="truncate text-sm"><span class="font-semibold">Ada Example</span> <span class="text-slate-500 dark:text-slate-400">@adaexample.bsky.social · 2m</span></p>
