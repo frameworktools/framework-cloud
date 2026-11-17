@@ -4,7 +4,7 @@
     $rows = $table['rows'];
     $rowCount = $table['row_count'] ?? count($rows);
     $columnCount = $table['column_count'] ?? count($columns);
-    $controlClass = 'rounded border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-800 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100';
+    $controlClass = 'rounded border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-800 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 focus-visible:border-sky-600 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sky-600';
     $decimal = [];
     foreach ($columns as $index => $column) {
         $decimal[$index] = $column['type'] === 'number' && array_filter(array_column($rows, $index), fn ($value) => is_float($value)) !== [];
@@ -19,9 +19,25 @@
             <h2 id="{{ $id }}-title" class="font-semibold text-slate-900 dark:text-slate-100">{{ $table['title'] ?? 'Table' }}</h2>
             <p class="mt-1 font-mono text-xs tabular-nums text-slate-500 dark:text-slate-400">{{ number_format($rowCount) }} {{ $rowCount === 1 ? 'row' : 'rows' }} × {{ number_format($columnCount) }} {{ $columnCount === 1 ? 'column' : 'columns' }}</p>
         </div>
-        <label data-table-control hidden class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300" for="{{ $id }}-search">
-            <span class="sr-only">Search table</span><input id="{{ $id }}-search" data-table-search type="search" class="{{ $controlClass }} max-w-52" autocomplete="off" placeholder="Search these rows">
-        </label>
+        @if ($model)
+            {{-- A model's few terms rarely need a search: an icon opens one, beside the scale switch if there is one --}}
+            <div class="flex items-center gap-2">
+                <div data-table-control hidden class="flex items-center gap-2">
+                    <button type="button" data-table-search-open aria-controls="{{ $id }}-search" aria-expanded="false" title="Search terms"
+                        class="rounded-md p-1.5 text-slate-500 focus-visible:outline-2 focus-visible:outline-sky-600 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200">
+                        <span class="sr-only">Search terms</span>
+                        <svg class="size-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.45 4.39l3.08 3.08a.75.75 0 1 1-1.06 1.06l-3.08-3.08A7 7 0 0 1 2 9Z" clip-rule="evenodd"/></svg>
+                    </button>
+                    <label for="{{ $id }}-search" class="sr-only">Search terms</label>
+                    <input id="{{ $id }}-search" data-table-search type="search" hidden class="{{ $controlClass }} w-44" autocomplete="off" placeholder="Search terms">
+                </div>
+                {{ $controls ?? '' }}
+            </div>
+        @else
+            <label data-table-control hidden class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300" for="{{ $id }}-search">
+                <span class="sr-only">Search table</span><input id="{{ $id }}-search" data-table-search type="search" class="{{ $controlClass }} max-w-52" autocomplete="off" placeholder="Search these rows">
+            </label>
+        @endif
     </div>
     @if ($table['truncated'] ?? false)
         <p class="border-b border-slate-200 px-4 py-3 text-xs text-slate-600 dark:border-slate-700 dark:text-slate-300">

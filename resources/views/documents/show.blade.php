@@ -183,7 +183,29 @@
                 @endif
 
                 @if ($coefficientIndex !== null)
-                    <x-artifact-table :table="$tables[$coefficientIndex]" :id="'artifact-table-'.$coefficientIndex" :model="true" />
+                    @php
+                        $ratio = \App\Support\RatioTable::ratio($model['exponentiate'] ?? null);
+                        $ratioTable = $ratio ? \App\Support\RatioTable::from($tables[$coefficientIndex], $ratio) : null;
+                        $logTable = $ratioTable ? \App\Support\RatioTable::renamed($tables[$coefficientIndex], \App\Support\RatioTable::SCALES[$ratio]) : null;
+                    @endphp
+                    @if ($ratioTable)
+                        {{-- One switch for the table and the coefficient plot; framework-embed has the same two views --}}
+                        @foreach (['ratio' => $ratioTable, 'model' => $logTable] as $view => $viewTable)
+                            <div data-scale-view="{{ $view }}" @if ($view === 'model') hidden @endif>
+                                <x-artifact-table :table="$viewTable" :id="'artifact-table-'.$coefficientIndex.($view === 'ratio' ? '-ratio' : '')" :model="true">
+                                    <x-slot:controls>
+                                        <div data-scale-switch role="group" aria-label="Scale" class="inline-flex rounded-md border border-slate-300 p-0.5 text-sm dark:border-slate-600">
+                                            @foreach (['ratio' => $ratio, 'model' => \App\Support\RatioTable::SCALES[$ratio]] as $scale => $label)
+                                                <button type="button" data-scale="{{ $scale }}" aria-pressed="{{ $scale === $view ? 'true' : 'false' }}" class="rounded px-3 py-1 font-medium text-slate-600 focus-visible:outline-2 focus-visible:outline-sky-600 aria-pressed:bg-sky-50 aria-pressed:text-sky-700 dark:text-slate-300 dark:aria-pressed:bg-sky-950 dark:aria-pressed:text-sky-300">{{ $label }}</button>
+                                            @endforeach
+                                        </div>
+                                    </x-slot:controls>
+                                </x-artifact-table>
+                            </div>
+                        @endforeach
+                    @else
+                        <x-artifact-table :table="$tables[$coefficientIndex]" :id="'artifact-table-'.$coefficientIndex" :model="true" />
+                    @endif
                     <x-artifact-coefficients :table="$tables[$coefficientIndex]" :level="$metricValues['confidence_level'] ?? null"
                         :method="$metricValues['interval_method'] ?? null" :exponentiate="$model['exponentiate'] ?? null" />
                 @endif

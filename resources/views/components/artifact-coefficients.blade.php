@@ -121,20 +121,13 @@
                     @endforeach
                 </div>
             @endif
-            @if ($ratio)
-                <div role="group" aria-label="Scale" class="inline-flex rounded-md border border-slate-300 p-0.5 text-xs dark:border-slate-600">
-                    @foreach (['ratio' => $ratio, 'model' => $scaleLabel] as $scale => $label)
-                        <button type="button" data-scale="{{ $scale }}" aria-pressed="{{ $scale === 'ratio' ? 'true' : 'false' }}" class="rounded px-2.5 py-1 font-medium text-slate-600 aria-pressed:bg-sky-50 aria-pressed:text-sky-700 dark:text-slate-300 dark:aria-pressed:bg-sky-950 dark:aria-pressed:text-sky-300">{{ $label }}</button>
-                    @endforeach
-                </div>
-            @endif
             </div>
         </div>
         <p class="mt-1 text-xs text-slate-600 dark:text-slate-300">
             Points are estimates.
             @if ($anyInterval) Lines are the {{ lcfirst($intervalLabel) }}. @endif
             @if ($ratio)
-                <span data-scale-note="ratio">{{ $ratio }}s are the exponentiated estimates, on a log scale. The dashed line marks 1, no difference. The table shows {{ lcfirst($scaleLabel) }}.</span>
+                <span data-scale-note="ratio">{{ $ratio }}s are the exponentiated estimates, on a log scale. The dashed line marks 1, no difference.</span>
                 <span data-scale-note="model" hidden>The dashed line marks zero.</span>
             @else
                 The dashed line marks zero.

@@ -137,7 +137,26 @@ export function mountTable(container) {
     });
     container.querySelector('[data-precision-increase]')?.addEventListener('click', () => { precision.stepUp(); precision.dispatchEvent(new Event('input', { bubbles: true })); });
     container.querySelector('[data-precision-decrease]')?.addEventListener('click', () => { precision.stepDown(); precision.dispatchEvent(new Event('input', { bubbles: true })); });
-    search.addEventListener('input', () => { state.query = search.value; state.page = 0; render(); });
+    search?.addEventListener('input', () => { state.query = search.value; state.page = 0; render(); });
+    // A model table's search starts as an icon. It opens on click and closes again when left empty.
+    const searchOpen = container.querySelector('[data-table-search-open]');
+    if (searchOpen && search) {
+        const show = (open) => {
+            search.hidden = !open;
+            searchOpen.hidden = open;
+            searchOpen.setAttribute('aria-expanded', String(open));
+        };
+        searchOpen.addEventListener('click', () => { show(true); search.focus(); });
+        search.addEventListener('blur', () => { if (!search.value) show(false); });
+        search.addEventListener('keydown', (event) => {
+            if (event.key !== 'Escape') return;
+            search.value = '';
+            state.query = '';
+            render();
+            show(false);
+            searchOpen.focus();
+        });
+    }
     size.addEventListener('change', () => { state.pageSize = Number(size.value); state.page = 0; render(); });
     previous.addEventListener('click', () => { state.page--; render(); });
     next.addEventListener('click', () => { state.page++; render(); });
@@ -161,21 +180,32 @@ export function mountTable(container) {
     render();
 }
 
-// Switches a coefficient plot between ratios and the model's own scale, and shows or hides the
-// intercept. Specs are keyed "model", "ratio", and "model:intercept". phiz redraws when data-phiz changes.
+// Shows or hides a coefficient plot's intercept, and draws it on the scale the page's switch picks.
+// Specs are keyed "model", "ratio", and "model:intercept". phiz redraws when data-phiz changes.
 function mountCoefficientPlot(section) {
     const specs = JSON.parse(section.querySelector('[data-coefficient-specs]').textContent);
     const chart = section.querySelector('[data-coefficient-chart]');
-    const state = { scale: section.querySelector('[data-scale][aria-pressed="true"]')?.dataset.scale ?? 'model', intercept: false };
+    const state = { scale: specs.ratio ? 'ratio' : 'model', intercept: false };
     const draw = () => {
-        chart.setAttribute('data-phiz', JSON.stringify(specs[state.scale + (state.intercept ? ':intercept' : '')] ?? specs[state.scale]));
-        section.querySelectorAll('[data-scale]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.scale === state.scale)));
+        const scale = specs[state.scale] ? state.scale : 'model';
+        chart.setAttribute('data-phiz', JSON.stringify(specs[scale + (state.intercept ? ':intercept' : '')] ?? specs[scale]));
         section.querySelectorAll('[data-intercept]').forEach((button) => button.setAttribute('aria-pressed', String((button.dataset.intercept === '1') === state.intercept)));
-        section.querySelectorAll('[data-scale-note]').forEach((note) => { note.hidden = note.dataset.scaleNote !== state.scale; });
+        section.querySelectorAll('[data-scale-note]').forEach((note) => { note.hidden = note.dataset.scaleNote !== scale; });
         section.querySelectorAll('[data-intercept-note]').forEach((note) => { note.hidden = state.intercept; });
     };
-    section.querySelectorAll('[data-scale]').forEach((button) => button.addEventListener('click', () => { state.scale = button.dataset.scale; draw(); }));
     section.querySelectorAll('[data-intercept]').forEach((button) => button.addEventListener('click', () => { state.intercept = button.dataset.intercept === '1'; draw(); }));
+    document.addEventListener('coefficient-scale', (event) => { state.scale = event.detail; draw(); });
+}
+
+// The ratio or model-scale switch in each coefficient table's header: shows that table, keeps every switch in step, and tells the plot.
+function mountScaleSwitch(group) {
+    group.querySelectorAll('[data-scale]').forEach((button) => button.addEventListener('click', () => {
+        const scale = button.dataset.scale;
+        document.querySelectorAll('[data-scale-switch] [data-scale]').forEach((other) => other.setAttribute('aria-pressed', String(other.dataset.scale === scale)));
+        document.querySelectorAll('[data-scale-view]').forEach((view) => { view.hidden = view.dataset.scaleView !== scale; });
+        document.dispatchEvent(new CustomEvent('coefficient-scale', { detail: scale }));
+        document.querySelector(`[data-scale-view="${scale}"] [data-scale="${scale}"]`)?.focus();
+    }));
 }
 
 if (typeof document !== 'undefined') {
@@ -183,4 +213,5 @@ if (typeof document !== 'undefined') {
     document.querySelectorAll('[data-coefficient-plot]').forEach((section) => {
         if (section.querySelector('[data-coefficient-specs]')) mountCoefficientPlot(section);
     });
+    document.querySelectorAll('[data-scale-switch]').forEach(mountScaleSwitch);
 }
