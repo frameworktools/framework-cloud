@@ -19,7 +19,7 @@ class ChartPage
     public const FILENAME = 'chart.html';
 
     /** Raised when the page's HTML changes, so stored pages are built again on their next view. */
-    private const PAGE_VERSION = 2;
+    private const PAGE_VERSION = 3;
 
     /** The sandbox the chart draws in: scripts from the pinned chart libraries only, no network. */
     public const CSP = "sandbox allow-scripts; default-src 'none'; script-src https://cdn.jsdelivr.net 'unsafe-inline' 'unsafe-eval'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:";
@@ -40,10 +40,30 @@ class ChartPage
         }
 
         return view('documents.chart', [
-            'container' => Html::container($spec, ['actions' => false, 'theme' => 'auto', 'config' => ['background' => 'transparent']], ['style' => 'width:100%']),
+            'container' => Html::container(self::responsive($spec), ['actions' => false, 'theme' => 'auto', 'config' => ['background' => 'transparent']], ['style' => 'width:100%']),
             'scripts' => Assets::cdn()->scripts(),
             'dark' => $dark,
         ])->render();
+    }
+
+    /**
+     * A single view without a width fills the frame, as in framework-embed. Otherwise
+     * Vega-Lite gives each band 20 pixels and a three-bar chart is 60 pixels wide.
+     * Composite and faceted views keep their own sizes.
+     *
+     * @param  array<string, mixed>  $spec
+     * @return array<string, mixed>
+     */
+    public static function responsive(array $spec): array
+    {
+        $encoding = is_array($spec['encoding'] ?? null) ? $spec['encoding'] : [];
+        if (array_key_exists('width', $spec) || array_intersect(['facet', 'repeat', 'concat', 'hconcat', 'vconcat'], array_keys($spec)) !== []
+            || isset($encoding['row']) || isset($encoding['column']) || isset($encoding['facet'])
+            || ! (isset($spec['mark']) || isset($spec['layer']))) {
+            return $spec;
+        }
+
+        return ['width' => 'container', 'autosize' => $spec['autosize'] ?? ['type' => 'fit', 'contains' => 'padding']] + $spec;
     }
 
     /** Builds and stores the page. False when the version has no chart. */
