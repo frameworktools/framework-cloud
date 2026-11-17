@@ -25,7 +25,7 @@ export function embedSnippet({ src, href, title }) {
 }
 
 // The vendored files' version, in their URLs so a new copy is never served from a browser's cache
-export const EMBED_VERSION = '0.3.2';
+export const EMBED_VERSION = '0.3.3';
 
 let renderer = null;
 

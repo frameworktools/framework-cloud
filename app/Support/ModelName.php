@@ -10,13 +10,21 @@ namespace App\Support;
  */
 class ModelName
 {
+    private const FAMILY_NAMES = ['gaussian' => 'Gaussian', 'tweedie' => 'Tweedie', 'poisson' => 'Poisson'];
+
+    private const LINK_NAMES = ['sqrt' => 'square-root', 'cloglog' => 'complementary log-log'];
+
+    /**
+     * The common name for a model, from its type, family, link, and exponentiate label.
+     * The family and link appear only when the name does not imply them. Null for an unknown combination.
+     */
     public static function for(array $model): ?string
     {
         $lower = fn (mixed $value): ?string => self::text($value) === null ? null : strtolower($value);
         $type = $lower($model['type'] ?? null);
         $family = $lower($model['family'] ?? null);
         $link = $lower($model['link'] ?? null);
-        $withLink = fn (string $name, string $implied): string => $link === null || $link === $implied ? $name : $name.' ('.$link.' link)';
+        $withLink = fn (string $name, string $implied): string => $link === null || $link === $implied ? $name : $name.' ('.self::linkName($link).' link)';
         if ($type === 'linear') {
             return 'Ordinary least squares regression';
         }
@@ -29,7 +37,7 @@ class ModelName
                     $link === null || $link === 'logit' => 'Logistic regression',
                     $link === 'probit' => 'Probit regression',
                     $link === 'cloglog' => 'Complementary log-log regression',
-                    default => 'Binomial regression ('.$link.' link)',
+                    default => 'Binomial regression ('.self::linkName($link).' link)',
                 };
             }
             if ($family === 'poisson') {
@@ -39,7 +47,7 @@ class ModelName
                 return $withLink('Negative binomial regression', 'log');
             }
             if ($family === 'gamma') {
-                return $link === null ? 'Gamma regression' : 'Gamma regression ('.$link.' link)';
+                return $link === null ? 'Gamma regression' : 'Gamma regression ('.self::linkName($link).' link)';
             }
             if ($family !== null && str_starts_with($family, 'quasi')) {
                 $rest = preg_replace('/^[- ]+/', '', substr($family, 5));
@@ -57,7 +65,7 @@ class ModelName
                 return match (true) {
                     $link === null || $link === 'logit' => 'Logistic mixed model',
                     $link === 'probit' => 'Probit mixed model',
-                    default => 'Binomial mixed model ('.$link.' link)',
+                    default => 'Binomial mixed model ('.self::linkName($link).' link)',
                 };
             }
             if ($family === 'poisson') {
@@ -67,7 +75,7 @@ class ModelName
                 return $withLink('Negative binomial mixed model', 'log');
             }
             if ($family === 'gamma') {
-                return $link === null ? 'Gamma mixed model' : 'Gamma mixed model ('.$link.' link)';
+                return $link === null ? 'Gamma mixed model' : 'Gamma mixed model ('.self::linkName($link).' link)';
             }
 
             return null;
@@ -79,7 +87,7 @@ class ModelName
             return match (true) {
                 $link === null || $link === 'logit' => 'Ordinal logistic regression',
                 $link === 'probit' => 'Ordinal probit regression',
-                default => 'Ordinal regression ('.$link.' link)',
+                default => 'Ordinal regression ('.self::linkName($link).' link)',
             };
         }
         if ($type === 'multinomial') {
@@ -103,8 +111,8 @@ class ModelName
 
         return match ($type) {
             'quantile' => 'Quantile regression',
-            'linear_ml' => 'Linear model (machine learning)',
-            'tree_ensemble' => 'Tree ensemble',
+            'linear_ml' => 'Linear model',
+            'tree_ensemble' => 'Tree ensemble model',
             default => null,
         };
     }
@@ -112,16 +120,26 @@ class ModelName
     private static function familyLink(?string $family, ?string $link): ?string
     {
         if ($family !== null && $link !== null) {
-            return $family.' family, '.$link.' link';
+            return self::familyName($family).' family, '.self::linkName($link).' link';
         }
         if ($family !== null) {
-            return $family.' family';
+            return self::familyName($family).' family';
         }
         if ($link !== null) {
-            return $link.' link';
+            return self::linkName($link).' link';
         }
 
         return null;
+    }
+
+    private static function familyName(string $family): string
+    {
+        return self::FAMILY_NAMES[strtolower($family)] ?? $family;
+    }
+
+    private static function linkName(string $link): string
+    {
+        return self::LINK_NAMES[strtolower($link)] ?? $link;
     }
 
     private static function text(mixed $value): ?string

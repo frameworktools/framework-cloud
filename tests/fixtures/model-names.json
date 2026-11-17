@@ -22,7 +22,7 @@
    "family": "gaussian",
    "link": "log"
   },
-  "meta": "Generalized linear model · gaussian family, log link"
+  "meta": "Generalized linear model · Gaussian family, log link"
  },
  {
   "model": {
@@ -78,7 +78,7 @@
    "family": "poisson",
    "link": "sqrt"
   },
-  "meta": "Poisson regression (sqrt link)"
+  "meta": "Poisson regression (square-root link)"
  },
  {
   "model": {
@@ -134,7 +134,7 @@
    "family": "tweedie",
    "link": "log"
   },
-  "meta": "Generalized linear model · tweedie family, log link"
+  "meta": "Generalized linear model · Tweedie family, log link"
  },
  {
   "model": {
@@ -216,7 +216,7 @@
    "type": "ordinal",
    "link": "cloglog"
   },
-  "meta": "Ordinal regression (cloglog link)"
+  "meta": "Ordinal regression (complementary log-log link)"
  },
  {
   "model": {
@@ -271,20 +271,20 @@
   "model": {
    "type": "linear_ml"
   },
-  "meta": "Linear model (machine learning)"
+  "meta": "Linear model"
  },
  {
   "model": {
    "type": "tree_ensemble"
   },
-  "meta": "Tree ensemble"
+  "meta": "Tree ensemble model"
  },
  {
   "model": {
    "type": "other",
    "family": "gaussian"
   },
-  "meta": "gaussian family"
+  "meta": "Gaussian family"
  },
  {
   "model": {
@@ -292,6 +292,6 @@
    "link": "log",
    "response": "y"
   },
-  "meta": "spline · log link · Response: y"
+  "meta": "Spline · log link · Response: y"
  }
 ]
