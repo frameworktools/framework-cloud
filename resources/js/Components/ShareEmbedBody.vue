@@ -6,7 +6,9 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import UiRadioCards from '@/Components/UiRadioCards.vue';
 import UiLink from '@/Components/UiLink.vue';
 import CopyBlock from '@/Components/CopyBlock.vue';
+import UiButton from '@/Components/UiButton.vue';
 import { embedSnippet, loadEmbedRenderer } from '@/embed-snippet.js';
+import { copyImage, downloadImage, embedImage } from '@/embed-image.js';
 
 const props = defineProps({ embed: { type: Object, required: true }, title: { type: String, default: '' } });
 
@@ -25,16 +27,19 @@ const themeObserver = new MutationObserver(() => { dark.value = document.documen
 
 const preview = ref(null);
 const status = ref('loading');
+let renderer = null;
+let embedDoc = null;
 onMounted(async () => {
     themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     try {
-        const [renderer, response] = await Promise.all([
+        const [loaded, response] = await Promise.all([
             loadEmbedRenderer(),
             fetch(`/api/embed/v1/artifacts/${encodeURIComponent(props.embed.key)}`, { headers: { Accept: 'application/json' }, credentials: 'omit' }),
         ]);
         if (!response.ok) throw new Error(`Embed request failed: ${response.status}`);
         const doc = await response.json();
         if (!preview.value) return;
+        [renderer, embedDoc] = [loaded, doc];
         renderer.mount(preview.value, doc, { lazy: false });
         status.value = 'ready';
     } catch {
@@ -42,6 +47,37 @@ onMounted(async () => {
     }
 });
 onBeforeUnmount(() => themeObserver.disconnect());
+
+// The image: copied to the clipboard, or saved where the clipboard can't take images
+const imageState = ref('idle'); // idle | working | copied | saved | error
+const fileName = computed(() => (props.title || 'artifact').replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'artifact');
+const settle = (state) => { imageState.value = state; setTimeout(() => { if (imageState.value === state) imageState.value = 'idle'; }, 2000); };
+async function copyAsImage() {
+    if (!renderer || imageState.value === 'working') return;
+    imageState.value = 'working';
+    const blob = embedImage(renderer, embedDoc);
+    try {
+        await copyImage(blob);
+        settle('copied');
+    } catch {
+        try {
+            downloadImage(await blob, fileName.value);
+            settle('saved');
+        } catch {
+            settle('error');
+        }
+    }
+}
+async function downloadAsImage() {
+    if (!renderer || imageState.value === 'working') return;
+    imageState.value = 'working';
+    try {
+        downloadImage(await embedImage(renderer, embedDoc), fileName.value);
+        settle('saved');
+    } catch {
+        settle('error');
+    }
+}
 </script>
 
 <template>
@@ -70,6 +106,16 @@ onBeforeUnmount(() => themeObserver.disconnect());
                 <UiLink href="https://github.com/frameworktools/framework-embed/tree/main/statamic" external>Statamic</UiLink> with the Framework plugin.
             </p>
             <CopyBlock :value="link" label="embed link" kind="value" />
+        </div>
+
+        <div class="flex min-w-0 flex-col gap-2">
+            <p class="text-sm font-medium text-slate-800 dark:text-white">Image</p>
+            <p class="text-sm text-slate-500 dark:text-slate-400">For Substack, email, and slides. Paste the link under the image so readers can open the artifact.</p>
+            <div class="flex flex-wrap items-center gap-2">
+                <UiButton size="sm" :disabled="status !== 'ready' || imageState === 'working'" @click="copyAsImage">{{ imageState === 'working' ? 'Making image…' : imageState === 'copied' ? 'Copied' : 'Copy image' }}</UiButton>
+                <UiButton size="sm" variant="ghost" :disabled="status !== 'ready' || imageState === 'working'" @click="downloadAsImage">Download PNG</UiButton>
+                <span class="text-sm text-slate-500 dark:text-slate-400" role="status">{{ imageState === 'saved' ? 'Saved as PNG.' : imageState === 'error' ? 'The image could not be made.' : '' }}</span>
+            </div>
         </div>
 
         <div class="flex min-w-0 flex-col gap-2">
