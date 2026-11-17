@@ -33,6 +33,7 @@
         'generic' => ['Drupal / Hosted CMS', ['Load the script', 'Add the tag', 'Published']],
         'academic' => ['Academic.page', ['Click the icon or type /framework', 'Paste the link', 'Published']],
         'substack' => ['Substack', ['Copy image', 'Paste', 'Published']],
+        'bluesky' => ['Bluesky', ['Copy image', 'Paste', 'Posted']],
     ];
     $first = array_key_first($hosts);
     $panel = fn (string $key) => $key === $first ? '' : 'invisible';
@@ -41,6 +42,11 @@
     $caret = '<span class="ml-px inline-block h-[1.1em] w-px translate-y-[0.15em] animate-pulse bg-current" aria-hidden="true"></span>';
     $pad = 'px-5 py-5 sm:px-8 sm:py-6';
     $wpBlue = 'bg-[#3858e9]';
+    $skyBlue = 'bg-[#1185fe]';
+    $avatar = 'flex size-9 shrink-0 items-center justify-center rounded-full bg-sky-200 text-xs font-semibold text-sky-900';
+    // Bluesky shortens a link in a post to its start
+    $postLink = 'framework.pub/@examples/penguin-st…';
+    $postText = 'Within each species, penguin body mass rises about 41 grams with each millimeter of flipper length.';
     // academic.page's toolbar; its Framework button's icon (pequod's flux/icon/framework.blade.php) is above
     $tool = 'flex h-7 min-w-7 shrink-0 items-center justify-center rounded';
     $toolRule = 'mx-1 h-4 w-px shrink-0 bg-zinc-300 dark:bg-zinc-600';
@@ -205,19 +211,7 @@
             <div role="tabpanel" id="share-panel-substack" aria-labelledby="share-tab-substack" data-share-panel="substack" inert class="{{ $panel('substack') }} grid min-w-0 [grid-area:1/1]">
                 {{-- 1. Framework's Share dialog: Copy image --}}
                 <div data-share-scene="0" aria-hidden="true" class="{{ $scene(0) }} flex items-center justify-center bg-slate-900/5 p-5 font-sans dark:bg-black/30">
-                    <div class="w-full max-w-xl rounded-xl bg-white p-5 shadow-xl ring-1 ring-slate-800/10 dark:bg-slate-800 dark:ring-white/10">
-                        <p class="font-semibold text-slate-900 dark:text-white">Share {{ $embed['title'] }}</p>
-                        {{-- The image that will be copied --}}
-                        <div class="mt-3 overflow-hidden rounded-md bg-white px-3 py-2 text-slate-800 ring-1 ring-slate-800/10">
-                            <p class="text-[10px] text-slate-500">{{ $meta }}</p>
-                            <x-landing-shared.table :rows="$rows" :image="true" class="mt-0.5 text-xs [&_td]:py-1 [&_td]:pl-2.5 [&_td]:text-[11px] [&_th]:py-1" />
-                        </div>
-                        <p class="mt-3 text-sm text-slate-600 dark:text-slate-300"><span class="font-medium text-slate-800 dark:text-white">Image.</span> Copy or download a PNG for Substack, email, and slides.</p>
-                        <p class="mt-3 flex justify-end gap-2 text-sm font-medium">
-                            <span class="rounded-md bg-sky-700 px-3 py-1.5 text-white" data-swap="Copied">Copy image</span>
-                            <span class="rounded-md bg-slate-800/5 px-3 py-1.5 text-slate-700 dark:bg-white/10 dark:text-slate-200">Download PNG</span>
-                        </p>
-                    </div>
+                    <x-landing-shared.copy :rows="$rows" :meta="$meta" :title="$embed['title']" />
                 </div>
                 {{-- 2. Substack's editor: the image pasted in --}}
                 <div data-share-scene="1" aria-hidden="true" class="{{ $scene(1) }} {{ $pad }} font-serif text-slate-800 dark:text-slate-200">
@@ -284,6 +278,60 @@
                         <div class="mt-3 flex items-baseline justify-between gap-4 border-t border-slate-800/10 pt-2.5 text-xs dark:border-white/10">
                             <span class="font-semibold text-slate-900 dark:text-white">{{ $embed['title'] }}</span>
                             <a href="{{ $url }}" target="_blank" rel="noopener" class="{{ $credit }}">Framework</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {{-- Bluesky: the copied image, attached to a post --}}
+            <div role="tabpanel" id="share-panel-bluesky" aria-labelledby="share-tab-bluesky" data-share-panel="bluesky" inert class="{{ $panel('bluesky') }} grid min-w-0 [grid-area:1/1]">
+                {{-- 1. Framework's Share dialog: Copy image --}}
+                <div data-share-scene="0" aria-hidden="true" class="{{ $scene(0) }} flex items-center justify-center bg-slate-900/5 p-5 font-sans dark:bg-black/30">
+                    <x-landing-shared.copy :rows="$rows" :meta="$meta" :title="$embed['title']" />
+                </div>
+                {{-- 2. Bluesky's composer: the image pasted in --}}
+                <div data-share-scene="1" aria-hidden="true" class="{{ $scene(1) }} flex items-center justify-center bg-slate-900/5 p-5 font-sans dark:bg-black/30">
+                    <div class="w-full max-w-lg rounded-xl bg-white shadow-xl ring-1 ring-slate-800/10 dark:bg-slate-800 dark:ring-white/10">
+                        <div class="flex items-center justify-between px-4 py-3 text-sm">
+                            <span class="text-[#1185fe]">Cancel</span>
+                            <span class="rounded-full {{ $skyBlue }} px-4 py-1 font-semibold text-white">Post</span>
+                        </div>
+                        <div class="flex gap-3 px-4 pb-3">
+                            <span class="{{ $avatar }}">AE</span>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-sm leading-relaxed text-slate-900 dark:text-slate-100">{{ $postText }} Full model: <span class="text-[#1185fe]">{{ $postLink }}</span>{!! $caret !!}</p>
+                                <div class="relative mt-3 w-56 max-w-full">
+                                    <span data-hide-on-reveal class="absolute top-0 left-0 rounded-md bg-slate-900 px-2 py-1 text-xs font-medium text-white dark:bg-white dark:text-slate-900">⌘V</span>
+                                    <div data-reveal class="relative overflow-hidden rounded-lg bg-white px-2.5 py-2 text-slate-800 ring-1 ring-slate-800/10 transition-opacity duration-300">
+                                        <x-landing-shared.table :rows="$rows" :image="true" class="text-[9px] [&_td]:py-0.5 [&_td]:pl-1.5 [&_td]:text-[8px] [&_th]:py-0.5" />
+                                        <span class="absolute bottom-1.5 left-1.5 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-semibold text-white">ALT</span>
+                                        <span class="absolute top-1.5 right-1.5 flex size-5 items-center justify-center rounded-full bg-black/70 text-white"><x-heroicon-m-x-mark class="size-3.5" /></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 border-t border-slate-800/10 px-4 py-2 text-[#1185fe] dark:border-white/10">
+                            <x-heroicon-o-photo class="size-5" />
+                            <x-heroicon-o-face-smile class="size-5" />
+                            <span class="ml-auto text-xs text-slate-500 dark:text-slate-400">{{ 300 - mb_strlen($postText.' Full model: '.$postLink) }}</span>
+                        </div>
+                    </div>
+                </div>
+                {{-- 3. The post in the feed --}}
+                <div data-share-scene="2" class="{{ $scene(2) }} px-5 py-4 font-sans text-slate-900 sm:px-8 dark:text-slate-100">
+                    <div class="mx-auto flex max-w-xl gap-3">
+                        <span class="{{ $avatar }}">AE</span>
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate text-sm"><span class="font-semibold">Ada Example</span> <span class="text-slate-500 dark:text-slate-400">@adaexample.bsky.social · 2m</span></p>
+                            <p class="mt-0.5 text-sm leading-relaxed">{{ $postText }} Full model: <a href="{{ $url }}" target="_blank" rel="noopener" class="text-[#1185fe] hover:underline">{{ $postLink }}</a></p>
+                            <div role="region" tabindex="0" aria-label="Copied image of the model, attached to the post" class="mt-2.5 overflow-x-auto rounded-lg bg-white px-3 py-2 text-slate-800 ring-1 ring-slate-800/10 dark:ring-white/10">
+                                <p class="text-[10px] text-slate-500">{{ $meta }}</p>
+                                <x-landing-shared.table :rows="$rows" :image="true" class="mt-0.5 text-xs [&_td]:py-1 [&_td]:pl-2.5 [&_td]:text-[11px] [&_th]:py-1" />
+                            </div>
+                            <p class="mt-2 flex gap-8 text-xs text-slate-500 dark:text-slate-400" aria-hidden="true">
+                                <span class="flex items-center gap-1"><x-heroicon-o-chat-bubble-oval-left class="size-4" /> 3</span>
+                                <span class="flex items-center gap-1"><x-heroicon-o-arrow-path-rounded-square class="size-4" /> 12</span>
+                                <span class="flex items-center gap-1"><x-heroicon-o-heart class="size-4" /> 48</span>
+                            </p>
                         </div>
                     </div>
                 </div>
