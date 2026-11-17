@@ -100,7 +100,7 @@ const menuFor = (doc) => [
                 <p v-if="!shown.length" class="text-sm text-slate-500 dark:text-slate-400">Nothing matches that search.</p>
             </template>
 
-            <EmptyState v-else-if="canPublish" :icon="GlobeAltIcon" title="No published artifacts">
+            <EmptyState v-else-if="canPublish && !uploading" :icon="GlobeAltIcon" title="No published artifacts">
                 Publish a file from your browser, R, Python, or the CLI. Start with a single figure, a data file, or a complete rendered report.
                 <template #actions>
                     <UiButton v-if="!projects.length" href="/projects/create">Create a project</UiButton>

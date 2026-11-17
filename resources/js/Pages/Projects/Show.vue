@@ -401,7 +401,7 @@ const artifactMenu = (doc) => [
                         </tr>
                     </tbody>
                 </UiTable>
-                <EmptyState v-else :icon="GlobeAltIcon" title="No published artifacts" compact>
+                <EmptyState v-else-if="!publishing" :icon="GlobeAltIcon" title="No published artifacts" compact>
                     Publish a figure, table, model, data file, or rendered report to give it a reader page and version history.
                 </EmptyState>
                 <p v-if="!canPublish" class="text-sm text-slate-500 dark:text-slate-400">Hosting artifacts on Framework Cloud is part of a paid plan. You can also publish to your own bucket or GitHub Pages.</p>
