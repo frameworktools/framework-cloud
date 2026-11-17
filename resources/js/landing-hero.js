@@ -297,3 +297,94 @@ for (const root of document.querySelectorAll('[data-cloud-screens]')) {
         });
     });
 }
+
+// Step 04: a tab per host. Each host plays its scenes in a loop: the insert step in its editor,
+// the link or image going in, and the published post. Panels and scenes share grid cells, so
+// nothing changes height. The loop waits while the step is off screen or hovered, and stops
+// for good when a step button is used or motion is reduced; the post stays shown then.
+for (const root of document.querySelectorAll('[data-share-demo]')) {
+    const tabs = [...root.querySelectorAll('[data-share-tab]')];
+    const durations = [2400, 2400, 4000];
+    let host = tabs[0].dataset.shareTab, scene = 2, playing = !reducedMotion.matches, visible = false, hovered = false, timers = [];
+    const later = (fn, ms) => timers.push(setTimeout(fn, ms));
+    const panel = () => root.querySelector(`[data-share-panel="${host}"]`);
+    const play = element => {
+        if (element.dataset.type !== undefined) {
+            const text = element.dataset.type;
+            element.textContent = '';
+            [...text].forEach((_, i) => later(() => { element.textContent = text.slice(0, i + 1); }, 300 + i * 70));
+        }
+        // Links and code arrive whole, as a paste, with a moment's highlight
+        if (element.dataset.paste !== undefined) {
+            element.dataset.original ??= element.textContent;
+            element.textContent = '';
+            later(() => {
+                element.textContent = element.dataset.original;
+                element.classList.add('bg-sky-400/25');
+                later(() => element.classList.remove('bg-sky-400/25'), 600);
+            }, 500);
+        }
+        if (element.dataset.swap !== undefined) {
+            element.dataset.original ??= element.textContent;
+            element.textContent = element.dataset.original;
+            later(() => { element.textContent = element.dataset.swap; }, 800);
+        }
+    };
+    const show = index => {
+        timers.forEach(clearTimeout); timers = [];
+        scene = index;
+        panel().querySelectorAll('[data-share-scene]').forEach(el => {
+            const active = Number(el.dataset.shareScene) === index;
+            el.classList.toggle('opacity-0', !active); el.classList.toggle('opacity-100', active);
+            el.inert = !active;
+            if (!active) return;
+            el.querySelectorAll('[data-type], [data-paste], [data-swap]').forEach(play);
+            const reveal = el.querySelector('[data-reveal]');
+            if (reveal) {
+                reveal.classList.add('opacity-0');
+                el.querySelector('[data-hide-on-reveal]').hidden = false;
+                later(() => { reveal.classList.remove('opacity-0'); el.querySelector('[data-hide-on-reveal]').hidden = true; }, 800);
+            }
+        });
+        root.querySelectorAll(`[data-share-host="${host}"] [data-share-step]`).forEach(step => step.setAttribute('aria-pressed', String(Number(step.dataset.shareStep) === index)));
+        if (playing) later(advance, durations[index]);
+    };
+    const advance = () => {
+        if (!playing) return;
+        if (!visible || hovered || document.hidden) { later(advance, 600); return; }
+        show((scene + 1) % durations.length);
+    };
+    const stop = () => { playing = false; };
+    const select = tab => {
+        host = tab.dataset.shareTab;
+        tabs.forEach(other => { const active = other === tab; other.setAttribute('aria-selected', String(active)); other.tabIndex = active ? 0 : -1; });
+        root.querySelectorAll('[data-share-panel]').forEach(el => {
+            const active = el.dataset.sharePanel === host;
+            el.classList.toggle('invisible', !active);
+            el.inert = !active;
+        });
+        root.querySelectorAll('[data-share-host]').forEach(el => setHidden(el, el.dataset.shareHost !== host));
+        show(playing ? 0 : 2);
+    };
+    tabs.forEach((tab, index) => {
+        tab.addEventListener('click', () => select(tab));
+        tab.addEventListener('keydown', event => {
+            if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+            event.preventDefault();
+            const next = tabs[event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length];
+            select(next); next.focus();
+        });
+    });
+    onClick(root, '[data-share-step]', step => { stop(); show(Number(step.dataset.shareStep)); });
+    root.querySelector('figure').addEventListener('mouseenter', () => { hovered = true; });
+    root.querySelector('figure').addEventListener('mouseleave', () => { hovered = false; });
+    reducedMotion.addEventListener('change', () => { if (reducedMotion.matches) { stop(); show(2); } });
+    document.addEventListener('landing-motion', event => { if (event.detail.paused) { stop(); show(2); } });
+    // The loop starts from the first scene once the step comes into view
+    let started = false;
+    new IntersectionObserver(([entry]) => {
+        visible = entry.isIntersecting;
+        if (visible && playing && !started) { started = true; show(0); }
+    }, { threshold: 0.4 }).observe(root);
+    show(2);
+}

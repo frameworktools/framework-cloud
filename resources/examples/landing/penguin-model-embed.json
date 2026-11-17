@@ -1,0 +1,174 @@
+{
+    "schema": "framework.embed/v1",
+    "key": "fkbeu8cmjsx7qd9tiv4ozgpg",
+    "version": 1,
+    "latest_version": 1,
+    "kind": "model",
+    "title": "Penguin body mass model",
+    "description": "Body mass on flipper length and species. Palmer penguins data, 342 penguins with complete measurements.",
+    "alt": "Linear model of body_mass_g with 4 terms.",
+    "url": "https://framework.pub/@examples/penguin-study-stata/penguin-body-mass/versions/1",
+    "embed_url": "https://framework.pub/api/embed/v1/artifacts/fkbeu8cmjsx7qd9tiv4ozgpg/versions/1",
+    "published_at": "2026-11-16T20:26:03Z",
+    "author": null,
+    "provider": {
+        "name": "Framework",
+        "url": "https://framework.pub"
+    },
+    "attribution": {
+        "text": "Framework",
+        "url": "https://framework.pub/@examples/penguin-study-stata/penguin-body-mass/versions/1"
+    },
+    "data": {
+        "schema": "framework.artifact/v1",
+        "kind": "model",
+        "source": {
+            "language": "stata",
+            "class": [
+                "regress"
+            ]
+        },
+        "model": {
+            "type": "linear",
+            "family": "gaussian",
+            "link": "identity",
+            "response": "body_mass_g"
+        },
+        "test": null,
+        "tables": [
+            {
+                "title": "Coefficients",
+                "role": "coefficients",
+                "columns": [
+                    {
+                        "name": "term",
+                        "type": "string"
+                    },
+                    {
+                        "name": "estimate",
+                        "type": "number"
+                    },
+                    {
+                        "name": "std_error",
+                        "type": "number"
+                    },
+                    {
+                        "name": "statistic",
+                        "type": "number"
+                    },
+                    {
+                        "name": "p_value",
+                        "type": "number"
+                    },
+                    {
+                        "name": "conf_low",
+                        "type": "number"
+                    },
+                    {
+                        "name": "conf_high",
+                        "type": "number"
+                    }
+                ],
+                "rows": [
+                    [
+                        "flipper_length_mm",
+                        40.70540077728075,
+                        3.0710197314090077,
+                        13.254685523822667,
+                        1.40159993610846e-32,
+                        34.66468251439588,
+                        46.746119040165624
+                    ],
+                    [
+                        "2.species_id",
+                        -206.5101203397226,
+                        57.7306463106237,
+                        -3.577131619635449,
+                        0.0003980985939155963,
+                        -320.0667236822644,
+                        -92.95351699718078
+                    ],
+                    [
+                        "3.species_id",
+                        266.8096031792107,
+                        95.26374051545366,
+                        2.8007466611698804,
+                        0.005391807625560511,
+                        79.42512914380595,
+                        454.1940772146154
+                    ],
+                    [
+                        "(Intercept)",
+                        -4031.476890693668,
+                        584.1513399294739,
+                        -6.901425392913416,
+                        2.55145337072138e-11,
+                        -5180.50684687101,
+                        -2882.446934516326
+                    ]
+                ],
+                "precision_note": null,
+                "row_count": 4,
+                "column_count": 7,
+                "truncated": false
+            }
+        ],
+        "metrics": [
+            {
+                "name": "nobs",
+                "value": 342
+            },
+            {
+                "name": "df_model",
+                "value": 3
+            },
+            {
+                "name": "df_resid",
+                "value": 338
+            },
+            {
+                "name": "r.squared",
+                "value": 0.7826479015540249
+            },
+            {
+                "name": "adj.r.squared",
+                "value": 0.7807187409169304
+            },
+            {
+                "name": "sigma",
+                "value": 375.53507478218376
+            },
+            {
+                "name": "aic",
+                "value": 5029.523063426064
+            },
+            {
+                "name": "bic",
+                "value": 5044.862306374314
+            },
+            {
+                "name": "log_likelihood",
+                "value": -2510.761531713032
+            },
+            {
+                "name": "vcov_type",
+                "value": "ols"
+            },
+            {
+                "name": "confidence_level",
+                "value": 0.95
+            },
+            {
+                "name": "interval_method",
+                "value": "wald-t"
+            },
+            {
+                "name": "command",
+                "value": "regress body_mass_g flipper_length_mm i.species_id"
+            }
+        ],
+        "truncated": false
+    },
+    "spec": null,
+    "image": null
+}

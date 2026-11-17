@@ -26,7 +26,7 @@
         [
             'id' => 'publish',
             'title' => 'Publish your work',
-            'body' => 'Publish a model from your script and share its link. Publish again with the same slug and collaborators get the latest version at that link.',
+            'body' => 'Publish models, tables, and charts from R, Python, or Stata. Each result gets its own page and version history, so collaborators can open the latest result or cite a specific version.',
             'guide' => 'publishing',
             'panels' => [
                 'r' => ['label' => 'R', 'code' => "# Publish a figure\npublish(plot, slug = \"flipper-and-mass\", to = \"cloud\")\n\n# Publish a model summary. Publishing again\n# adds a version at the same link.\npublish(model, slug = \"penguin-body-mass\", to = \"cloud\")\n\n# Publish a rendered document\npublish(\"outputs/report.html\", to = \"cloud\")"],
@@ -34,6 +34,12 @@
                 'stata' => ['label' => 'Stata', 'code' => "// Publish a figure\nfw_publish \"\$fw_outputs_figures/figure.svg\", ///\n    slug(flipper-and-mass) to(cloud)\n\n// Publish the estimation results\nfw_publish, estimates slug(study-model) to(cloud)\n\n// Publish a rendered document\nfw_publish \"outputs/report.html\", to(cloud)"],
                 'cli' => ['label' => 'CLI', 'code' => "fw publish outputs/figure.svg --to cloud\n\nfw publish outputs/model.json --to cloud\n\nfw publish outputs/report.html --to cloud\n\n# Use a named folder or storage destination\nfw publish outputs/report.html --to lab"],
             ],
+        ],
+        [
+            'id' => 'share',
+            'title' => 'Share your results anywhere',
+            'body' => 'Share a link, copy an image, or embed a model, table, or interactive chart in your own website. Embedded results take on the site\'s design.',
+            'panels' => [],
         ],
     ];
     // Stata shows once the package is public or its docs site is live, as in the hero
@@ -43,6 +49,7 @@
             unset($unreleased['panels']['stata']);
         }
         unset($unreleased);
+        $steps[2]['body'] = str_replace('R, Python, or Stata', 'R or Python', $steps[2]['body']);
     }
 @endphp
 <section id="workflow" class="scroll-mt-6 border-t border-slate-800/10 py-14 sm:py-20 dark:border-white/10">
@@ -114,14 +121,22 @@
                     <h3 class="mt-3 text-2xl font-semibold tracking-tight">{{ $step['title'] }}</h3>
                     <p class="mt-4 text-base leading-relaxed text-slate-600 dark:text-slate-400">{{ $step['body'] }}</p>
                     <div class="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+                        @if ($step['id'] === 'share')
+                        <a class="text-slate-700 underline decoration-slate-300 underline-offset-4 hover:decoration-slate-600 dark:text-slate-300" href="https://framework.pub/@examples/penguin-study/penguin-body-mass">View an example &rarr;</a>
+                        <a class="text-slate-700 underline decoration-slate-300 underline-offset-4 hover:decoration-slate-600 dark:text-slate-300" href="{{ route('guide', 'embedding') }}">Embedding guide &rarr;</a>
+                        @else
                         <a class="text-slate-700 underline decoration-slate-300 underline-offset-4 hover:decoration-slate-600 dark:text-slate-300" href="{{ \App\Support\Docs\Products::publicUrl('r', '/guides/'.$step['guide']) }}">R &rarr;</a>
                         <a class="text-slate-700 underline decoration-slate-300 underline-offset-4 hover:decoration-slate-600 dark:text-slate-300" href="{{ \App\Support\Docs\Products::publicUrl('py', '/guides/'.$step['guide']) }}">Python &rarr;</a>
                         @if ($showStata)<a class="text-slate-700 underline decoration-slate-300 underline-offset-4 hover:decoration-slate-600 dark:text-slate-300" href="{{ \App\Support\Docs\Products::publicUrl('stata', '/guides/'.['setup' => 'projects', 'analysis' => 'data', 'publish' => 'publishing'][$step['id']]) }}">Stata &rarr;</a>@endif
+                        @endif
                     </div>
                 </div>
-                <div class="min-w-0 rounded-xl shadow-panel-deep dark:shadow-panel-deep-dark">
+                {{-- Step 04 puts the shadow on its preview alone, above its one-line caption --}}
+                <div @class(['min-w-0', 'rounded-xl shadow-panel-deep dark:shadow-panel-deep-dark' => $step['id'] !== 'share'])>
                 @if ($step['id'] === 'publish')
                     <x-landing-published />
+                @elseif ($step['id'] === 'share')
+                    <x-landing-shared />
                 @else
                     <x-landing-editor :panels="$panels" :files="$files" :companions="$companions" :helper="$step['id'] === 'analysis'" :arrow="in_array($step['id'], ['setup', 'publish'])" :priority="$step['id'] === 'publish' ? ['outputs/', 'scripts/', 'settings/'] : ['settings.yml', 'settings/', 'inputs/', 'scripts/', 'functions/', 'notebooks/', 'outputs/', 'AGENTS.md', '.gitignore']" :title="$step['title']" />
                 @endif
