@@ -46,7 +46,7 @@
                         @endforeach
                     </span>
                 </h1>
-                <p class="mt-6 max-w-xl text-lg leading-relaxed text-slate-700 dark:text-slate-200">Framework gives every {{ isset(\App\Support\Docs\Products::listed()['stata']) ? 'R, Python, and Stata' : 'R and Python' }} project a proven structure and built-in data safeguards, with conventions ready for AI agents if you use them. Framework Cloud can start projects and publish results.</p>
+                <p class="mt-6 max-w-xl text-lg leading-relaxed text-slate-700 dark:text-slate-200">Framework gives every {{ isset(\App\Support\Docs\Products::listed()['stata']) ? 'R, Python, and Stata' : 'R and Python' }} project a proven structure and built-in data safeguards, with conventions ready for AI agents if you use them. Framework Cloud can start projects, publish results, and share them on popular media platforms.</p>
                 @php
                     // The tools a visitor can use without Cloud, each linking to its docs site
                     $tools = collect([
