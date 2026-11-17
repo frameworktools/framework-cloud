@@ -321,8 +321,8 @@ for (const root of document.querySelectorAll('[data-share-demo]')) {
             later(() => {
                 element.textContent = element.dataset.original;
                 element.classList.add('bg-sky-400/25');
-                later(() => element.classList.remove('bg-sky-400/25'), 600);
-            }, 500);
+                later(() => element.classList.remove('bg-sky-400/25'), 500);
+            }, 250);
         }
         if (element.dataset.swap !== undefined) {
             element.dataset.original ??= element.textContent;

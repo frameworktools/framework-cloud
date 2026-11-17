@@ -297,7 +297,7 @@
                 </div>
             </div>
             {{-- Drupal or a hosted CMS: the stylesheet and script once, then the tag in an HTML block --}}
-            <div role="tabpanel" id="share-panel-generic" aria-labelledby="share-tab-generic" data-share-panel="generic" inert class="{{ $panel('generic') }} grid min-w-0 [grid-area:1/1]">
+            <div role="tabpanel" id="share-panel-generic" aria-labelledby="share-tab-generic" data-share-panel="generic" data-share-durations="[1400,1400,3200]" inert class="{{ $panel('generic') }} grid min-w-0 [grid-area:1/1]">
                 {{-- 1. The site's header code (a theme template, or a hosted CMS's code injection) loads the stylesheet and script --}}
                 @php $load = "<link rel=\"stylesheet\"\n        href=\"{$asset}.css\">\n  <script defer\n          src=\"{$asset}.iife.js\"></script>"; @endphp
                 <div data-share-scene="0" aria-hidden="true" class="{{ $scene(0) }} bg-[#0c1526] px-5 py-4 font-mono text-[13px] leading-6 text-slate-300">
