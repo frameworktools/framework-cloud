@@ -63,7 +63,12 @@ onBeforeUnmount(() => themeObserver.disconnect());
 
         <div class="flex min-w-0 flex-col gap-2">
             <p class="text-sm font-medium text-slate-800 dark:text-white">Link</p>
-            <p class="text-sm text-slate-500 dark:text-slate-400">Paste into WordPress, Drupal, Statamic, or academic.page with the Framework plugin.</p>
+            <p class="text-sm text-slate-500 dark:text-slate-400">
+                Paste into <UiLink href="https://academic.page" external>Academic.page</UiLink>,
+                or into <UiLink href="https://github.com/frameworktools/framework-embed/releases/latest" external>WordPress</UiLink>,
+                <UiLink href="https://github.com/frameworktools/framework-embed/tree/main/drupal" external>Drupal</UiLink>, or
+                <UiLink href="https://github.com/frameworktools/framework-embed/tree/main/statamic" external>Statamic</UiLink> with the Framework plugin.
+            </p>
             <CopyBlock :value="link" label="embed link" kind="value" />
         </div>
 
@@ -74,8 +79,7 @@ onBeforeUnmount(() => themeObserver.disconnect());
         </div>
 
         <p class="text-sm text-slate-500 dark:text-slate-400">
-            Get the <UiLink href="https://github.com/frameworktools/framework-embed/releases/latest" external>WordPress plugin</UiLink>.
-            The <UiLink href="/docs/embedding" external>embedding guide</UiLink> covers Drupal, Statamic, and other sites.
+            The <UiLink href="/docs/embedding" external>embedding guide</UiLink> covers each platform.
         </p>
     </div>
 </template>
