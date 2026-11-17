@@ -59,7 +59,7 @@ const skip = () => router.post('/welcome/passkey/skip');
 
     <AuthLayout
         title="Passkey setup"
-        :description="`You're signed in as ${email}. Save a passkey on this device to sign in with Touch ID, Face ID, or a security key instead of waiting for an email.`"
+        :description="`You're signed in as ${email}. Save a passkey on this device to sign in next time with Touch ID, Face ID, or a security key.`"
     >
         <template v-if="supported">
             <p v-if="error" class="text-sm text-red-600 dark:text-red-400">{{ error }}</p>
