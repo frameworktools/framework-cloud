@@ -23,7 +23,7 @@ Plugins for WordPress, Drupal, and Statamic live in the open-source [framework-e
 
 | CMS | Install |
 |---|---|
-| WordPress | Upload `framework-embed-0.2.0.zip` from the [latest release](https://github.com/frameworktools/framework-embed/releases/latest) under Plugins → Add New → Upload. |
+| WordPress | Upload the `framework-embed` zip from the [latest release](https://github.com/frameworktools/framework-embed/releases/latest) under Plugins → Add New → Upload. |
 | Drupal | Install the `drupal/` module with Composer from the repository. See its README. |
 | Statamic | Install the `statamic/` addon with Composer from the repository. See its README. |
 
