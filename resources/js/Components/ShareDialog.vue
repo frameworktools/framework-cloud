@@ -63,7 +63,7 @@ watch(show, (open) => { if (!open) emit('close'); });
 </script>
 
 <template>
-    <UiModal v-model="show" :title="target ? `Share ${target.title}` : 'Share'">
+    <UiModal v-model="show" :size="embedding ? 'wide' : 'md'" :title="target ? `Share ${target.title}` : 'Share'">
         <UiTabs v-if="target?.type === 'artifact'" v-model="view" :tabs="views" label="Share format" />
         <div :class="target?.type === 'artifact' ? 'mt-2' : 'mt-4'">
             <p v-if="state.loading" class="text-sm text-slate-500 dark:text-slate-400">Loading…</p>

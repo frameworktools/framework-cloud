@@ -2,7 +2,8 @@
 import { nextTick, onBeforeUnmount, ref, useId, watch } from 'vue';
 
 // A dialog: Escape or the backdrop closes it, and focus moves into it when it opens
-defineProps({ title: String });
+// size: md (the default) or wide, for dialogs that show content such as a preview
+const props = defineProps({ title: String, size: { type: String, default: 'md' } });
 const show = defineModel({ type: Boolean, default: false });
 const id = useId();
 const panel = ref(null);
@@ -26,7 +27,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
     <Teleport to="body">
         <div v-if="show" class="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div class="absolute inset-0 bg-slate-950/50" @click="show = false" />
-            <div ref="panel" role="dialog" aria-modal="true" :aria-labelledby="title ? `${id}-title` : undefined" class="relative max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-6 shadow-xl dark:bg-slate-900 dark:ring-1 dark:ring-slate-700">
+            <div ref="panel" role="dialog" aria-modal="true" :aria-labelledby="title ? `${id}-title` : undefined" class="relative max-h-[calc(100dvh-2rem)] w-full overflow-y-auto rounded-xl bg-white p-6 shadow-xl dark:bg-slate-900 dark:ring-1 dark:ring-slate-700" :class="props.size === 'wide' ? 'max-w-3xl' : 'max-w-lg'">
                 <h2 v-if="title" :id="`${id}-title`" class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ title }}</h2>
                 <div class="mt-3 flex flex-col gap-4">
                     <slot />

@@ -1,9 +1,9 @@
 <script setup>
 // An artifact's embed: a live preview drawn by the framework-embed renderer,
-// a choice of newest or pinned version, and the link and HTML to paste into
+// a switch to pin the current version, and the link, image, and HTML to paste into
 // another site. embed comes from ShareController::embed.
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import UiRadioCards from '@/Components/UiRadioCards.vue';
+import UiSwitch from '@/Components/UiSwitch.vue';
 import UiLink from '@/Components/UiLink.vue';
 import CopyBlock from '@/Components/CopyBlock.vue';
 import UiButton from '@/Components/UiButton.vue';
@@ -12,8 +12,9 @@ import { copyImage, downloadImage, embedImage } from '@/embed-image.js';
 
 const props = defineProps({ embed: { type: Object, required: true }, title: { type: String, default: '' } });
 
-const version = ref('newest');
-const pinned = computed(() => version.value === 'pinned');
+const pinnedSwitch = ref(false);
+const pinned = computed(() => pinnedSwitch.value);
+const expanded = ref(false);
 const link = computed(() => (pinned.value ? props.embed.version_link : props.embed.link));
 const html = computed(() => embedSnippet({
     src: pinned.value ? props.embed.version_snippet_src : props.embed.snippet_src,
@@ -81,50 +82,48 @@ async function downloadAsImage() {
 </script>
 
 <template>
-    <div class="flex min-w-0 flex-col gap-6">
+    <div class="flex min-w-0 flex-col gap-5">
         <section aria-label="Preview" class="min-w-0">
-            <p class="text-sm font-medium text-slate-800 dark:text-white">Preview</p>
-            <div class="mt-2 max-h-72 overflow-auto rounded-lg border border-slate-800/10 px-4 text-slate-900 focus-visible:outline-2 focus-visible:outline-sky-500 dark:border-white/15 dark:text-slate-100"
-                tabindex="0" role="region" :aria-label="`Embed preview of ${title}`" :data-theme="dark ? 'dark' : 'light'">
+            <div class="flex items-center justify-between gap-3">
+                <p class="text-sm font-medium text-slate-800 dark:text-white">Preview</p>
+                <button v-if="status === 'ready'" type="button" class="text-sm font-medium text-sky-700 hover:underline dark:text-sky-400" :aria-expanded="expanded" @click="expanded = !expanded">{{ expanded ? 'Collapse' : 'Expand' }}</button>
+            </div>
+            <div class="mt-2 overflow-auto rounded-lg border border-slate-800/10 px-4 text-slate-900 focus-visible:outline-2 focus-visible:outline-sky-500 dark:border-white/15 dark:text-slate-100"
+                :class="expanded ? '' : 'max-h-64'" tabindex="0" role="region" :aria-label="`Embed preview of ${title}`" :data-theme="dark ? 'dark' : 'light'">
                 <p v-if="status === 'loading'" class="py-4 text-sm text-slate-500 dark:text-slate-400">Loading preview…</p>
                 <p v-else-if="status === 'error'" class="py-4 text-sm text-slate-500 dark:text-slate-400">The preview didn't load. The link and HTML still work.</p>
                 <div ref="preview" class="embed-preview" />
             </div>
         </section>
 
-        <UiRadioCards v-model="version" name="embed-version" legend="Version" :options="[
-            { value: 'newest', label: 'Newest version', description: 'Updates when you publish again.' },
-            { value: 'pinned', label: `This version (v${embed.latest_version})`, description: 'Stays as it is now.' },
-        ]" />
+        <UiSwitch v-model="pinnedSwitch" :label="`Pin to version ${embed.latest_version}`" description="When off, embeds update when you publish again." />
 
         <div class="flex min-w-0 flex-col gap-2">
-            <p class="text-sm font-medium text-slate-800 dark:text-white">Link</p>
-            <p class="text-sm text-slate-500 dark:text-slate-400">
+            <p class="text-sm text-slate-600 dark:text-slate-300">
+                <span class="font-medium text-slate-800 dark:text-white">Link.</span>
                 Paste into <UiLink href="https://academic.page" external>Academic.page</UiLink>,
-                or into <UiLink href="https://github.com/frameworktools/framework-embed/releases/latest" external>WordPress</UiLink>,
+                <UiLink href="https://github.com/frameworktools/framework-embed/releases/latest" external>WordPress</UiLink>,
                 <UiLink href="https://github.com/frameworktools/framework-embed/tree/main/drupal" external>Drupal</UiLink>, or
-                <UiLink href="https://github.com/frameworktools/framework-embed/tree/main/statamic" external>Statamic</UiLink> with the Framework plugin.
+                <UiLink href="https://github.com/frameworktools/framework-embed/tree/main/statamic" external>Statamic</UiLink>.
             </p>
             <CopyBlock :value="link" label="embed link" kind="value" />
         </div>
 
-        <div class="flex min-w-0 flex-col gap-2">
-            <p class="text-sm font-medium text-slate-800 dark:text-white">Image</p>
-            <p class="text-sm text-slate-500 dark:text-slate-400">For Substack, email, and slides. Paste the link under the image so readers can open the artifact.</p>
-            <div class="flex flex-wrap items-center gap-2">
+        <div class="flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
+            <p class="text-sm text-slate-600 dark:text-slate-300"><span class="font-medium text-slate-800 dark:text-white">Image.</span> For Substack, email, and slides.</p>
+            <div class="flex items-center gap-2">
+                <span class="text-sm text-slate-500 dark:text-slate-400" role="status">{{ imageState === 'saved' ? 'Saved.' : imageState === 'error' ? 'The image could not be made.' : '' }}</span>
                 <UiButton size="sm" :disabled="status !== 'ready' || imageState === 'working'" @click="copyAsImage">{{ imageState === 'working' ? 'Making image…' : imageState === 'copied' ? 'Copied' : 'Copy image' }}</UiButton>
-                <UiButton size="sm" variant="ghost" :disabled="status !== 'ready' || imageState === 'working'" @click="downloadAsImage">Download PNG</UiButton>
-                <span class="text-sm text-slate-500 dark:text-slate-400" role="status">{{ imageState === 'saved' ? 'Saved as PNG.' : imageState === 'error' ? 'The image could not be made.' : '' }}</span>
+                <UiButton size="sm" variant="ghost" :disabled="status !== 'ready' || imageState === 'working'" @click="downloadAsImage">Download</UiButton>
             </div>
         </div>
 
-        <div class="flex min-w-0 flex-col gap-2">
-            <p class="text-sm font-medium text-slate-800 dark:text-white">HTML</p>
-            <p class="text-sm text-slate-500 dark:text-slate-400">Paste into any web page.</p>
-            <CopyBlock :value="html" label="embed HTML" />
-        </div>
+        <details class="group min-w-0">
+            <summary class="cursor-pointer text-sm text-slate-600 marker:text-slate-400 dark:text-slate-300"><span class="font-medium text-slate-800 dark:text-white">HTML.</span> For any other web page.</summary>
+            <div class="mt-2"><CopyBlock :value="html" label="embed HTML" /></div>
+        </details>
 
-        <p class="text-sm text-slate-500 dark:text-slate-400">
+        <p class="text-xs text-slate-500 dark:text-slate-400">
             The <UiLink href="/docs/embedding" external>embedding guide</UiLink> covers each platform.
         </p>
     </div>
