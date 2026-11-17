@@ -51,6 +51,10 @@
     $image = ['src' => asset('images/landing/penguin-model-image.webp'), 'width' => 1494, 'height' => 1058,
         'alt' => 'Penguin body mass model: estimates, standard errors, statistics, p-values, and 95% confidence intervals for the intercept, flipper length, and species.'];
     $skyBlue = 'bg-[#1185fe]';
+    // bsky.app's type and colors, light and dim (from a live post page)
+    $bsSans = "font-[InterVariable,Inter,-apple-system,system-ui,sans-serif]";
+    $bsMuted = 'text-[#42576c] dark:text-[#aebbc9]';
+    $bsRule = 'border-[#d4dbe2] dark:border-[#2e4052]';
     $avatar = 'flex size-9 shrink-0 items-center justify-center rounded-full bg-sky-200 text-xs font-semibold text-sky-900';
     // Bluesky shortens a link in a post to its start
     $postLink = 'framework.pub/@examples/penguin-st…';
@@ -373,18 +377,36 @@
                         </div>
                     </div>
                 </div>
-                {{-- 3. The post in the feed --}}
-                <div data-share-scene="2" class="{{ $scene(2) }} relative overflow-hidden font-sans text-slate-900 dark:text-slate-100">
-                    <div data-scroll="900" class="absolute inset-x-0 top-0 mx-auto flex max-w-xl gap-3 px-5 py-4 sm:px-8">
-                        <span class="{{ $avatar }}">AE</span>
-                        <div class="min-w-0 flex-1">
-                            <p class="truncate text-sm"><span class="font-semibold">Ada Example</span> <span class="text-slate-500 dark:text-slate-400">@adaexample.bsky.social · 2m</span></p>
-                            <p class="mt-0.5 text-sm leading-relaxed">{{ $postText }} Full model: <a href="{{ $url }}" target="_blank" rel="noopener" class="text-[#1185fe] hover:underline">{{ $postLink }}</a></p>
-                            <img src="{{ $image['src'] }}" width="{{ $image['width'] }}" height="{{ $image['height'] }}" alt="{{ $image['alt'] }}" loading="lazy" class="mt-2.5 block h-auto w-full rounded-lg ring-1 ring-slate-800/10 dark:ring-white/10">
-                            <p class="mt-2 flex gap-8 text-xs text-slate-500 dark:text-slate-400" aria-hidden="true">
-                                <span class="flex items-center gap-1"><x-heroicon-o-chat-bubble-oval-left class="size-4" /> 3</span>
-                                <span class="flex items-center gap-1"><x-heroicon-o-arrow-path-rounded-square class="size-4" /> 12</span>
-                                <span class="flex items-center gap-1"><x-heroicon-o-heart class="size-4" /> 48</span>
+                {{-- 3. The post's page on bsky.app, after a live one: a sticky "Post" header, the author with Follow,
+                     the text, the image with ALT, the time, counts, and actions. Bluesky's own light and dim themes. --}}
+                <div data-share-scene="2" class="{{ $scene(2) }} relative overflow-hidden bg-white {{ $bsSans }} text-[#0b0f14] dark:bg-[#151d28] dark:text-white">
+                    <div class="absolute inset-x-0 top-0 z-10 border-b {{ $bsRule }} bg-white dark:bg-[#151d28]">
+                        <p class="mx-auto flex max-w-sm items-center gap-4 px-5 py-2.5 text-[17px] font-semibold">
+                            <x-heroicon-m-arrow-left class="size-5" aria-hidden="true" />Post
+                            <x-heroicon-o-adjustments-vertical class="ml-auto size-5 {{ $bsMuted }}" aria-hidden="true" />
+                        </p>
+                    </div>
+                    <div data-scroll="900" class="absolute inset-x-0 top-0 pt-[45px]">
+                        <div class="mx-auto max-w-sm px-5 pt-3 pb-3">
+                            <div class="flex items-center gap-2.5">
+                                <span class="{{ $avatar }} size-10" aria-hidden="true">AE</span>
+                                <p class="min-w-0 flex-1 leading-tight"><span class="block text-[15px] font-semibold">Ada Example</span><span class="block text-sm {{ $bsMuted }}">@adaexample.bsky.social</span></p>
+                                <span class="flex items-center gap-1 rounded-full bg-[#1e2936] px-3 py-1.5 text-[13px] font-semibold text-white dark:bg-[#2e4052]" aria-hidden="true"><x-heroicon-m-plus class="size-3.5" />Follow</span>
+                            </div>
+                            <p class="mt-2.5 text-[15px] leading-snug">{{ $postText }} Full model: <a href="{{ $url }}" target="_blank" rel="noopener" class="text-[#1083fe] hover:underline">{{ $postLink }}</a></p>
+                            <div class="mt-2.5 overflow-hidden rounded-xl border {{ $bsRule }}">
+                                <img src="{{ $image['src'] }}" width="{{ $image['width'] }}" height="{{ $image['height'] }}" alt="{{ $image['alt'] }}" loading="lazy" class="block h-auto w-full">
+                            </div>
+                            <p class="mt-2.5 flex items-center gap-1.5 text-[13px] {{ $bsMuted }}" aria-hidden="true">6:12 PM · Nov 17, 2026 <x-heroicon-o-globe-americas class="ml-1 size-3.5" /> Everybody can reply</p>
+                            <p class="mt-2.5 flex gap-4 border-t {{ $bsRule }} pt-2.5 text-[14px] {{ $bsMuted }}" aria-hidden="true">
+                                <span><b class="font-semibold text-[#0b0f14] dark:text-white">12</b> reposts</span>
+                                <span><b class="font-semibold text-[#0b0f14] dark:text-white">48</b> likes</span>
+                            </p>
+                            <p class="mt-2 flex items-center gap-8 text-[13px] {{ $bsMuted }} [&_svg]:size-[18px]" aria-hidden="true">
+                                <span class="flex items-center gap-1"><x-heroicon-o-chat-bubble-left />3</span>
+                                <span class="flex items-center gap-1"><x-heroicon-o-arrow-path-rounded-square />12</span>
+                                <span class="flex items-center gap-1"><x-heroicon-o-heart />48</span>
+                                <span class="ml-auto flex gap-4"><x-heroicon-o-bookmark /><x-heroicon-o-arrow-uturn-right /><x-heroicon-o-ellipsis-horizontal /></span>
                             </p>
                         </div>
                     </div>

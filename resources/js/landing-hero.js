@@ -344,7 +344,15 @@ for (const root of document.querySelectorAll('[data-share-demo]')) {
                 page.style.transition = 'none';
                 page.style.transform = '';
                 page.offsetHeight;
-                const end = () => `translateY(-${Math.max(0, page.scrollHeight - page.parentElement.clientHeight)}px)`;
+                // To the end of the page, or to put [data-scroll-to] near the top
+                const target = page.querySelector('[data-scroll-to]');
+                const end = () => {
+                    const bottom = Math.max(0, page.scrollHeight - page.parentElement.clientHeight);
+                    // A sticky header beside the page covers its top
+                    const header = page.parentElement.querySelector(':scope > :not([data-scroll])');
+                    const top = target ? target.offsetTop - (header?.offsetHeight ?? 0) - 8 : bottom;
+                    return `translateY(-${Math.max(0, Math.min(bottom, top))}px)`;
+                };
                 if (reducedMotion.matches || !playing) { page.style.transform = end(); return; }
                 later(() => { page.style.transition = 'transform 0.9s ease-in-out'; page.style.transform = end(); }, Number(page.dataset.scroll));
             });
