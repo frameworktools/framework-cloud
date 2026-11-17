@@ -339,6 +339,15 @@ for (const root of document.querySelectorAll('[data-share-demo]')) {
             el.inert = !active;
             if (!active) return;
             el.querySelectorAll('[data-type], [data-paste], [data-swap]').forEach(play);
+            // A scene taller than the frame scrolls down to its end after a moment
+            el.querySelectorAll('[data-scroll]').forEach(page => {
+                page.style.transition = 'none';
+                page.style.transform = '';
+                page.offsetHeight;
+                const end = () => `translateY(-${Math.max(0, page.scrollHeight - page.parentElement.clientHeight)}px)`;
+                if (reducedMotion.matches || !playing) { page.style.transform = end(); return; }
+                later(() => { page.style.transition = 'transform 1.1s ease-in-out'; page.style.transform = end(); }, Number(page.dataset.scroll));
+            });
             const reveal = el.querySelector('[data-reveal]');
             if (reveal) {
                 reveal.classList.add('opacity-0');
@@ -347,7 +356,8 @@ for (const root of document.querySelectorAll('[data-share-demo]')) {
             }
         });
         root.querySelectorAll(`[data-share-host="${host}"] [data-share-step]`).forEach(step => step.setAttribute('aria-pressed', String(Number(step.dataset.shareStep) === index)));
-        if (playing) later(advance, durations[index]);
+        const timing = panel().dataset.shareDurations ? JSON.parse(panel().dataset.shareDurations) : durations;
+        if (playing) later(advance, timing[index]);
     };
     const advance = () => {
         if (!playing) return;

@@ -42,6 +42,14 @@
     $caret = '<span class="ml-px inline-block h-[1.1em] w-px translate-y-[0.15em] animate-pulse bg-current" aria-hidden="true"></span>';
     $pad = 'px-5 py-5 sm:px-8 sm:py-6';
     $wpBlue = 'bg-[#3858e9]';
+    // Substack's post and editor type and the like/comment/restack pills (measured from live posts)
+    $ssSans = "font-[-apple-system,BlinkMacSystemFont,'SF_Pro_Display',system-ui,sans-serif]";
+    $ssSerif = "font-[Spectral,Lora,Georgia,serif]";
+    $ssPill = 'flex h-7 items-center gap-1 rounded-full border border-[#e6e6e6] px-2.5';
+    $subtitle = 'Body mass, flipper length, and species in the Palmer penguins';
+    // The PNG Framework's Copy image makes for this model (resources/js/embed-image.js)
+    $image = ['src' => asset('images/landing/penguin-model-image.webp'), 'width' => 1494, 'height' => 1058,
+        'alt' => 'Penguin body mass model: estimates, standard errors, statistics, p-values, and 95% confidence intervals for the intercept, flipper length, and species.'];
     $skyBlue = 'bg-[#1185fe]';
     $avatar = 'flex size-9 shrink-0 items-center justify-center rounded-full bg-sky-200 text-xs font-semibold text-sky-900';
     // Bluesky shortens a link in a post to its start
@@ -207,35 +215,84 @@
                 </div>
             </div>
 
-            {{-- Substack --}}
-            <div role="tabpanel" id="share-panel-substack" aria-labelledby="share-tab-substack" data-share-panel="substack" inert class="{{ $panel('substack') }} grid min-w-0 [grid-area:1/1]">
+            {{-- Substack, after its real editor and post pages: always light, as Substack is. The pasted
+                 image is the actual PNG Framework's Copy image makes for this model. The editor and the
+                 post are taller than the frame, so each scrolls to the image once it is in view. --}}
+            <div role="tabpanel" id="share-panel-substack" aria-labelledby="share-tab-substack" data-share-panel="substack" data-share-durations="[2400,3600,4400]" inert class="{{ $panel('substack') }} grid min-w-0 [grid-area:1/1]">
                 {{-- 1. Framework's Share dialog: Copy image --}}
                 <div data-share-scene="0" aria-hidden="true" class="{{ $scene(0) }} flex items-center justify-center bg-slate-900/5 p-5 font-sans dark:bg-black/30">
-                    <x-landing-shared.copy :rows="$rows" :meta="$meta" :title="$embed['title']" />
+                    <x-landing-shared.copy :image="$image" :title="$embed['title']" />
                 </div>
-                {{-- 2. Substack's editor: the image pasted in --}}
-                <div data-share-scene="1" aria-hidden="true" class="{{ $scene(1) }} {{ $pad }} font-serif text-slate-800 dark:text-slate-200">
-                    <p class="text-lg font-bold text-slate-950 dark:text-white">{{ $title }}</p>
-                    <p class="mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{{ $lede }}{!! $caret !!}</p>
-                    <div class="relative mt-4">
-                        <span data-hide-on-reveal class="absolute top-0 left-0 rounded-md bg-slate-900 px-2 py-1 font-sans text-xs font-medium text-white dark:bg-white dark:text-slate-900">⌘V</span>
-                        <div data-reveal class="rounded-sm bg-white px-4 py-3 font-sans text-slate-800 ring-2 ring-[#ff6719] transition-opacity duration-300">
-                            <p class="text-[11px] text-slate-500">{{ $meta }}</p>
-                            <x-landing-shared.table :rows="$rows" :image="true" class="mt-1" />
+                {{-- 2. Substack's post editor: the image pasted in and selected --}}
+                <div data-share-scene="1" aria-hidden="true" class="{{ $scene(1) }} relative overflow-hidden bg-white {{ $ssSans }} text-[#363737]">
+                    <div data-scroll="1100" class="absolute inset-x-0 top-0">
+                        <div class="flex items-center gap-2 px-3 pt-2.5 text-xs">
+                            <x-heroicon-m-chevron-left class="size-4 text-[#363737]" />
+                            <span class="flex items-center gap-1.5 rounded border border-[#e6e6e6] px-1.5 py-0.5 text-[11px]"><span class="size-1.5 rounded-full bg-[#00c876]"></span>Saved</span>
+                            <span class="ml-auto rounded-md bg-[#eeeeee] px-3 py-1.5 font-semibold">Preview</span>
+                            <span class="rounded-md bg-[#ff6719] px-3 py-1.5 font-semibold text-white">Continue</span>
+                        </div>
+                        <div class="mt-1 flex items-center justify-center gap-2.5 px-3 py-1.5 text-[#363737] [&_svg]:size-3.5" aria-hidden="true">
+                            <x-heroicon-m-arrow-uturn-left /><x-heroicon-m-arrow-uturn-right class="opacity-40" />
+                            <span class="h-3.5 w-px bg-[#e6e6e6]"></span>
+                            <span class="flex items-center gap-0.5 text-[11px] font-semibold">Style<x-heroicon-m-chevron-down class="!size-3" /></span>
+                            <span class="h-3.5 w-px bg-[#e6e6e6]"></span>
+                            <x-heroicon-m-bold /><x-heroicon-m-italic /><x-heroicon-m-strikethrough /><x-heroicon-m-code-bracket />
+                            <span class="h-3.5 w-px bg-[#e6e6e6]"></span>
+                            <x-heroicon-m-link /><x-heroicon-m-photo class="text-[#ff6719]" /><x-heroicon-m-musical-note class="max-sm:hidden" /><x-heroicon-m-video-camera class="max-sm:hidden" /><x-heroicon-m-chat-bubble-bottom-center-text class="max-sm:hidden" />
+                            <span class="h-3.5 w-px bg-[#e6e6e6] max-sm:hidden"></span>
+                            <x-heroicon-m-list-bullet class="max-sm:hidden" /><x-heroicon-m-numbered-list class="max-sm:hidden" />
+                            <span class="h-3.5 w-px bg-[#e6e6e6] max-md:hidden"></span>
+                            <span class="flex items-center gap-0.5 text-[11px] font-semibold max-md:hidden">Button<x-heroicon-m-chevron-down class="!size-3" /></span>
+                            <span class="flex items-center gap-0.5 text-[11px] font-semibold max-md:hidden">More<x-heroicon-m-chevron-down class="!size-3" /></span>
+                        </div>
+                        <div class="mx-auto max-w-md px-5 pt-4 pb-8">
+                            <p class="{{ $ssSerif }} text-[26px] leading-tight font-bold">{{ $title }}</p>
+                            <p class="{{ $ssSerif }} mt-2 text-[15px] text-[#868787]">{{ $subtitle }}</p>
+                            <p class="mt-3 flex items-center gap-1.5 text-xs">
+                                <span class="flex items-center gap-1.5 rounded-full bg-[#eeeeee] py-1 pr-1.5 pl-2.5 text-[#757575]">Ada Example <x-heroicon-m-x-mark class="size-3" /></span>
+                                <span class="flex size-6 items-center justify-center rounded-full border border-[#e6e6e6] text-[#757575]"><x-heroicon-m-plus class="size-3" /></span>
+                            </p>
+                            <p class="{{ $ssSerif }} mt-4 text-[15px] leading-relaxed">{{ $lede }}</p>
+                            <div class="relative mt-5">
+                                <p data-hide-on-reveal class="{{ $ssSerif }} text-[15px]">{!! $caret !!}</p>
+                                <div data-reveal class="relative rounded-[3px] shadow-[0_0_0_1px_#ff6719,0_0_0_4px_#fdebe2] transition-opacity duration-300">
+                                    <img src="{{ $image['src'] }}" width="{{ $image['width'] }}" height="{{ $image['height'] }}" alt="" loading="lazy" class="block h-auto w-full rounded-[3px] border border-white">
+                                    <span class="absolute top-2 right-2 flex h-5 w-6 items-center justify-center rounded-md bg-[#363737] text-white"><x-heroicon-m-ellipsis-horizontal class="size-3.5" /></span>
+                                    <span class="absolute top-1/2 left-1.5 h-8 w-1.5 -translate-y-1/2 rounded-full border border-[#868787] bg-white"></span>
+                                    <span class="absolute top-1/2 right-1.5 h-8 w-1.5 -translate-y-1/2 rounded-full border border-[#868787] bg-white"></span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                {{-- 3. The newsletter --}}
-                <div data-share-scene="2" class="{{ $scene(2) }} {{ $pad }} font-serif text-slate-800 dark:text-slate-200">
-                    <p class="text-center text-lg leading-snug font-bold text-slate-950 dark:text-white">{{ $title }}</p>
-                    <p class="mt-1 text-center font-sans text-xs text-slate-500 dark:text-slate-400">Ada Example · Nov 16, 2026</p>
-                    <div class="mx-auto mt-4 max-w-xl">
-                        <div role="region" tabindex="0" aria-label="Copied image of the model, pasted into the newsletter" class="overflow-x-auto rounded-sm bg-white px-4 py-3 font-sans text-slate-800 ring-1 ring-slate-800/10 dark:ring-white/10">
-                            <p class="text-[11px] text-slate-500">{{ $meta }}</p>
-                            <x-landing-shared.table :rows="$rows" :image="true" class="mt-1" />
-                            <p class="mt-2 text-[11px] font-semibold text-slate-900">{{ $embed['title'] }}</p>
+                {{-- 3. The published post --}}
+                <div data-share-scene="2" class="{{ $scene(2) }} relative overflow-hidden bg-white {{ $ssSans }} text-[#363737]">
+                    <div data-scroll="1400" class="absolute inset-x-0 top-0">
+                        <div class="flex items-center border-b border-[#e6e6e6] px-4 py-3">
+                            <span class="flex size-7 items-center justify-center rounded-md bg-[#363737] text-[11px] font-bold text-white" aria-hidden="true">AN</span>
+                            <span class="flex-1 text-center text-base font-bold">Ada's Notebook</span>
+                            <span class="rounded-lg bg-[#ff6719] px-3 py-1.5 text-xs font-semibold text-white">Subscribe</span>
                         </div>
-                        <p class="mt-2 text-center font-sans text-xs text-slate-500 dark:text-slate-400">Full model on <a href="{{ $url }}" target="_blank" rel="noopener" class="underline decoration-slate-300 underline-offset-4 hover:decoration-slate-600 dark:decoration-slate-600">Framework</a></p>
+                        <div class="mx-auto max-w-md px-5 pt-5 pb-6">
+                            <p class="text-[26px] leading-[1.15] font-bold">{{ $title }}</p>
+                            <p class="mt-2 text-[15px] leading-snug text-[#868787]">{{ $subtitle }}</p>
+                            <div class="mt-3 flex items-center gap-2.5 text-[11px] leading-[18px] font-medium tracking-[0.2px] uppercase">
+                                <span class="flex size-8 items-center justify-center rounded-full bg-sky-200 text-[10px] font-semibold text-sky-900 normal-case" aria-hidden="true">AE</span>
+                                <span><span class="block">Ada Example</span><span class="block text-[#868787]">Nov 16, 2026</span></span>
+                            </div>
+                            <div class="mt-3 flex items-center gap-1.5 text-xs font-medium text-[#868787]" aria-hidden="true">
+                                <span class="{{ $ssPill }}"><x-heroicon-o-heart class="size-3.5" />48</span>
+                                <span class="{{ $ssPill }}"><x-heroicon-o-chat-bubble-oval-left class="size-3.5" />3</span>
+                                <span class="{{ $ssPill }}"><x-heroicon-o-arrow-path class="size-3.5" />12</span>
+                                <span class="{{ $ssPill }} ml-auto">Share</span>
+                            </div>
+                            <p class="{{ $ssSerif }} mt-4 text-[15px] leading-relaxed">{{ $lede }}</p>
+                            <figure class="mt-5">
+                                <img src="{{ $image['src'] }}" width="{{ $image['width'] }}" height="{{ $image['height'] }}" alt="{{ $image['alt'] }}" loading="lazy" class="block h-auto w-full">
+                                <figcaption class="{{ $ssSerif }} mt-2 px-[15%] text-center text-[13px] leading-5 tracking-[-0.15px] text-[#868787]">Penguin body mass model. Full results on <a href="{{ $url }}" target="_blank" rel="noopener" class="text-[#363737] underline">Framework</a>.</figcaption>
+                            </figure>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -283,10 +340,10 @@
                 </div>
             </div>
             {{-- Bluesky: the copied image, attached to a post --}}
-            <div role="tabpanel" id="share-panel-bluesky" aria-labelledby="share-tab-bluesky" data-share-panel="bluesky" inert class="{{ $panel('bluesky') }} grid min-w-0 [grid-area:1/1]">
+            <div role="tabpanel" id="share-panel-bluesky" aria-labelledby="share-tab-bluesky" data-share-panel="bluesky" data-share-durations="[2400,2600,4000]" inert class="{{ $panel('bluesky') }} grid min-w-0 [grid-area:1/1]">
                 {{-- 1. Framework's Share dialog: Copy image --}}
                 <div data-share-scene="0" aria-hidden="true" class="{{ $scene(0) }} flex items-center justify-center bg-slate-900/5 p-5 font-sans dark:bg-black/30">
-                    <x-landing-shared.copy :rows="$rows" :meta="$meta" :title="$embed['title']" />
+                    <x-landing-shared.copy :image="$image" :title="$embed['title']" />
                 </div>
                 {{-- 2. Bluesky's composer: the image pasted in --}}
                 <div data-share-scene="1" aria-hidden="true" class="{{ $scene(1) }} flex items-center justify-center bg-slate-900/5 p-5 font-sans dark:bg-black/30">
@@ -299,10 +356,10 @@
                             <span class="{{ $avatar }}">AE</span>
                             <div class="min-w-0 flex-1">
                                 <p class="text-sm leading-relaxed text-slate-900 dark:text-slate-100">{{ $postText }} Full model: <span class="text-[#1185fe]">{{ $postLink }}</span>{!! $caret !!}</p>
-                                <div class="relative mt-3 w-56 max-w-full">
+                                <div class="relative mt-3 w-40 max-w-full">
                                     <span data-hide-on-reveal class="absolute top-0 left-0 rounded-md bg-slate-900 px-2 py-1 text-xs font-medium text-white dark:bg-white dark:text-slate-900">⌘V</span>
-                                    <div data-reveal class="relative overflow-hidden rounded-lg bg-white px-2.5 py-2 text-slate-800 ring-1 ring-slate-800/10 transition-opacity duration-300">
-                                        <x-landing-shared.table :rows="$rows" :image="true" class="text-[9px] [&_td]:py-0.5 [&_td]:pl-1.5 [&_td]:text-[8px] [&_th]:py-0.5" />
+                                    <div data-reveal class="relative overflow-hidden rounded-lg ring-1 ring-slate-800/10 transition-opacity duration-300">
+                                        <img src="{{ $image['src'] }}" width="{{ $image['width'] }}" height="{{ $image['height'] }}" alt="" loading="lazy" class="block h-auto w-full">
                                         <span class="absolute bottom-1.5 left-1.5 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-semibold text-white">ALT</span>
                                         <span class="absolute top-1.5 right-1.5 flex size-5 items-center justify-center rounded-full bg-black/70 text-white"><x-heroicon-m-x-mark class="size-3.5" /></span>
                                     </div>
@@ -317,16 +374,13 @@
                     </div>
                 </div>
                 {{-- 3. The post in the feed --}}
-                <div data-share-scene="2" class="{{ $scene(2) }} px-5 py-4 font-sans text-slate-900 sm:px-8 dark:text-slate-100">
-                    <div class="mx-auto flex max-w-xl gap-3">
+                <div data-share-scene="2" class="{{ $scene(2) }} relative overflow-hidden font-sans text-slate-900 dark:text-slate-100">
+                    <div data-scroll="1200" class="absolute inset-x-0 top-0 mx-auto flex max-w-xl gap-3 px-5 py-4 sm:px-8">
                         <span class="{{ $avatar }}">AE</span>
                         <div class="min-w-0 flex-1">
                             <p class="truncate text-sm"><span class="font-semibold">Ada Example</span> <span class="text-slate-500 dark:text-slate-400">@adaexample.bsky.social · 2m</span></p>
                             <p class="mt-0.5 text-sm leading-relaxed">{{ $postText }} Full model: <a href="{{ $url }}" target="_blank" rel="noopener" class="text-[#1185fe] hover:underline">{{ $postLink }}</a></p>
-                            <div role="region" tabindex="0" aria-label="Copied image of the model, attached to the post" class="mt-2.5 overflow-x-auto rounded-lg bg-white px-3 py-2 text-slate-800 ring-1 ring-slate-800/10 dark:ring-white/10">
-                                <p class="text-[10px] text-slate-500">{{ $meta }}</p>
-                                <x-landing-shared.table :rows="$rows" :image="true" class="mt-0.5 text-xs [&_td]:py-1 [&_td]:pl-2.5 [&_td]:text-[11px] [&_th]:py-1" />
-                            </div>
+                            <img src="{{ $image['src'] }}" width="{{ $image['width'] }}" height="{{ $image['height'] }}" alt="{{ $image['alt'] }}" loading="lazy" class="mt-2.5 block h-auto w-full rounded-lg ring-1 ring-slate-800/10 dark:ring-white/10">
                             <p class="mt-2 flex gap-8 text-xs text-slate-500 dark:text-slate-400" aria-hidden="true">
                                 <span class="flex items-center gap-1"><x-heroicon-o-chat-bubble-oval-left class="size-4" /> 3</span>
                                 <span class="flex items-center gap-1"><x-heroicon-o-arrow-path-rounded-square class="size-4" /> 12</span>
