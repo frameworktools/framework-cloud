@@ -111,6 +111,9 @@ class MoveArtifactsCommand extends Command
         }
 
         $stream = $source->readStream($file);
+        if (! is_resource($stream)) {
+            throw new RuntimeException("Could not read {$file}.");
+        }
         try {
             if (! $target->put($file, $stream)) {
                 throw new RuntimeException("Could not write {$file}.");

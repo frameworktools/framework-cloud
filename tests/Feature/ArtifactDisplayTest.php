@@ -6,6 +6,7 @@ use App\Models\Project;
 use App\Support\ArtifactPublisher;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -56,6 +57,20 @@ class ArtifactDisplayTest extends TestCase
         $this->get($version->url())->assertOk()->assertSee('This is a limited preview.')
             ->assertSee('Large integer columns are shown as text')->assertSee('9007199254740993')
             ->assertDontSee('9007199254740992');
+    }
+
+    public function test_an_artifact_whose_file_is_missing_still_opens(): void
+    {
+        Storage::fake('local');
+        $version = app(ArtifactPublisher::class)->publish(Project::factory()->create(), [
+            'file' => UploadedFile::fake()->createWithContent('model.json', json_encode($this->model())),
+        ]);
+        Storage::disk($version->disk())->delete($version->entryPath());
+        Cache::flush();
+
+        $this->get($version->url())->assertOk();
+        $this->get($version->url().'?embed=1')->assertOk();
+        $this->getJson('/api/embed/v1/artifacts/'.$version->document->key)->assertOk()->assertJsonPath('kind', 'page');
     }
 
     public function test_only_pages_with_a_chart_load_the_chart_scripts(): void

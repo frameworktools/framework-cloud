@@ -260,7 +260,7 @@ class ArtifactEmbed
             return $cached;
         }
         $stream = Storage::disk($version->disk())->readStream($version->entryPath());
-        if ($stream === false) {
+        if (! is_resource($stream)) {
             return ['width' => null, 'height' => null];
         }
         try {

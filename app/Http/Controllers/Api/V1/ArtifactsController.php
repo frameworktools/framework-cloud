@@ -301,6 +301,9 @@ class ArtifactsController extends Controller
         }
 
         $stream = $disk->readStream($version->entryPath());
+        if (! is_resource($stream)) {
+            return $none;
+        }
         $text = (string) stream_get_contents($stream, self::MAX_CONTENT_BYTES + 1);
         fclose($stream);
         $truncated = strlen($text) > self::MAX_CONTENT_BYTES;

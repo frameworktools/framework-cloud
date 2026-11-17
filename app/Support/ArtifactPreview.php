@@ -34,7 +34,7 @@ class ArtifactPreview
     private static function readVegaLiteSpec(DocumentVersion $version): ?array
     {
         $stream = Storage::disk($version->disk())->readStream($version->entryPath());
-        if ($stream === false) {
+        if (! is_resource($stream)) {
             self::$readFailed = true;
 
             return null;
@@ -124,7 +124,7 @@ class ArtifactPreview
         $json = $type === 'application/json' || str_ends_with(strtolower($version->original_filename ?? ''), '.json');
         $limit = $json ? ArtifactRepresentation::MAX_BYTES : self::MAX_BYTES;
         $stream = Storage::disk($version->disk())->readStream($version->entryPath());
-        if ($stream === false) {
+        if (! is_resource($stream)) {
             self::$readFailed = true;
 
             return ['type' => 'download'];

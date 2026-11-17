@@ -178,7 +178,7 @@ class ArtifactPublisher
                             default => $stored['disk_path'],
                         };
                         $stream = Storage::disk($version->disk())->readStream($file);
-                        if ($stream === false) {
+                        if (! is_resource($stream)) {
                             throw new RuntimeException('Could not read a source artifact file.');
                         }
                         try {
