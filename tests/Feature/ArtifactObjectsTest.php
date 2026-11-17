@@ -96,7 +96,7 @@ class ArtifactObjectsTest extends TestCase
 
         $this->get($version->url())->assertOk()
             ->assertSee('R &middot; <span class="font-mono">glm()</span>', false)
-            ->assertSee('Generalized linear model, binomial family, logit link')
+            ->assertSee('Logistic regression')
             ->assertSee('Coefficient plot')
             ->assertSee('data-scale="ratio"', false)->assertSee('Log odds')
             ->assertSee('Odds ratio (95% CI)')
@@ -108,7 +108,7 @@ class ArtifactObjectsTest extends TestCase
         $version = $this->publish('r-lmer.json', 'model.json');
 
         $this->get($version->url())->assertOk()
-            ->assertSee('lmer()')->assertSee('Mixed-effects model')
+            ->assertSee('lmer()')->assertSee('Linear mixed model')
             ->assertSee('Random effects')->assertSee('Std. deviation')
             ->assertSee('Groups: Subject')
             ->assertSeeInOrder(['Correlations', 'Subject:', '(Intercept) and Days'])

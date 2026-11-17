@@ -1,0 +1,297 @@
+[
+ {
+  "model": {
+   "type": "linear",
+   "family": "gaussian",
+   "link": "identity",
+   "response": "price"
+  },
+  "meta": "Ordinary least squares regression · Response: price"
+ },
+ {
+  "model": {
+   "type": "glm",
+   "family": "gaussian",
+   "link": "identity"
+  },
+  "meta": "Ordinary least squares regression"
+ },
+ {
+  "model": {
+   "type": "glm",
+   "family": "gaussian",
+   "link": "log"
+  },
+  "meta": "Generalized linear model · gaussian family, log link"
+ },
+ {
+  "model": {
+   "type": "glm",
+   "family": "binomial",
+   "link": "logit",
+   "response": "am"
+  },
+  "meta": "Logistic regression · Response: am"
+ },
+ {
+  "model": {
+   "type": "glm",
+   "family": "binomial",
+   "link": "probit"
+  },
+  "meta": "Probit regression"
+ },
+ {
+  "model": {
+   "type": "glm",
+   "family": "binomial",
+   "link": "cloglog"
+  },
+  "meta": "Complementary log-log regression"
+ },
+ {
+  "model": {
+   "type": "glm",
+   "family": "binomial",
+   "link": "cauchit"
+  },
+  "meta": "Binomial regression (cauchit link)"
+ },
+ {
+  "model": {
+   "type": "glm",
+   "family": "Binomial"
+  },
+  "meta": "Logistic regression"
+ },
+ {
+  "model": {
+   "type": "glm",
+   "family": "poisson",
+   "link": "log"
+  },
+  "meta": "Poisson regression"
+ },
+ {
+  "model": {
+   "type": "glm",
+   "family": "poisson",
+   "link": "sqrt"
+  },
+  "meta": "Poisson regression (sqrt link)"
+ },
+ {
+  "model": {
+   "type": "glm",
+   "family": "negative binomial",
+   "link": "log"
+  },
+  "meta": "Negative binomial regression"
+ },
+ {
+  "model": {
+   "type": "glm",
+   "family": "gamma",
+   "link": "log"
+  },
+  "meta": "Gamma regression (log link)"
+ },
+ {
+  "model": {
+   "type": "glm",
+   "family": "gamma",
+   "link": "inverse"
+  },
+  "meta": "Gamma regression (inverse link)"
+ },
+ {
+  "model": {
+   "type": "glm",
+   "family": "quasibinomial",
+   "link": "logit"
+  },
+  "meta": "Quasi-binomial regression"
+ },
+ {
+  "model": {
+   "type": "glm",
+   "family": "quasipoisson",
+   "link": "log"
+  },
+  "meta": "Quasi-Poisson regression"
+ },
+ {
+  "model": {
+   "type": "glm",
+   "family": "quasi",
+   "link": "identity"
+  },
+  "meta": "Quasi-likelihood regression"
+ },
+ {
+  "model": {
+   "type": "glm",
+   "family": "tweedie",
+   "link": "log"
+  },
+  "meta": "Generalized linear model · tweedie family, log link"
+ },
+ {
+  "model": {
+   "type": "mixed",
+   "family": "gaussian",
+   "link": "identity"
+  },
+  "meta": "Linear mixed model"
+ },
+ {
+  "model": {
+   "type": "mixed"
+  },
+  "meta": "Linear mixed model"
+ },
+ {
+  "model": {
+   "type": "mixed",
+   "family": "binomial",
+   "link": "logit"
+  },
+  "meta": "Logistic mixed model"
+ },
+ {
+  "model": {
+   "type": "mixed",
+   "family": "binomial",
+   "link": "probit"
+  },
+  "meta": "Probit mixed model"
+ },
+ {
+  "model": {
+   "type": "mixed",
+   "family": "poisson",
+   "link": "log"
+  },
+  "meta": "Poisson mixed model"
+ },
+ {
+  "model": {
+   "type": "mixed",
+   "family": "beta",
+   "link": "logit"
+  },
+  "meta": "Mixed model · beta family, logit link"
+ },
+ {
+  "model": {
+   "type": "survival",
+   "exponentiate": "Hazard ratio"
+  },
+  "meta": "Cox proportional hazards model"
+ },
+ {
+  "model": {
+   "type": "survival",
+   "exponentiate": "Time ratio",
+   "link": "log"
+  },
+  "meta": "Parametric survival model"
+ },
+ {
+  "model": {
+   "type": "ordinal",
+   "link": "logit"
+  },
+  "meta": "Ordinal logistic regression"
+ },
+ {
+  "model": {
+   "type": "ordinal",
+   "link": "probit"
+  },
+  "meta": "Ordinal probit regression"
+ },
+ {
+  "model": {
+   "type": "ordinal",
+   "link": "cloglog"
+  },
+  "meta": "Ordinal regression (cloglog link)"
+ },
+ {
+  "model": {
+   "type": "multinomial"
+  },
+  "meta": "Multinomial logistic regression"
+ },
+ {
+  "model": {
+   "type": "additive",
+   "family": "gaussian"
+  },
+  "meta": "Generalized additive model"
+ },
+ {
+  "model": {
+   "type": "additive",
+   "family": "binomial",
+   "link": "logit"
+  },
+  "meta": "Generalized additive model (binomial family, logit link)"
+ },
+ {
+  "model": {
+   "type": "fixed_effects"
+  },
+  "meta": "Fixed-effects regression"
+ },
+ {
+  "model": {
+   "type": "fixed_effects",
+   "family": "poisson",
+   "link": "log"
+  },
+  "meta": "Fixed-effects Poisson regression"
+ },
+ {
+  "model": {
+   "type": "fixed_effects",
+   "family": "binomial",
+   "link": "logit"
+  },
+  "meta": "Fixed-effects logistic regression"
+ },
+ {
+  "model": {
+   "type": "quantile"
+  },
+  "meta": "Quantile regression"
+ },
+ {
+  "model": {
+   "type": "linear_ml"
+  },
+  "meta": "Linear model (machine learning)"
+ },
+ {
+  "model": {
+   "type": "tree_ensemble"
+  },
+  "meta": "Tree ensemble"
+ },
+ {
+  "model": {
+   "type": "other",
+   "family": "gaussian"
+  },
+  "meta": "gaussian family"
+ },
+ {
+  "model": {
+   "type": "spline",
+   "link": "log",
+   "response": "y"
+  },
+  "meta": "spline · log link · Response: y"
+ }
+]

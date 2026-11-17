@@ -73,10 +73,10 @@ class ArtifactDisplayTest extends TestCase
     {
         Storage::fake('local');
         $project = Project::factory()->create();
-        foreach (['stata-regress' => ['Stata', 'regress', 'Linear model', 'Coefficient plot', 'R²'],
+        foreach (['stata-regress' => ['Stata', 'regress', 'Ordinary least squares regression', 'Coefficient plot', 'R²'],
             'stata-logit' => ['Stata', 'logit', 'Odds ratio'],
-            'stata-mixed' => ['Stata', 'mixed', 'Mixed-effects model', 'Random effects', 'Residual'],
-            'stata-stcox' => ['Stata', 'stcox', 'Survival model', 'Hazard ratio']] as $fixture => $expected) {
+            'stata-mixed' => ['Stata', 'mixed', 'Linear mixed model', 'Random effects', 'Residual'],
+            'stata-stcox' => ['Stata', 'stcox', 'Cox proportional hazards model', 'Hazard ratio']] as $fixture => $expected) {
             $json = file_get_contents(base_path("tests/fixtures/artifacts/{$fixture}.json"));
             $version = app(ArtifactPublisher::class)->publish($project, [
                 'file' => UploadedFile::fake()->createWithContent("{$fixture}.json", $json),

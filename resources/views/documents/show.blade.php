@@ -106,6 +106,10 @@
                 isset($model['family']) && ($model['family'] !== 'gaussian' || ($model['type'] ?? '') === 'glm') ? (['poisson' => 'Poisson', 'weibull' => 'Weibull', 'gaussian' => 'Gaussian'][$model['family']] ?? $model['family']).' family' : null,
                 isset($model['link']) && $model['link'] !== 'identity' ? $model['link'].' link' : null,
             ])));
+            // The common name, as embeds show it ("Logistic regression"); the family and link are then implied
+            if ($model && ($commonName = \App\Support\ModelName::for($model)) !== null) {
+                [$modelType, $modelDetail] = [$commonName, ''];
+            }
             $metrics = $preview['metrics'] ?? [];
             $metricValues = collect($metrics)->pluck('value', 'name');
             $tables = $preview['tables'];
