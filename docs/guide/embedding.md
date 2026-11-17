@@ -4,7 +4,7 @@ Public and unlisted artifacts can appear on blogs, personal websites, newsletter
 
 Models, tables, hypothesis tests, figures, and Vega-Lite charts render directly in the host page's typography and colors rather than inside an iframe. HTML documents, Quarto sites, PDFs, and downloadable files render as link cards. Embedding requires no account or API key on the receiving site.
 
-An artifact can be embedded when it is stored on Framework Cloud, its sharing is **Public, with a readable link** or **Anyone with the link**, and it has no password. Private artifacts, password-protected artifacts, deleted artifacts, and external publications cannot be embedded. Making an artifact private, adding a password, or deleting it stops live embeds within an hour, and figure images stop loading within five minutes. Sites that store a copy of the artifact keep showing that copy until a takedown check removes it or the author refreshes it.
+An artifact can be embedded when it is stored on Framework Cloud, its sharing is **Public, with a readable link** or **Anyone with the link**, and it has no password. Private artifacts, password-protected artifacts, deleted artifacts, and external publications cannot be embedded. Making an artifact private, adding a password, or deleting it stops live embeds within an hour, and figure images stop loading within five minutes on framework.pub or within an hour on a self-hosted server. Sites that store a copy of the artifact keep showing that copy until a takedown check removes it or the author refreshes it.
 
 Every artifact link form works when embedding:
 
@@ -66,7 +66,7 @@ Sites that build a custom renderer can call the embed API directly. All routes a
 | `GET /api/oembed?url={artifact link}&format=json` | oEmbed 1.0 `photo` or `link` response |
 | `GET /.well-known/framework.json` | Discovery document listing the server's embed endpoints |
 
-Artifacts that cannot be embedded and artifacts that do not exist return the same `404` response with `Cache-Control: no-store`. Version endpoints send `Cache-Control: public, max-age=3600`. Newest-version and resolve endpoints send `Cache-Control: public, max-age=300`. Each IP address can make up to 300 requests per minute across all embed routes.
+Artifacts that cannot be embedded and artifacts that do not exist return the same `404` response with `Cache-Control: no-store`. Requests that name a version send `Cache-Control: public, max-age=3600`. Requests for the newest version send `Cache-Control: public, max-age=300`. Resolve and oEmbed requests follow the link they are given. Each IP address can make up to 300 requests per minute across all embed routes.
 
 Version URLs and `image.url` remain stable for the life of the artifact. On framework.pub, `image.url` redirects to a short-lived signed URL on `content.framework.pub`. Consumers must reference `image.url` directly rather than storing the redirect target.
 
