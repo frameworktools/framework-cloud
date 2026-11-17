@@ -95,7 +95,7 @@
             <div role="tabpanel" id="share-panel-academic" aria-labelledby="share-tab-academic" data-share-panel="academic" inert class="{{ $panel('academic') }} grid min-w-0 [grid-area:1/1]">
                 {{-- 1. The editor: its toolbar's Framework button, or "/framework" --}}
                 <div data-share-scene="0" aria-hidden="true" class="{{ $scene(0) }} font-sans text-zinc-800 dark:text-zinc-200">
-                    <div class="flex items-center gap-0.5 overflow-hidden border-b border-neutral-100 bg-neutral-50 pb-3 px-2 py-1.5 text-zinc-600 dark:border-zinc-800 dark:bg-zinc-800 dark:text-zinc-300">
+                    <div class="flex items-center gap-0.5 overflow-hidden border-b border-neutral-100 bg-neutral-50 px-2 py-1.5 text-zinc-600 dark:border-zinc-800 dark:bg-zinc-800 dark:text-zinc-300">
                         <span class="{{ $tool }} gap-0.5 px-1.5 text-sm font-bold">H<x-heroicon-m-chevron-down class="size-3" /></span>
                         <span class="{{ $toolRule }}"></span>
                         <span class="{{ $tool }}"><x-heroicon-m-bold class="size-4" /></span>
@@ -111,7 +111,7 @@
                         <span class="{{ $tool }} gap-0.5 px-1.5 max-sm:hidden"><x-heroicon-m-table-cells class="size-4" /><x-heroicon-m-chevron-down class="size-3" /></span>
                         <span class="{{ $toolRule }}"></span>
                         <span class="{{ $tool }}"><x-heroicon-m-photo class="size-4" /></span>
-                        <span class="{{ $tool }} relative bg-sky-100 text-sky-800 ring-1 ring-sky-300 dark:bg-sky-950 dark:text-sky-300 dark:ring-sky-700">{!! $frameworkIcon !!}<x-heroicon-s-cursor-arrow-rays class="absolute top-3.5 left-3.5 size-5 text-zinc-900 drop-shadow dark:text-white" /></span>
+                        <span class="{{ $tool }} relative bg-sky-100 text-sky-800 ring-1 ring-sky-300 dark:bg-sky-950 dark:text-sky-300 dark:ring-sky-700">{!! $frameworkIcon !!}</span>
                         <span class="{{ $tool }}"><x-heroicon-m-play-circle class="size-4" /></span>
                     </div>
                     <div class="px-5 py-4 sm:px-8">
