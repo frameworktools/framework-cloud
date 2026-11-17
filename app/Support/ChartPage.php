@@ -18,6 +18,9 @@ class ChartPage
 {
     public const FILENAME = 'chart.html';
 
+    /** Raised when the page's HTML changes, so stored pages are built again on their next view. */
+    private const PAGE_VERSION = 2;
+
     /** The sandbox the chart draws in: scripts from the pinned chart libraries only, no network. */
     public const CSP = "sandbox allow-scripts; default-src 'none'; script-src https://cdn.jsdelivr.net 'unsafe-inline' 'unsafe-eval'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:";
 
@@ -71,6 +74,6 @@ class ChartPage
 
     private static function cacheKey(DocumentVersion $version): string
     {
-        return "artifact-chart-page:{$version->id}:".md5($version->disk().':'.$version->disk_path);
+        return 'artifact-chart-page:v'.self::PAGE_VERSION.":{$version->id}:".md5($version->disk().':'.$version->disk_path);
     }
 }
