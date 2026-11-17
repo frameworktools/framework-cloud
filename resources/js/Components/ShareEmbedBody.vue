@@ -55,7 +55,7 @@ const settle = (state) => { imageState.value = state; setTimeout(() => { if (ima
 async function copyAsImage() {
     if (!renderer || imageState.value === 'working') return;
     imageState.value = 'working';
-    const blob = embedImage(renderer, embedDoc);
+    const blob = embedImage(renderer, embedDoc, link.value);
     try {
         await copyImage(blob);
         settle('copied');
@@ -72,7 +72,7 @@ async function downloadAsImage() {
     if (!renderer || imageState.value === 'working') return;
     imageState.value = 'working';
     try {
-        downloadImage(await embedImage(renderer, embedDoc), fileName.value);
+        downloadImage(await embedImage(renderer, embedDoc, link.value), fileName.value);
         settle('saved');
     } catch {
         settle('error');

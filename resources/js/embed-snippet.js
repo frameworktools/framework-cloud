@@ -24,6 +24,9 @@ export function embedSnippet({ src, href, title }) {
     return lines.join('\n');
 }
 
+// The vendored files' version, in their URLs so a new copy is never served from a browser's cache
+export const EMBED_VERSION = '0.3.2';
+
 let renderer = null;
 
 /** window.FrameworkEmbed, after loading the vendored stylesheet and script once. */
@@ -31,11 +34,11 @@ export function loadEmbedRenderer(base = '/vendor/framework-embed') {
     if (window.FrameworkEmbed) return Promise.resolve(window.FrameworkEmbed);
     renderer ??= new Promise((resolve, reject) => {
         if (!document.querySelector('link[data-framework-embed]')) {
-            const link = Object.assign(document.createElement('link'), { rel: 'stylesheet', href: `${base}/framework-embed.css` });
+            const link = Object.assign(document.createElement('link'), { rel: 'stylesheet', href: `${base}/framework-embed.css?v=${EMBED_VERSION}` });
             link.dataset.frameworkEmbed = '';
             document.head.append(link);
         }
-        const script = Object.assign(document.createElement('script'), { src: `${base}/framework-embed.iife.js`, async: true });
+        const script = Object.assign(document.createElement('script'), { src: `${base}/framework-embed.iife.js?v=${EMBED_VERSION}`, async: true });
         script.onload = () => (window.FrameworkEmbed ? resolve(window.FrameworkEmbed) : reject(new Error('framework-embed did not load')));
         script.onerror = () => { renderer = null; script.remove(); reject(new Error('framework-embed did not load')); };
         document.head.append(script);
