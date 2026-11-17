@@ -3,8 +3,26 @@
 <head>
     <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="referrer" content="no-referrer">
-    @if ($collection->visibility !== 'public' || $collection->password_hash)<meta name="robots" content="noindex">@endif
     <title>{{ $collection->title }} · Framework</title>
+    @php
+        $collectionUrl = $collection->shareUrl();
+        $collectionOwner = $collection->project->user;
+        $collectionDescription = \App\Support\Seo::describe($collection->description)
+            ?? 'A research collection from '.$collection->project->name.($collectionOwner ? ' by '.$collectionOwner->name : '').', published on Framework.';
+    @endphp
+    <x-share-meta :title="$collection->title.' · Framework'" :description="$collectionDescription" :canonical="$collectionUrl"
+        :noindex="$collection->visibility !== 'public' || $collection->password_hash"
+        :schema="[\App\Support\Seo::organization(), [
+            '@type' => 'CollectionPage',
+            '@id' => $collectionUrl.'#collection',
+            'name' => $collection->title,
+            'description' => $collectionDescription,
+            'url' => $collectionUrl,
+            'author' => \App\Support\Seo::person($collectionOwner),
+            'dateModified' => \App\Support\Seo::date($collection->updated_at),
+            'publisher' => ['@id' => \App\Support\Seo::home().'#organization'],
+            'hasPart' => $items->map(fn ($item) => ['@type' => 'CreativeWork', 'name' => $item->document->title ?? $item->document->slug, 'url' => $item->readerUrl()])->values()->all(),
+        ]]" />
     <x-theme-script />
     @vite(['resources/css/app.css'])
 </head>

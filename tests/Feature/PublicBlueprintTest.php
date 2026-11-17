@@ -31,6 +31,25 @@ class PublicBlueprintTest extends TestCase
         return Blueprint::where('user_id', $user->id)->firstOrFail();
     }
 
+    public function test_public_blueprints_are_indexed_and_in_the_sitemap_and_unlisted_ones_are_not(): void
+    {
+        $public = tap($this->own('unlisted'))->update(['visibility' => 'public']);
+        $this->app['auth']->forgetGuards(); // the next request signs in as its own user
+        $unlisted = $this->own('unlisted');
+
+        $this->get(parse_url($public->publicUrl(), PHP_URL_PATH))->assertOk()
+            ->assertDontSee('content="noindex"', false)
+            ->assertSee('<link rel="canonical" href="'.$public->publicUrl().'">', false)
+            ->assertSee('<meta property="og:description" content="For the workshop.">', false)
+            ->assertSee('"genre":"Project template"', false);
+        $this->get(parse_url($unlisted->publicUrl(), PHP_URL_PATH))->assertOk()
+            ->assertSee('<meta name="robots" content="noindex">', false);
+
+        $this->get('/sitemap.xml')->assertOk()
+            ->assertSee('<loc>'.$public->publicUrl().'</loc>', false)
+            ->assertDontSee($unlisted->publicUrl(), false);
+    }
+
     public function test_new_blueprints_are_private_and_have_no_public_page(): void
     {
         $blueprint = $this->own('');

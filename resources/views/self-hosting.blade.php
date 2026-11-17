@@ -4,9 +4,21 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Self-hosting — Framework Cloud</title>
-    <meta name="description" content="Self-hosted Framework Cloud with Docker. Server features, artifact storage, installation, and administration.">
     <link rel="icon" type="image/png" href="/images/favicon.png">
-    <x-share-meta title="Self-hosting — Framework Cloud" description="Self-hosted Framework Cloud with Docker. Server features, artifact storage, installation, and administration." />
+    <x-share-meta title="Self-hosting — Framework Cloud" description="Self-hosted Framework Cloud with Docker. Server features, artifact storage, installation, and administration." :schema="[
+        [
+            '@type' => 'SoftwareApplication',
+            'name' => 'Framework Cloud',
+            'url' => route('self-hosting'),
+            'description' => 'The open server behind framework.pub, self-hosted with Docker.',
+            'applicationCategory' => 'DeveloperApplication',
+            'operatingSystem' => 'Linux (Docker)',
+            'offers' => ['@type' => 'Offer', 'price' => '0', 'priceCurrency' => 'USD'],
+            'codeRepository' => \App\Support\Docs\CloudGuide::REPOSITORY,
+            'publisher' => ['@id' => \App\Support\Seo::home().'#organization'],
+        ],
+        \App\Support\Seo::breadcrumbs([['Framework', \App\Support\Seo::home()], ['Self-hosting', route('self-hosting')]]),
+    ]" />
     <x-theme-script />
     @vite(['resources/css/app.css'])
 </head>

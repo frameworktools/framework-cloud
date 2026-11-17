@@ -2,8 +2,28 @@
 <html lang="en" class="h-full">
 <head>
     <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-    @if ($blueprint->visibility !== 'public' && ! $blueprint->isSystem())<meta name="robots" content="noindex">@endif
     <title>{{ $blueprint->name }} · Blueprint · {{ config('app.name') }}</title>
+    @php
+        $blueprintUrl = route('blueprints.public', $blueprint->public_key);
+        $blueprintDescription = \App\Support\Seo::describe($blueprint->description)
+            ?? 'A Framework project blueprint'.($blueprint->owner ? ' by '.$blueprint->owner->name : '').'. Start a project from it with fw or in Framework Cloud.';
+    @endphp
+    <x-share-meta :title="$blueprint->name.' · Blueprint · Framework'" :description="$blueprintDescription" :canonical="$blueprintUrl"
+        :noindex="$blueprint->visibility !== 'public' && ! $blueprint->isSystem()"
+        :schema="[\App\Support\Seo::organization(), [
+            '@type' => 'CreativeWork',
+            '@id' => $blueprintUrl.'#blueprint',
+            'name' => $blueprint->name,
+            'alternateName' => $blueprint->handle,
+            'description' => $blueprintDescription,
+            'url' => $blueprintUrl,
+            'genre' => 'Project template',
+            'version' => (string) $blueprint->latestVersion->version,
+            'programmingLanguage' => $language,
+            'author' => $blueprint->isSystem() ? ['@id' => \App\Support\Seo::home().'#organization'] : \App\Support\Seo::person($blueprint->owner),
+            'dateModified' => \App\Support\Seo::date($blueprint->updated_at),
+            'isAccessibleForFree' => true,
+        ]]" />
     <x-theme-script />
     @vite(['resources/css/app.css'])
 </head>

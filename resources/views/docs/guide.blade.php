@@ -1,7 +1,7 @@
 @extends('docs.layout')
 
 @section('title', $guide['title'])
-@section('description', $guide['description'] ?: $site['tagline'])
+@section('description', $guide['description'] ?: (\App\Support\Seo::lead($guide['html']) ?? $site['tagline']))
 
 @section('content')
     @php

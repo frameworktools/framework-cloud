@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Privacy — Framework Cloud</title>
-    <x-share-meta title="Privacy — Framework Cloud" />
+    <x-share-meta title="Privacy — Framework Cloud" description="Account and project data in Framework Cloud: what is stored, how it is protected, and how to delete it." />
     <x-theme-script />
     @vite(['resources/css/app.css'])
 </head>

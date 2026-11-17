@@ -36,6 +36,7 @@ use App\Http\Controllers\Settings\DefaultsController;
 use App\Http\Controllers\Settings\GitHubController;
 use App\Http\Controllers\Settings\PackageSearchController;
 use App\Http\Controllers\Settings\PasskeysController;
+use App\Http\Controllers\SitemapController;
 use App\Http\Middleware\EnsureAgentsEnabled;
 use App\Models\Document;
 use App\Models\User;
@@ -56,6 +57,7 @@ foreach (array_unique(array_filter(config('framework.docs_hosts', []))) as $docs
         Route::get('/reference/{id}', [DocsController::class, 'entry'])->defaults('product', $docsProduct)->name('entry');
         Route::get('/search', [DocsController::class, 'search'])->defaults('product', $docsProduct)->name('search');
         Route::get('/search.json', [DocsController::class, 'searchIndex'])->defaults('product', $docsProduct)->name('search-index');
+        Route::get('/sitemap.xml', [SitemapController::class, 'docs'])->defaults('product', $docsProduct)->name('sitemap');
         Route::get('/images/{path}', [DocsController::class, 'image'])->defaults('product', $docsProduct)
             ->where('path', '[A-Za-z0-9_./-]+')->name('image');
     });
@@ -64,6 +66,10 @@ foreach (array_unique(array_filter(config('framework.docs_hosts', []))) as $docs
 // Embed discovery for other sites. Without the web group, so it sets no cookies.
 Route::get('/.well-known/framework.json', [EmbedController::class, 'discovery'])
     ->withoutMiddleware('web')->middleware('throttle:embed')->name('embed.discovery');
+
+// robots.txt names each host's own sitemap. Without the web group, so they set no cookies.
+Route::get('/robots.txt', [SitemapController::class, 'robots'])->withoutMiddleware('web')->name('robots');
+Route::get('/sitemap.xml', [SitemapController::class, 'index'])->withoutMiddleware('web')->name('sitemap');
 
 Route::get('/', HomeController::class)->name('home');
 

@@ -3,8 +3,42 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="robots" content="noindex">
     <title>{{ $document->title }}</title>
+    @php
+        // Search engines index the newest version of a public artifact with no password, at its share link
+        $isLatest = $version->number === $latest;
+        $indexable = $isLatest && $document->visibility === 'public' && ! $document->isPasswordProtected() && ! request()->boolean('embed');
+        $owner = $project->user;
+        $artifactKind = $version->kind ?? $document->kind ?? 'html';
+        $artifactDescription = \App\Support\Seo::describe($document->description)
+            ?? ucfirst($artifactKind).' from '.$project->name.($owner ? ' by '.$owner->name : '').', published on Framework.';
+        $artifactUrl = $isLatest ? $document->shareUrl() : url()->current();
+        $artifactType = match ($artifactKind) {
+            'table', 'data' => 'Dataset',
+            'book' => 'Book',
+            'report', 'notebook', 'html', 'text', 'pdf' => 'Article',
+            default => 'CreativeWork',
+        };
+        $artifactSchema = [
+            '@type' => $artifactType,
+            '@id' => $artifactUrl.'#artifact',
+            ($artifactType === 'Article' ? 'headline' : 'name') => $document->title ?? $document->slug,
+            'description' => $artifactDescription,
+            'url' => $artifactUrl,
+            'author' => \App\Support\Seo::person($owner),
+            'dateCreated' => \App\Support\Seo::date($document->created_at),
+            'dateModified' => \App\Support\Seo::date($version->created_at ?? $document->updated_at),
+            'version' => (string) $version->number,
+            'encodingFormat' => $version->content_type ?? $document->content_type,
+            'isAccessibleForFree' => true,
+            'publisher' => ['@id' => \App\Support\Seo::home().'#organization'],
+            'distribution' => $artifactType === 'Dataset' && $indexable
+                ? [['@type' => 'DataDownload', 'encodingFormat' => $version->content_type ?? $document->content_type, 'contentUrl' => route('documents.download', $document->key)]]
+                : null,
+        ];
+    @endphp
+    <x-share-meta :title="($document->title ?? $document->slug).' · Framework'" :description="$artifactDescription" type="article" :canonical="$artifactUrl" :noindex="! $indexable"
+        :schema="[\App\Support\Seo::organization(), $artifactSchema]" />
     @if ($embedLinks ?? null)
         <link rel="alternate" type="application/json+oembed" href="{{ $embedLinks['oembed'] }}" title="{{ $document->title }}">
         <link rel="alternate" type="application/vnd.framework.embed+json" href="{{ $embedLinks['embed'] }}">

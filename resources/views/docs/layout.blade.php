@@ -1,8 +1,27 @@
 @php
     use App\Support\Docs\Products;
+    use App\Support\Seo;
 
     $siteTitle = $site['title'] ?? Products::NAMES[$product];
     $repository = $site['repository'] ?? null;
+
+    // Structured data: the docs site, and the guide or reference entry on this page
+    $docsHome = url($site['home'] ?? '/');
+    $pageTitle = View::hasSection('title') ? trim(View::yieldContent('title')) : null;
+    $pageDescription = trim(View::yieldContent('description', $site['tagline'] ?? 'Documentation for '.$siteTitle.'.'));
+    $schema = [Seo::organization(), Seo::website($siteTitle, $docsHome)];
+    $article = fn (string $headline, array $crumbs) => [
+        ['@type' => 'TechArticle', '@id' => url()->current().'#article', 'headline' => $headline, 'description' => $pageDescription,
+            'url' => url()->current(), 'inLanguage' => 'en', 'isPartOf' => ['@id' => $docsHome.'#website'],
+            'publisher' => ['@id' => Seo::home().'#organization']],
+        Seo::breadcrumbs(array_merge([[$siteTitle, $docsHome]], $crumbs, [[$headline, url()->current()]])),
+    ];
+    if (isset($guide) && url()->current() !== $docsHome) {
+        $guideSection = collect($site['sections'] ?? [])->firstWhere('id', $guide['section'] ?? null);
+        $schema = array_merge($schema, $article($guide['title'], $guideSection ? [[$guideSection['title'], $docsHome]] : []));
+    } elseif (isset($entry)) {
+        $schema = array_merge($schema, $article($pageTitle ?? $entry['name'], [['Reference', url('/reference')]]));
+    }
 @endphp
 <!DOCTYPE html>
 <html lang="en" class="h-full antialiased">
@@ -10,9 +29,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@hasSection('title')@yield('title') · {{ $siteTitle }}@else{{ $siteTitle }}@endif</title>
-    <meta name="description" content="@yield('description', $site['tagline'] ?? 'Documentation for '.$siteTitle.'.')">
     <link rel="icon" type="image/png" href="/images/favicon.png">
-    <x-share-meta :title="View::hasSection('title') ? trim(View::yieldContent('title')).' · '.$siteTitle : $siteTitle" :description="trim(View::yieldContent('description', $site['tagline'] ?? 'Documentation for '.$siteTitle.'.'))" />
+    {{-- Search results and an unpublished site stay out of search engines --}}
+    <x-share-meta :title="$pageTitle ? $pageTitle.' · '.$siteTitle : $siteTitle" :description="$pageDescription" :type="isset($guide) || isset($entry) ? 'article' : 'website'" :noindex="isset($results) || ! $site" :schema="$schema" />
     <x-theme-script />
     @vite(['resources/css/docs.css'])
 </head>

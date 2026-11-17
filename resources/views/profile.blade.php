@@ -4,7 +4,23 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ '@'.$user->handle }} — Framework Cloud</title>
-    <x-share-meta :title="'@'.$user->handle.' — Framework Cloud'" />
+    @php
+        $profileUrl = route('profile', $user->handle);
+        $profileDescription = $user->name.' (@'.$user->handle.')'.($affiliation ? ', '.$affiliation : '').': public artifacts on Framework Cloud.';
+    @endphp
+    <x-share-meta :title="$user->name.' (@'.$user->handle.') — Framework Cloud'" :description="$profileDescription" type="profile" :canonical="$profileUrl" :schema="[[
+        '@type' => 'ProfilePage',
+        'url' => $profileUrl,
+        'dateCreated' => \App\Support\Seo::date($user->created_at),
+        'mainEntity' => [
+            '@type' => 'Person',
+            'name' => $user->name,
+            'alternateName' => '@'.$user->handle,
+            'url' => $profileUrl,
+            'affiliation' => $affiliation ? ['@type' => 'Organization', 'name' => $affiliation] : null,
+        ],
+        'hasPart' => $artifacts->map(fn ($a) => ['@type' => 'CreativeWork', 'name' => $a->title ?? $a->slug, 'url' => $a->shareUrl()])->values()->all(),
+    ]]" />
     <x-theme-script />
     @vite(['resources/css/app.css'])
 </head>

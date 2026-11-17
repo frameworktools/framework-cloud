@@ -19,8 +19,29 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="referrer" content="no-referrer">
-    @if ($preview || $report->visibility !== 'public' || $report->password_hash)<meta name="robots" content="noindex">@endif
     <title>{{ $title }} · Framework</title>
+    @php
+        $isLatestReport = $version->number === $versions->max('number');
+        $reportUrl = $isLatestReport ? $report->shareUrl() : $version->url();
+        $reportOwner = $project->user;
+        $reportDescription = \App\Support\Seo::describe($description)
+            ?? 'A research report from '.$project->name.($reportOwner ? ' by '.$reportOwner->name : '').', published on Framework.';
+    @endphp
+    <x-share-meta :title="$title.' · Framework'" :description="$reportDescription" type="article" :canonical="$reportUrl"
+        :noindex="$preview || ! $isLatestReport || $report->visibility !== 'public' || $report->password_hash"
+        :schema="[\App\Support\Seo::organization(), [
+            '@type' => 'Report',
+            '@id' => $reportUrl.'#report',
+            'headline' => $title,
+            'description' => $reportDescription,
+            'url' => $reportUrl,
+            'author' => \App\Support\Seo::person($reportOwner),
+            'datePublished' => \App\Support\Seo::date($versions->pluck('date')->filter()->min()),
+            'dateModified' => \App\Support\Seo::date($version->created_at),
+            'version' => (string) $version->number,
+            'isAccessibleForFree' => true,
+            'publisher' => ['@id' => \App\Support\Seo::home().'#organization'],
+        ]]" />
     <x-theme-script />
     @vite(['resources/css/app.css'])
 </head>

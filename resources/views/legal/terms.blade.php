@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Terms — Framework Cloud</title>
-    <x-share-meta title="Terms — Framework Cloud" />
+    <x-share-meta title="Terms — Framework Cloud" description="Terms of service for Framework Cloud and framework.pub accounts." />
     <x-theme-script />
     @vite(['resources/css/app.css'])
 </head>

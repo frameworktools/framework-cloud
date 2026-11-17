@@ -4,9 +4,21 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Framework: Structured workflows for statistics and data science</title>
-    <meta name="description" content="Reproducible research with R, Python, and the Framework CLI. Create projects, connect databases, track data integrity, and publish versioned figures, tables, models, and reports.">
     <link rel="icon" type="image/png" href="/images/favicon.png">
-    <x-share-meta />
+    <x-share-meta :canonical="\App\Support\Seo::home()" :schema="[
+        \App\Support\Seo::organization(),
+        \App\Support\Seo::website(),
+        [
+            '@type' => 'SoftwareApplication',
+            'name' => 'Framework',
+            'url' => \App\Support\Seo::home(),
+            'description' => 'Structured workflows for statistics and data science in R, Python, and Stata, with a command-line tool and a cloud service for projects and published artifacts.',
+            'applicationCategory' => 'DeveloperApplication',
+            'operatingSystem' => 'macOS, Linux, Windows',
+            'offers' => ['@type' => 'Offer', 'price' => '0', 'priceCurrency' => 'USD'],
+            'publisher' => ['@id' => \App\Support\Seo::home().'#organization'],
+        ],
+    ]" />
     <x-theme-script />
     @vite(['resources/css/app.css'])
 </head>
