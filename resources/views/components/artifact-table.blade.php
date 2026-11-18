@@ -10,8 +10,15 @@
         $decimal[$index] = $column['type'] === 'number' && array_filter(array_column($rows, $index), fn ($value) => is_float($value)) !== [];
     }
     // A model leaves a value out when it doesn't apply (no p-value for lmer); data tables mark real missing values as NA
-    $format = fn ($value, $index = null) => $value === null && $model ? '—' : \App\Support\ArtifactFormatting::value($value, $index !== null && ($decimal[$index] ?? false));
-    $label = fn ($name) => $model ? \App\Support\ArtifactFormatting::coefficientLabel($name) : $name;
+    // Effective sample sizes count draws, so they read as whole numbers
+    $whole = array_map(fn ($column) => in_array($column['name'], ['ess_bulk', 'ess_tail'], true), $columns);
+    $format = fn ($value, $index = null) => match (true) {
+        $value === null && $model => '—',
+        $index !== null && ($whole[$index] ?? false) && (is_int($value) || is_float($value)) => number_format(round($value)),
+        default => \App\Support\ArtifactFormatting::value($value, $index !== null && ($decimal[$index] ?? false)),
+    };
+    // A label set for display wins, such as Posterior mean on a Bayesian model (see PosteriorTable)
+    $label = fn ($column) => $model ? ($column['display_label'] ?? \App\Support\ArtifactFormatting::coefficientLabel($column['name'])) : $column['name'];
 @endphp
 <section data-artifact-table data-model-table="{{ $model ? 'true' : 'false' }}" class="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800" aria-labelledby="{{ $id }}-title">
     <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 px-4 py-4 dark:border-slate-700">
@@ -57,10 +64,10 @@
                     @foreach ($columns as $index => $column)
                         <th scope="col" @unless ($model) aria-sort="none" @endunless class="whitespace-nowrap px-4 py-3 {{ $column['type'] === 'number' ? 'text-right' : '' }}">
                             @if ($model)
-                                <span class="font-semibold text-slate-800 dark:text-slate-100">{{ $label($column['name']) }}</span>
+                                <span class="font-semibold text-slate-800 dark:text-slate-100">{{ $label($column) }}</span>
                             @else
-                            <button type="button" data-table-sort="{{ $index }}" class="inline-flex items-center gap-2 rounded font-semibold text-slate-800 focus-visible:outline-2 focus-visible:outline-sky-500 dark:text-slate-100" aria-label="Sort by {{ $label($column['name']) }}">
-                                {{ $label($column['name']) }}
+                            <button type="button" data-table-sort="{{ $index }}" class="inline-flex items-center gap-2 rounded font-semibold text-slate-800 focus-visible:outline-2 focus-visible:outline-sky-500 dark:text-slate-100" aria-label="Sort by {{ $label($column) }}">
+                                {{ $label($column) }}
                                 <svg data-sort-indicator aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" class="size-3 text-slate-400"><path data-sort-up d="m4 6 4-4 4 4"/><path data-sort-down d="m4 10 4 4 4-4"/></svg>
                             </button>
                             @endif

@@ -1,4 +1,4 @@
-@props(['table', 'level' => null, 'method' => null, 'exponentiate' => null])
+@props(['table', 'level' => null, 'method' => null, 'exponentiate' => null, 'bayesian' => false])
 @php
     $names = array_column($table['columns'], 'name');
     $column = function (string ...$candidates) use ($names) {
@@ -14,6 +14,9 @@
     $highIndex = $column('conf_high', 'conf.high');
     $errorIndex = $column('std_error', 'std.error');
     $pIndex = $column('p_value', 'p.value');
+    // A posterior's ratio scale: the package's summaries of the exponentiated draws
+    $ratioIndex = ['estimate' => $column('ratio_estimate'), 'lower' => $column('ratio_conf_low'), 'upper' => $column('ratio_conf_high')];
+    $postRatio = $bayesian && ! in_array(null, $ratioIndex, true);
     $number = fn ($value) => (is_int($value) || is_float($value)) && is_finite((float) $value);
 
     $rows = [];
@@ -33,7 +36,8 @@
                 'upper' => $interval ? $high : $estimate,
                 'std_error' => $errorIndex === null ? null : ($row[$errorIndex] ?? null),
                 'p_value' => $pIndex === null ? null : ($row[$pIndex] ?? null),
-            ], fn ($value) => $value !== null) + ['interval' => $interval];
+            ], fn ($value) => $value !== null) + ['interval' => $interval]
+                + ($postRatio ? ['ratio' => array_map(fn ($index) => $row[$index] ?? null, $ratioIndex)] : []);
         }
     }
     // The intercept is usually on another scale and squeezes the other terms, as in phiz's coefplot()
@@ -50,8 +54,9 @@
 
     $percent = is_numeric($level) && $level > 0 && $level < 1 ? rtrim(rtrim(number_format($level * 100, 1), '0'), '.').'%' : null;
     $methodLabel = ['wald-t' => 'Wald t', 'wald-normal' => 'Wald normal'][$method] ?? $method;
-    $intervalLabel = ($percent ? "{$percent} confidence interval" : 'Confidence interval').($methodLabel ? " ({$methodLabel})" : '');
-    $ci = $anyInterval && $percent ? " ({$percent} CI)" : '';
+    $kindLabel = $bayesian ? 'credible interval' : 'confidence interval';
+    $intervalLabel = ($percent ? "{$percent} {$kindLabel}" : ucfirst($kindLabel)).($methodLabel ? " ({$methodLabel})" : '');
+    $ci = $anyInterval && $percent ? " ({$percent} ".($bayesian ? 'CrI' : 'CI').')' : '';
 
     // Ratios read on a log scale around 1. Estimates too large to exponentiate stay on the model scale.
     $largest = $rows === [] ? 0 : max(array_map(fn ($row) => max(abs($row['lower']), abs($row['upper'])), $rows));
@@ -79,7 +84,8 @@
         $low = min(0, ...array_column($rows, 'lower'));
         $high = max(0, ...array_column($rows, 'upper'));
         $pad = $high > $low ? ($high - $low) * 0.06 : 1;
-        $specs['model'] = $styled($forest($rows, 0, $scaleLabel.$ci)->xlim($low - $pad, $high + $pad), count($rows))->toArray();
+        $plain = array_map(fn ($row) => array_diff_key($row, ['ratio' => true]), $rows);
+        $specs['model'] = $styled($forest($plain, 0, $scaleLabel.$ci)->xlim($low - $pad, $high + $pad), count($rows))->toArray();
 
         $largest = max(array_map(fn ($row) => max(abs($row['lower']), abs($row['upper'])), $rows));
         if ($ratio) {
@@ -89,8 +95,10 @@
 
                 return $specs;
             }
-            $ratioRows = array_map(fn ($row) => ['estimate' => exp($row['estimate']), 'lower' => exp($row['lower']), 'upper' => exp($row['upper'])]
-                + array_diff_key($row, ['std_error' => true]), $rows);
+            $ratioRows = array_map(fn ($row) => (isset($row['ratio']) && ! in_array(null, $row['ratio'], true)
+                ? $row['ratio']
+                : ['estimate' => exp($row['estimate']), 'lower' => exp($row['lower']), 'upper' => exp($row['upper'])])
+                + array_diff_key($row, ['std_error' => true, 'ratio' => true]), $rows);
             $lowRatio = min(1, ...array_column($ratioRows, 'lower'));
             $highRatio = max(1, ...array_column($ratioRows, 'upper'));
             $specs['ratio'] = $styled($forest($ratioRows, 1, $ratio.$ci)->scaleX(type: 'log', limits: [$lowRatio / 1.15, $highRatio * 1.15]), count($rows))->toArray();

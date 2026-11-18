@@ -14,7 +14,7 @@ class ArtifactRepresentation
 
     private const MAX_STRING = 10000;
 
-    public const ROLES = ['coefficients', 'random_effects', 'importance', 'smooth_terms', 'anova', 'data'];
+    public const ROLES = ['coefficients', 'random_effects', 'importance', 'smooth_terms', 'anova', 'priors', 'data'];
 
     private const MODEL_FIELDS = ['type', 'family', 'link', 'response', 'exponentiate'];
 
@@ -162,6 +162,9 @@ class ArtifactRepresentation
                 if (is_string($input['model'][$field] ?? null) && $input['model'][$field] !== '') {
                     $model[$field] = self::label($input['model'][$field], $truncated);
                 }
+            }
+            if (in_array($input['model']['inference'] ?? null, ['frequentist', 'bayesian'], true)) {
+                $model['inference'] = $input['model']['inference'];
             }
         }
         $output = ['schema' => $input['schema'], 'kind' => $input['kind'],

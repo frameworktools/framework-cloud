@@ -64,6 +64,8 @@ export function tablePage(table, { query = '', sortColumn = null, direction = 'a
     return { rows: rows.slice(start, start + pageSize).map(({ row }) => row), total: rows.length, pages, page: current, start };
 }
 
+const WHOLE_COLUMNS = new Set(['ess_bulk', 'ess_tail']);
+
 export function mountTable(container) {
     const table = JSON.parse(container.querySelector('[data-table-values]').textContent);
     const body = container.querySelector('tbody');
@@ -93,7 +95,11 @@ export function mountTable(container) {
                 if (column.type === 'number') cell.classList.add('text-right', 'tabular-nums');
                 if (row[index] === null) cell.classList.add('text-slate-400');
                 const reported = row[index] !== null && row[index] !== undefined;
-                cell.textContent = !reported && modelTable ? '—' : isPValueColumn(column.name) ? displayPValue(row[index], state.precision) : displayValue(row[index], state.precision, decimal[index]);
+                cell.textContent = !reported && modelTable ? '—'
+                    : isPValueColumn(column.name) ? displayPValue(row[index], state.precision)
+                    // Effective sample sizes count draws, so they read as whole numbers
+                    : WHOLE_COLUMNS.has(column.name) && typeof row[index] === 'number' ? Math.round(row[index]).toLocaleString('en-US')
+                    : displayValue(row[index], state.precision, decimal[index]);
                 cell.title = reported ? String(row[index]) : modelTable ? 'Not reported' : 'Missing value';
                 tr.append(cell);
             });

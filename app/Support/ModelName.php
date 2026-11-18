@@ -20,6 +20,17 @@ class ModelName
      */
     public static function for(array $model): ?string
     {
+        $name = self::common($model);
+        if ($name === null || ! PosteriorTable::is($model)) {
+            return $name;
+        }
+
+        // A posterior fit: Bayesian logistic regression. Proper nouns keep their capital
+        return 'Bayesian '.(preg_match('/^(Poisson|Cox)\b/', $name) === 1 ? $name : lcfirst($name));
+    }
+
+    private static function common(array $model): ?string
+    {
         $lower = fn (mixed $value): ?string => self::text($value) === null ? null : strtolower($value);
         $type = $lower($model['type'] ?? null);
         $family = $lower($model['family'] ?? null);

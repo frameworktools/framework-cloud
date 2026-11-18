@@ -122,9 +122,9 @@
             // The object's own class, e.g. lm() for a model fit with lm(), GLM for statsmodels' GLMResultsWrapper
             $sourceClass = \Illuminate\Support\Str::afterLast($preview['source']['class'][0] ?? '', '.');
             $sourceClass = preg_replace('/(?<=.)(ResultsWrapper|Results|Wrapper)$/', '', $sourceClass);
-            $fittedBy = ['lm', 'glm', 'aov', 'nls', 'loess', 'coxph', 'survreg', 'polr', 'multinom', 'betareg', 'gam', 'glm.nb', 'lmer', 'glmer', 'feols', 'feglm', 'fepois'];
+            $fittedBy = ['lm', 'glm', 'aov', 'nls', 'loess', 'coxph', 'survreg', 'polr', 'multinom', 'betareg', 'gam', 'glm.nb', 'lmer', 'glmer', 'feols', 'feglm', 'fepois', 'brm'];
             // Classes named differently from the function that fits them
-            $sourceClass = $preview['source']['language'] === 'r' ? (['lmerMod' => 'lmer', 'glmerMod' => 'glmer', 'negbin' => 'glm.nb'][$sourceClass] ?? $sourceClass) : $sourceClass;
+            $sourceClass = $preview['source']['language'] === 'r' ? (['lmerMod' => 'lmer', 'glmerMod' => 'glmer', 'negbin' => 'glm.nb', 'brmsfit' => 'brm'][$sourceClass] ?? $sourceClass) : $sourceClass;
             $sourceLabel = $preview['source']['language'] === 'r' && in_array($sourceClass, $fittedBy, true) ? $sourceClass.'()' : $sourceClass;
             $languageLabel = ['r' => 'R', 'python' => 'Python', 'stata' => 'Stata'][$preview['source']['language']] ?? null;
             // A published CSV or TSV shows just its format
@@ -143,8 +143,11 @@
             // The common name, as embeds show it ("Logistic regression"); the family and link are then implied
             if ($model && ($commonName = \App\Support\ModelName::for($model)) !== null) {
                 [$modelType, $modelDetail] = [$commonName, ''];
+            } elseif (\App\Support\PosteriorTable::is($model)) {
+                $modelType = $modelType ? 'Bayesian '.lcfirst($modelType) : 'Bayesian model';
             }
             $metrics = $preview['metrics'] ?? [];
+            $bayesian = \App\Support\PosteriorTable::is($model ?: null);
             $metricValues = collect($metrics)->pluck('value', 'name');
             $tables = $preview['tables'];
             $coefficientIndex = null;
@@ -185,8 +188,17 @@
                 @if ($coefficientIndex !== null)
                     @php
                         $ratio = \App\Support\RatioTable::ratio($model['exponentiate'] ?? null);
-                        $ratioTable = $ratio ? \App\Support\RatioTable::from($tables[$coefficientIndex], $ratio) : null;
-                        $logTable = $ratioTable ? \App\Support\RatioTable::renamed($tables[$coefficientIndex], \App\Support\RatioTable::SCALES[$ratio]) : null;
+                        $plainTable = $tables[$coefficientIndex];
+                        if ($bayesian) {
+                            // A posterior's ratio scale comes from the package's exponentiated draws, or not at all
+                            $ratio = $ratio && \App\Support\PosteriorTable::hasRatio($plainTable) ? $ratio : null;
+                            $ratioTable = $ratio ? \App\Support\PosteriorTable::ratioScale($plainTable, $ratio) : null;
+                            $logTable = $ratio ? \App\Support\PosteriorTable::modelScale($plainTable, \App\Support\RatioTable::SCALES[$ratio]) : null;
+                            $plainTable = \App\Support\PosteriorTable::modelScale($plainTable);
+                        } else {
+                            $ratioTable = $ratio ? \App\Support\RatioTable::from($plainTable, $ratio) : null;
+                            $logTable = $ratioTable ? \App\Support\RatioTable::renamed($plainTable, \App\Support\RatioTable::SCALES[$ratio]) : null;
+                        }
                     @endphp
                     @if ($ratioTable)
                         {{-- One switch for the table and the coefficient plot; framework-embed has the same two views --}}
@@ -204,14 +216,24 @@
                             </div>
                         @endforeach
                     @else
-                        <x-artifact-table :table="$tables[$coefficientIndex]" :id="'artifact-table-'.$coefficientIndex" :model="true" />
+                        <x-artifact-table :table="$plainTable" :id="'artifact-table-'.$coefficientIndex" :model="true" />
                     @endif
                     <x-artifact-coefficients :table="$tables[$coefficientIndex]" :level="$metricValues['confidence_level'] ?? null"
-                        :method="$metricValues['interval_method'] ?? null" :exponentiate="$model['exponentiate'] ?? null" />
+                        :method="$metricValues['interval_method'] ?? null" :exponentiate="$model['exponentiate'] ?? null" :bayesian="$bayesian" />
                 @endif
+
+                @foreach ($bayesian ? \App\Support\PosteriorTable::warnings($tables, $metrics) : [] as $warning)
+                    <p class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">{{ $warning }}</p>
+                @endforeach
 
                 @foreach ($tables as $index => $table)
                     @continue($index === $coefficientIndex)
+                    @if (($table['role'] ?? null) === 'random_effects' && $bayesian)
+                        {{-- Group-level posteriors read like the coefficients --}}
+                        @php $table = \App\Support\PosteriorTable::modelScale($table); $table['title'] = ($table['title'] ?? 'Table') === 'Table' ? 'Group-level effects' : $table['title']; @endphp
+                        <x-artifact-table :table="$table" :id="'artifact-table-'.$index" :model="true" />
+                        @continue
+                    @endif
                     @if (($table['role'] ?? null) === 'random_effects')
                         <x-artifact-random-effects :table="$table" />
                         @continue
@@ -230,7 +252,7 @@
                     <x-artifact-table :table="$table" :id="'artifact-table-'.$index" :model="$tableKind($table)" />
                 @endforeach
 
-                <x-artifact-model-summary :metrics="$metrics" :title="$preview['kind'] === 'model' ? 'Model summary' : 'Summary'" />
+                <x-artifact-model-summary :metrics="$metrics" :title="$preview['kind'] === 'model' ? 'Model summary' : 'Summary'" :bayesian="$bayesian" />
                 <p class="text-xs text-slate-500 dark:text-slate-400">
                     @if (! empty($preview['data_file']))
                         Published data file. Column types were inferred from its values. Download {{ $version->original_filename }} for every row exactly as published.

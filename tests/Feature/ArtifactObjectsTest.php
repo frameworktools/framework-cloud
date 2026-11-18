@@ -74,6 +74,31 @@ class ArtifactObjectsTest extends TestCase
         $this->assertSame('tree_ensemble', $xgboost['model']['type']);
     }
 
+    public function test_a_bayesian_model_shows_its_posterior_with_the_package_ratio_scale_and_warnings(): void
+    {
+        $parsed = ArtifactRepresentation::parse($this->fixture('r-brms-logit.json'));
+        $this->assertSame('bayesian', $parsed['model']['inference']);
+        $this->assertSame(['coefficients', 'random_effects', 'priors'], array_column($parsed['tables'], 'role'));
+
+        $version = $this->publish('r-brms-logit.json', 'model.json');
+        $html = $this->get($version->url())->assertOk()
+            ->assertSee('R &middot; <span class="font-mono">brm()</span>', false)
+            ->assertSee('Bayesian logistic mixed model')
+            ->assertSee('Posterior mean')->assertSee('Posterior SD')->assertSee('R-hat')->assertSee('Bulk ESS')
+            ->assertSee('Group-level effects')->assertSee('Priors')->assertSee('student_t(3, 0, 2.5)')
+            ->assertSee('Credible level')->assertSee('Divergent transitions')
+            ->assertSee('R-hat above 1.01 for 1 parameter: the chains may not have converged.')
+            ->assertSee('3 divergent transitions: the posterior may be biased.')
+            ->assertDontSee('ratio_estimate')->assertDontSee('Ratio estimate')
+            ->getContent();
+
+        // The ratio view shows the package's 1.80, not exp(0.58) = 1.786
+        $ratio = substr($html, strpos($html, 'data-scale-view="ratio"'), 20000);
+        $this->assertStringContainsString('1.800', $ratio);
+        $this->assertStringNotContainsString('1.786', $ratio);
+        $this->assertStringContainsString('613', $html, 'Effective sample sizes read as whole numbers.');
+    }
+
     public function test_column_summaries_are_kept_and_bad_ones_dropped(): void
     {
         $table = ArtifactRepresentation::parse($this->fixture('r-tibble.json'))['tables'][0];

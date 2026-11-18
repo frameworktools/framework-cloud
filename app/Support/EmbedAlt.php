@@ -57,7 +57,12 @@ class EmbedAlt
 
     private static function modelLabel(array $model): string
     {
-        return ModelName::for($model) ?? self::MODEL_TYPES[$model['type'] ?? ''] ?? 'Model';
+        $name = ModelName::for($model);
+        if ($name === null && PosteriorTable::is($model)) {
+            return isset(self::MODEL_TYPES[$model['type'] ?? '']) ? 'Bayesian '.lcfirst(self::MODEL_TYPES[$model['type']]) : 'Bayesian model';
+        }
+
+        return $name ?? self::MODEL_TYPES[$model['type'] ?? ''] ?? 'Model';
     }
 
     private static function table(array $data): ?string

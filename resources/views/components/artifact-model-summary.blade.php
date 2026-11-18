@@ -1,4 +1,4 @@
-@props(['metrics', 'title' => 'Model summary'])
+@props(['metrics', 'title' => 'Model summary', 'bayesian' => false])
 @php
     $labels = [
         'nobs' => 'Observations', 'n_events' => 'Events', 'df_resid' => 'Residual degrees of freedom', 'df_model' => 'Model degrees of freedom',
@@ -11,12 +11,20 @@
         'confidence_level' => 'Confidence level', 'interval_method' => 'Interval method', 'vcov_type' => 'Standard errors',
         'n_estimators' => 'Trees', 'max_depth' => 'Maximum depth', 'learning_rate' => 'Learning rate', 'min_samples_leaf' => 'Minimum samples per leaf',
         'n_features' => 'Features', 'n_classes' => 'Classes', 'objective' => 'Objective', 'importance_type' => 'Importance measure',
+        'chains' => 'Chains', 'draws' => 'Draws', 'warmup' => 'Warmup', 'sampler' => 'Sampler', 'divergent_transitions' => 'Divergent transitions',
+        'max_treedepth_hits' => 'Max treedepth hits', 'bayes_r2' => 'Bayes R²', 'elpd_loo' => 'ELPD (LOO)', 'elpd_loo_se' => 'ELPD (LOO) SE',
+        'looic' => 'LOOIC', 'p_loo' => 'p (LOO)', 'waic' => 'WAIC',
     ];
+    if ($bayesian) {
+        $labels['confidence_level'] = 'Credible level';
+    }
     $groupOf = fn (string $name) => match (true) {
         in_array($name, ['nobs', 'n_events', 'df_resid', 'df_model'], true), str_starts_with($name, 'n_groups') => 'Sample and degrees of freedom',
         in_array($name, ['aic', 'bic', 'rsquared', 'r.squared', 'rsquared_adj', 'adj.r.squared', 'within_r.squared', 'pseudo_rsquared', 'sigma', 'llf',
             'log_likelihood', 'deviance', 'null.deviance', 'null_deviance', 'deviance_explained', 'concordance', 'converged'], true) => 'Model fit',
         in_array($name, ['confidence_level', 'interval_method', 'vcov_type'], true) => 'Inference',
+        in_array($name, ['chains', 'draws', 'warmup', 'sampler', 'divergent_transitions', 'max_treedepth_hits'], true) => 'Sampling',
+        in_array($name, ['bayes_r2', 'elpd_loo', 'elpd_loo_se', 'looic', 'p_loo', 'waic'], true) => 'Model fit',
         in_array($name, ['n_estimators', 'max_depth', 'learning_rate', 'min_samples_leaf', 'n_features', 'n_classes', 'objective', 'importance_type'], true) => 'Settings',
         default => 'Additional statistics',
     };
@@ -32,9 +40,9 @@
         <h2 id="model-summary-title" class="mb-3 font-semibold text-slate-900 dark:text-slate-100">{{ $title }}</h2>
         <div class="w-fit max-w-full overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
             <table class="w-auto border-collapse bg-white text-sm dark:bg-slate-950">
-                <caption class="sr-only">Summary statistics grouped by sample, fit, inference, and settings</caption>
+                <caption class="sr-only">Summary statistics grouped by sample, fit, inference, sampling, and settings</caption>
                 <thead class="border-b border-slate-200 dark:border-slate-700"><tr><th scope="col" class="px-4 py-2 text-left font-medium text-slate-500 dark:text-slate-400">Statistic</th><th scope="col" class="px-4 py-2 text-right font-medium text-slate-500 dark:text-slate-400">Value</th></tr></thead>
-                @foreach (['Sample and degrees of freedom', 'Model fit', 'Inference', 'Settings', 'Additional statistics'] as $group)
+                @foreach (['Sample and degrees of freedom', 'Model fit', 'Inference', 'Sampling', 'Settings', 'Additional statistics'] as $group)
                     @if (!empty($groups[$group]))
                         <tbody class="border-b border-slate-200 last:border-0 dark:border-slate-700">
                             <tr><th scope="rowgroup" colspan="2" class="bg-slate-50 px-4 py-2 text-left text-xs font-semibold text-slate-600 dark:bg-slate-900 dark:text-slate-300">{{ $group }}</th></tr>
