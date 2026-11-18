@@ -15,7 +15,7 @@ final class PosteriorTable
     public const RHAT_LIMIT = 1.01;
 
     private const LABELS = [
-        'estimate' => 'Posterior mean', 'std_error' => 'Posterior SD', 'conf_low' => 'CrI lower', 'conf_high' => 'CrI upper',
+        'estimate' => 'Posterior mean', 'std_error' => 'Posterior SD', 'conf_low' => 'Interval lower', 'conf_high' => 'Interval upper',
         'rhat' => 'R-hat', 'ess_bulk' => 'Bulk ESS', 'ess_tail' => 'Tail ESS',
     ];
 

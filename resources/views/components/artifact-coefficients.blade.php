@@ -56,7 +56,7 @@
     $methodLabel = ['wald-t' => 'Wald t', 'wald-normal' => 'Wald normal'][$method] ?? $method;
     $kindLabel = $bayesian ? 'credible interval' : 'confidence interval';
     $intervalLabel = ($percent ? "{$percent} {$kindLabel}" : ucfirst($kindLabel)).($methodLabel ? " ({$methodLabel})" : '');
-    $ci = $anyInterval && $percent ? " ({$percent} ".($bayesian ? 'CrI' : 'CI').')' : '';
+    $ci = $anyInterval && $percent ? " ({$percent} ".($bayesian ? 'interval' : 'CI').')' : '';
 
     // Ratios read on a log scale around 1. Estimates too large to exponentiate stay on the model scale.
     $largest = $rows === [] ? 0 : max(array_map(fn ($row) => max(abs($row['lower']), abs($row['upper'])), $rows));
