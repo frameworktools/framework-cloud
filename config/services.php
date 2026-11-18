@@ -65,7 +65,7 @@ return [
         // scaffolding on GitHub off. The workflow checks the download against
         // fw_sha256 when it is set, and otherwise against the release's
         // checksums file.
-        'fw_version' => env('GITHUB_FW_VERSION', '0.6.5'),
+        'fw_version' => env('GITHUB_FW_VERSION', '0.6.6'),
         'fw_sha256' => env('GITHUB_FW_SHA256'),
     ],
 

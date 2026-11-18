@@ -34,9 +34,9 @@
     },
     "stata": {
         "package": "fw",
-        "ref": "0.6.5",
-        "commit": "baca79d982531279a3b89590e3dc4b98294149d7",
-        "version": "0.6.5",
+        "ref": "0.6.6",
+        "commit": "e8af622d494970d06e99089649347c99c96b8efd",
+        "version": "0.6.6",
         "skills": [
             "framework-sensitive-data",
             "framework-stata"

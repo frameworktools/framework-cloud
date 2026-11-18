@@ -10,9 +10,9 @@
 # Each tool is pinned to a commit. Change the pins here and rebuild to move
 # them; all three are public repositories under github.com/frameworktools.
 
-ARG FW_REF=baca79d982531279a3b89590e3dc4b98294149d7
+ARG FW_REF=e8af622d494970d06e99089649347c99c96b8efd
 # The release FW_REF is tagged as, so fw --version reports it
-ARG FW_VERSION=0.6.5
+ARG FW_VERSION=0.6.6
 ARG FRAMEWORK_REF=76a587f92c08ada9b7d81d61d0514c91bb216300
 ARG FRAMEWORK_PY_REF=af8a9f78cb67fcda969a8236d3f48c5597433ef3
 
