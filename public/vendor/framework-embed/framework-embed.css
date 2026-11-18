@@ -103,6 +103,9 @@
 .fw-embed__meta + .fw-embed__formula {
   margin-top: -0.75em;
 }
+.fw-embed__details > .fw-embed__meta + .fw-embed__formula {
+  margin-top: 0.25em;
+}
 .fw-embed__method {
   font-weight: 600;
 }
