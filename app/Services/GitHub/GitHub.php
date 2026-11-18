@@ -253,6 +253,22 @@ class GitHub
         $this->send('post', "/repos/{$repo}/actions/workflows/{$workflow}/dispatches", ['ref' => $ref]);
     }
 
+    /**
+     * A workflow run's jobs, with their steps' names and conclusions.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function runJobs(string $repo, int $runId): array
+    {
+        return $this->get("/repos/{$repo}/actions/runs/{$runId}/jobs", ['per_page' => 50])->json('jobs', []);
+    }
+
+    /** A job's plain-text log. GitHub redirects to a short-lived download address. */
+    public function jobLog(string $repo, int $jobId): string
+    {
+        return $this->request()->accept('*/*')->timeout(15)->get(self::API."/repos/{$repo}/actions/jobs/{$jobId}/logs")->throw()->body();
+    }
+
     /** The repository's GitHub Pages site, or null when Pages is off. */
     public function pages(string $repo): ?array
     {

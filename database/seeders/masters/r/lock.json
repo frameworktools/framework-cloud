@@ -1,5 +1,5 @@
 {
-    "commit": "0f12d4155e03966a019b7edb24ab4dd49ed6573c",
+    "commit": "76a587f92c08ada9b7d81d61d0514c91bb216300",
     "files": {
         "conformance/create/python/bare-jupyter.json": {
             "source": "inst/conformance/create/python/bare-jupyter.json",

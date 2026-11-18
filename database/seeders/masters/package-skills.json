@@ -1,0 +1,45 @@
+{
+    "r": {
+        "package": "framework",
+        "ref": "76a587f92c08ada9b7d81d61d0514c91bb216300",
+        "commit": "76a587f92c08ada9b7d81d61d0514c91bb216300",
+        "version": "2.0.13",
+        "skills": [
+            "framework-cache",
+            "framework-data",
+            "framework-databases",
+            "framework-outputs",
+            "framework-packages",
+            "framework-publishing",
+            "framework-sensitive-data",
+            "framework-workflow",
+            "ggplot2-figures"
+        ]
+    },
+    "python": {
+        "package": "framework-py",
+        "ref": "af8a9f78cb67fcda969a8236d3f48c5597433ef3",
+        "commit": "af8a9f78cb67fcda969a8236d3f48c5597433ef3",
+        "version": "0.1.0.dev26",
+        "skills": [
+            "framework-cache",
+            "framework-data",
+            "framework-databases",
+            "framework-outputs",
+            "framework-packages",
+            "framework-publishing",
+            "framework-sensitive-data",
+            "framework-workflow"
+        ]
+    },
+    "stata": {
+        "package": "fw",
+        "ref": "0.6.5",
+        "commit": "baca79d982531279a3b89590e3dc4b98294149d7",
+        "version": "0.6.5",
+        "skills": [
+            "framework-sensitive-data",
+            "framework-stata"
+        ]
+    }
+}

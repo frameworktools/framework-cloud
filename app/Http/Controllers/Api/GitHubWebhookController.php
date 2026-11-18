@@ -32,7 +32,9 @@ class GitHubWebhookController extends Controller
                 ->first();
 
             if ($project) {
-                $scaffolder->finish($project, (string) $payload['workflow_run']['conclusion'], $payload['workflow_run']['html_url'] ?? null);
+                $run = $payload['workflow_run'];
+                // A failure reads the run's log from GitHub, so it is recorded after the response
+                dispatch(fn () => $scaffolder->finish($project, (string) $run['conclusion'], $run['html_url'] ?? null, $run['id'] ?? null))->afterResponse();
             }
         }
 

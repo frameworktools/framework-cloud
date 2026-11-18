@@ -42,6 +42,10 @@ const showUpdate = computed(() => !!github.value?.repo && (github.value.update_a
 const updateError = computed(() => (props.errors ? page.props.errors.github : null));
 const requestUpdate = () => router.post(`/projects/${props.project.id}/github/update`, {}, { preserveScroll: true });
 
+// A failed run's error: a sentence, then the log lines it quotes
+const errorSummary = computed(() => (github.value?.error ?? '').split('\n')[0]);
+const errorLines = computed(() => (github.value?.error ?? '').split('\n').slice(1).join('\n'));
+
 const open = ref(!props.collapsed);
 const show = () => { open.value = true; emit('open'); };
 </script>
@@ -57,7 +61,10 @@ const show = () => { open.value = true; emit('open'); };
                 <UiButton v-if="github.status === 'running' && github.repo" variant="ghost" size="sm" @click="refresh">Check status</UiButton>
                 <UiButton v-if="github.status === 'failed' && github.url" variant="ghost" size="sm" @click="retry">Retry</UiButton>
             </div>
-            <p v-if="github.error" class="text-red-600 dark:text-red-400">{{ github.error }}</p>
+            <template v-if="github.error">
+                <p class="text-red-600 dark:text-red-400">{{ errorSummary }}</p>
+                <pre v-if="errorLines" class="max-h-48 overflow-auto rounded-lg bg-slate-50 p-3 font-mono text-xs leading-5 whitespace-pre-wrap break-words text-slate-800 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-200 dark:ring-slate-800">{{ errorLines }}</pre>
+            </template>
             <div v-if="github.status === 'done'" class="min-w-0"><CodeChip>git clone {{ github.url }}.git</CodeChip></div>
         </div>
 

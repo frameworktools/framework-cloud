@@ -66,12 +66,8 @@ class ProjectRepositoryController extends Controller
             }
 
             try {
-                if (str_starts_with((string) $project->scaffold_error, 'The scaffold workflow')) {
-                    $scaffolder->retry($project);
-                } else {
-                    // It failed before the workflow ran: commit the layers and workflow again
-                    $this->rescaffold($project);
-                }
+                // Commits the layers and the workflow again, whether or not the first run started
+                $scaffolder->retry($project);
             } catch (RequestException $e) {
                 throw ValidationException::withMessages(['github' => 'GitHub returned an error: '.($e->response->json('message') ?? $e->response->status())]);
             } catch (GitHubNotConnected $e) {
@@ -291,17 +287,6 @@ class ProjectRepositoryController extends Controller
             'scaffold_run_url' => $project->scaffold_run_url,
             'repository' => $project->github_repo,
         ];
-    }
-
-    /** Commit the layers and the workflow again to a repository whose first scaffold never started. */
-    private function rescaffold(Project $project): void
-    {
-        $github = $this->github($project);
-        $envelope = ProjectLayers::for($project);
-
-        $project->update(['scaffold_status' => 'running', 'scaffold_error' => null]);
-        $github->putFile($project->github_repo, Scaffolder::LAYERS_PATH, ProjectLayers::toJson($envelope), 'Add Framework project layers');
-        $github->putFile($project->github_repo, Scaffolder::WORKFLOW_PATH, Scaffolder::workflow($project->language ?? 'r'), 'Add Framework scaffold workflow');
     }
 
     private function github(Project $project): GitHub

@@ -231,6 +231,8 @@ class Resolver
             $layers[] = ['kind' => 'blueprint', 'key' => ($this->blueprint?->blueprint->handle ?? 'blueprint').' requires', 'layer' => $requires];
         }
         $layers[] = ProjectLayers::projectLayer($slug, $language, $layers);
+        // Pieces made before a package skill was retired name the skill that replaced it
+        $layers = PackageSkills::upgradeLayers($layers);
 
         if ($problems = Layer::envelopeProblems(['spec_version' => 1, 'name' => (string) ($choices['name'] ?? 'project'), 'layers' => $layers])) {
             throw ValidationException::withMessages(['settings' => implode("\n", $problems)]);

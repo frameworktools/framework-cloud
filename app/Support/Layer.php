@@ -169,7 +169,8 @@ class Layer
     /**
      * Problems with a whole layers envelope before it leaves the cloud. The
      * committed .framework/layers.json stays in the repository's history, so
-     * every layer in it gets the credential and env checks again.
+     * every layer in it gets the credential and env checks again. Package
+     * skills must ship with the package version this server scaffolds with.
      *
      * @return list<string>
      */
@@ -183,6 +184,9 @@ class Layer
             $problems = [...$problems, ...self::credentialProblems($layer['publish']['destinations'] ?? [], 'publish.destinations')];
             $problems = [...$problems, ...self::envProblems($layer['env'] ?? [])];
         }
+
+        // A package skill the pinned package doesn't ship stops the scaffold
+        $problems = [...$problems, ...PackageSkills::problems($envelope)];
 
         return array_values(array_unique($problems));
     }

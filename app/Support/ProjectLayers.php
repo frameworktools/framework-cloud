@@ -28,8 +28,10 @@ class ProjectLayers
      */
     public static function for(Project $project): array
     {
+        // Retired package skills become their successors on the way out, so a
+        // project resolved before a retirement still scaffolds
         if ($project->resolved) {
-            return json_decode($project->resolved, true);
+            return PackageSkills::upgrade(json_decode($project->resolved, true));
         }
 
         $project->loadMissing('user', 'blueprintVersion.blueprint.owner', 'blueprintVersion.base.facet.owner', 'blueprintVersion.facetVersions.facet.owner');
@@ -82,7 +84,7 @@ class ProjectLayers
         $envelope = self::envelope($user, $project->name, $layers, $version && ! $composition ? ['key' => $version->blueprint->handle, 'version' => $version->version] : null);
         $project->forceFill(['resolved' => json_encode($envelope, JSON_UNESCAPED_SLASHES)])->saveQuietly();
 
-        return $envelope;
+        return PackageSkills::upgrade($envelope);
     }
 
     /** The structure, then the pieces, in the order the project recorded them. */
