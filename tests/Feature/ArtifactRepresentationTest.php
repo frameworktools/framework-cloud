@@ -36,6 +36,39 @@ class ArtifactRepresentationTest extends TestCase
         return $version->document;
     }
 
+    public function test_model_variables_and_terms_are_kept_and_bad_entries_dropped(): void
+    {
+        $input = $this->representation();
+        $input['kind'] = 'model';
+        $input['variables'] = [
+            ['name' => 'mass', 'role' => 'response', 'type' => 'number', 'label' => 'Body mass (g)',
+                'summary' => ['count' => 342, 'missing' => 0, 'mean' => 4201.75, 'min' => 2700, 'max' => 6300, 'histogram' => ['edges' => [0, 1], 'counts' => [1]]]],
+            ['name' => 'species', 'role' => 'predictor', 'type' => 'categorical', 'levels' => ['Adelie', 'Chinstrap', 7], 'reference' => 'Adelie',
+                'summary' => ['count' => 342, 'top' => [['value' => 'Adelie', 'count' => 151]]]],
+            ['name' => 'species', 'type' => 'number'],
+            ['name' => 'bad', 'type' => 'complex'],
+            'nonsense',
+        ];
+        $input['terms'] = [
+            ['term' => 'speciesChinstrap', 'parts' => [['variable' => 'species', 'level' => 'Chinstrap']]],
+            ['term' => 'mass:speciesChinstrap', 'parts' => [['variable' => 'mass'], ['variable' => 'species', 'level' => 'Chinstrap']]],
+            ['term' => 'unknown', 'parts' => [['variable' => 'missing']]],
+            ['term' => 'empty', 'parts' => []],
+        ];
+        $parsed = ArtifactRepresentation::parse(json_encode($input));
+
+        $this->assertSame([
+            ['name' => 'mass', 'type' => 'number', 'role' => 'response', 'label' => 'Body mass (g)',
+                'summary' => ['count' => 342, 'missing' => 0, 'mean' => 4201.75, 'min' => 2700, 'max' => 6300]],
+            ['name' => 'species', 'type' => 'categorical', 'role' => 'predictor', 'levels' => ['Adelie', 'Chinstrap'], 'reference' => 'Adelie',
+                'summary' => ['count' => 342, 'top' => [['value' => 'Adelie', 'count' => 151]]]],
+        ], $parsed['variables']);
+        $this->assertSame(['speciesChinstrap', 'mass:speciesChinstrap'], array_column($parsed['terms'], 'term'));
+
+        $input['kind'] = 'table';
+        $this->assertArrayNotHasKey('variables', ArtifactRepresentation::parse(json_encode($input)));
+    }
+
     public function test_typed_values_source_metadata_and_model_formula_are_preserved(): void
     {
         $input = $this->representation();

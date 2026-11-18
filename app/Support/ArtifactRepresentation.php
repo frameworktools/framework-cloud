@@ -18,6 +18,10 @@ class ArtifactRepresentation
 
     private const MODEL_FIELDS = ['type', 'family', 'link', 'response', 'exponentiate'];
 
+    private const VARIABLE_ROLES = ['response', 'predictor', 'group', 'weight', 'offset'];
+
+    private const VARIABLE_TYPES = ['number', 'categorical', 'boolean', 'date', 'datetime', 'string'];
+
     public static function parse(string $json): ?array
     {
         if (strlen($json) > self::MAX_BYTES) {
@@ -171,8 +175,119 @@ class ArtifactRepresentation
             $output['formula'] = self::scalar($input['formula'], $truncated);
             $output['truncated'] = $truncated;
         }
+        if ($input['kind'] === 'model') {
+            $variables = self::variables($input['variables'] ?? null, $truncated);
+            if ($variables !== []) {
+                $output['variables'] = $variables;
+                $output['terms'] = self::terms($input['terms'] ?? null, array_column($variables, 'name'), $truncated);
+            }
+            $output['truncated'] = $truncated;
+        }
 
         return $output;
+    }
+
+    /**
+     * A model's variables, from the data it was fit on. Entries that don't
+     * fit the contract are dropped, not the document.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private static function variables(mixed $input, bool &$truncated): array
+    {
+        if (! self::isList($input)) {
+            return [];
+        }
+        $variables = [];
+        $seen = [];
+        foreach ($input as $variable) {
+            if (! is_array($variable) || ! is_string($variable['name'] ?? null) || $variable['name'] === ''
+                || ! in_array($variable['type'] ?? null, self::VARIABLE_TYPES, true)) {
+                continue;
+            }
+            $name = self::label($variable['name'], $truncated);
+            if (isset($seen[$name])) {
+                continue;
+            }
+            if (count($variables) === 100) {
+                $truncated = true;
+                break;
+            }
+            $seen[$name] = true;
+            $entry = ['name' => $name, 'type' => $variable['type']];
+            if (in_array($variable['role'] ?? null, self::VARIABLE_ROLES, true)) {
+                $entry['role'] = $variable['role'];
+            }
+            if (is_string($variable['label'] ?? null) && $variable['label'] !== '') {
+                $entry['label'] = self::label($variable['label'], $truncated);
+            }
+            if (self::isList($variable['levels'] ?? null)) {
+                $levels = [];
+                foreach ($variable['levels'] as $level) {
+                    if (is_string($level)) {
+                        if (count($levels) === 50) {
+                            $truncated = true;
+                            break;
+                        }
+                        $levels[] = self::label($level, $truncated);
+                    }
+                }
+                if ($levels !== []) {
+                    $entry['levels'] = $levels;
+                }
+            }
+            if (is_string($variable['reference'] ?? null) && $variable['reference'] !== '') {
+                $entry['reference'] = self::label($variable['reference'], $truncated);
+            }
+            $summary = self::summary($variable['summary'] ?? null, $truncated);
+            unset($summary['histogram']);
+            if ($summary) {
+                $entry['summary'] = $summary;
+            }
+            $variables[] = $entry;
+        }
+
+        return $variables;
+    }
+
+    /**
+     * Coefficient terms mapped to the variables, and levels, behind them.
+     * A term naming a variable that isn't listed is dropped.
+     *
+     * @param  list<string>  $names
+     * @return list<array{term: string, parts: list<array<string, string>>}>
+     */
+    private static function terms(mixed $input, array $names, bool &$truncated): array
+    {
+        if (! self::isList($input)) {
+            return [];
+        }
+        $known = array_flip($names);
+        $terms = [];
+        foreach ($input as $term) {
+            if (! is_array($term) || ! is_string($term['term'] ?? null) || $term['term'] === ''
+                || ! self::isList($term['parts'] ?? null) || $term['parts'] === [] || count($term['parts']) > 10) {
+                continue;
+            }
+            $parts = [];
+            foreach ($term['parts'] as $part) {
+                if (! is_array($part) || ! is_string($part['variable'] ?? null) || ! isset($known[$part['variable']])) {
+                    continue 2;
+                }
+                $entry = ['variable' => $part['variable']];
+                if (is_string($part['level'] ?? null) && $part['level'] !== '') {
+                    $entry['level'] = self::label($part['level'], $truncated);
+                }
+                $parts[] = $entry;
+            }
+            if (count($terms) === 500) {
+                $truncated = true;
+                break;
+            }
+            $terms[] = ['term' => self::label($term['term'], $truncated), 'parts' => $parts];
+        }
+
+        return $terms;
     }
 
     /** A column's summary over all rows. Parts that don't fit the contract are dropped, not the document. */
