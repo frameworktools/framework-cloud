@@ -5,17 +5,21 @@ namespace App\Support;
 use App\Models\Document;
 use App\Models\DocumentVersion;
 use App\Models\Project;
+use App\Support\Snippets\ArtifactSnippet;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use InvalidArgumentException;
 use RuntimeException;
 use Throwable;
 
 class ArtifactPublisher
 {
+    public const KINDS = ['html', 'image', 'chart', 'table', 'data', 'model', 'test', 'text', 'pdf', 'file', ArtifactSnippet::KIND];
+
     public const VERSION_FIELDS = ['disk_path', 'entrypoint', 'content_type', 'size_bytes', 'kind', 'original_filename', 'manifest', 'storage_disk', 'source_path'];
 
     public static function rules(): array
@@ -30,7 +34,7 @@ class ArtifactPublisher
             'readable' => ['sometimes', 'boolean'],
             'visibility' => ['sometimes', Rule::in(['public', 'unlisted', 'private'])],
             'password' => ['sometimes', 'nullable', 'string', 'min:8', 'max:200'],
-            'kind' => ['sometimes', Rule::in(['html', 'image', 'chart', 'table', 'data', 'model', 'test', 'text', 'pdf', 'file'])],
+            'kind' => ['sometimes', Rule::in(self::KINDS)],
         ];
     }
 
@@ -73,15 +77,34 @@ class ArtifactPublisher
                 }
             }
             $representationKind = null;
-            if (! $bundle && strtolower(pathinfo($filename, PATHINFO_EXTENSION)) === 'json' && $upload->getSize() <= ArtifactRepresentation::MAX_BYTES) {
-                $representationKind = ArtifactRepresentation::parse(file_get_contents($upload->getRealPath()))['kind'] ?? null;
+            $snippet = null;
+            $json = ! $bundle && strtolower(pathinfo($filename, PATHINFO_EXTENSION)) === 'json';
+            // A code snippet is checked strictly: a broken one fails here, not as a broken page or embed
+            if (($input['kind'] ?? null) === ArtifactSnippet::KIND && ! $json) {
+                throw ValidationException::withMessages(['file' => 'A code snippet is published as a JSON file.']);
+            }
+            if ($json && $upload->getSize() <= ArtifactRepresentation::MAX_BYTES) {
+                $content = (string) file_get_contents($upload->getRealPath());
+                if (($input['kind'] ?? null) === ArtifactSnippet::KIND || ArtifactSnippet::claims($content)) {
+                    try {
+                        $snippet = ArtifactSnippet::fromJson($content);
+                    } catch (InvalidArgumentException $e) {
+                        throw ValidationException::withMessages(['file' => $e->getMessage()]);
+                    }
+                    $representationKind = ArtifactSnippet::KIND;
+                } else {
+                    $representationKind = ArtifactRepresentation::parse($content)['kind'] ?? null;
+                }
+            } elseif (($input['kind'] ?? null) === ArtifactSnippet::KIND) {
+                throw ValidationException::withMessages(['file' => 'A code snippet can be at most 2 MB.']);
             }
             if (! $bundle && ArtifactPreview::isVegaLite($filename)) {
                 $representationKind = 'chart';
             }
             $stored += ['content_type' => $type, 'original_filename' => $filename, 'storage_disk' => $disk, 'kind' => $input['kind'] ?? $representationKind ?? $this->kind($type, $filename)];
 
-            $version = DB::transaction(function () use ($project, $slug, $stored, $input) {
+            $unchanged = false;
+            $version = DB::transaction(function () use ($project, $slug, $stored, $input, $snippet, &$unchanged) {
                 PublishingQuota::check($project, (int) $stored['size_bytes']);
                 Project::whereKey($project->id)->lockForUpdate()->firstOrFail();
                 // Publishing again under a deleted artifact's name brings it back from the Trash
@@ -94,6 +117,11 @@ class ArtifactPublisher
                 }
                 if ($document->exists) {
                     $document->preserveImplicitVersion();
+                }
+                // Every render of a notebook publishes its snippets again; an unchanged one adds no version
+                if ($snippet !== null && $document->exists && self::sameSnippet($document->latestVersion(), $snippet)) {
+                    $unchanged = true;
+                    $stored = [];
                 }
                 $number = max((int) $document->next_version_number, (int) $document->versions()->withTrashed()->max('number') + 1, 1);
                 $document->fill($stored + ['key' => $document->key ?? Document::newKey(), 'title' => $input['title'] ?? $document->title ?? self::titleFromSlug($slug)]);
@@ -108,6 +136,13 @@ class ArtifactPublisher
                     }
                     $document->password_hash = filled($input['password']) ? Hash::make($input['password']) : null;
                 }
+                if ($unchanged) {
+                    $document->save();
+                    $latest = $document->latestVersion()->load('document.project.user');
+                    $latest->unchanged = true;
+
+                    return $latest;
+                }
                 $document->next_version_number = $number + 1;
                 $document->save();
 
@@ -117,6 +152,11 @@ class ArtifactPublisher
                 return $document->versions()->create($stored + ['number' => $number] + $provenance)->load('document.project.user');
             });
 
+            if ($unchanged) {
+                Storage::disk($disk)->deleteDirectory($prefix);
+
+                return $version;
+            }
             // The page's preview and chart are built now, once, not when someone first opens it
             try {
                 ArtifactPreview::forVersion($version);
@@ -203,6 +243,24 @@ class ArtifactPublisher
                 Storage::disk(config('framework.artifacts_disk', 'local'))->deleteDirectory($prefix);
             }
             throw $exception;
+        }
+    }
+
+    /** Whether a version holds this snippet already, as Cloud normalizes it. */
+    private static function sameSnippet(DocumentVersion $version, array $snippet): bool
+    {
+        if ($version->kind !== ArtifactSnippet::KIND || $version->isBundle() || ! $version->exists) {
+            return false;
+        }
+        try {
+            $disk = Storage::disk($version->disk());
+            if (! $disk->exists($version->disk_path) || $disk->size($version->disk_path) > ArtifactSnippet::MAX_BYTES) {
+                return false;
+            }
+
+            return ArtifactSnippet::fromJson((string) $disk->get($version->disk_path)) === $snippet;
+        } catch (Throwable) {
+            return false;
         }
     }
 

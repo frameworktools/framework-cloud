@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\DocumentVersion;
+use App\Support\Snippets\ArtifactSnippet;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 
@@ -141,11 +142,14 @@ class ArtifactPreview
         }
         if ($json) {
             $representation = ArtifactRepresentation::parse($content);
+            if (($representation['kind'] ?? null) === ArtifactSnippet::KIND) {
+                return ['type' => ArtifactSnippet::KIND] + $representation;
+            }
             if ($representation !== null) {
                 return ['type' => 'representation'] + $representation;
             }
             if (strlen($content) > ArtifactRepresentation::MAX_BYTES
-                || in_array($version->kind, ['table', 'model'])
+                || in_array($version->kind, ['table', 'model', ArtifactSnippet::KIND])
                 || preg_match('/"schema"\s*:/', $content)) {
                 return ['type' => 'download', 'message' => 'This artifact representation cannot be previewed. Download the original file to inspect it.'];
             }

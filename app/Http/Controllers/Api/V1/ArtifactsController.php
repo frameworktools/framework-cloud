@@ -103,7 +103,7 @@ class ArtifactsController extends Controller
         $connection = $this->agent($request);
         $version = $this->publish($project, $data['filename'], $bytes, $data, $connection);
 
-        return response()->json($this->published($version), 201);
+        return response()->json($this->published($version), $version->unchanged ? 200 : 201);
     }
 
     /**
@@ -169,7 +169,7 @@ class ArtifactsController extends Controller
         }
         $upload->forceFill(['document_id' => $version->document_id])->save();
 
-        return response()->json($this->published($version), 201);
+        return response()->json($this->published($version), $version->unchanged ? 200 : 201);
     }
 
     /** DELETE /artifacts/{artifact}: move an artifact to the Trash, files and all, until restored. Needs an account token. */
@@ -245,7 +245,7 @@ class ArtifactsController extends Controller
     {
         $document = $version->document->load('project.user', 'linkedProjects:id,slug');
 
-        return $this->summary($document) + ['version' => $version->number, 'version_url' => $version->url()];
+        return $this->summary($document) + ['version' => $version->number, 'version_url' => $version->url(), 'unchanged' => $version->unchanged];
     }
 
     /** @return array<string, array<int, mixed>> */

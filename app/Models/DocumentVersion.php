@@ -29,6 +29,9 @@ class DocumentVersion extends Model
 
     protected $guarded = [];
 
+    /** Set when a publish matched this version and added none (code snippets). Not stored. */
+    public bool $unchanged = false;
+
     protected function casts(): array
     {
         return ['manifest' => 'array', 'provenance' => 'array'];

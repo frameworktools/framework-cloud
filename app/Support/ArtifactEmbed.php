@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Models\Document;
 use App\Models\DocumentVersion;
 use App\Models\User;
+use App\Support\Snippets\ArtifactSnippet;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 
@@ -62,7 +63,9 @@ class ArtifactEmbed
      * /d/{key}, /d/{key}/versions/{n}, /@{handle}/{project}/{slug}, and its
      * /versions/{n} form, on this server's host only.
      *
-     * @return array{0: DocumentVersion, 1: bool}|null The version, and whether the link named one
+     * A snippet link may add ?output=none for its code alone.
+     *
+     * @return array{0: DocumentVersion, 1: bool, 2: bool}|null The version, whether the link named one, and whether it asks for code only
      */
     public static function resolve(string $url): ?array
     {
@@ -82,7 +85,7 @@ class ArtifactEmbed
         }
         $version = $document === null ? null : ($number === null ? $document->latestVersion() : $document->findVersion($number));
 
-        return $version === null ? null : [$version, $number !== null];
+        return $version === null ? null : [$version, $number !== null, ArtifactSnippet::wantsCodeOnly(parse_url($url, PHP_URL_QUERY))];
     }
 
     /** Whether a URL is on this server's own host (APP_URL). */
@@ -99,19 +102,26 @@ class ArtifactEmbed
         return strcasecmp($parts['host'], $app['host']) === 0 && ($parts['port'] ?? null) === ($app['port'] ?? null);
     }
 
-    /** The embed document for one version. */
-    public static function document(DocumentVersion $version): array
+    /** The embed document for one version; $codeOnly hides a snippet's output at first. */
+    public static function document(DocumentVersion $version, bool $codeOnly = false): array
     {
         $document = $version->document;
         $owner = $document->project->user;
         $latest = $document->latestVersion()->number;
         $kind = self::kind($version);
         $preview = ArtifactPreview::forVersion($version);
-        $data = $preview['type'] === 'representation' ? array_diff_key($preview, ['type' => true, 'data_file' => true]) : null;
+        $data = in_array($preview['type'], ['representation', ArtifactSnippet::KIND], true) ? array_diff_key($preview, ['type' => true, 'data_file' => true]) : null;
+        if ($kind === ArtifactSnippet::KIND) {
+            $data = self::snippet($data, $document, $codeOnly);
+        } else {
+            $codeOnly = false;
+        }
         $spec = $kind === 'vega-lite' ? ArtifactPreview::vegaLiteSpec($version) : null;
         $image = $kind === 'image' ? ['url' => self::imageUrl($version), 'content_type' => self::contentType($version)] + self::imageSize($version) : null;
         $title = $document->title ?: $document->slug;
-        $url = self::pageUrl($version);
+        // The option rides on both links, so a site that fetches again keeps it
+        $option = $codeOnly ? '?output=none' : '';
+        $url = self::pageUrl($version).$option;
 
         return [
             'schema' => self::SCHEMA,
@@ -123,7 +133,7 @@ class ArtifactEmbed
             'description' => filled($document->description) ? $document->description : null,
             'alt' => EmbedAlt::for($kind, $title, $data),
             'url' => $url,
-            'embed_url' => self::embedUrl($version),
+            'embed_url' => self::embedUrl($version).$option,
             'published_at' => ($version->created_at ?? $document->updated_at)?->toIso8601ZuluString(),
             'author' => self::author($owner),
             'provider' => ['name' => self::providerName(), 'url' => self::providerUrl()],
@@ -134,13 +144,28 @@ class ArtifactEmbed
         ];
     }
 
-    /** model, table, test, image, vega-lite, or page. */
+    /**
+     * A snippet as embeds receive it: model links only when the model is
+     * embeddable, and links already resolved to URLs.
+     */
+    private static function snippet(array $data, Document $document, bool $codeOnly): array
+    {
+        $data['display'] = ($codeOnly ? ['output' => false] : []) + ['links' => array_map(
+            fn (array $link) => ['rel' => $link['rel'], 'url' => $link['url']],
+            ArtifactSnippet::resolvedLinks($data, $document, embed: true),
+        )];
+
+        return $data;
+    }
+
+    /** model, table, test, code_snippet, image, vega-lite, or page. */
     public static function kind(DocumentVersion $version): string
     {
         $preview = ArtifactPreview::forVersion($version);
 
         return match ($preview['type']) {
             'representation' => in_array($preview['kind'] ?? null, ['model', 'table', 'test'], true) ? $preview['kind'] : 'page',
+            ArtifactSnippet::KIND => ArtifactSnippet::KIND,
             'chart' => self::selfContained(ArtifactPreview::vegaLiteSpec($version)) ? 'vega-lite' : 'page',
             'image' => ! $version->isBundle() && in_array(self::contentType($version), self::IMAGE_TYPES, true) ? 'image' : 'page',
             default => 'page',

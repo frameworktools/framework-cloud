@@ -3,6 +3,7 @@
 namespace App\Mcp;
 
 use App\Models\McpConnection;
+use App\Support\ArtifactPublisher;
 use App\Support\ProjectData;
 use App\Support\ProjectDefaults;
 
@@ -438,7 +439,7 @@ class ToolCatalog
                 'description' => ['type' => 'string'],
                 'visibility' => ['type' => 'string', 'enum' => ['private', 'unlisted', 'public'], 'description' => 'Who can open it. New artifacts start private. Ask the user before choosing public.'],
                 'password' => ['type' => 'string', 'minLength' => 8],
-                'kind' => ['type' => 'string', 'enum' => ['html', 'image', 'chart', 'table', 'data', 'model', 'test', 'text', 'pdf', 'file'], 'description' => 'Overrides the kind read from the file name.'],
+                'kind' => ['type' => 'string', 'enum' => ArtifactPublisher::KINDS, 'description' => 'Overrides the kind read from the file name. A code_snippet is a framework.artifact/v1 JSON file of code and printed output.'],
             ],
             'required' => ['filename'],
         ];

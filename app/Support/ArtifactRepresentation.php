@@ -2,7 +2,9 @@
 
 namespace App\Support;
 
+use App\Support\Snippets\ArtifactSnippet;
 use DateTimeImmutable;
+use InvalidArgumentException;
 use JsonException;
 
 /** The portable, data-only representation emitted by framework clients. */
@@ -26,6 +28,13 @@ class ArtifactRepresentation
     {
         if (strlen($json) > self::MAX_BYTES) {
             return null;
+        }
+        if (ArtifactSnippet::claims($json)) {
+            try {
+                return ArtifactSnippet::fromJson($json);
+            } catch (InvalidArgumentException) {
+                // Not a valid snippet; read it as any other representation
+            }
         }
         try {
             $structure = json_decode($json, false, 64, JSON_THROW_ON_ERROR);

@@ -45,6 +45,8 @@ class DocumentsController extends Controller
             // Clients report what was stored, which may differ from what they asked for
             'visibility' => $document->visibility,
             'version' => $version->number,
+            // A code snippet that matched the newest version added none
+            'unchanged' => $version->unchanged,
             // The link to share: readable when available, else unlisted.
             'url' => $readableUrl ?? $document->publicUrl(),
             'private_url' => $document->publicUrl(),
@@ -54,6 +56,6 @@ class DocumentsController extends Controller
             'notice' => $document->isReadable() && ! $readableUrl
                 ? 'Public. Set a handle in Account > Account details to get a readable URL. Until then, share the link above.'
                 : null,
-        ], 201);
+        ], $version->unchanged ? 200 : 201);
     }
 }

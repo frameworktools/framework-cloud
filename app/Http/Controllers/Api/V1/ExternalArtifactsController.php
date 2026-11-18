@@ -26,7 +26,7 @@ class ExternalArtifactsController extends Controller
         $data = $request->validate([
             'slug' => ['required', 'string', 'max:120', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/'],
             'title' => ['required', 'string', 'max:200'], 'description' => ['nullable', 'string', 'max:10000'],
-            'kind' => ['required', Rule::in(['html', 'image', 'figure', 'chart', 'table', 'data', 'model', 'test', 'text', 'pdf', 'file', 'notebook', 'report', 'book'])],
+            'kind' => ['required', Rule::in(['html', 'image', 'figure', 'chart', 'table', 'data', 'model', 'test', 'text', 'pdf', 'file', 'code_snippet', 'notebook', 'report', 'book'])],
             'driver' => ['required', Rule::in(['github', 'folder', 's3'])],
             'url' => ['nullable', 'url:http,https', 'max:2048'], 'version_url' => ['nullable', 'url:http,https', 'max:2048'],
             'version' => ['required', 'integer', 'min:1', 'max:2147483646'],

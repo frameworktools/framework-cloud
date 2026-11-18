@@ -52,7 +52,7 @@
 <body class="flex h-full flex-col bg-white dark:bg-slate-950">
     @php
         $embedded = request()->boolean('embed');
-        $structured = in_array($preview['type'], ['representation', 'chart', 'image'], true);
+        $structured = in_array($preview['type'], ['representation', 'chart', 'image', 'code_snippet'], true);
     @endphp
     @unless ($embedded)
     <header class="border-b border-slate-200 bg-white px-4 {{ $structured ? 'py-4 sm:px-6' : 'py-2.5' }} dark:border-slate-700 dark:bg-slate-800">
@@ -83,7 +83,7 @@
                 </select>
             @endif
             @unless ($structured)<a href="{{ $version->contentUrl() }}" class="text-sky-600 hover:underline dark:text-sky-400">Open original</a>@endunless
-            <a href="{{ $version->downloadUrl() }}" class="text-sky-600 hover:underline dark:text-sky-400">Download {{ $preview['type'] === 'representation' && empty($preview['data_file']) ? 'JSON' : ($version->original_filename ?? 'artifact') }}</a>
+            <a href="{{ $version->downloadUrl() }}" class="text-sky-600 hover:underline dark:text-sky-400">Download {{ ($preview['type'] === 'representation' && empty($preview['data_file'])) || $preview['type'] === 'code_snippet' ? 'JSON' : ($version->original_filename ?? 'artifact') }}</a>
         </div>
         </div>
     </header>
@@ -261,6 +261,12 @@
                         Download the original JSON to keep every value, column type, and source detail.
                     @endif
                 </p>
+            </div>
+        </main>
+    @elseif ($preview['type'] === 'code_snippet')
+        <main class="grow overflow-auto p-4 sm:p-6">
+            <div class="mx-auto {{ $embedded ? '' : 'max-w-4xl' }}">
+                <x-artifact-snippet :snippet="$preview" :document="$document" :output-shown="request()->query('output') !== 'none'" />
             </div>
         </main>
     @elseif ($preview['type'] === 'chart')

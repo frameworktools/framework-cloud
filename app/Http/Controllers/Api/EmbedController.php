@@ -36,21 +36,27 @@ class EmbedController extends Controller
             return self::notFound();
         }
 
-        return $this->embed($resolved[0], $resolved[1] ? self::VERSION_MAX_AGE : self::LATEST_MAX_AGE);
+        return $this->embed($resolved[0], $resolved[1] ? self::VERSION_MAX_AGE : self::LATEST_MAX_AGE, $resolved[2]);
     }
 
-    public function show(string $key): JsonResponse
+    public function show(Request $request, string $key): JsonResponse
     {
         $document = ArtifactEmbed::byKey($key);
 
-        return $document ? $this->embed($document->latestVersion(), self::LATEST_MAX_AGE) : self::notFound();
+        return $document ? $this->embed($document->latestVersion(), self::LATEST_MAX_AGE, self::codeOnly($request)) : self::notFound();
     }
 
-    public function showVersion(string $key, int $number): JsonResponse
+    public function showVersion(Request $request, string $key, int $number): JsonResponse
     {
         $version = ArtifactEmbed::byKey($key)?->findVersion($number);
 
-        return $version ? $this->embed($version, self::VERSION_MAX_AGE) : self::notFound();
+        return $version ? $this->embed($version, self::VERSION_MAX_AGE, self::codeOnly($request)) : self::notFound();
+    }
+
+    /** ?output=none: a snippet's code without its output. */
+    private static function codeOnly(Request $request): bool
+    {
+        return $request->query('output') === 'none';
     }
 
     /**
@@ -103,9 +109,9 @@ class EmbedController extends Controller
         if ($resolved === null) {
             return self::notFound();
         }
-        [$version, $pinned] = $resolved;
+        [$version, $pinned, $codeOnly] = $resolved;
         $maxAge = $pinned ? self::VERSION_MAX_AGE : self::LATEST_MAX_AGE;
-        $embed = ArtifactEmbed::document($version);
+        $embed = ArtifactEmbed::document($version, $codeOnly);
 
         $answer = ['version' => '1.0', 'type' => 'link', 'title' => $embed['title']];
         $image = $embed['image'];
@@ -136,9 +142,9 @@ class EmbedController extends Controller
         ]]], self::LATEST_MAX_AGE);
     }
 
-    private function embed(DocumentVersion $version, int $maxAge): JsonResponse
+    private function embed(DocumentVersion $version, int $maxAge, bool $codeOnly = false): JsonResponse
     {
-        return self::json(ArtifactEmbed::document($version), $maxAge);
+        return self::json(ArtifactEmbed::document($version, $codeOnly), $maxAge);
     }
 
     /**

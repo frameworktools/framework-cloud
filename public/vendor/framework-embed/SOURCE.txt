@@ -1,5 +1,5 @@
-framework-embed.css and framework-embed.iife.js from framework-embed v0.4.1
-(https://github.com/frameworktools/framework-embed/releases/tag/v0.4.1), MIT License (LICENSE).
+framework-embed.css and framework-embed.iife.js from framework-embed v0.5.0
+(https://github.com/frameworktools/framework-embed/releases/tag/v0.5.0), MIT License (LICENSE).
 Byte-identical to the copies served at https://frameworktools.github.io/framework-embed/, which the
 HTML snippet in the share dialog links. The share dialog loads these files to preview an artifact's
 embed. Replace both together.

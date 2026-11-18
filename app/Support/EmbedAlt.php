@@ -25,6 +25,7 @@ class EmbedAlt
             'model' => $data ? self::model($data) : null,
             'table' => $data ? self::table($data) : null,
             'test' => $data ? self::test($data) : null,
+            'code_snippet' => $data ? Snippets\ArtifactSnippet::alt($data) : null,
             default => null,
         };
 

@@ -94,6 +94,46 @@ html.dark { color-scheme: dark; }
 .project-editor-compact .project-code { max-height: 16rem; padding-block: 1rem; }
 
 
+/* Code snippets (x-artifact-snippet): token colors for code, Stata and console styles for output */
+.snippet-code .t-kw { color: #cf222e; }
+.snippet-code .t-str { color: #0a3069; }
+.snippet-code .t-num, .snippet-code .t-const { color: #0550ae; }
+.snippet-code .t-fn { color: #8250df; }
+.snippet-code .t-var { color: #953800; }
+.snippet-code .t-op { color: #57606a; }
+.snippet-code .t-com { color: #6e7781; font-style: italic; }
+.dark .snippet-code .t-kw { color: #ff7b72; }
+.dark .snippet-code .t-str { color: #a5d6ff; }
+.dark .snippet-code .t-num, .dark .snippet-code .t-const { color: #79c0ff; }
+.dark .snippet-code .t-fn { color: #d2a8ff; }
+.dark .snippet-code .t-var { color: #ffa657; }
+.dark .snippet-code .t-op { color: #8b949e; }
+.dark .snippet-code .t-com { color: #8b949e; }
+.snippet-output .t-res, .snippet-output .t-inp, .snippet-output .t-bold { font-weight: 600; }
+.snippet-output .t-res { color: var(--color-slate-950); }
+.dark .snippet-output .t-res { color: var(--color-white); }
+.snippet-output .t-err { color: var(--color-red-700); }
+.dark .snippet-output .t-err { color: var(--color-red-400); }
+.snippet-output .t-italic { font-style: italic; }
+.snippet-output .t-underline { text-decoration: underline; }
+.snippet-output .t-faint { opacity: 0.7; }
+.snippet-output .t-ansi-black { color: var(--color-slate-900); }
+.snippet-output .t-ansi-red { color: var(--color-red-700); }
+.snippet-output .t-ansi-green { color: var(--color-emerald-700); }
+.snippet-output .t-ansi-yellow { color: var(--color-amber-700); }
+.snippet-output .t-ansi-blue { color: var(--color-blue-700); }
+.snippet-output .t-ansi-magenta { color: var(--color-fuchsia-700); }
+.snippet-output .t-ansi-cyan { color: var(--color-cyan-700); }
+.snippet-output .t-ansi-white { color: var(--color-slate-500); }
+.dark .snippet-output .t-ansi-black { color: var(--color-slate-400); }
+.dark .snippet-output .t-ansi-red { color: var(--color-red-400); }
+.dark .snippet-output .t-ansi-green { color: var(--color-emerald-400); }
+.dark .snippet-output .t-ansi-yellow { color: var(--color-amber-300); }
+.dark .snippet-output .t-ansi-blue { color: var(--color-blue-400); }
+.dark .snippet-output .t-ansi-magenta { color: var(--color-fuchsia-400); }
+.dark .snippet-output .t-ansi-cyan { color: var(--color-cyan-400); }
+.dark .snippet-output .t-ansi-white { color: var(--color-slate-200); }
+
 /* Landing page shadows: one for terminals and large panels, one for small cards */
 @utility shadow-panel {
     box-shadow: 0 24px 56px -16px rgb(15 23 42 / 0.24);
