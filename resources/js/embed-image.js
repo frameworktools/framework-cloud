@@ -9,6 +9,9 @@ const CHART_WIDTH = 720;
 const MAX_WIDTH = 1200;
 const PAD = 32;
 const CHART_WAIT_MS = 6000;
+// One type style for every image, whatever page makes it
+export const IMAGE_FONT = 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+export const IMAGE_TEXT = '#1f2229';
 
 let library = null;
 const loadLibrary = () => (library ??= import('html-to-image'));
@@ -69,13 +72,12 @@ async function exactCss(stage, getFontEmbedCSS) {
 /** A PNG blob of the embed document, drawn with the framework-embed renderer. */
 export async function embedImage(renderer, doc, link) {
     const { toBlob, getFontEmbedCSS } = await loadLibrary();
-    const font = getComputedStyle(document.body).fontFamily || 'ui-sans-serif, system-ui, sans-serif';
     const chart = doc.kind === 'vega-lite' || doc.kind === 'image';
 
     const stage = el('div', {
         position: 'fixed', left: '-10000px', top: '0', boxSizing: 'border-box',
         width: `${(chart ? CHART_WIDTH : MIN_WIDTH) + PAD * 2}px`, padding: `${PAD}px`,
-        background: '#ffffff', color: '#1f2229', colorScheme: 'light', fontFamily: font, fontSize: '16px', lineHeight: '1.5',
+        background: '#ffffff', color: IMAGE_TEXT, colorScheme: 'light', fontFamily: IMAGE_FONT, fontSize: '16px', lineHeight: '1.5',
     });
     stage.setAttribute('aria-hidden', 'true');
     stage.dataset.theme = 'light';
