@@ -36,19 +36,23 @@
   --fw-embed-rule: color-mix(in srgb, currentColor 8%, transparent);
   --fw-embed-bg: transparent;
   --fw-embed-accent: #1d4ed8;
+  --fw-embed-warning: #b45309;
   --fw-embed-tip-bg: #1f2229;
   --fw-embed-tip-fg: #f4f5f7;
 }
 @media (prefers-color-scheme: dark) {
   :where(.fw-embed) {
     --fw-embed-accent: #7aa7ff;
+    --fw-embed-warning: #f59e0b;
   }
 }
 :where([data-theme=light], .light) :where(.fw-embed) {
   --fw-embed-accent: #1d4ed8;
+  --fw-embed-warning: #b45309;
 }
 :where([data-theme=dark], .dark) :where(.fw-embed) {
   --fw-embed-accent: #7aa7ff;
+  --fw-embed-warning: #f59e0b;
 }
 .fw-embed {
   display: block;
@@ -120,6 +124,12 @@
 }
 .fw-embed__note {
   margin-top: -0.5em;
+}
+.fw-embed__warning {
+  color: var(--fw-embed-warning);
+}
+.fw-embed__warning::before {
+  content: "\26a0  ";
 }
 .fw-embed__formula code,
 .fw-embed code {

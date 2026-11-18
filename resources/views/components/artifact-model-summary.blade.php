@@ -13,7 +13,9 @@
         'n_features' => 'Features', 'n_classes' => 'Classes', 'objective' => 'Objective', 'importance_type' => 'Importance measure',
         'chains' => 'Chains', 'draws' => 'Draws', 'warmup' => 'Warmup', 'sampler' => 'Sampler', 'divergent_transitions' => 'Divergent transitions',
         'max_treedepth_hits' => 'Max treedepth hits', 'bayes_r2' => 'Bayes R²', 'elpd_loo' => 'ELPD (LOO)', 'elpd_loo_se' => 'ELPD (LOO) SE',
-        'looic' => 'LOOIC', 'p_loo' => 'p (LOO)', 'waic' => 'WAIC',
+        'looic' => 'LOOIC', 'p_loo' => 'p (LOO)', 'waic' => 'WAIC', 'rhat_max' => 'Max R-hat', 'acceptance_rate' => 'Acceptance rate',
+        'efficiency_min' => 'Efficiency (min)', 'efficiency_avg' => 'Efficiency (avg)', 'efficiency_max' => 'Efficiency (max)', 'dic' => 'DIC',
+        'log_marginal_likelihood' => 'Log marginal likelihood',
     ];
     if ($bayesian) {
         $labels['confidence_level'] = 'Credible level';
@@ -23,8 +25,8 @@
         in_array($name, ['aic', 'bic', 'rsquared', 'r.squared', 'rsquared_adj', 'adj.r.squared', 'within_r.squared', 'pseudo_rsquared', 'sigma', 'llf',
             'log_likelihood', 'deviance', 'null.deviance', 'null_deviance', 'deviance_explained', 'concordance', 'converged'], true) => 'Model fit',
         in_array($name, ['confidence_level', 'interval_method', 'vcov_type'], true) => 'Inference',
-        in_array($name, ['chains', 'draws', 'warmup', 'sampler', 'divergent_transitions', 'max_treedepth_hits'], true) => 'Sampling',
-        in_array($name, ['bayes_r2', 'elpd_loo', 'elpd_loo_se', 'looic', 'p_loo', 'waic'], true) => 'Model fit',
+        in_array($name, ['chains', 'draws', 'warmup', 'sampler', 'divergent_transitions', 'max_treedepth_hits', 'rhat_max', 'acceptance_rate', 'efficiency_min', 'efficiency_avg', 'efficiency_max'], true) => 'Sampling',
+        in_array($name, ['bayes_r2', 'elpd_loo', 'elpd_loo_se', 'looic', 'p_loo', 'waic', 'dic', 'log_marginal_likelihood'], true) => 'Model fit',
         in_array($name, ['n_estimators', 'max_depth', 'learning_rate', 'min_samples_leaf', 'n_features', 'n_classes', 'objective', 'importance_type'], true) => 'Settings',
         default => 'Additional statistics',
     };
