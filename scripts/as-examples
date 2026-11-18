@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Run a command as framework.pub's examples account (examples@framework.pub).
+#
+# Use it for every example, test, or experiment against framework.pub, so
+# that work never lands in Erik's own account. It reads the account's token
+# from the framework.pub vault and passes it in FW_CLOUD_TOKEN, which fw and
+# the R and Python packages read before the keyring. The keyring login is
+# left alone.
+#
+#   scripts/as-examples fw projects list
+#   scripts/as-examples Rscript -e 'framework::new("demo")'
+#   scripts/as-examples sh -c 'curl -sH "Authorization: Bearer $FW_CLOUD_TOKEN" https://framework.pub/api/v1/me'
+set -euo pipefail
+
+[[ $# -gt 0 ]] || { sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; exit 64; }
+
+FW_CLOUD_TOKEN=$(cd ~/System/ansible && ansible-vault view vault/apps/framework-pub.yml |
+  ruby -ryaml -e 'print YAML.load(STDIN.read).dig("examples", "api_token").to_s')
+[[ -n "$FW_CLOUD_TOKEN" ]] || { echo "as-examples: no examples.api_token in the framework.pub vault" >&2; exit 1; }
+
+export FW_CLOUD_TOKEN FW_CLOUD_URL=https://framework.pub
+exec "$@"

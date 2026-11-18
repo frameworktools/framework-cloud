@@ -19,7 +19,7 @@ use Illuminate\Support\Str;
  */
 class HomepageExampleCommand extends Command
 {
-    protected $signature = 'fw:homepage-example {--email=examples@framework.invalid : The example account}';
+    protected $signature = 'fw:homepage-example {--email=examples@framework.pub : The example account}';
 
     protected $description = 'Publish the penguin study model shown on the homepage';
 

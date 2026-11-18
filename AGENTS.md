@@ -31,6 +31,15 @@ Main checkout preview discovered with `tunnels` on 2026-11-02: https://framework
 
 Pushing `main` deploys through Forge's push-to-deploy. Do not also start a deployment through the Forge API: two at once collide and Forge emails a false failure. To wait for a push's deployment, or to redeploy the same commit after an env change, run `scripts/deploy-prod` (`--again` to redeploy). It never starts a deployment while another runs.
 
+## framework.pub examples account
+
+Run every example, test, and experiment against framework.pub as the examples account, `examples@framework.pub` (handle `examples`). Never create projects, blueprints, tokens, or artifacts in Erik's own account, `erik@pequod.sh`.
+
+- `scripts/as-examples <command>` runs a command with the account's token in `FW_CLOUD_TOKEN` and `FW_CLOUD_URL=https://framework.pub`. `fw` and the R and Python packages read that before the keyring.
+- The token is `examples.api_token` in `~/System/ansible/vault/apps/framework-pub.yml`. Never run `fw login` with it, since that replaces Erik's keyring login.
+- For a browser session, run `php artisan fw:login-link examples@framework.pub` on the server (`ssh framework`, in `/home/forge/framework.pub/current`).
+- The account is linked to the GitHub user `framework-examples`, a member of the `frameworktools` organization. Create example repositories in `frameworktools`, never in a personal account.
+
 ## Design
 
 Load the `cloud-design` skill (`.claude/skills/cloud-design/SKILL.md`) before building or restyling any page or component. It records the academic.page / Flux design language this app follows and the shared Vue components that implement it.
