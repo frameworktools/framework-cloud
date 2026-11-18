@@ -51,6 +51,8 @@ class Credentials
         'mail.ses_region' => ['AWS_DEFAULT_REGION', 'services.ses.region', false],
 
         'agents.enabled' => ['FW_AGENTS', 'framework.agents', false],
+
+        'sharing.name' => ['FW_SHARE_NAME', 'framework.share_name', false],
     ];
 
     /** Variables whose presence decides something without being a credential */

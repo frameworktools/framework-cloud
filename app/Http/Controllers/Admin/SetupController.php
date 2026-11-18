@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Services\GitHub\Scaffolder;
 use App\Support\Agents;
+use App\Support\ArtifactEmbed;
 use App\Support\Credentials;
 use App\Support\GettingStarted;
 use Illuminate\Http\Client\ConnectionException;
@@ -26,10 +27,11 @@ use Throwable;
  */
 class SetupController extends Controller
 {
-    public const GROUPS = ['github', 'storage', 'mail', 'agents'];
+    public const GROUPS = ['github', 'storage', 'mail', 'agents', 'sharing'];
 
     private const LABELS = [
         'agents.enabled' => 'Connected agents',
+        'sharing.name' => 'Share name',
         'github.app_id' => 'App ID',
         'github.app_slug' => 'App slug',
         'github.client_id' => 'Client ID',
@@ -82,6 +84,7 @@ class SetupController extends Controller
                 'storage' => config('framework.artifacts_disk'),
                 'mail' => config('mail.default'),
                 'agents' => Agents::enabled(),
+                'sharing' => ArtifactEmbed::providerName(),
             ],
             'artifactsDiskFromEnv' => Credentials::envSet('FW_ARTIFACTS_DISK'),
             'broken' => collect(array_keys(Credentials::REGISTRY))->filter(fn ($k) => Credentials::source($k) === 'broken')->values(),
@@ -109,6 +112,9 @@ class SetupController extends Controller
         }
         if ($group === 'agents') {
             $rules['agents__enabled'] = ['nullable', Rule::in(['true', 'false'])];
+        }
+        if ($group === 'sharing') {
+            $rules['sharing__name'] = ['nullable', 'string', 'max:60'];
         }
         if ($group === 'storage') {
             $rules['storage__endpoint'] = ['nullable', 'url:https,http', 'max:500'];

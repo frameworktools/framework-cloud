@@ -126,8 +126,8 @@ class ArtifactEmbed
             'embed_url' => self::embedUrl($version),
             'published_at' => ($version->created_at ?? $document->updated_at)?->toIso8601ZuluString(),
             'author' => self::author($owner),
-            'provider' => ['name' => 'Framework', 'url' => self::providerUrl()],
-            'attribution' => ['text' => 'Framework', 'url' => $url],
+            'provider' => ['name' => self::providerName(), 'url' => self::providerUrl()],
+            'attribution' => ['text' => self::providerName(), 'url' => $url],
             'data' => $kind === 'page' ? null : self::compact($data),
             'spec' => $spec,
             'image' => $image,
@@ -235,6 +235,16 @@ class ArtifactEmbed
     public static function providerUrl(): string
     {
         return rtrim(url('/'), '/');
+    }
+
+    /** The share name set for this server, or else its host, so a self-hosted server credits itself. */
+    public static function providerName(): string
+    {
+        if (filled($name = config('framework.share_name'))) {
+            return trim((string) $name);
+        }
+
+        return preg_replace('/^www\./', '', parse_url(url('/'), PHP_URL_HOST) ?? '') ?: 'Framework';
     }
 
     /** The owner, named only when their profile is public: an unlisted link shouldn't reveal who made it. */

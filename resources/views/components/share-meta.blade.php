@@ -19,7 +19,7 @@
 <link rel="canonical" href="{{ $canonical }}">
 @endif
 <meta property="og:type" content="{{ $type }}">
-<meta property="og:site_name" content="Framework">
+<meta property="og:site_name" content="{{ \App\Support\ArtifactEmbed::providerName() }}">
 <meta property="og:title" content="{{ $title }}">
 <meta property="og:description" content="{{ $description }}">
 <meta property="og:url" content="{{ $canonical }}">

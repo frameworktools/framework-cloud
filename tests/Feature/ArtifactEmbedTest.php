@@ -75,8 +75,8 @@ class ArtifactEmbedTest extends TestCase
             'url' => "http://localhost/d/{$key}/versions/1",
             'embed_url' => "http://localhost/api/embed/v1/artifacts/{$key}/versions/1",
             'author' => ['name' => 'Ada Example', 'url' => 'http://localhost/@ada'],
-            'provider' => ['name' => 'Framework', 'url' => 'http://localhost'],
-            'attribution' => ['text' => 'Framework', 'url' => "http://localhost/d/{$key}/versions/1"],
+            'provider' => ['name' => 'localhost', 'url' => 'http://localhost'],
+            'attribution' => ['text' => 'localhost', 'url' => "http://localhost/d/{$key}/versions/1"],
             'spec' => null, 'image' => null,
         ])->assertJsonPath('data.schema', 'framework.artifact/v1')
             ->assertJsonPath('data.kind', 'model')
@@ -300,7 +300,7 @@ class ArtifactEmbedTest extends TestCase
             'version' => '1.0', 'type' => 'photo', 'title' => 'Fuel economy',
             'url' => "http://localhost/api/embed/v1/artifacts/{$key}/versions/1/image", 'width' => 672, 'height' => 480,
             'author_name' => 'Ada Example', 'author_url' => 'http://localhost/@ada',
-            'provider_name' => 'Framework', 'provider_url' => 'http://localhost', 'cache_age' => 3600,
+            'provider_name' => 'localhost', 'provider_url' => 'http://localhost', 'cache_age' => 3600,
             'framework_embed_url' => "http://localhost/api/embed/v1/artifacts/{$key}/versions/1",
         ]);
         $this->getJson('/api/oembed?url='.urlencode("http://localhost/d/{$key}").'&maxwidth=336&maxheight=1000')
@@ -311,7 +311,7 @@ class ArtifactEmbedTest extends TestCase
         $link = $this->getJson('/api/oembed?url='.urlencode('http://localhost/d/'.$model->document->key))->assertOk();
         $link->assertExactJson([
             'version' => '1.0', 'type' => 'link', 'title' => 'Transmission model',
-            'provider_name' => 'Framework', 'provider_url' => 'http://localhost', 'cache_age' => 300,
+            'provider_name' => 'localhost', 'provider_url' => 'http://localhost', 'cache_age' => 300,
             'framework_embed_url' => 'http://localhost/api/embed/v1/artifacts/'.$model->document->key.'/versions/1',
         ]);
         $this->getJson('/api/embed/v1/artifacts/'.$model->document->key)->assertOk()->assertJsonPath('author', null);

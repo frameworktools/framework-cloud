@@ -155,7 +155,7 @@
                         <div class="mt-2 overflow-x-auto" tabindex="0" role="region" aria-label="Coefficients on Academic.page"><x-landing-shared.table :rows="$rows" /></div>
                         <div class="mt-3 flex items-baseline justify-between gap-4 border-t border-slate-800/10 pt-2.5 text-xs dark:border-white/10">
                             <span class="font-semibold text-slate-900 dark:text-white">{{ $embed['title'] }}</span>
-                            <a href="{{ $url }}" target="_blank" rel="noopener" class="{{ $credit }}">Framework</a>
+                            <a href="{{ $url }}" target="_blank" rel="noopener" class="{{ $credit }}">Framework.pub</a>
                         </div>
                     </div>
                 </div>
@@ -213,7 +213,7 @@
                         <div class="overflow-x-auto" tabindex="0" role="region" aria-label="Coefficients on WordPress"><x-landing-shared.table :rows="$rows" /></div>
                         <div class="mt-3 flex items-baseline justify-between gap-4 text-xs">
                             <span class="text-slate-500 dark:text-slate-400"><span class="font-medium text-slate-900 dark:text-white">{{ $embed['title'] }}</span> · {{ $observations }} observations</span>
-                            <a href="{{ $url }}" target="_blank" rel="noopener" class="{{ $credit }}">Framework</a>
+                            <a href="{{ $url }}" target="_blank" rel="noopener" class="{{ $credit }}">Framework.pub</a>
                         </div>
                     </div>
                 </div>
@@ -294,7 +294,7 @@
                             <p class="{{ $ssSerif }} mt-4 text-[15px] leading-relaxed">{{ $lede }}</p>
                             <figure class="mt-5">
                                 <img src="{{ $image['src'] }}" width="{{ $image['width'] }}" height="{{ $image['height'] }}" alt="{{ $image['alt'] }}" loading="lazy" class="block h-auto w-full">
-                                <figcaption class="{{ $ssSerif }} mt-2 px-[15%] text-center text-[13px] leading-5 tracking-[-0.15px] text-[#868787]">Penguin body mass model. Full results on <a href="{{ $url }}" target="_blank" rel="noopener" class="text-[#363737] underline">Framework</a>.</figcaption>
+                                <figcaption class="{{ $ssSerif }} mt-2 px-[15%] text-center text-[13px] leading-5 tracking-[-0.15px] text-[#868787]">Penguin body mass model. Full results on <a href="{{ $url }}" target="_blank" rel="noopener" class="text-[#363737] underline">Framework.pub</a>.</figcaption>
                             </figure>
                         </div>
                     </div>
@@ -338,7 +338,7 @@
                         <div class="mt-2 overflow-x-auto" tabindex="0" role="region" aria-label="Coefficients on a generic site"><x-landing-shared.table :rows="$rows" /></div>
                         <div class="mt-3 flex items-baseline justify-between gap-4 border-t border-slate-800/10 pt-2.5 text-xs dark:border-white/10">
                             <span class="font-semibold text-slate-900 dark:text-white">{{ $embed['title'] }}</span>
-                            <a href="{{ $url }}" target="_blank" rel="noopener" class="{{ $credit }}">Framework</a>
+                            <a href="{{ $url }}" target="_blank" rel="noopener" class="{{ $credit }}">Framework.pub</a>
                         </div>
                     </div>
                 </div>

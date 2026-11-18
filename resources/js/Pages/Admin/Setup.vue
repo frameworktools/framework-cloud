@@ -33,7 +33,7 @@ const formFor = (group) => useForm(Object.fromEntries(
         .filter(([key, f]) => key.startsWith(`${group}.`) && f.source !== 'env')
         .map(([key, f]) => [key.replace('.', '__'), f.secret ? '' : f.value]),
 ));
-const forms = { github: formFor('github'), storage: formFor('storage'), mail: formFor('mail'), agents: formFor('agents') };
+const forms = { github: formFor('github'), storage: formFor('storage'), mail: formFor('mail'), agents: formFor('agents'), sharing: formFor('sharing') };
 // The select shows the current state whether it was saved here or is the default
 if (!['true', 'false'].includes(forms.agents.agents__enabled)) forms.agents.agents__enabled = props.status.agents ? 'true' : 'false';
 const field = (key) => props.fields[key];
@@ -331,6 +331,24 @@ const pill = (ready) => (ready
                     <div class="flex flex-wrap items-center justify-end gap-2">
                         <span v-if="flash === 'agents-saved'" class="text-sm text-slate-500 dark:text-slate-400">Saved.</span>
                         <UiButton v-if="!allEnv('agents')" type="submit" form="agents-form" :disabled="forms.agents.processing">Save</UiButton>
+                    </div>
+                </template>
+            </UiPanel>
+
+            <UiPanel id="sharing" title="Sharing" class="scroll-mt-6">
+                <template #header>
+                    <span class="rounded-full px-2 py-0.5 text-xs" :class="pill(true)">{{ status.sharing }}</span>
+                </template>
+                <p class="-mt-4 text-sm text-slate-600 dark:text-slate-400">
+                    The name embeds and link previews credit for artifacts shared from this server. Left blank, they use the server's address.
+                </p>
+                <form id="sharing-form" @submit.prevent="save('sharing')">
+                    <CredentialField v-model="forms.sharing.sharing__name" :field="field('sharing.name')" placeholder="Framework.pub" :error="forms.sharing.errors.sharing__name" />
+                </form>
+                <template #actions>
+                    <div class="flex flex-wrap items-center justify-end gap-2">
+                        <span v-if="flash === 'sharing-saved'" class="text-sm text-slate-500 dark:text-slate-400">Saved.</span>
+                        <UiButton v-if="!allEnv('sharing')" type="submit" form="sharing-form" :disabled="forms.sharing.processing">Save</UiButton>
                     </div>
                 </template>
             </UiPanel>

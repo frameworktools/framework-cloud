@@ -89,6 +89,13 @@ return [
     | turned off in Server administration. See App\Support\Agents.
     */
     'agents' => env('FW_AGENTS', true),
+
+    /*
+    | The name embeds and link previews credit, such as Framework.pub. Set
+    | with FW_SHARE_NAME or in Server administration. Unset: this server's
+    | host. See App\Support\ArtifactEmbed::providerName().
+    */
+    'share_name' => env('FW_SHARE_NAME'),
     // Setup steps for the Framework Cloud plugin, which connects to framework.pub only. Unset: shown on framework.pub
     // Sign in and sign up with GitHub on the login, registration, and device
     // pages. On when the login-only OAuth app is set (GITHUB_LOGIN_CLIENT_ID
