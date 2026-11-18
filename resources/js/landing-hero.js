@@ -298,14 +298,15 @@ for (const root of document.querySelectorAll('[data-cloud-screens]')) {
     });
 }
 
-// Step 04: a tab per host. Each host plays its scenes in a loop: the insert step in its editor,
-// the link or image going in, and the published post. Panels and scenes share grid cells, so
+// Step 04: a tab per host. Each host plays its scenes in turn: the insert step in its editor,
+// the link or image going in, and the published post. After the post, the next host's tab
+// opens. Choosing a tab keeps that host looping instead. Panels and scenes share grid cells, so
 // nothing changes height. The loop waits while the step is off screen or hovered, and stops
 // for good when a step button is used or motion is reduced; the post stays shown then.
 for (const root of document.querySelectorAll('[data-share-demo]')) {
     const tabs = [...root.querySelectorAll('[data-share-tab]')];
     const durations = [1800, 1800, 3200];
-    let host = tabs[0].dataset.shareTab, scene = 2, playing = !reducedMotion.matches, visible = false, hovered = false, timers = [];
+    let host = tabs[0].dataset.shareTab, scene = 2, playing = !reducedMotion.matches, rotating = true, visible = false, hovered = false, timers = [];
     const later = (fn, ms) => timers.push(setTimeout(fn, ms));
     const panel = () => root.querySelector(`[data-share-panel="${host}"]`);
     const play = element => {
@@ -370,6 +371,10 @@ for (const root of document.querySelectorAll('[data-share-demo]')) {
     const advance = () => {
         if (!playing) return;
         if (!visible || hovered || document.hidden) { later(advance, 600); return; }
+        if (rotating && scene === durations.length - 1) {
+            select(tabs[(tabs.findIndex(tab => tab.dataset.shareTab === host) + 1) % tabs.length]);
+            return;
+        }
         show((scene + 1) % durations.length);
     };
     const stop = () => { playing = false; };
@@ -385,12 +390,12 @@ for (const root of document.querySelectorAll('[data-share-demo]')) {
         show(playing ? 0 : 2);
     };
     tabs.forEach((tab, index) => {
-        tab.addEventListener('click', () => select(tab));
+        tab.addEventListener('click', () => { rotating = false; select(tab); });
         tab.addEventListener('keydown', event => {
             if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
             event.preventDefault();
             const next = tabs[event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length];
-            select(next); next.focus();
+            rotating = false; select(next); next.focus();
         });
     });
     onClick(root, '[data-share-step]', step => { stop(); show(Number(step.dataset.shareStep)); });
