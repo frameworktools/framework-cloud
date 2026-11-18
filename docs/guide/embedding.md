@@ -28,8 +28,8 @@ Plugins for WordPress, Drupal, and Statamic are available in the open-source [fr
 | CMS | Installation |
 |---|---|
 | WordPress | Download the `framework-embed` `.zip` archive from the [latest release](https://github.com/frameworktools/framework-embed/releases/latest) and upload it under **Plugins > Add New > Upload Plugin**. |
-| Drupal | Install the `drupal/` module with Composer from the repository. See `drupal/README.md` for path repository setup. |
-| Statamic | Install the `statamic/` addon with Composer from the repository. See `statamic/README.md` for path repository setup. |
+| Drupal | The module is not on drupal.org. Clone the repository at a release tag and install `drupal/` with Composer path repositories. See [`drupal/README.md`](https://github.com/frameworktools/framework-embed/blob/main/drupal/README.md). |
+| Statamic | The addon is not on Packagist. Clone the repository at a release tag and install `statamic/` with Composer path repositories. See [`statamic/README.md`](https://github.com/frameworktools/framework-embed/blob/main/statamic/README.md). |
 
 Inserting a block or field saves a copy of the artifact with the post or entry and renders from that copy. Pasting a link on its own line queues a background fetch and displays a link until the copy arrives.
 
@@ -53,82 +53,8 @@ The element fetches the embed document and renders it into the page. Vega-Lite c
 
 ## oEmbed
 
-Paste an artifact link into any editor that supports oEmbed. Figures with known dimensions embed as `photo` responses, and other artifacts embed as `link` responses. Embeddable artifact reader pages include oEmbed and `framework.embed/v1` discovery `<link>` tags in `<head>`.
+Paste an artifact link into any editor that supports oEmbed. Figures with known dimensions embed as `photo` responses, and other artifacts embed as `link` responses. Embeddable artifact reader pages include oEmbed and `framework.embed/v1` discovery `<link>` tags in `<head>`. See [Discovery](embed-integrations.md#discovery).
 
-## Embed API
+## Custom integrations
 
-Sites that build a custom renderer can call the embed API directly. All routes are public and stateless, set no cookies, and respond with `Access-Control-Allow-Origin: *`.
-
-| Route | Response |
-|---|---|
-| `GET /api/embed/v1/resolve?url={artifact link}` | Embed document for any artifact URL on this server |
-| `GET /api/embed/v1/artifacts/{key}` | Embed document for the newest version |
-| `GET /api/embed/v1/artifacts/{key}/versions/{n}` | Embed document for version `n` |
-| `GET /api/embed/v1/artifacts/{key}/versions/{n}/image` | Figure file for an image artifact |
-| `GET /api/oembed?url={artifact link}&format=json` | oEmbed 1.0 `photo` or `link` response |
-| `GET /.well-known/framework.json` | Discovery document listing the server's embed endpoints |
-
-Artifacts that cannot be embedded and artifacts that do not exist return the same `404` response with `Cache-Control: no-store`. Requests that name a version send `Cache-Control: public, max-age=3600`. Requests for the newest version send `Cache-Control: public, max-age=300`. Resolve and oEmbed requests follow the link they are given. Each IP address can make up to 300 requests per minute across all embed routes.
-
-Version URLs and `image.url` remain stable for the life of the artifact. On framework.pub, `image.url` redirects to a short-lived signed URL on `content.framework.pub`. Consumers must reference `image.url` directly rather than storing the redirect target.
-
-Self-hosted Framework Cloud servers serve the same API at their own domain.
-
-## Embed document
-
-An embed document uses the `framework.embed/v1` schema:
-
-```json
-{
-  "schema": "framework.embed/v1",
-  "key": "rglmlogit0000000",
-  "version": 1,
-  "latest_version": 1,
-  "kind": "model",
-  "title": "Transmission model",
-  "description": null,
-  "alt": "Logistic regression of am with 3 terms and odds ratios.",
-  "url": "https://framework.pub/@ada/admissions/transmission/versions/1",
-  "embed_url": "https://framework.pub/api/embed/v1/artifacts/rglmlogit0000000/versions/1",
-  "published_at": "2026-11-16T12:00:00Z",
-  "author": {"name": "Ada Example", "url": "https://framework.pub/@ada"},
-  "provider": {"name": "Framework.pub", "url": "https://framework.pub"},
-  "attribution": {"text": "Framework.pub", "url": "https://framework.pub/@ada/admissions/transmission/versions/1"},
-  "data": {"schema": "framework.artifact/v1", "kind": "model", "...": "..."},
-  "spec": null,
-  "image": null
-}
-```
-
-| Field | Contents |
-|---|---|
-| `kind` | `model`, `table`, `test`, `image`, `vega-lite`, or `page`. Renderers treat unknown values as `page`. |
-| `data` | Normalized `framework.artifact/v1` representation for `model`, `table`, and `test`. Includes up to 10 tables, 50 columns per table, and the first 25 rows per table. `row_count`, `column_count`, and column summaries describe the full table, and shortened tables set `truncated: true`. Models may include `variables` and `terms`, which describe the data the model used and map coefficient terms to variables and levels. |
-| `spec` | Vega-Lite specification for `vega-lite`. Only charts with inline data embed as `vega-lite`. Charts that load external URLs for data, images, or links embed as `page`. |
-| `image` | Object with `url`, `content_type`, `width`, and `height` for `image`. `width` and `height` may be `null`. |
-| `alt` | One-sentence text description for screen readers and image alt text. |
-| `url` | Reader page URL for this version. |
-| `author`, `description` | Optional metadata, or `null`. `author` appears only when the owner's profile is public. |
-| `provider`, `attribution` | The server's share name and address. The name is set in **Server administration > Sharing** or with `FW_SHARE_NAME`, and is the server's host by default. |
-
-The `page` kind covers HTML documents, Quarto sites, PDFs, data files, and other outputs. Renderers display `page` documents as link cards showing the title, description, author, and attribution link.
-
-Existing `framework.embed/v1` fields remain compatible across updates, and new optional fields may appear within `v1`. Renderers should ignore unknown fields.
-
-## Consumer tiers
-
-Consumers either store embed documents with their content or fetch them through a short-lived cache.
-
-| Tier | Behavior |
-|---|---|
-| Stored | Save the embed document with the page when the author inserts it, pinned to the version URL, and render from that saved copy. Refresh the copy only when the author requests it. Render figures from `image.url` without copying image files. An optional background check may remove the saved copy when the server returns `404` or `410`. |
-| Live | Fetch the embed document in the background so network requests do not block page rendering. Cache the document up to its `Cache-Control` lifetime, and drop the cached copy when the server returns `404` or `410`. |
-
-Keep existing copies when a request times out or returns `429` or `5xx`.
-
-## Consumer security
-
-- Fetch embed documents only from allowed hosts: framework.pub by default, plus any self-hosted Framework Cloud servers configured by an administrator. Validate the host of every pasted URL before sending a request.
-- Escape all artifact text before inserting it into HTML.
-- Render SVG figures inside `<img>` elements.
-- Load `vega-embed` from self-hosted assets or a pinned CDN version with subresource integrity.
+Sites can build their own integration from the public embed API, which serves each artifact as a `framework.embed/v1` JSON document. [Embed integrations](embed-integrations.md) covers the API, the JavaScript and PHP renderers, page setup, HTML sanitizers, Content Security Policy, caching, and conformance tests. [Artifact representation](artifact-representation.md) describes the model, table, and test data inside each document. Self-hosted Framework Cloud servers serve the same API at their own domain.

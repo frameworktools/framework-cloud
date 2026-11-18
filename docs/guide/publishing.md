@@ -106,6 +106,8 @@ Set your account handle in **Account > Account details**. Disabling the readable
 
 Set a password on the **Sharing** tab to require authentication before opening the reader page, original files, downloads, supporting assets, or historical versions. Passwords require at least eight characters. Updating a password invalidates existing reader sessions, while signed-in owners bypass the password prompt.
 
+Public and unlisted artifacts stored on Framework Cloud without a password can be embedded on other websites. See [Embedding artifacts](embedding.md).
+
 Legacy artifacts stored on a public object-storage domain cannot add a password while public bucket versions remain, because a reader-page password cannot revoke direct bucket URLs.
 
 ## Versions and merging

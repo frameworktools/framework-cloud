@@ -33,6 +33,8 @@ class CloudGuide
             'skill-sync' => 'Skill sync',
             'publishing' => 'Publishing artifacts',
             'embedding' => 'Embedding artifacts',
+            'embed-integrations' => 'Embed integrations',
+            'artifact-representation' => 'Artifact representation',
             'ai-apps' => 'AI apps',
             'stata' => 'Framework for Stata',
         ],

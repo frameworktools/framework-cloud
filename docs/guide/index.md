@@ -16,6 +16,8 @@ Framework Cloud is open source and runs in two modes:
 - [Skill sync](skill-sync.md): synchronize local agent skills with your account.
 - [Publishing artifacts](publishing.md): share reports, figures, tables, model outputs, and collections with version histories and optional passwords.
 - [Embedding artifacts](embedding.md): show models, tables, tests, figures, and charts on Academic.page, WordPress, Drupal, Statamic, and other websites.
+- [Embed integrations](embed-integrations.md): build a CMS plugin, static site extension, or custom renderer on the embed API.
+- [Artifact representation](artifact-representation.md): model, table, and test data inside embed documents.
 - [AI apps](ai-apps.md): connect Claude, ChatGPT, Claude Code, and Codex through MCP.
 - [Framework for Stata](stata.md): install the Stata package, select a backend, and publish estimation results.
 

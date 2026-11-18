@@ -97,14 +97,14 @@ The JS and PHP renderers produce the same HTML for the same embed document; the 
 </figure>
 ```
 
-- `model`: a coefficient table per coefficient-like table (estimate, standard error, confidence interval, p-value when present), the exponentiated column when `model.exponentiate` is set, then fit statistics as a `<dl>`.
+- `model`: a coefficient table per coefficient-like table (estimate, standard error, confidence interval, p-value when present), with a switch between the ratio scale and the model scale when `model.exponentiate` is set, then fit statistics as a `<dl>`.
 - `table`: a static `<table>` with the first 25 rows and a note giving the total and a link to the artifact for the rest.
 - `test`: method, statistic, parameters, p-value, estimates, and confidence interval.
 - `image`: `<img src alt loading="lazy">`.
 - `vega-lite`: a `<div class="fw-embed__chart" data-fw-embed-chart>` holding the spec in `<script type="application/json">`, and a link to the artifact as the fallback. The JS bundle draws it with vega-embed; without JavaScript the link stays.
 - `page`: a link card.
 
-The stylesheet themes through custom properties (`--fw-embed-font`, `--fw-embed-mono`, `--fw-embed-fg`, `--fw-embed-muted`, `--fw-embed-bg`, `--fw-embed-border`, `--fw-embed-accent`). It follows `prefers-color-scheme` and a `data-theme="dark"` or `.dark` ancestor.
+The stylesheet themes through the custom properties listed under "Theming" in framework-embed's `SPEC.md`. It follows `prefers-color-scheme` and a `data-theme="dark"` or `.dark` ancestor.
 
 ## Consumer tiers
 
