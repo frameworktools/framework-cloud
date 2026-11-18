@@ -53,19 +53,22 @@ const displayAddress = (url) => {
 
 /**
  * html-to-image copies each element's computed style, with two distortions:
- * it rounds font sizes down (11.96px becomes 10.9px), and it pins a table to
- * its measured height, which counts the table's caption twice and stretches
- * the rows. These rules, added after its font CSS, restore the real sizes.
+ * it rounds font sizes down (11.96px becomes 10.9px), and it pins every box to
+ * its measured height. A table's height then counts its caption twice, which
+ * stretches the rows, and a wrapping caption spreads its lines apart. These
+ * rules, added after its font CSS, restore the real sizes and let boxes other
+ * than pictures size to their content.
  */
 async function exactCss(stage, getFontEmbedCSS) {
     const sizes = new Set();
     for (const node of [stage, ...stage.querySelectorAll('*')]) {
         const size = getComputedStyle(node).fontSize;
         node.setAttribute('data-fw-size', size);
+        if (node.closest('svg, img, canvas, video')) node.setAttribute('data-fw-picture', '');
         sizes.add(size);
     }
     const rules = [...sizes].map((size) => `[data-fw-size="${size}"]{font-size:${size}!important}`);
-    rules.push('table,caption,thead,tbody,tfoot,tr,td,th{height:auto!important;block-size:auto!important}');
+    rules.push('[data-fw-size]:not([data-fw-picture]){height:auto!important;block-size:auto!important}');
     return `${await getFontEmbedCSS(stage)}\n${rules.join('\n')}`;
 }
 
