@@ -393,7 +393,7 @@
                                 <p class="min-w-0 flex-1 leading-tight"><span class="block text-[15px] font-semibold">Ada Example</span><span class="block text-sm {{ $bsMuted }}">@adaexample.bsky.social</span></p>
                                 <span class="flex items-center gap-1 rounded-full bg-[#1e2936] px-3 py-1.5 text-[13px] font-semibold text-white dark:bg-[#2e4052]" aria-hidden="true"><x-heroicon-m-plus class="size-3.5" />Follow</span>
                             </div>
-                            <p class="mt-2.5 text-[15px] leading-snug">{{ $postText }} Full model: <a href="{{ $url }}" target="_blank" rel="noopener" class="text-[#1083fe] hover:underline">{{ $postLink }}</a></p>
+                            <p data-scroll-to class="mt-2.5 text-[15px] leading-snug">{{ $postText }} Full model: <a href="{{ $url }}" target="_blank" rel="noopener" class="text-[#1083fe] hover:underline">{{ $postLink }}</a></p>
                             <div class="mt-2.5 overflow-hidden rounded-xl border {{ $bsRule }}">
                                 <img src="{{ $image['src'] }}" width="{{ $image['width'] }}" height="{{ $image['height'] }}" alt="{{ $image['alt'] }}" loading="lazy" class="block h-auto w-full">
                             </div>
