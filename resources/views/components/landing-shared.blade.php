@@ -46,7 +46,7 @@
     $ssPill = 'flex h-7 items-center gap-1 rounded-full border border-[#e6e6e6] px-2.5';
     $subtitle = 'Body mass, flipper length, and species in the Palmer penguins';
     // The PNG Framework's Copy image makes for this model (resources/js/embed-image.js)
-    $image = ['src' => asset('images/landing/penguin-model-image.webp'), 'width' => 1248, 'height' => 744,
+    $image = ['src' => asset('images/landing/penguin-model-image.webp').'?v='.substr(md5_file(public_path('images/landing/penguin-model-image.webp')), 0, 8), 'width' => 1248, 'height' => 744,
         'alt' => 'Penguin body mass model: estimates, standard errors, statistics, p-values, and 95% confidence intervals for the intercept, flipper length, and species.'];
     $skyBlue = 'bg-[#1185fe]';
     // bsky.app's type and colors, light and dim (from a live post page)
