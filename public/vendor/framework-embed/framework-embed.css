@@ -94,11 +94,20 @@
 .fw-embed__body > * {
   margin: 0;
 }
-.fw-embed__meta,
 .fw-embed__note,
 .fw-embed__fallback {
   font-size: calc(0.75em / 0.875);
   color: var(--fw-embed-muted);
+}
+.fw-embed__meta {
+  font-size: calc(0.75em / 0.875);
+}
+.fw-embed__meta > span {
+  color: var(--fw-embed-muted);
+}
+.fw-embed__meta > .fw-embed__var {
+  font-family: var(--fw-embed-mono);
+  font-size: 0.95em;
 }
 .fw-embed__meta + .fw-embed__formula {
   margin-top: -0.75em;
