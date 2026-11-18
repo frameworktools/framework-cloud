@@ -48,6 +48,9 @@ class HandleInertiaRequests extends Middleware
             // Resolved when the page renders, after the controller (the Agents page may end expired connections)
             'nav' => fn () => array_values(array_filter([
                 ['label' => 'Settings', 'href' => '/settings/blueprint', 'match' => '/settings'],
+                // GitHub decides where projects are created, so it sits with the main items
+                $user instanceof User && filled(config('services.github.client_id'))
+                    ? ['label' => $user->githubAccount()->exists() ? 'GitHub' : 'Connect GitHub', 'href' => '/account/github'] : null,
                 ['label' => 'Artifacts', 'href' => '/published', 'match' => ['/published', '/artifacts'], 'section' => 'Your research'],
                 ['label' => 'Collections', 'href' => '/collections', 'section' => 'Your research'],
                 ['label' => 'Reports', 'href' => '/reports', 'section' => 'Your research'],
@@ -57,7 +60,7 @@ class HandleInertiaRequests extends Middleware
                 ['label' => 'Skills', 'href' => '/skills', 'section' => 'Agents'],
                 ['label' => 'Skill sets', 'href' => '/skill-sets', 'section' => 'Agents'],
                 $user instanceof User && Agents::enabled() ? ['label' => McpConnection::active()->where('user_id', $user->id)->exists() ? 'Connected agents' : 'Connect your agent', 'href' => '/agents', 'section' => 'Agents'] : null,
-                ['label' => 'Account', 'href' => '/account/account', 'section' => 'You', 'match' => ['/account', '/tokens']],
+                ['label' => 'Account', 'href' => '/account/account', 'section' => 'You', 'match' => ['/account/account', '/account/security', '/tokens']],
                 $user instanceof User ? ['label' => 'Trash', 'href' => '/trash', 'section' => 'You'] : null,
                 $user?->is_admin ? ['label' => 'Users', 'href' => '/admin/users', 'section' => 'You'] : null,
                 $user?->is_admin ? ['label' => 'Server administration', 'href' => '/admin/setup', 'section' => 'You'] : null,
