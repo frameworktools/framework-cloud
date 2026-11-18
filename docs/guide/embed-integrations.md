@@ -12,7 +12,7 @@ The open-source [framework-embed](https://github.com/frameworktools/framework-em
 | [`js/README.md`](https://github.com/frameworktools/framework-embed/blob/main/js/README.md) and [`js/index.d.ts`](https://github.com/frameworktools/framework-embed/blob/main/js/index.d.ts) | JavaScript API |
 | `wordpress/`, `drupal/`, `statamic/` | Reference integrations built on the PHP renderer |
 
-[Artifact representation](artifact-representation.md) describes the `data` field of model, table, and test documents.
+[Artifact representation](artifact-representation.md) describes the `data` field of model, table, test, and code snippet documents.
 
 ## Integration paths
 
@@ -34,11 +34,11 @@ The packages are not yet on npm, Packagist, or drupal.org. Each [release](https:
 | File | Contents |
 |---|---|
 | `framework-embed.css` | Stylesheet |
-| `framework-embed.iife.js` | Script-tag build. It sets `window.FrameworkEmbed`, applies `window.FrameworkEmbedConfig`, registers `<framework-artifact>`, prepares disclosures for printing, and draws charts and sets up variable tips on load. |
+| `framework-embed.iife.js` | Script-tag build. It sets `window.FrameworkEmbed`, applies `window.FrameworkEmbedConfig`, registers `<framework-artifact>`, prepares disclosures for printing, and sets up charts, variable tips, and code snippet controls on load. |
 | `framework-embed.js` | ES module with the same exports. Importing it registers no custom element and adds no event listeners. |
 | `framework-embed-<version>.zip` | WordPress plugin |
 
-The repository also commits these three built files under `php/assets/`. jsDelivr serves them at a pinned tag, such as `https://cdn.jsdelivr.net/gh/frameworktools/framework-embed@v0.4.1/php/assets/framework-embed.js`. GitHub Pages serves the latest release under unversioned names at `https://frameworktools.github.io/framework-embed/`. The **HTML** snippet in the **Embed** tab loads its files from there.
+The repository also commits these three built files under `php/assets/`. jsDelivr serves them at a pinned tag, such as `https://cdn.jsdelivr.net/gh/frameworktools/framework-embed@v0.5.0/php/assets/framework-embed.js`. GitHub Pages serves the latest release under unversioned names at `https://frameworktools.github.io/framework-embed/`. The **HTML** snippet in the **Embed** tab loads its files from there.
 
 PHP projects can install `framework-cloud/embed` from a release archive with a Composer package repository:
 
@@ -49,13 +49,13 @@ PHP projects can install `framework-cloud/embed` from a release archive with a C
             "type": "package",
             "package": {
                 "name": "framework-cloud/embed",
-                "version": "0.4.1",
-                "dist": {"type": "zip", "url": "https://github.com/frameworktools/framework-embed/archive/refs/tags/v0.4.1.zip"},
+                "version": "0.5.0",
+                "dist": {"type": "zip", "url": "https://github.com/frameworktools/framework-embed/archive/refs/tags/v0.5.0.zip"},
                 "autoload": {"psr-4": {"Framework\\Embed\\": "php/src/"}}
             }
         }
     ],
-    "require": {"framework-cloud/embed": "0.4.1"}
+    "require": {"framework-cloud/embed": "0.5.0"}
 }
 ```
 
@@ -100,6 +100,8 @@ Artifacts that cannot be embedded and artifacts that do not exist return the sam
 
 Version URLs and `image.url` remain stable for the life of the artifact. On framework.pub, `image.url` redirects to a short-lived signed URL on `content.framework.pub`. Store and reference `image.url` itself. The signed redirect target expires.
 
+For a code snippet, `?output=none` on a pasted link or an artifact route sets `data.display.output` to `false`, so the output starts hidden. The embed document's `url` and `embed_url` keep the option, as does `framework_embed_url` in oEmbed responses. Other kinds ignore it.
+
 Self-hosted Framework Cloud servers serve the same API at their own domain.
 
 ## Embed document
@@ -130,8 +132,8 @@ An embed document uses the `framework.embed/v1` schema:
 
 | Field | Contents |
 |---|---|
-| `kind` | `model`, `table`, `test`, `image`, `vega-lite`, or `page`. Renderers treat unknown values as `page`. |
-| `data` | The `framework.artifact/v1` representation for `model`, `table`, and `test`. See [Artifact representation](artifact-representation.md). |
+| `kind` | `model`, `table`, `test`, `code_snippet`, `image`, `vega-lite`, or `page`. Renderers treat unknown values as `page`. |
+| `data` | The `framework.artifact/v1` representation for `model`, `table`, `test`, and `code_snippet`. See [Artifact representation](artifact-representation.md). |
 | `spec` | Vega-Lite specification for `vega-lite`. Only charts with inline data embed as `vega-lite`. Charts that load external URLs for data, images, or links embed as `page`. |
 | `image` | Object with `url`, `content_type`, `width`, and `height` for `image`. `width` and `height` may be `null`. |
 | `key`, `version`, `latest_version` | The artifact's key, this document's version number, and the newest version number. A stored integration can compare `version` with `latest_version` to offer an update. |
@@ -148,7 +150,7 @@ Existing `framework.embed/v1` fields remain compatible across updates, and new o
 
 ## Markup
 
-Every renderer output is one `<figure class="fw-embed fw-embed--{kind}">`. "Markup by kind" in `SPEC.md` specifies the rest. Two parts need the browser script for full behavior.
+Every renderer output is one `<figure class="fw-embed fw-embed--{kind}">`. "Markup by kind" in `SPEC.md` specifies the rest. Three parts need the browser script for full behavior.
 
 **Variable tips.** A coefficient term mapped in `data.terms`, or a data table column header with a label or summary, renders as a button followed immediately by its popover:
 
@@ -159,6 +161,8 @@ Every renderer output is one `<figure class="fw-embed fw-embed--{kind}">`. "Mark
 The `popover` attribute opens the tip on click or tap without JavaScript. `enhanceTips` adds hover and placement, and finds each tip as the button's next element sibling, so keep the two adjacent. "Variable tips" in `SPEC.md` gives the tip text rules.
 
 **Charts.** A `vega-lite` document renders as `<div class="fw-embed__chart" data-fw-embed-chart>` holding the specification in `<script type="application/json">` and a fallback paragraph with a link. `enhanceCharts` replaces the fallback with the chart.
+
+**Code snippets.** A `code_snippet` document renders as `<div class="fw-embed__snippet">`: a header, code in `<pre class="fw-embed__code">`, and each block of output, messages, warnings, or errors in `<div class="fw-embed__block">`. Framework Cloud sends styled text as `[classes, text]` segments, and the renderers wrap styled segments of code and output in `<span>` elements with `fw-t-` classes. Snippets with non-code blocks include an output toggle. The **Copy code** button and the toggle ship with the `hidden` attribute. `enhanceCopy` and `enhanceOutput` show them and handle clicks. When the output starts hidden, each `.fw-embed__block` also carries `hidden`, and only the toggle shows it.
 
 **Stored documents.** `<framework-artifact>` renders a document from a direct child `<script type="application/json">` without a network request:
 
@@ -172,29 +176,33 @@ Write the JSON with `<`, `>`, `&`, U+2028, and U+2029 escaped as `\u003c`, `\u00
 
 ## Page setup
 
-The script-tag build sets up a page by itself. Set `window.FrameworkEmbedConfig` before `framework-embed.iife.js` runs. The script applies that configuration, registers `<framework-artifact>`, prepares disclosures for printing, and calls `enhanceCharts(document)` and `enhanceTips(document)` once the document is parsed. Server-rendered markup that is in the page at load needs nothing more.
+The script-tag build sets up a page by itself. Set `window.FrameworkEmbedConfig` before `framework-embed.iife.js` runs. The script applies that configuration, registers `<framework-artifact>`, prepares disclosures for printing, and calls `enhanceCharts`, `enhanceTips`, `enhanceCopy`, and `enhanceOutput` on `document` once the document is parsed. Server-rendered markup that is in the page at load needs nothing more.
 
-A server-rendered integration can load the script only on pages that need it. The WordPress, Drupal, and Statamic plugins load it when the rendered HTML contains `data-fw-embed-chart` or `fw-embed__term`. Without the script, browsers that support `::details-content` still open disclosures for printing.
+A server-rendered integration can load the script only when the rendered HTML contains `data-fw-embed-chart`, `fw-embed__term`, or `fw-embed__snippet`. Without the script, browsers that support `::details-content` still open disclosures for printing.
 
-Markup inserted later needs two calls on the element that contains it, after the element is in the document. Examples are a single-page app's route change, an editor preview, and a block rendered in a CMS editor.
+Markup inserted later needs four calls on the element that contains it, after the element is in the document. Examples are a single-page app's route change, an editor preview, and a block rendered in a CMS editor.
 
 ```js
 FrameworkEmbed.enhanceCharts(container);
 FrameworkEmbed.enhanceTips(container);
+FrameworkEmbed.enhanceCopy(container);
+FrameworkEmbed.enhanceOutput(container);
 ```
 
-`mount(element, doc)` inserts the markup and makes both calls. `<framework-artifact>` uses `mount`.
+`mount(element, doc)` inserts the markup and makes all four calls. `<framework-artifact>` uses `mount`.
 
 A page that imports the ES module calls the setup functions directly:
 
 ```js
-import { configure, defineElement, enhanceCharts, enhanceTips, expandDetailsForPrint } from './framework-embed.js';
+import { configure, defineElement, enhanceCharts, enhanceCopy, enhanceOutput, enhanceTips, expandDetailsForPrint } from './framework-embed.js';
 
 configure({ hosts: ['framework.pub', 'framework.example.org'] });
 defineElement();          // only if the page uses <framework-artifact>
 expandDetailsForPrint();
 enhanceCharts(document);
 enhanceTips(document);
+enhanceCopy(document);
+enhanceOutput(document);
 ```
 
 | Function | Effect |
@@ -202,12 +210,14 @@ enhanceTips(document);
 | `configure({hosts, vegaScripts, vegaEmbed, vegaInterpreter, vegaOptions})` | Sets allowed hosts and chart loading for later calls. `hosts` replaces the default `["framework.pub"]`. `vegaScripts` lists the `vega`, `vega-lite`, and `vega-embed` scripts as URLs or `{src, integrity}` objects. `vegaEmbed` supplies the `vega-embed` function directly. `vegaInterpreter` replaces the Vega expression interpreter. `vegaOptions` adds `vega-embed` options, and the chart safety options override them. |
 | `enhanceCharts(root, {lazy})` | Draws each chart under `root` that has not been drawn, as it comes within 200 pixels of the viewport. `{lazy: false}` draws them at once. The first chart loads the Vega scripts. A chart that fails keeps its fallback link. |
 | `enhanceTips(root)` | Renumbers tip ids under `root` that repeat an id elsewhere in the document, which happens when one artifact is embedded more than once. The first call adds delegated listeners on `document` and `window` for mouse hover, click to keep a tip open, placement beside the button, scrolling, and resizing. Call it after the markup is in the document. |
-| `expandDetailsForPrint()` | Opens closed **Model details** and **Test details** disclosures before printing and closes them afterward. Later calls do nothing. |
+| `enhanceCopy(root)` | Shows the **Copy code** button on each code snippet under `root`. A click copies the snippet's code blocks, joined with newlines, without output. The Clipboard API requires a secure context: HTTPS or `localhost`. |
+| `enhanceOutput(root)` | Shows the output toggle on each code snippet under `root` that has non-code blocks. A click hides or shows its output, messages, warnings, and errors, and switches the label between **Hide output** and **Show output**. |
+| `expandDetailsForPrint()` | Opens closed **Model details** and **Test details** disclosures and folded snippet output before printing and closes them afterward. Later calls do nothing. |
 | `defineElement(name)` | Registers `<framework-artifact>`, or another tag name. |
 
 `<framework-artifact>` sets `data-fw-embed-state` to `loading`, `ready`, `gone`, or `error`. It dispatches `framework-embed:load` with `detail.doc` and `framework-embed:error` with `detail.error`.
 
-Without JavaScript, embeds still show their results. Tips open on click or tap through the `popover` attribute, the scale switch works through CSS, and disclosures open on click. Charts show their fallback link, and tips do not open on hover.
+Without JavaScript, embeds still show their results. Tips open on click or tap through the `popover` attribute, the scale switch works through CSS, and disclosures open on click. Charts show their fallback link, and tips do not open on hover. Code snippets show no copy button or output toggle, and output that starts hidden stays hidden.
 
 ## HTML sanitizers
 
@@ -218,11 +228,11 @@ A host that must pass the HTML through a sanitizer needs to allow these elements
 | Element | Attributes |
 |---|---|
 | `figure` | `class`, `data-fw-embed-kind`, `data-fw-embed-key`, `data-fw-embed-version` |
-| `figcaption`, `p`, `dl`, `details`, `table`, `code` | `class` |
-| `div` | `class`, `role`, `aria-label`, `tabindex`, `data-fw-embed-chart` |
+| `figcaption`, `p`, `dl`, `details`, `table`, `code`, `pre` | `class` |
+| `div` | `class`, `role`, `aria-label`, `tabindex`, `data-fw-embed-chart`, `hidden` |
 | `span` | `class`, `id`, `popover` |
 | `a` | `class`, `href`, `target`, `rel` |
-| `button` | `type`, `class`, `popovertarget` |
+| `button` | `type`, `class`, `popovertarget`, `data-fw-copy`, `data-fw-output`, `hidden` |
 | `form` | `class` |
 | `label`, `summary`, `caption`, `thead`, `tbody`, `tr`, `dt` | none |
 | `input` | `type="radio"`, `name`, `value`, `checked` |
@@ -231,7 +241,7 @@ A host that must pass the HTML through a sanitizer needs to allow these elements
 | `img` | `class`, `src`, `alt`, `width`, `height`, `loading`, `decoding`, `style` |
 | `script` | `type="application/json"`, only inside `div[data-fw-embed-chart]` |
 
-A sanitizer that filters values can rely on these patterns. Every class name starts with `fw-embed`. Every tip `id` and `popovertarget` starts with `fw-embed-tip-`. `href` and `src` use `http` or `https`. The `style` attribute on `img` sets only `max-width`.
+A sanitizer that filters values can rely on these patterns. Every class name starts with `fw-embed` or, for styled code and output in code snippets, `fw-t-`. Every tip `id` and `popovertarget` starts with `fw-embed-tip-`. `href` and `src` use `http` or `https`. The `style` attribute on `img` sets only `max-width`.
 
 Removing an element or attribute changes the embed:
 
@@ -243,8 +253,11 @@ Removing an element or attribute changes the embed:
 | `input` | The scale switch disappears, and only the ratio scale table shows. |
 | `script[type=application/json]` or `data-fw-embed-chart` | The chart never draws, and its fallback link remains. |
 | `title` | Rounded values lose their full value on hover. |
+| `data-fw-copy` or `data-fw-output` | The copy button or output toggle stays hidden. |
+| `hidden` on a snippet button | The button shows before the script runs, and does nothing without it. |
+| `hidden` on a snippet output block | Output requested hidden with `?output=none` shows. |
 | `style` on `img` | Tall SVG figures fill the width instead of narrowing to fit 80% of the viewport height. |
-| `class` | Embeds lose all styling, both scale tables show at once, and tips and print expansion stop working. |
+| `class` | Embeds lose all styling, both scale tables show at once, and tips, snippet buttons, and print expansion stop working. |
 | `role`, `aria-label`, `tabindex` | Scrolling tables lose keyboard focus and their labels, and the scale switch loses its group label. |
 
 ## Content Security Policy
@@ -281,9 +294,10 @@ Embeds take the host page's font and text color. Custom properties on `.fw-embed
 |---|---|
 | `--fw-embed-font` | Labels, headers, prose, and tips. Unset by default, so the page's font applies. |
 | `--fw-embed-mono` | Numbers, formulas, the outcome variable, and tip headings. JetBrains Mono by default. |
+| `--fw-embed-code` | Code and output in code snippets. System monospace fonts by default, so box-drawing characters in Stata output line up. |
 | `--fw-embed-fg` | Embed text. Unset by default, so the page's text color applies. |
 | `--fw-embed-muted` | Table headers, notes, statistic labels, and chart axis labels. |
-| `--fw-embed-border` | Header rules, the scale switch, link cards, and chart gridlines. |
+| `--fw-embed-border` | Header rules, the scale switch, code snippet panels, link cards, and chart gridlines. |
 | `--fw-embed-rule` | Rules between table rows and between statistics. |
 | `--fw-embed-bg` | Background of the `<figure class="fw-embed">` wrapper and the scale switch. Transparent by default. Image artifacts keep a white panel. |
 | `--fw-embed-accent` | Links and focus outlines. |

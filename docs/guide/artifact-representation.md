@@ -1,8 +1,8 @@
 # Artifact representation
 
-Models, tables, and hypothesis tests published from the Framework packages for R, Python, and Stata carry a structured representation in the `framework.artifact/v1` schema. Framework Cloud validates and normalizes it when the artifact is published. The `data` field of an embed document holds that normalized representation for the `model`, `table`, and `test` kinds.
+Models, tables, and hypothesis tests published from the Framework packages for R, Python, and Stata carry a structured representation in the `framework.artifact/v1` schema. Framework Cloud validates and normalizes it when the artifact is published. The `data` field of an embed document holds that normalized representation for the `model`, `table`, `test`, and `code_snippet` kinds. Code snippets use the same schema with their own fields. See [Code snippets](#code-snippets).
 
-[`spec/embed.schema.json`](https://github.com/frameworktools/framework-embed/blob/main/spec/embed.schema.json) defines it formally, and [`SPEC.md`](https://github.com/frameworktools/framework-embed/blob/main/SPEC.md) specifies how the reference renderers display each field. This page describes the representation as embed documents deliver it, after normalization. [Embed integrations](embed-integrations.md) covers fetching and rendering documents.
+[`spec/embed.schema.json`](https://github.com/frameworktools/framework-embed/blob/main/spec/embed.schema.json) defines it formally, and [`SPEC.md`](https://github.com/frameworktools/framework-embed/blob/main/SPEC.md) specifies how the reference renderers display each field. Except for the publish inputs noted under [Code snippets](#code-snippets), this page describes the representation as embed documents deliver it, after normalization. [Embed integrations](embed-integrations.md) covers fetching and rendering documents.
 
 ## Top-level fields
 
@@ -213,6 +213,38 @@ A `priors` table lists `parameter`, `prior` (the distribution as text, such as `
 
 A test may also carry `tables` and `metrics` with further details.
 
+## Code snippets
+
+A code snippet holds a notebook chunk's code and the text it printed. Clients publish it with `kind` set to `code_snippet`:
+
+```json
+{
+  "schema": "framework.artifact/v1",
+  "kind": "code_snippet",
+  "source": {"language": "r", "file": "notebooks/analysis.qmd", "label": "fit", "lines": [41, 44],
+             "commit": "3f2c9e1d4b5a69788796a5b4c3d2e1f0a9b8c7d6", "repository": "https://github.com/example/analysis"},
+  "snippet": {"width": 80, "blocks": [
+    {"type": "code", "text": "summary(fit)"},
+    {"type": "output", "text": "…"}
+  ]},
+  "display": {"folded": "auto", "links": [{"rel": "notebook", "url": "https://example.org/analysis.html"}, {"rel": "model", "artifact": "fit"}]}
+}
+```
+
+| Field | Contents |
+|---|---|
+| `source.language` | `r`, `python`, or `stata`. Required. |
+| `source.file`, `source.label` | The notebook file and the chunk label. Optional. |
+| `source.lines` | First and last line of the chunk in the file, with `1 ≤ first ≤ last`. Optional. |
+| `source.commit`, `source.repository` | A lowercase hex commit hash of 7 to 64 characters and an `https://github.com/{owner}/{repo}` URL. Optional. With a 40-character commit, a relative `file`, and `lines`, Framework Cloud adds `source.permalink` to those lines on GitHub. |
+| `snippet.width` | The console width the output was printed at, from 20 to 1,000. Optional. |
+| `snippet.blocks` | The blocks in order. Each has a `type`: `code`, `output`, `message`, `warning`, or `error`. At least one must be `code`. |
+| Block `text` | The block's plain text. At publish, a non-code block may send Stata's SMCL in `smcl` instead, or include ANSI escape codes in `text`. |
+| Block `folded` | Non-code blocks only. Whether the block starts closed. Without it, `display.folded` decides: `true`, `false`, or `auto`, which folds blocks longer than 12 lines. Normalization sets `folded` on every non-code block and drops `display.folded`. |
+| `display.links` | Up to 10 links with `rel` set to `notebook` or `model`. A link carries an `https` `url`, or for a model, the `artifact` slug of a model in the same project. |
+
+Framework Cloud highlights the code, converts SMCL and ANSI codes into styled segments, and strips them from `text`. Each normalized block carries plain `text` and `lines`: a list of lines, each a list of `[classes, text]` segments. An `output` block sent as SMCL that starts with `{err}` text becomes an `error` block. In an embed document, a model link given as `artifact` resolves to the model's `url` when the model can be embedded, and is dropped otherwise. `?output=none` adds `display.output: false`. The `code_snippet` section of `SPEC.md` lists the classes and the markup.
+
 ## Limits
 
 Framework Cloud enforces these limits when it normalizes a representation. Entries past a limit are dropped. For tables, rows, columns, metrics, source classes, variables, levels, terms, and strings, `truncated` is also set.
@@ -232,3 +264,15 @@ Framework Cloud enforces these limits when it normalizes a representation. Entri
 | `top` values | 8 entries of up to 80 characters each |
 | Parts per term | 10 |
 | Test `parameters`, `estimates`, and `null_value` | 20 entries each |
+
+Code snippets have their own limits. A snippet over a limit marked *rejected* fails to publish. Text past a non-code block's limits is cut. The block records the cut lines in `truncated.lines`, and the snippet's `truncated` is `true`.
+
+| Item | Limit |
+|---|---|
+| Snippet size | 2 MB, rejected |
+| Blocks | 200, rejected |
+| Lines of code | 400 in total, rejected |
+| Lines per non-code block | 500 |
+| Characters per non-code block | 100,000 |
+| Links | 10 |
+| `source.file` and `source.label` | 300 characters each |
