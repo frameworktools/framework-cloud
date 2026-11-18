@@ -37,4 +37,13 @@ class Installations
 
         return $slug ? "https://github.com/apps/{$slug}/installations/select_target" : null;
     }
+
+    /** The error for an owner without the app: names the owner and, when known, where to install it. */
+    public static function missingOn(string $owner): string
+    {
+        $url = self::installUrl();
+
+        return "The Framework app is not installed on {$owner}. Install it there first"
+            .($url ? ": {$url}" : '.');
+    }
 }

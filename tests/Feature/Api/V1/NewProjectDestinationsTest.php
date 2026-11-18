@@ -104,7 +104,8 @@ class NewProjectDestinationsTest extends TestCase
 
         $this->withToken($token)->postJson('/api/v1/projects', [
             'name' => 'Clinic Visits', 'blueprint' => 'framework/project', 'github' => ['owner' => 'someone-else'],
-        ])->assertUnprocessable()->assertJsonValidationErrors('github.owner');
+        ])->assertUnprocessable()
+            ->assertJsonPath('message', 'The Framework app is not installed on someone-else. Install it there first: https://github.com/apps/framework-pub/installations/select_target');
 
         $this->withToken($token)->postJson('/api/v1/projects', [
             'name' => 'Clinic Visits', 'blueprint' => 'framework/project_sensitive', 'github' => ['owner' => 'ada', 'private' => false],

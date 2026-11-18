@@ -234,7 +234,7 @@ class ProjectGitHubUpdateTest extends TestCase
         ]])]);
 
         $this->actingAs($project->user)->post("/projects/{$project->id}/github/update")
-            ->assertSessionHasErrors(['github' => 'Install the Framework app on lab first.']);
+            ->assertSessionHasErrors(['github' => 'The Framework app is not installed on lab. Install it there first: https://github.com/apps/framework-pub/installations/select_target']);
         Queue::assertNothingPushed();
         $this->assertNull($project->fresh()->github_update);
     }

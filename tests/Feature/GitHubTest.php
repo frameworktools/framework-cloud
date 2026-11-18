@@ -457,7 +457,7 @@ class GitHubTest extends TestCase
             'name' => 'NHANES Study',
             'blueprint_id' => $blueprint->id,
             'github' => ['enabled' => true, 'owner' => 'someone-else', 'name' => 'x', 'private' => true],
-        ])->assertSessionHasErrors('github.owner');
+        ])->assertSessionHasErrors(['github.owner' => 'The Framework app is not installed on someone-else. Install it there first: https://github.com/apps/framework-pub/installations/select_target']);
     }
 
     public function test_github_scaffolding_is_off_without_a_pinned_framework_commit(): void

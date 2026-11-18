@@ -17,6 +17,9 @@ const installed = computed(() => page.props.flash.status === 'github-installed')
 // Where the app is installed, by name, for the message after connecting
 const kind = (i) => (i.type === 'Organization' ? 'organization' : 'account');
 const places = computed(() => (props.installations ?? []).map((i) => `${kind(i)} ${i.login}`));
+// The connected user's own account needs the app too; GitHub doesn't install it there by default
+const ownMissing = computed(() => Array.isArray(props.installations) && props.account
+    && !props.installations.some((i) => i.login.toLowerCase() === props.account.login.toLowerCase()));
 const list = (items) => (items.length < 3 ? items.join(' and ') : `${items.slice(0, -1).join(', ')}, and ${items.at(-1)}`);
 
 const disconnect = async () => {
@@ -37,8 +40,8 @@ const disconnect = async () => {
         <UiCallout v-if="connected" variant="success" heading="GitHub connected">
             <template v-if="places.length">Connected to {{ list(places) }}. </template>
             <template v-else-if="account">Connected as @{{ account.login }}. Install the Framework app on your account or an organization to create repositories there. </template>
-            Each other organization needs the app installed too.
-            <a v-if="install_url" :href="install_url" class="font-medium underline">Install on another organization</a>
+            Framework can create repositories only where the app is installed.
+            <a v-if="install_url" :href="install_url" class="font-medium underline">Install on another account or organization</a>
         </UiCallout>
 
         <UiCallout v-if="installed" variant="success" heading="Framework app installed">
@@ -67,7 +70,7 @@ const disconnect = async () => {
             </div>
             </UiPanel>
 
-            <UiPanel title="Repository access" description="Framework creates repositories only where the app is installed. Install it on each account or organization you use.">
+            <UiPanel title="Repository access" description="Framework can create repositories only under the accounts and organizations listed here. Install the app on any other account before you use it.">
             <div class="flex flex-col gap-2">
                 <p v-if="installations === null" class="text-sm text-slate-500 dark:text-slate-400">GitHub could not be reached. Reload to try again.</p>
                 <div v-else class="flex flex-col divide-y divide-slate-200 dark:divide-slate-700">
@@ -77,7 +80,11 @@ const disconnect = async () => {
                     </div>
                     <p v-if="!installations.length" class="py-2 text-sm text-slate-500 dark:text-slate-400">The app isn't installed anywhere yet.</p>
                 </div>
-                <div v-if="install_url"><a :href="install_url"><UiButton variant="outline" size="sm">Install on another organization</UiButton></a></div>
+                <UiCallout v-if="ownMissing" variant="warning" heading="Personal account">
+                    <p>The Framework app is not installed on <span class="font-mono">@{{ account.login }}</span>. Framework cannot create repositories there until you install it.</p>
+                    <div v-if="install_url"><UiButton :href="install_url" external variant="outline" size="sm">Install on @{{ account.login }}</UiButton></div>
+                </UiCallout>
+                <div v-if="install_url"><UiButton :href="install_url" external variant="outline" size="sm">Install on another account or organization</UiButton></div>
             </div>
             </UiPanel>
         </template>

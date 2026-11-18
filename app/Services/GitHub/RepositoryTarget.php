@@ -32,7 +32,7 @@ class RepositoryTarget
         $owner = collect(Installations::for($account) ?? [])->firstWhere('login', $input['owner']);
 
         if (! $owner) {
-            throw ValidationException::withMessages(["{$field}.owner" => 'Install the Framework app on that account first.']);
+            throw ValidationException::withMessages(["{$field}.owner" => Installations::missingOn($input['owner'])]);
         }
 
         $private = (bool) ($input['private'] ?? true);

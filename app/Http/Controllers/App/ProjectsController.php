@@ -828,7 +828,7 @@ class ProjectsController extends Controller
         }
         $owner = Str::before($project->github_repo, '/');
         if (! collect(Installations::for($account) ?? [])->contains(fn (array $o) => strcasecmp($o['login'], $owner) === 0)) {
-            return back()->withErrors(['github' => "Install the Framework app on {$owner} first."]);
+            return back()->withErrors(['github' => Installations::missingOn($owner)]);
         }
 
         $project->update(['github_update' => ['status' => 'pending']]);
