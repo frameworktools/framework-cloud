@@ -8,7 +8,7 @@ Source datasets and analysis scripts remain on user computers and in their repos
 
 Each Framework Cloud release publishes container images to GitHub Container Registry:
 
-```text
+```text title="Container images"
 ghcr.io/frameworktools/framework-cloud
 ghcr.io/frameworktools/framework-scaffolder
 ```

@@ -20,7 +20,7 @@ class CloudGuide
     public const REPOSITORY = 'https://github.com/frameworktools/framework-cloud';
 
     /** Bump when rendered pages change shape, so cached pages are rebuilt */
-    private const VERSION = 3;
+    private const VERSION = 5;
 
     /** Sidebar order: section => [slug => title] */
     public const PAGES = [
@@ -173,8 +173,10 @@ class CloudGuide
     }
 
     /**
-     * An R code block followed directly by a Python one becomes a pair of
-     * tabs. On GitHub the Markdown shows both blocks, R first.
+     * An R code block followed directly by a Python one becomes one code card
+     * with R and Python tabs in its head, where the other cards show a title.
+     * The code-blocks script adds the Copy button. On GitHub the Markdown
+     * shows both blocks, R first.
      */
     public static function languageTabs(string $html): string
     {
@@ -182,14 +184,16 @@ class CloudGuide
 
         return preg_replace_callback(
             '#'.$block('r').'\s*'.$block('python').'#s',
-            fn ($m) => '<div class="code-tabs" data-code-tabs>'
-                .'<div class="code-tabs-bar" role="tablist">'
+            fn ($m) => '<figure class="code-block" data-code-tabs>'
+                .'<div class="code-block-head">'
+                .'<div class="code-block-tabs" role="tablist" aria-label="Language">'
                 .'<button type="button" role="tab" data-lang="r" aria-selected="true">R</button>'
                 .'<button type="button" role="tab" data-lang="python" aria-selected="false">Python</button>'
                 .'</div>'
+                .'</div>'
                 .'<div data-lang-panel="r">'.$m[1].'</div>'
                 .'<div data-lang-panel="python" hidden>'.$m[2].'</div>'
-                .'</div>',
+                .'</figure>',
             $html,
         );
     }

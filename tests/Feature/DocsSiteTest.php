@@ -69,7 +69,7 @@ class DocsSiteTest extends DocsTestCase
     public function test_reference_examples_and_usage_are_colored(): void
     {
         $this->docs('r', '/reference/ai_generate_context')
-            ->assertSee('<pre class="mt-4 overflow-x-auto', false)
+            ->assertSee('<pre class="language-r mt-4 overflow-x-auto', false)
             ->assertSee('<code><span class="line"><span class="token" style="color: #ff7b72;">if</span>', false);
 
         // Usage lines too, in the product's language

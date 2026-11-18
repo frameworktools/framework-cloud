@@ -8,7 +8,7 @@ Framework Public Cloud includes 1 GB of artifact storage per account across all 
 
 Framework publishes to Framework Cloud, GitHub Pages, local or mounted folders, and S3-compatible object storage. Configure named destinations in `settings.yml`:
 
-```yaml
+```yaml title="settings.yml"
 publish:
   default: lab
   destinations:
@@ -98,7 +98,7 @@ Browser uploads and package or CLI `publish()` calls create **unlisted** artifac
 
 Enable a readable URL by choosing **Public** on the **Sharing** tab or passing `visibility = "public"` when publishing. Readable URLs use your account handle and project slug:
 
-```text
+```text title="Readable URL"
 https://framework.pub/@ada/nhanes-study/main-results
 ```
 
@@ -114,7 +114,7 @@ Legacy artifacts stored on a public object-storage domain cannot add a password 
 
 Publishing again under the same slug appends a numbered version. The primary artifact URL serves the latest active version, while version URLs address a specific snapshot:
 
-```text
+```text title="Version URL"
 https://framework.pub/d/q7w2k9m4x8c1v5b3n6z0p2rt/versions/2
 ```
 
@@ -172,7 +172,7 @@ Scripts and AI agents manage reports through `/api/v1/projects/<project>/reports
 
 Report payloads pass an ordered `blocks` array. Text blocks accept Markdown or sanitized HTML (`"format": "html"`). Artifact blocks reference artifacts by slug:
 
-```json
+```json title="Report payload"
 {
   "title": "Penguin body mass",
   "publish": true,

@@ -6,7 +6,7 @@ Claude, ChatGPT, Claude Code, Codex, and other MCP-compatible AI apps can connec
 
 MCP clients connect to your server URL followed by `/mcp`:
 
-```text
+```text title="MCP server address"
 https://framework.pub/mcp
 ```
 

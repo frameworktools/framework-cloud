@@ -29,7 +29,8 @@
         $toc[] = ['level' => 2, 'id' => 'see-also', 'text' => 'Related reference'];
     }
     $h2 = 'mt-10 scroll-mt-24 text-xl font-semibold tracking-tight text-slate-900 dark:text-white';
-    $code = 'mt-4 overflow-x-auto rounded-xl bg-slate-900 p-4 font-mono text-sm text-slate-50 shadow-sm dark:bg-slate-800/60 dark:ring-1 dark:ring-slate-300/10';
+    $language = \App\Support\Docs\CodeBlocks::productLanguage($site['product'] ?? '') ?? '';
+    $code = 'language-'.$language.' mt-4 overflow-x-auto rounded-xl bg-slate-900 p-4 font-mono text-sm text-slate-50 shadow-sm dark:bg-slate-800/60 dark:ring-1 dark:ring-slate-300/10';
 @endphp
 
 @section('title', $display)
@@ -151,15 +152,12 @@
         @if ($entry['examples'])
             <h2 id="examples" class="{{ $h2 }}">Examples</h2>
             @foreach ($entry['examples'] as $example)
-                @if ($example['title'] || ! $example['runnable'])
-                    <p class="mt-5 flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
-                        {{ $example['title'] }}
-                        @if (! $example['runnable'])
-                            <span class="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400" title="This example needs a project, a server, or credentials, so it is not run when the docs are built.">Not run</span>
-                        @endif
+                @if (! $example['runnable'])
+                    <p class="mt-5 text-sm">
+                        <span class="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400" title="This example needs a project, a server, or credentials, so it is not run when the docs are built.">Not run</span>
                     </p>
                 @endif
-                <pre class="{{ $code }}"><code>@if (! empty($example['html'])){!! $example['html'] !!}@else{{ $example['code'] }}@endif</code></pre>
+                <pre class="{{ $code }}" @if ($example['title']) data-title="{{ $example['title'] }}" @endif><code>@if (! empty($example['html'])){!! $example['html'] !!}@else{{ $example['code'] }}@endif</code></pre>
             @endforeach
         @endif
 

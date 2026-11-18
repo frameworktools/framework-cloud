@@ -106,17 +106,6 @@
             document.addEventListener('click', (event) => { if (!menu.contains(event.target)) menu.open = false; });
         });
 
-        // Copy buttons on code blocks
-        document.querySelectorAll('[data-copy]').forEach((button) => {
-            button.addEventListener('click', async () => {
-                const target = document.getElementById(button.dataset.copy);
-                try { await navigator.clipboard.writeText(target.innerText.trim()); } catch { return; }
-                const label = button.querySelector('[data-copy-label]');
-                label.textContent = 'Copied';
-                setTimeout(() => { label.textContent = 'Copy'; }, 2000);
-            });
-        });
-
         // R or Python tabs on code samples (CloudGuide::languageTabs): every
         // group follows the last choice, and this browser remembers it
         (() => {

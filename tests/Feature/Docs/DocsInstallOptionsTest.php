@@ -16,7 +16,7 @@ class DocsInstallOptionsTest extends DocsTestCase
         $this->docs('py')
             ->assertOk()
             ->assertSeeInOrder(['<h3 id="install-latest">Install latest</h3>', 'Recommended.', '<code id="docs-install"><span class="line">', '<h3 id="install-from-pypi">Install from PyPI</h3>', '<code id="docs-install-2"><span class="line">'], false)
-            ->assertSee('data-copy="docs-install-2"', false)
+            ->assertSee('<code id="docs-install-2">', false)
             ->assertSee('href="#install-from-pypi"', false);
     }
 

@@ -16,6 +16,10 @@ use Phiki\Phiki;
  * HTML. Token colors come from a dark theme; the block keeps the docs'
  * own background. Unknown languages and `text` stay uncolored. Untagged
  * and indented blocks take the product's language when they look like code.
+ *
+ * A fence may name its block: ```sh title="Terminal". The title rides on the
+ * pre as data-title, and the code-blocks script shows it above the code.
+ * GitHub reads only the first word, so the Markdown still renders there.
  */
 class CodeBlocks implements NodeRendererInterface
 {
@@ -61,11 +65,26 @@ class CodeBlocks implements NodeRendererInterface
      */
     public static function install(string $command, string $product): ?string
     {
-        $language = preg_match('/^\s*(?:\$ )?(?:uv|pip3?|pipx|brew|curl|npm|conda)\s/', $command)
+        return self::tokens($command, self::installLanguage($command, $product));
+    }
+
+    /** The install command's language: shell for a package manager, else the product's */
+    public static function installLanguage(string $command, string $product): string
+    {
+        return preg_match('/^\s*(?:\$ )?(?:uv|pip3?|pipx|brew|curl|npm|conda)\s/', $command)
             ? 'shellscript'
             : (self::productLanguage($product) ?? '');
+    }
 
-        return self::tokens($command, $language);
+    /** The block's title="…" from a fence's info string, or null */
+    public static function title(string $info): ?string
+    {
+        if (! preg_match('/\btitle=(?:"([^"]*)"|\'([^\']*)\')/', $info, $m)) {
+            return null;
+        }
+        $title = trim(($m[2] ?? '') !== '' ? $m[2] : $m[1]);
+
+        return $title === '' ? null : $title;
     }
 
     /**
@@ -103,6 +122,7 @@ class CodeBlocks implements NodeRendererInterface
 
         $code = rtrim($node->getLiteral(), "\n");
         $language = $node instanceof FencedCode ? strtolower($node->getInfoWords()[0] ?? '') : '';
+        $title = $node instanceof FencedCode ? self::title($node->getInfo() ?? '') : null;
         if ($language === '' && $this->default !== null && self::looksLikeCode($code)) {
             $language = $this->default;
         }
@@ -112,12 +132,13 @@ class CodeBlocks implements NodeRendererInterface
         if ($grammar === '' || ! $phiki->environment->grammars->has($grammar)) {
             $attributes = $language !== '' ? ['class' => 'language-'.$language] : [];
 
-            return new HtmlElement('pre', [], new HtmlElement('code', $attributes, htmlspecialchars($code, ENT_QUOTES | ENT_HTML5)));
+            return new HtmlElement('pre', $title !== null ? ['data-title' => $title] : [], new HtmlElement('code', $attributes, htmlspecialchars($code, ENT_QUOTES | ENT_HTML5)));
         }
 
         $html = $phiki->codeToHtml($code, $grammar, self::THEME)->toString();
+        $titled = $title !== null ? ' data-title="'.htmlspecialchars($title, ENT_QUOTES | ENT_HTML5).'"' : '';
 
         // Keep the docs' block background and text color; only tokens are colored
-        return preg_replace('#^<pre class="[^"]*"([^>]*?) style="[^"]*"#', '<pre class="phiki language-'.$language.'"$1', $html, 1);
+        return preg_replace('#^<pre class="[^"]*"([^>]*?) style="[^"]*"#', '<pre class="phiki language-'.$language.'"'.$titled.'$1', $html, 1);
     }
 }

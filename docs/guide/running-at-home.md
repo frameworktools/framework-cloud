@@ -17,7 +17,7 @@ docker run --rm ghcr.io/frameworktools/framework-cloud php artisan key:generate 
 
 Set `APP_KEY` in `.env` to the generated key and configure local single-user settings:
 
-```sh
+```sh title=".env"
 APP_URL=http://localhost:8080
 SERVER_NAME=:80
 HTTP_PORT=8080
@@ -55,7 +55,7 @@ Both packages allow unencrypted `http://` URLs exclusively for `localhost` and l
 
 Inside Docker, host browser connections arrive from the Docker bridge gateway IP rather than `127.0.0.1`. At container startup, Framework Cloud detects the bridge gateway and appends it to the allowed single-user networks. Container logs record the detected address:
 
-```text
+```text title="Container log"
 Single-user mode: signing in requests from 192.168.148.1
 ```
 
@@ -65,7 +65,7 @@ Because every connection forwarded to the container shares that gateway source I
 
 Follow the build steps in [Manual installation](install-manual.md), then configure `.env` for local single-user operation:
 
-```sh
+```sh title=".env"
 APP_URL=http://localhost:8000
 FW_ADMIN_EMAIL=you@example.com
 FW_REGISTRATION=closed

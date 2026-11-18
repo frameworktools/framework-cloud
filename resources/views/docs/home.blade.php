@@ -27,6 +27,7 @@
             'html' => (is_array($site['install_html'] ?? null) ? $site['install_html'][$i] ?? null : ($site['install_html'] ?? null))
                 ?? \App\Support\Docs\CodeBlocks::install($option['code'], $site['product'] ?? $product),
             'id' => $i ? 'docs-install-'.($i + 1) : 'docs-install',
+            'language' => \App\Support\Docs\CodeBlocks::installLanguage($option['code'], $site['product'] ?? $product),
         ]);
     $toc = [
         ...($site['install'] ? [['level' => 2, 'id' => 'install', 'text' => 'Install']] : []),
@@ -55,13 +56,7 @@
                     @if ($option['note'])
                         <p>{{ $option['note'] }}</p>
                     @endif
-                    {{-- One dark panel: the command scrolls in its own column, and Copy sits beside it --}}
-                    <div data-has-copy class="my-6 flex items-start rounded-xl bg-slate-900 shadow-sm dark:bg-slate-800/60 dark:ring-1 dark:ring-slate-300/10">
-                        <pre class="my-0! min-w-0 flex-1 rounded-none! bg-transparent! pr-3! shadow-none! ring-0!"><code id="{{ $option['id'] }}">@if ($option['html']){!! $option['html'] !!}@else{{ $option['code'] }}@endif</code></pre>
-                        <div class="shrink-0 pt-2.5 pr-2.5 pl-2">
-                            <button type="button" data-copy="{{ $option['id'] }}" class="rounded-lg bg-slate-700 px-3 py-1 text-xs font-medium text-slate-100 ring-1 ring-white/10 hover:bg-slate-600 hover:text-white"><span data-copy-label>Copy</span></button>
-                        </div>
-                    </div>
+                    <pre class="language-{{ $option['language'] }}"><code id="{{ $option['id'] }}">@if ($option['html']){!! $option['html'] !!}@else{{ $option['code'] }}@endif</code></pre>
                 @endforeach
                 <p>
                     @if ($first)

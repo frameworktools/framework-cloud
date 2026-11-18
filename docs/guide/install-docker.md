@@ -55,7 +55,7 @@ On first boot, `app` runs database migrations, seeds built-in blueprints and str
 
 When an existing reverse proxy (such as nginx, Caddy, or Traefik) terminates HTTPS on the host, configure Framework Cloud to listen on plain HTTP behind it:
 
-```sh
+```sh title=".env"
 SERVER_NAME=:80
 HTTP_PORT=8080
 HTTP_BIND=127.0.0.1

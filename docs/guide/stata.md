@@ -40,7 +40,7 @@ Create a Stata project in Framework Cloud or run `fw new` in a terminal with **S
 
 Call `fw_project` at the top of a do-file to locate the project root and define path globals:
 
-```stata
+```stata title="Do-file"
 fw_project
 use "$fw_inputs_raw/penguins.dta", clear
 graph export "$fw_outputs_figures/flipper-and-mass.svg", replace
