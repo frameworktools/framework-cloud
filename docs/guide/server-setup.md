@@ -48,6 +48,8 @@ Uploaded HTML artifacts can include scripts. On multi-user servers, set `FW_CONT
 
 ## Connected agents
 
+The **Sharing** panel in **Server administration** sets the name that embeds, oEmbed responses, and link previews credit for artifacts shared from the server. Left blank, they use the server's host. `FW_SHARE_NAME` in `.env` overrides it.
+
 The **Connected agents** panel in **Server administration** toggles the `/mcp` server across the deployment. When set to **Off** (or when `FW_AGENTS=false` is set in `.env`), new agent connections are refused, existing agent tokens stop working, and the sidebar agent item is hidden until re-enabled. See [AI apps](ai-apps.md).
 
 ## User accounts

@@ -17,6 +17,7 @@ Framework Cloud reads runtime configuration from environment variables, typicall
 | `FW_DOCUMENTS_DISK` | `local` | Filesystem disk for older artifact versions saved without a recorded disk. Switches to `bucket` when a bucket is saved in **Server administration**. |
 | `FW_ARTIFACTS_DISK` | `local` | Private filesystem disk for new artifacts. Must have no public bucket or web-root access. Switches to `bucket` when a bucket is saved in **Server administration**. Run `fw:move-artifacts` after changing it. |
 | `FW_PUBLISH_STORAGE_LIMIT_BYTES` | `1073741824` when `FW_MODE=hosted`, none when `self` | Per-account artifact storage limit in bytes, across all versions and Trash. Applies in both modes when set. `0` removes the limit. |
+| `FW_SHARE_NAME` | the server's host | Name that embeds, oEmbed responses, and link previews credit, such as `Framework.pub`. Overrides **Server administration > Sharing**. |
 | `FW_AGENTS` | `true` | `false` disables `/mcp`, OAuth agent sign-in, and the sidebar agent pages, overriding **Server administration**. See [AI apps](ai-apps.md). |
 | `FW_AGENT_PLUGIN` | unset | Displays `frameworktools/plugins` installation steps on the agent setup page (`framework.pub` only when unset). |
 | `FW_TRASH_DAYS` | `30` | Retention window in days before the `scheduler` service permanently deletes trashed items and artifact files (`0` disables automatic purge). |

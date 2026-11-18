@@ -1,8 +1,9 @@
 // An artifact's embed as a PNG, for sites that take images but not embeds
 // (Substack, email, slides). The result is drawn again off screen, light, with
-// the renderer's own layout and sizes, so it looks like the embed. Only the
-// Model details disclosure is left out, since an image can't open it, and the
-// artifact's address joins the caption, since an image can't link.
+// the renderer's own layout and sizes, so it looks like the embed. The Model
+// details disclosure and variable tips are left out, since an image can't open
+// them, and the artifact's address replaces the link back, since an image
+// can't link: under the description, or in a link card's caption.
 
 const MIN_WIDTH = 560;
 const CHART_WIDTH = 720;
@@ -92,11 +93,25 @@ export async function embedImage(renderer, doc, link) {
         stage.querySelectorAll('.fw-embed').forEach((figure) => { figure.style.margin = '0'; });
         stage.querySelectorAll('.fw-embed__scroll').forEach((scroll) => { scroll.style.overflow = 'visible'; });
 
-        // The address readers can type, on its own line at the end of the caption
+        // A term with a tip is plain text in an image
+        stage.querySelectorAll('.fw-embed__tip').forEach((node) => node.remove());
+        stage.querySelectorAll('.fw-embed__term').forEach((node) => node.replaceWith(node.textContent));
+
+        // The address readers can type, in place of the link back
         const address = displayAddress(link || doc.url || '');
-        const caption = stage.querySelector('.fw-embed__caption');
-        if (address && caption) {
-            caption.append(el('span', { flexBasis: '100%', order: '2', color: 'var(--fw-embed-muted)', overflowWrap: 'anywhere' }, address));
+        const figure = stage.querySelector('.fw-embed');
+        const credit = stage.querySelector('.fw-embed__credit');
+        if (address && figure?.classList.contains('fw-embed--page') && credit) {
+            credit.replaceWith(el('span', { marginLeft: 'auto', color: 'var(--fw-embed-muted)', overflowWrap: 'anywhere' }, address));
+        } else if (address && figure) {
+            credit?.remove();
+            let about = figure.querySelector(':scope > .fw-embed__about');
+            if (!about) {
+                about = el('div', {});
+                about.className = 'fw-embed__about';
+                figure.append(about);
+            }
+            about.append(el('span', { flexBasis: '100%', overflowWrap: 'anywhere' }, address));
         } else if (address) {
             stage.append(el('div', { marginTop: '12px', fontSize: '12px', color: '#6b7280', overflowWrap: 'anywhere' }, address));
         }

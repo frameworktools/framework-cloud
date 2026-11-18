@@ -20,9 +20,7 @@
         $intervals[number_format($row[$at['estimate']], 6)] = [$row[$at['conf_low']], $row[$at['conf_high']]];
     }
     $rows = array_map(fn ($row) => [...$row, ...$intervals[number_format($row[1], 6)]], $model['rows']);
-    $observations = collect($embed['data']['metrics'])->firstWhere('name', 'nobs')['value'];
     $url = 'https://framework.pub/@examples/'.\App\Console\Commands\HomepageExampleCommand::PROJECTS['r'].'/'.\App\Console\Commands\HomepageExampleCommand::SLUG;
-    $meta = "Linear regression · Response: body_mass_g · {$observations} observations";
     $credit = 'shrink-0 text-slate-500 underline decoration-slate-300 underline-offset-4 hover:decoration-slate-600 dark:text-slate-400 dark:decoration-slate-600';
 
     // academic.page's Framework button icon, from pequod's flux/icon/framework.blade.php
@@ -48,7 +46,7 @@
     $ssPill = 'flex h-7 items-center gap-1 rounded-full border border-[#e6e6e6] px-2.5';
     $subtitle = 'Body mass, flipper length, and species in the Palmer penguins';
     // The PNG Framework's Copy image makes for this model (resources/js/embed-image.js)
-    $image = ['src' => asset('images/landing/penguin-model-image.webp'), 'width' => 1248, 'height' => 852,
+    $image = ['src' => asset('images/landing/penguin-model-image.webp'), 'width' => 1248, 'height' => 744,
         'alt' => 'Penguin body mass model: estimates, standard errors, statistics, p-values, and 95% confidence intervals for the intercept, flipper length, and species.'];
     $skyBlue = 'bg-[#1185fe]';
     // bsky.app's type and colors, light and dim (from a live post page)
@@ -151,12 +149,14 @@
                     <p class="text-lg font-semibold tracking-tight text-slate-900 dark:text-white">{{ $title }}</p>
                     <p class="mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{{ $lede }}</p>
                     <div class="mt-4">
-                        <p class="text-xs text-slate-500 dark:text-slate-400">{{ $meta }}</p>
-                        <div class="mt-2 overflow-x-auto" tabindex="0" role="region" aria-label="Coefficients on Academic.page"><x-landing-shared.table :rows="$rows" /></div>
-                        <div class="mt-3 flex items-baseline justify-between gap-4 border-t border-slate-800/10 pt-2.5 text-xs dark:border-white/10">
+                        <div class="mb-3 flex items-baseline justify-between gap-4 border-b border-slate-800/10 pb-2.5 text-xs dark:border-white/10">
                             <span class="font-semibold text-slate-900 dark:text-white">{{ $embed['title'] }}</span>
                             <a href="{{ $url }}" target="_blank" rel="noopener" class="{{ $credit }}">Framework.pub</a>
                         </div>
+                        <div class="overflow-x-auto" tabindex="0" role="region" aria-label="Coefficients on Academic.page"><x-landing-shared.table :rows="$rows" /></div>
+                        @if (filled($embed['description']))
+                            <p class="mt-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400">{{ $embed['description'] }}</p>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -210,11 +210,14 @@
                     <p class="mt-1 text-xl font-medium tracking-tight text-slate-950 dark:text-white">{{ $title }}</p>
                     <p class="mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{{ $lede }}</p>
                     <div class="mt-4">
-                        <div class="overflow-x-auto" tabindex="0" role="region" aria-label="Coefficients on WordPress"><x-landing-shared.table :rows="$rows" /></div>
-                        <div class="mt-3 flex items-baseline justify-between gap-4 text-xs">
-                            <span class="text-slate-500 dark:text-slate-400"><span class="font-medium text-slate-900 dark:text-white">{{ $embed['title'] }}</span> · {{ $observations }} observations</span>
+                        <div class="mb-3 flex items-baseline justify-between gap-4 border-b border-slate-800/10 pb-2.5 text-xs dark:border-white/10">
+                            <span class="font-semibold text-slate-900 dark:text-white">{{ $embed['title'] }}</span>
                             <a href="{{ $url }}" target="_blank" rel="noopener" class="{{ $credit }}">Framework.pub</a>
                         </div>
+                        <div class="overflow-x-auto" tabindex="0" role="region" aria-label="Coefficients on WordPress"><x-landing-shared.table :rows="$rows" /></div>
+                        @if (filled($embed['description']))
+                            <p class="mt-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400">{{ $embed['description'] }}</p>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -334,12 +337,14 @@
                     <p class="text-xl font-semibold tracking-tight text-slate-950 dark:text-white">{{ $title }}</p>
                     <p class="mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{{ $lede }}</p>
                     <div class="mt-4">
-                        <p class="text-xs text-slate-500 dark:text-slate-400">{{ $meta }}</p>
-                        <div class="mt-2 overflow-x-auto" tabindex="0" role="region" aria-label="Coefficients on a generic site"><x-landing-shared.table :rows="$rows" /></div>
-                        <div class="mt-3 flex items-baseline justify-between gap-4 border-t border-slate-800/10 pt-2.5 text-xs dark:border-white/10">
+                        <div class="mb-3 flex items-baseline justify-between gap-4 border-b border-slate-800/10 pb-2.5 text-xs dark:border-white/10">
                             <span class="font-semibold text-slate-900 dark:text-white">{{ $embed['title'] }}</span>
                             <a href="{{ $url }}" target="_blank" rel="noopener" class="{{ $credit }}">Framework.pub</a>
                         </div>
+                        <div class="overflow-x-auto" tabindex="0" role="region" aria-label="Coefficients on a generic site"><x-landing-shared.table :rows="$rows" /></div>
+                        @if (filled($embed['description']))
+                            <p class="mt-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400">{{ $embed['description'] }}</p>
+                        @endif
                     </div>
                 </div>
             </div>

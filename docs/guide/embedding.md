@@ -4,6 +4,8 @@ Public and unlisted artifacts can appear on blogs, personal websites, newsletter
 
 Models, tables, hypothesis tests, figures, and Vega-Lite charts render directly in the host page's typography and colors rather than inside an iframe. HTML documents, Quarto sites, PDFs, and downloadable files render as link cards. Embedding requires no account or API key on the receiving site.
 
+Each embed opens with the artifact's title and a link back to it, followed by the result, then the description and author. A model shows its coefficients first; its type, response, formula, and fit statistics are under **Model details**. When a model was published with its variables, each coefficient term explains itself on hover or tap: the variable's label, the level it compares against, and a summary of the data the model used. Table columns with labels or summaries do the same.
+
 An artifact can be embedded when it is stored on Framework Cloud, its sharing is **Public, with a readable link** or **Anyone with the link**, and it has no password. Private artifacts, password-protected artifacts, deleted artifacts, and external publications cannot be embedded. Making an artifact private, adding a password, or deleting it stops live embeds within an hour, and figure images stop loading within five minutes on framework.pub or within an hour on a self-hosted server. Sites that store a copy of the artifact keep showing that copy until a takedown check removes it or the author refreshes it.
 
 Every artifact link form works when embedding:
@@ -33,7 +35,7 @@ Inserting a block or field saves a copy of the artifact with the post or entry a
 
 ## Images
 
-Select **Copy image** or **Download PNG** in the **Embed** tab to export a high-resolution PNG for Substack, email newsletters, and slide decks. The exported image includes the artifact title, description, formatted result, and web address on a light background.
+Select **Copy image** or **Download PNG** in the **Embed** tab to export a high-resolution PNG for Substack, email newsletters, and slide decks. The exported image includes the artifact title, formatted result, description, and web address on a light background.
 
 ## Web component
 
@@ -90,8 +92,8 @@ An embed document uses the `framework.embed/v1` schema:
   "embed_url": "https://framework.pub/api/embed/v1/artifacts/rglmlogit0000000/versions/1",
   "published_at": "2026-11-16T12:00:00Z",
   "author": {"name": "Ada Example", "url": "https://framework.pub/@ada"},
-  "provider": {"name": "Framework", "url": "https://framework.pub"},
-  "attribution": {"text": "Framework", "url": "https://framework.pub/@ada/admissions/transmission/versions/1"},
+  "provider": {"name": "Framework.pub", "url": "https://framework.pub"},
+  "attribution": {"text": "Framework.pub", "url": "https://framework.pub/@ada/admissions/transmission/versions/1"},
   "data": {"schema": "framework.artifact/v1", "kind": "model", "...": "..."},
   "spec": null,
   "image": null
@@ -101,12 +103,13 @@ An embed document uses the `framework.embed/v1` schema:
 | Field | Contents |
 |---|---|
 | `kind` | `model`, `table`, `test`, `image`, `vega-lite`, or `page`. Renderers treat unknown values as `page`. |
-| `data` | Normalized `framework.artifact/v1` representation for `model`, `table`, and `test`. Includes up to 10 tables, 50 columns per table, and the first 25 rows per table. `row_count`, `column_count`, and column summaries describe the full table, and shortened tables set `truncated: true`. |
+| `data` | Normalized `framework.artifact/v1` representation for `model`, `table`, and `test`. Includes up to 10 tables, 50 columns per table, and the first 25 rows per table. `row_count`, `column_count`, and column summaries describe the full table, and shortened tables set `truncated: true`. Models may include `variables` and `terms`, which describe the data the model used and map coefficient terms to variables and levels. |
 | `spec` | Vega-Lite specification for `vega-lite`. Only charts with inline data embed as `vega-lite`. Charts that load external URLs for data, images, or links embed as `page`. |
 | `image` | Object with `url`, `content_type`, `width`, and `height` for `image`. `width` and `height` may be `null`. |
 | `alt` | One-sentence text description for screen readers and image alt text. |
 | `url` | Reader page URL for this version. |
 | `author`, `description` | Optional metadata, or `null`. `author` appears only when the owner's profile is public. |
+| `provider`, `attribution` | The server's share name and address. The name is set in **Server administration > Sharing** or with `FW_SHARE_NAME`, and is the server's host by default. |
 
 The `page` kind covers HTML documents, Quarto sites, PDFs, data files, and other outputs. Renderers display `page` documents as link cards showing the title, description, author, and attribution link.
 
