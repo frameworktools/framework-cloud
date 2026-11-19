@@ -265,6 +265,16 @@
                     @endforeach
                 </div>
             </div>
+            {{-- Step through the topics like a carousel: arrows at the edges, a dot per topic in the middle --}}
+            <div class="flex items-center justify-between gap-2 border-t border-slate-800/10 px-2 py-2 sm:px-3 dark:border-white/10" role="group" aria-label="Best practices topics">
+                <button type="button" data-practice-step="-1" aria-label="Previous topic" class="rounded-md p-1.5 text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 dark:text-slate-500 dark:hover:bg-white/10 dark:hover:text-slate-200"><x-heroicon-m-chevron-left class="size-6" /></button>
+                <div class="flex flex-wrap items-center justify-center">
+                    @foreach ($topics as $key => [$title])
+                        <button type="button" data-practice-dot="{{ $key }}" aria-label="{{ $title }}" aria-pressed="{{ $key === $first ? 'true' : 'false' }}" class="group flex h-6 min-w-5 items-center justify-center"><span class="h-1.5 w-1.5 rounded-full bg-slate-300 transition-all group-aria-pressed:w-5 group-aria-pressed:bg-sky-700 dark:bg-slate-600 dark:group-aria-pressed:bg-sky-400"></span></button>
+                    @endforeach
+                </div>
+                <button type="button" data-practice-step="1" aria-label="Next topic" class="rounded-md p-1.5 text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 dark:text-slate-500 dark:hover:bg-white/10 dark:hover:text-slate-200"><x-heroicon-m-chevron-right class="size-6" /></button>
+            </div>
         </x-landing-frame>
     </div>
     @if ($docLinks->isNotEmpty())

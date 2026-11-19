@@ -73,26 +73,31 @@
                                     </div>
                                 @endforeach
                             </div>
-                            {{-- Caption left and controls right hang below the screenshot, so only the screenshot is centered --}}
+                            {{-- The caption hangs below the screenshot, so only the screenshot is centered --}}
                             <div class="absolute inset-x-0 top-full mt-2 flex min-h-7 items-center justify-between gap-3">
                                 <p class="min-w-0 text-xs leading-snug text-slate-600 dark:text-slate-400">
                                     @foreach ($slides as [$image, $caption])<span data-cloud-caption @unless ($loop->first) hidden @endunless>{{ $caption }}</span>@endforeach
                                 </p>
-                                @if (count($slides) > 1)
-                                <div class="flex shrink-0 items-center gap-0.5" role="group" aria-label="{{ $title }} screenshots">
-                                    <button type="button" data-cloud-step="-1" aria-label="Previous screenshot" class="rounded-md p-1 text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 dark:text-slate-500 dark:hover:bg-white/10 dark:hover:text-slate-200"><x-heroicon-m-chevron-left class="size-4" /></button>
-                                    @foreach ($slides as $dot)
-                                        <button type="button" data-cloud-dot="{{ $loop->index }}" aria-label="Screenshot {{ $loop->iteration }} of {{ count($slides) }}" aria-pressed="{{ $loop->first ? 'true' : 'false' }}" class="group flex h-6 min-w-6 items-center justify-center"><span class="h-1.5 w-1.5 rounded-full bg-slate-300 transition-all group-aria-pressed:w-5 group-aria-pressed:bg-sky-700 dark:bg-slate-600 dark:group-aria-pressed:bg-sky-400"></span></button>
-                                    @endforeach
-                                    <button type="button" data-cloud-step="1" aria-label="Next screenshot" class="rounded-md p-1 text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 dark:text-slate-500 dark:hover:bg-white/10 dark:hover:text-slate-200"><x-heroicon-m-chevron-right class="size-4" /></button>
-                                    <button type="button" data-cloud-pause aria-label="Pause screenshots" aria-pressed="false" class="group ml-1 rounded-md p-1 text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 dark:text-slate-500 dark:hover:bg-white/10 dark:hover:text-slate-200"><x-heroicon-m-pause class="size-4 group-aria-pressed:hidden" /><x-heroicon-m-play class="hidden size-4 group-aria-pressed:block" /></button>
-                                </div>
-                                @endif
                             </div>
                         </div>
                     @endforeach
                 </div>
             </div>
+            {{-- A strip per pane, full width under the frame: arrows at the edges step through the screenshots and on to the next feature, dots and pause in the middle --}}
+            @foreach ($screens as $key => [$title, $summary, $slides])
+                <div data-cloud-strip="{{ $key }}" @unless ($loop->first) hidden @endunless class="flex items-center justify-between gap-2 border-t border-slate-800/10 px-2 py-2 sm:px-3 dark:border-white/10" role="group" aria-label="{{ $title }} screenshots">
+                    <button type="button" data-cloud-step="-1" aria-label="Previous screenshot" class="rounded-md p-1.5 text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 dark:text-slate-500 dark:hover:bg-white/10 dark:hover:text-slate-200"><x-heroicon-m-chevron-left class="size-6" /></button>
+                    <div class="flex flex-wrap items-center justify-center">
+                        @if (count($slides) > 1)
+                            @foreach ($slides as $dot)
+                                <button type="button" data-cloud-dot="{{ $loop->index }}" aria-label="Screenshot {{ $loop->iteration }} of {{ count($slides) }}" aria-pressed="{{ $loop->first ? 'true' : 'false' }}" class="group flex h-6 min-w-5 items-center justify-center"><span class="h-1.5 w-1.5 rounded-full bg-slate-300 transition-all group-aria-pressed:w-5 group-aria-pressed:bg-sky-700 dark:bg-slate-600 dark:group-aria-pressed:bg-sky-400"></span></button>
+                            @endforeach
+                            <button type="button" data-cloud-pause aria-label="Pause screenshots" aria-pressed="false" class="group ml-2 rounded-md p-1.5 text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 dark:text-slate-500 dark:hover:bg-white/10 dark:hover:text-slate-200"><x-heroicon-m-pause class="size-4 group-aria-pressed:hidden" /><x-heroicon-m-play class="hidden size-4 group-aria-pressed:block" /></button>
+                        @endif
+                    </div>
+                    <button type="button" data-cloud-step="1" aria-label="Next screenshot" class="rounded-md p-1.5 text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 dark:text-slate-500 dark:hover:bg-white/10 dark:hover:text-slate-200"><x-heroicon-m-chevron-right class="size-6" /></button>
+                </div>
+            @endforeach
         </x-landing-frame>
     </div>
 

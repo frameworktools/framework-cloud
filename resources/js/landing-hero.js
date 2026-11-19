@@ -159,6 +159,7 @@ for (const root of document.querySelectorAll('[data-practices]')) {
             setHidden(panel, panel.dataset.practicePanel !== tab.dataset.practiceTab);
             if (panel.dataset.practicePanel === tab.dataset.practiceTab) showLanguage(panel);
         });
+        root.querySelectorAll('[data-practice-dot]').forEach(dot => dot.setAttribute('aria-pressed', String(dot.dataset.practiceDot === tab.dataset.practiceTab)));
     };
     // Each topic has its own #practices-<topic> address, so links open it and Back returns to the last one.
     // Clicks add a history entry; arrow keys replace it.
@@ -186,6 +187,12 @@ for (const root of document.querySelectorAll('[data-practices]')) {
         const tab = tabs.find(other => other.dataset.practiceTab === button.dataset.practiceGoto);
         go(tab); tab.focus();
     });
+    // The strip under the panels steps through the topics, wrapping at either end
+    onClick(root, '[data-practice-step]', button => {
+        const current = tabs.findIndex(tab => tab.getAttribute('aria-selected') === 'true');
+        go(tabs[(current + Number(button.dataset.practiceStep) + tabs.length) % tabs.length]);
+    });
+    onClick(root, '[data-practice-dot]', dot => go(tabs.find(tab => tab.dataset.practiceTab === dot.dataset.practiceDot)));
     onClick(root, '[data-practice-language]', button => {
         language = button.dataset.practiceLanguage;
         showLanguage(button.closest('[data-practice-panel]'));
@@ -288,13 +295,15 @@ for (const root of document.querySelectorAll('[data-cloud-screens]')) {
         }
         play();
     }, { rootMargin: '200px' }).observe(root);
+    // The controls strip under the frame that belongs to the current pane
+    const strip = () => root.querySelector(`[data-cloud-strip="${pane.dataset.cloudScreen}"]`);
     // Panes with several screenshots advance on their own while the section is in view.
     const show = index => {
         const slides = [...pane.querySelectorAll('[data-cloud-slide]')];
         slide = (index + slides.length) % slides.length;
         slides.forEach((el, i) => { setHidden(el, i !== slide); });
         pane.querySelectorAll('[data-cloud-caption]').forEach((el, i) => { setHidden(el, i !== slide); });
-        pane.querySelectorAll('[data-cloud-dot]').forEach((dot, i) => dot.setAttribute('aria-pressed', String(i === slide)));
+        strip().querySelectorAll('[data-cloud-dot]').forEach((dot, i) => dot.setAttribute('aria-pressed', String(i === slide)));
     };
     const play = () => {
         clearInterval(timer);
@@ -310,7 +319,14 @@ for (const root of document.querySelectorAll('[data-cloud-screens]')) {
     const label = () => root.querySelectorAll('[data-cloud-pause]').forEach(button => { button.setAttribute('aria-label', stopped ? 'Play screenshots' : 'Pause screenshots'); button.setAttribute('aria-pressed', String(stopped)); });
     onClick(root, '[data-cloud-pause]', () => { stopped = !stopped; label(); play(); });
     label();
-    onClick(root, '[data-cloud-step]', step => { show(slide + Number(step.dataset.cloudStep)); play(); });
+    // The arrows step through a pane's screenshots, then on to the neighbouring feature
+    onClick(root, '[data-cloud-step]', step => {
+        const delta = Number(step.dataset.cloudStep), count = pane.querySelectorAll('[data-cloud-slide]').length, next = slide + delta;
+        if (next >= 0 && next < count) { show(next); play(); return; }
+        const index = tabs.findIndex(tab => tab.getAttribute('aria-selected') === 'true');
+        select(tabs[(index + delta + tabs.length) % tabs.length]);
+        if (delta < 0) { show(pane.querySelectorAll('[data-cloud-slide]').length - 1); play(); }
+    });
     const select = tab => {
         tabs.forEach(other => {
             const active = other === tab;
@@ -318,6 +334,7 @@ for (const root of document.querySelectorAll('[data-cloud-screens]')) {
             other.tabIndex = active ? 0 : -1;
             const screen = root.querySelector(`[data-cloud-screen="${other.dataset.cloudTab}"]`);
             setHidden(screen, !active);
+            setHidden(root.querySelector(`[data-cloud-strip="${other.dataset.cloudTab}"]`), !active);
             if (active) pane = screen;
         });
         show(0);
