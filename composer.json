@@ -22,7 +22,7 @@
         "league/flysystem-aws-s3-v3": "^3.35",
         "opis/json-schema": "^2.4",
         "phiki/phiki": "^2.2",
-        "phpstats/phiz": "^0.6.4",
+        "phpstats/phiz": "^0.6.6",
         "spatie/laravel-passkeys": "^1.8",
         "symfony/html-sanitizer": "^7.4",
         "symfony/yaml": "^8.1"
