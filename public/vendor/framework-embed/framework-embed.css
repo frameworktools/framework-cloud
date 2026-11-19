@@ -395,6 +395,29 @@
   display: block;
   max-width: none;
 }
+.fw-embed__chart:not([data-fw-embed-chart-state=ready]):has(> .fw-embed__media) > .fw-embed__chart-view {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+}
+@media screen {
+  .fw-embed__chart[data-fw-embed-chart-state=ready] > .fw-embed__media {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+}
 .fw-embed__card {
   display: flex;
   flex-direction: column;
@@ -847,6 +870,9 @@ framework-artifact {
   .fw-embed__scroll,
   .fw-embed__chart {
     overflow: visible;
+  }
+  .fw-embed__chart:has(> .fw-embed__media) > .fw-embed__chart-view {
+    display: none;
   }
   .fw-embed__table th,
   .fw-embed__table td {
