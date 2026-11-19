@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "07d4164c7f35923e883bd44c5fae5e71",
+    "content-hash": "65a22b2db08b7a8c9ffda231d1466bcb",
     "packages": [
         {
             "name": "aws/aws-crt-php",
@@ -4878,16 +4878,16 @@
         },
         {
             "name": "phpstats/phiz",
-            "version": "v0.6.3",
+            "version": "v0.6.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpstats/phiz.git",
-                "reference": "5e62d2f2e9c332b4fb35619316b8559fa5a3cac1"
+                "reference": "9ecdb980e0b99058eba7a0dd3cfdb5accf175db2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstats/phiz/zipball/5e62d2f2e9c332b4fb35619316b8559fa5a3cac1",
-                "reference": "5e62d2f2e9c332b4fb35619316b8559fa5a3cac1",
+                "url": "https://api.github.com/repos/phpstats/phiz/zipball/9ecdb980e0b99058eba7a0dd3cfdb5accf175db2",
+                "reference": "9ecdb980e0b99058eba7a0dd3cfdb5accf175db2",
                 "shasum": ""
             },
             "require": {
@@ -4944,9 +4944,10 @@
             ],
             "support": {
                 "issues": "https://github.com/phpstats/phiz/issues",
-                "source": "https://github.com/phpstats/phiz/tree/v0.6.3"
+                "source": "https://github.com/phpstats/phiz/tree/v0.6.4"
             },
-            "time": "2026-11-02T12:32:17+00:00"
+            "time": "2026-11-19T17:19:50+00:00",
+            "published-time": "2026-11-19T17:19:56+00:00"
         },
         {
             "name": "psr/clock",
@@ -12911,5 +12912,5 @@
         "php": "^8.3"
     },
     "platform-dev": {},
-    "plugin-api-version": "2.9.0"
+    "plugin-api-version": "2.11.0"
 }
