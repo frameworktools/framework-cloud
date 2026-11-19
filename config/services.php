@@ -57,15 +57,15 @@ return [
         // never a branch, so a repo's scaffold is reproducible. Bump it here
         // deliberately; the env var overrides it, and an empty one turns
         // GitHub scaffolding off.
-        'framework_sha' => env('GITHUB_FRAMEWORK_SHA', '76a587f92c08ada9b7d81d61d0514c91bb216300'),
+        'framework_sha' => env('GITHUB_FRAMEWORK_SHA', 'f2d9e704cbb5e8bd5e5d93dd1f8ccc1e3987d163'),
         // The framework-py commit that scaffolds Python projects. Empty turns
         // Python scaffolding on GitHub off.
-        'framework_py_sha' => env('GITHUB_FRAMEWORK_PY_SHA', 'af8a9f78cb67fcda969a8236d3f48c5597433ef3'),
+        'framework_py_sha' => env('GITHUB_FRAMEWORK_PY_SHA', '04ed5ede8f84567b0f24b2f5527e3dbcc4d89147'),
         // The fw release that scaffolds Stata projects. Empty turns Stata
         // scaffolding on GitHub off. The workflow checks the download against
         // fw_sha256 when it is set, and otherwise against the release's
         // checksums file.
-        'fw_version' => env('GITHUB_FW_VERSION', '0.6.6'),
+        'fw_version' => env('GITHUB_FW_VERSION', '0.7.2'),
         'fw_sha256' => env('GITHUB_FW_SHA256'),
     ],
 

@@ -1,9 +1,9 @@
 {
     "r": {
         "package": "framework",
-        "ref": "76a587f92c08ada9b7d81d61d0514c91bb216300",
-        "commit": "76a587f92c08ada9b7d81d61d0514c91bb216300",
-        "version": "2.0.13",
+        "ref": "f2d9e704cbb5e8bd5e5d93dd1f8ccc1e3987d163",
+        "commit": "f2d9e704cbb5e8bd5e5d93dd1f8ccc1e3987d163",
+        "version": "2.0.15",
         "skills": [
             "framework-cache",
             "framework-data",
@@ -18,9 +18,9 @@
     },
     "python": {
         "package": "framework-py",
-        "ref": "af8a9f78cb67fcda969a8236d3f48c5597433ef3",
-        "commit": "af8a9f78cb67fcda969a8236d3f48c5597433ef3",
-        "version": "0.1.0.dev26",
+        "ref": "04ed5ede8f84567b0f24b2f5527e3dbcc4d89147",
+        "commit": "04ed5ede8f84567b0f24b2f5527e3dbcc4d89147",
+        "version": "0.1.0.dev29",
         "skills": [
             "framework-cache",
             "framework-data",
@@ -34,9 +34,9 @@
     },
     "stata": {
         "package": "fw",
-        "ref": "0.6.6",
-        "commit": "e8af622d494970d06e99089649347c99c96b8efd",
-        "version": "0.6.6",
+        "ref": "0.7.2",
+        "commit": "a6e3c6215e4a5c94bfcba8c0f36a2bb30eb4937c",
+        "version": "0.7.2",
         "skills": [
             "framework-sensitive-data",
             "framework-stata"
