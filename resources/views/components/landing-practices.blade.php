@@ -31,6 +31,17 @@
             ]],
         ],
         'Analysis' => [
+            // A map of the project instead of a before and after: each part links to the topic that shows it.
+            'reproducible' => ['Reproducible analyses', 'Framework encourages conventions for packages, setup, data, and results.', ['map' => [
+                "penguin-study/\n├── settings/\n│   ├── packages.yml\n│   └── scaffold.yml\n├── inputs/\n│   └── private/   # never in Git\n│       ├── raw/\n│       └── final/\n├── scripts/\n│   ├── clean.R\n│   └── analysis.R\n└── outputs/\n    └── public/",
+                [
+                    ['Packages', 'Framework installs missing packages declared in the project settings.', 'packages'],
+                    ['Script setup', '`scaffold()` sets paths from the project root, loads project functions, and can set a random seed.', 'session'],
+                    ['Input data', '`data_read()` records a fingerprint of each input and warns or stops when a locked input changes.', 'integrity'],
+                    ['Results', 'Save helpers record figures and tables. Framework Cloud can publish them as versioned artifacts.', 'outputs'],
+                    ['Private folders', '.gitignore excludes `private/` folders, so scripts, settings, and `public/` outputs can be committed.', 'git'],
+                ],
+            ]], 'Projects can use different folder structures. Each records its folders, packages, and setup options in settings.yml, and Framework\'s functions read from it.'],
             'session' => ['Setup code in one place', 'Bootstrap every script or notebook with one line.', [
                 'r' => [
                     [[null, "setwd(\"~/projects/penguin-study\")\nreadRenviron(\".env\")\nlibrary(dplyr)\nlibrary(ggplot2)\nsource(\"R/clean.R\")\nsource(\"R/models.R\")\nset.seed(123)\ntheme_set(theme_minimal())"]],
@@ -98,6 +109,19 @@
                 ],
             ], 'Declare each connection once in a settings file, then query it by name from any script or notebook. Keep passwords in .env, which Git ignores, and read them with `env()`.'],
         ],
+        'AI agents' => [
+            // The same prompt without and with a figure skill. The skill lines are an example of a user's preferences.
+            'ai' => ['AI context and skills', 'Give AI agents your project\'s conventions and task instructions.', [
+                'r' => [
+                    [['Prompt', "Plot body mass against flipper length\nby species.", 'output'], ['Result', "ggplot(penguins, aes(flipper_len, body_mass,\n                     color = species)) +\n  geom_point()"]],
+                    [['.claude/skills/ggplot2-figures/SKILL.md', "- Label axes with plain names and units.\n- Use the Okabe-Ito palette for categories.\n- Use theme_minimal(base_size = 12).\n- Save with save_figure(plot, \"name\").", 'output'], ['Prompt', "Plot body mass against flipper length\nby species.", 'output'], ['Result', "p <- ggplot(penguins, aes(flipper_len, body_mass,\n                          color = species)) +\n  geom_point(alpha = 0.7) +\n  scale_color_manual(\n    values = palette.colors(4, \"Okabe-Ito\")[-1]) +\n  labs(x = \"Flipper length (mm)\",\n       y = \"Body mass (g)\", color = NULL) +\n  theme_minimal(base_size = 12)\nsave_figure(p, \"flipper-mass\", width = 6,\n            height = 4)"]],
+                ],
+                'py' => [
+                    [['Prompt', "Plot body mass against flipper length\nby species.", 'output'], ['Result', "for species, group in df.groupby(\"species\"):\n    plt.scatter(group.flipper_len, group.body_mass)\nplt.show()"]],
+                    [['.claude/skills/matplotlib-figures/SKILL.md', "- Label axes with plain names and units.\n- Use the Okabe-Ito palette for categories.\n- Remove the top and right spines.\n- Save with fw.save_figure(fig, \"name\").", 'output'], ['Prompt', "Plot body mass against flipper length\nby species.", 'output'], ['Result', "okabe_ito = [\"#E69F00\", \"#56B4E9\", \"#009E73\"]\nfig, ax = plt.subplots(figsize=(6, 4))\nfor (species, group), color in zip(\n        df.groupby(\"species\"), okabe_ito):\n    ax.scatter(group.flipper_len, group.body_mass,\n               color=color, alpha=0.7, label=species)\nax.set(xlabel=\"Flipper length (mm)\",\n       ylabel=\"Body mass (g)\")\nax.spines[[\"top\", \"right\"]].set_visible(False)\nax.legend(frameon=False)\nfw.save_figure(fig, \"flipper-mass\", width=6,\n               height=4)"]],
+                ],
+            ], 'Each project has a baseline context file with its conventions, set up for the agents you choose. Skills hold instructions for specific tasks. A ggplot2 or matplotlib skill tells agents your preferences for labels, colors, themes, and saving. Framework\'s packages keep skills in sync when you use more than one agent, and Framework Cloud manages your skills in one place.'],
+        ],
         'Data safety' => [
             'integrity' => ['Data change detection', 'Know when an input file changes.', [
                 'r' => [
@@ -113,9 +137,9 @@
                     [[null, "fw_use inputs.private.raw.penguins, clear"]],
                 ],
             ], [
-                'r' => '`data_read()` records a fingerprint of each input. Your scripts warn you or stop when a file changes. Lock an input to stop a changed file from being read, and check inputs with `data_verify()`. Framework Cloud can share fingerprints with collaborators and reviewers. Your data stays on your machine.',
-                'py' => '`fw.data_read()` records a fingerprint of each input. Your scripts warn you or stop when a file changes. Lock an input to stop a changed file from being read, and check inputs with `fw.data_verify()`. Framework Cloud can share fingerprints with collaborators and reviewers. Your data stays on your machine.',
-                'stata' => '`fw_use` records a fingerprint of each input. Your do-files warn you or stop when a file changes. Lock an input to stop a changed file from being read. Framework Cloud can share fingerprints with collaborators and reviewers. Your data stays on your machine.',
+                'r' => '`data_read()` records a fingerprint of each input. Your scripts warn you or stop when a file changes. Lock an input to stop a changed file from being read, and check inputs with `data_verify()`. Your data stays on your machine.',
+                'py' => '`fw.data_read()` records a fingerprint of each input. Your scripts warn you or stop when a file changes. Lock an input to stop a changed file from being read, and check inputs with `fw.data_verify()`. Your data stays on your machine.',
+                'stata' => '`fw_use` records a fingerprint of each input. Your do-files warn you or stop when a file changes. Lock an input to stop a changed file from being read. Your data stays on your machine.',
             ]],
             'git' => ['Private data out of Git', 'Avoid data and secret leakage with out-of-the-box defense in depth.', [
                 '*' => [
@@ -128,16 +152,24 @@
     $languages = ['r' => 'R', 'py' => 'Python', 'stata' => 'Stata'];
     // Notes are plain text, with `code` in backticks.
     $prose = fn (string $text) => preg_replace('/`([^`]+)`/', '<code class="font-mono text-[0.85em] text-slate-700 dark:text-slate-300">$1</code>', e($text));
-    // A folder tree: folders in blue, the branch lines and # notes dimmed.
-    $tree = fn (string $text) => preg_replace(
-        ['~(?:(?<=── )|^)([^\n#]*?/)(?=\s|$)~mu', '~([│├└─]+)~u', '~(?<=\s)(#[^\n]*)~u'],
-        ['<span class="text-sky-300">$1</span>', '<span class="text-slate-500">$1</span>', '<span class="text-slate-500">$1</span>'],
-        e($text),
-    );
-    // One list, most persuasive first. The AI agents section covers agents.
-    $order = ['session', 'integrity', 'packages', 'git', 'structure', 'outputs', 'databases', 'caching', 'publish'];
+    // One list, most persuasive first.
+    $order = ['reproducible', 'structure', 'session', 'integrity', 'packages', 'git', 'ai', 'outputs', 'databases', 'caching', 'publish'];
     $topics = array_replace(array_flip($order), array_merge(...array_values($groups)));
     $first = $order[0];
+    // The heading reads "A Framework for …" and ends with the selected topic's tagline.
+    $taglines = [
+        'reproducible' => 'reproducible analyses',
+        'session' => 'script setup',
+        'integrity' => 'data integrity',
+        'packages' => 'package management',
+        'git' => 'data safety',
+        'ai' => 'AI-assisted analysis',
+        'structure' => 'project organization',
+        'outputs' => 'organizing research artifacts',
+        'databases' => 'data access',
+        'caching' => 'performance',
+        'publish' => 'sharing results',
+    ];
     // Link each documentation site the header lists, joined as R, Python, Stata, or the command line.
     $docNames = ['r' => 'R', 'py' => 'Python', 'stata' => 'Stata', 'cli' => 'the command line'];
     $docLinks = collect($docNames)->only(array_keys(\App\Support\Docs\Products::listed()))
@@ -147,8 +179,17 @@
 @endphp
 <section id="practices" data-practices class="scroll-mt-6 py-14 sm:py-20">
     <div class="mx-auto max-w-3xl text-center">
-        <h2 class="text-3xl font-semibold tracking-tight text-balance">Best practices made easy</h2>
-        <p class="mt-4 leading-relaxed text-balance text-slate-600 dark:text-slate-400">Framework's R, Python, and Stata packages give every project a sensible structure. Scripts start with one line. Data safeguards are built in. Framework Cloud makes starting projects and sharing results even easier.</p>
+        <h2 class="text-3xl font-semibold tracking-tight sm:text-4xl">
+            A Framework for
+            <span class="sr-only">best practices</span>
+            {{-- Stacked in one grid cell so the line keeps the longest tagline's width; landing-hero.js slides in the selected topic's --}}
+            <span data-practice-words aria-hidden="true" class="grid justify-items-center overflow-hidden pb-[0.08em] text-sky-700 dark:text-sky-300">
+                @foreach ($topics as $key => $topic)
+                    <span data-practice-word="{{ $key }}" @class(['[grid-area:1/1] text-balance sm:whitespace-nowrap transition duration-500 ease-out motion-reduce:transition-none', 'translate-y-full opacity-0' => $key !== $first])>{{ $taglines[$key] }}</span>
+                @endforeach
+            </span>
+        </h2>
+        <p class="mt-4 leading-relaxed text-balance text-slate-600 dark:text-slate-400">Framework's R, Python, and Stata packages organize inputs, code, and outputs in a project structure you choose. They install declared packages, set up each script and notebook from the project root, and record a fingerprint of each data file. Framework Cloud sets up projects and publishes versioned artifacts.</p>
     </div>
 
     <div class="mt-10">
@@ -168,7 +209,7 @@
                                 @foreach ((array) $note as $language => $text)
                                     <p @if (is_array($note)) data-practice-code="{{ $language }}" @unless ($loop->first) hidden @endunless @endif class="mt-1 text-sm text-slate-500 dark:text-slate-400">{!! $prose($text) !!}</p>
                                 @endforeach
-                                @if (! isset($variants['*']))
+                                @if (! isset($variants['*']) && ! isset($variants['map']))
                                     <div role="group" aria-label="{{ $title }} language" class="mt-4 flex w-fit gap-1 rounded-lg bg-slate-100 p-1 dark:bg-white/5">
                                         @foreach (array_intersect_key($languages, $variants) as $language => $label)
                                             <button type="button" data-practice-language="{{ $language }}" aria-pressed="{{ $loop->first ? 'true' : 'false' }}" class="rounded-md px-3 py-1 text-sm font-medium text-slate-600 hover:text-slate-950 aria-pressed:bg-white aria-pressed:text-slate-950 aria-pressed:shadow-sm dark:text-slate-400 dark:hover:text-white dark:aria-pressed:bg-slate-700 dark:aria-pressed:text-white">{{ $label }}</button>
@@ -176,6 +217,25 @@
                                     </div>
                                 @endif
                                 </div>
+                                @if (isset($variants['map']))
+                                    @php([$mapTree, $mapParts] = $variants['map'])
+                                    <div class="grid gap-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)] lg:items-start">
+                                        <div class="overflow-hidden rounded-lg bg-[#0c1526] ring-1 ring-slate-400/20">
+                                            <x-folder-tree :text="$mapTree" />
+                                        </div>
+                                        <dl class="divide-y divide-slate-800/10 dark:divide-white/10">
+                                            @foreach ($mapParts as [$part, $text, $target])
+                                                <div class="py-2.5 first:pt-0 last:pb-0">
+                                                    <dt class="flex items-baseline justify-between gap-3 text-sm font-medium text-slate-900 dark:text-white">
+                                                        {{ $part }}
+                                                        <button type="button" data-practice-goto="{{ $target }}" class="shrink-0 text-xs font-normal text-slate-500 underline decoration-slate-300 underline-offset-4 hover:text-slate-800 hover:decoration-slate-600 dark:text-slate-400 dark:decoration-slate-600 dark:hover:text-slate-200">{{ $topics[$target][0] }}</button>
+                                                    </dt>
+                                                    <dd class="mt-0.5 text-sm text-slate-500 dark:text-slate-400">{!! $prose($text) !!}</dd>
+                                                </div>
+                                            @endforeach
+                                        </dl>
+                                    </div>
+                                @else
                                 @foreach ($variants as $language => [$before, $after])
                                     <div data-practice-code="{{ $language }}" @unless ($loop->first) hidden @endunless class="grid gap-4 lg:grid-cols-2">
                                         @foreach (['Without Framework' => $before, 'With Framework' => $after] as $side => $blocks)
@@ -188,7 +248,11 @@
                                                             @if ($file)
                                                                 <p class="border-b border-white/10 px-3 py-1.5 font-mono text-[0.7rem] text-slate-400">{{ $file }}</p>
                                                             @endif
-                                                            <pre @class(["overflow-x-auto px-3 py-2.5 font-mono text-xs text-slate-100", "leading-[1.6]" => ($block[2] ?? null) !== "tree", "leading-[1.3]" => ($block[2] ?? null) === "tree"]) style="color-scheme: dark"><code>{!! match ($block[2] ?? 'code') { 'tree' => $tree($code), 'output' => e($code), default => \App\Support\ExampleCode::highlight($code, false) } !!}</code></pre>
+                                                            @if (($block[2] ?? null) === 'tree')
+                                                                <x-folder-tree :text="$code" />
+                                                            @else
+                                                                <pre class="overflow-x-auto px-3 py-2.5 font-mono text-xs leading-[1.6] text-slate-100" style="color-scheme: dark"><code>{!! ($block[2] ?? null) === 'output' ? e($code) : \App\Support\ExampleCode::highlight($code, false) !!}</code></pre>
+                                                            @endif
                                                         </div>
                                                     @endforeach
                                                 </div>
@@ -196,6 +260,7 @@
                                         @endforeach
                                     </div>
                                 @endforeach
+                                @endif
                             </div>
                     @endforeach
                 </div>

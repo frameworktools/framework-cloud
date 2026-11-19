@@ -130,22 +130,61 @@ for (const root of document.querySelectorAll('[data-practices]')) {
         codes.forEach(code => setHidden(code, code.dataset.practiceCode !== pick));
         panel.querySelectorAll('[data-practice-language]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.practiceLanguage === pick)));
     };
+    // The heading's tagline slides up to the new topic's, or down when moving back up the list
+    const taglines = [...root.querySelectorAll('[data-practice-word]')];
+    let shown = tabs.findIndex(tab => tab.getAttribute('aria-selected') === 'true');
+    const showTagline = index => {
+        if (index === shown) return;
+        const forward = index > shown;
+        taglines.forEach((word, i) => {
+            if (i !== shown && i !== index) return;
+            if (i === index) {
+                // Start the incoming tagline on the far side without a transition, then slide it in
+                word.style.transition = 'none';
+                word.classList.toggle('translate-y-full', forward);
+                word.classList.toggle('-translate-y-full', !forward);
+                word.offsetHeight;
+                word.style.transition = '';
+            }
+            word.classList.toggle('opacity-0', i !== index);
+            word.classList.toggle('translate-y-full', i !== index && !forward);
+            word.classList.toggle('-translate-y-full', i !== index && forward);
+        });
+        shown = index;
+    };
     const select = tab => {
+        showTagline(tabs.indexOf(tab));
         tabs.forEach(other => { const active = other === tab; other.setAttribute('aria-selected', String(active)); other.tabIndex = active ? 0 : -1; });
         root.querySelectorAll('[data-practice-panel]').forEach(panel => {
             setHidden(panel, panel.dataset.practicePanel !== tab.dataset.practiceTab);
             if (panel.dataset.practicePanel === tab.dataset.practiceTab) showLanguage(panel);
         });
     };
+    // Each topic has its own #practices-<topic> address, so links open it and Back returns to the last one.
+    // Clicks add a history entry; arrow keys replace it.
+    const hashFor = tab => `#practices-${tab.dataset.practiceTab}`;
+    const go = (tab, mode = 'push') => {
+        select(tab);
+        if (location.hash !== hashFor(tab)) history[mode === 'push' ? 'pushState' : 'replaceState'](null, '', hashFor(tab));
+    };
+    const fromHash = () => { const tab = tabs.find(other => hashFor(other) === location.hash); if (tab) select(tab); return tab; };
+    window.addEventListener('popstate', fromHash);
+    window.addEventListener('hashchange', fromHash);
+    if (fromHash()) root.scrollIntoView();
     tabs.forEach((tab, index) => {
-        tab.addEventListener('click', () => select(tab));
+        tab.addEventListener('click', () => go(tab));
         tab.addEventListener('keydown', event => {
             if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
             event.preventDefault();
             const step = ['ArrowDown', 'ArrowRight'].includes(event.key) ? 1 : -1;
             const next = tabs[event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (index + step + tabs.length) % tabs.length];
-            select(next); next.focus();
+            go(next, 'replace'); next.focus();
         });
+    });
+    // Links from one topic to another select that topic's tab
+    onClick(root, '[data-practice-goto]', button => {
+        const tab = tabs.find(other => other.dataset.practiceTab === button.dataset.practiceGoto);
+        go(tab); tab.focus();
     });
     onClick(root, '[data-practice-language]', button => {
         language = button.dataset.practiceLanguage;
