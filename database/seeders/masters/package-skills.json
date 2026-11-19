@@ -18,9 +18,9 @@
     },
     "python": {
         "package": "framework-py",
-        "ref": "04ed5ede8f84567b0f24b2f5527e3dbcc4d89147",
-        "commit": "04ed5ede8f84567b0f24b2f5527e3dbcc4d89147",
-        "version": "0.1.0.dev29",
+        "ref": "601017ad1b64395b0fd341049d57a6bb564a7845",
+        "commit": "601017ad1b64395b0fd341049d57a6bb564a7845",
+        "version": "0.1.0.dev30",
         "skills": [
             "framework-cache",
             "framework-data",

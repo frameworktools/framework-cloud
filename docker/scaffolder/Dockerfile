@@ -14,7 +14,7 @@ ARG FW_REF=a6e3c6215e4a5c94bfcba8c0f36a2bb30eb4937c
 # The release FW_REF is tagged as, so fw --version reports it
 ARG FW_VERSION=0.7.2
 ARG FRAMEWORK_REF=f2d9e704cbb5e8bd5e5d93dd1f8ccc1e3987d163
-ARG FRAMEWORK_PY_REF=04ed5ede8f84567b0f24b2f5527e3dbcc4d89147
+ARG FRAMEWORK_PY_REF=601017ad1b64395b0fd341049d57a6bb564a7845
 
 # 1. fw, built from source at its pin
 FROM golang:1.27 AS fw
