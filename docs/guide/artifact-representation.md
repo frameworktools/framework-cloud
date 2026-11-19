@@ -6,7 +6,7 @@ Models, tables, and hypothesis tests published from the Framework packages for R
 
 ## Top-level fields
 
-```json
+```json title="Model representation"
 {
   "schema": "framework.artifact/v1",
   "kind": "model",
@@ -217,7 +217,7 @@ A test may also carry `tables` and `metrics` with further details.
 
 A code snippet holds a notebook chunk's code and the text it printed. Clients publish it with `kind` set to `code_snippet`:
 
-```json
+```json title="Publish input"
 {
   "schema": "framework.artifact/v1",
   "kind": "code_snippet",

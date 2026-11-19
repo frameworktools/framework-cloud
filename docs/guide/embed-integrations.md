@@ -42,7 +42,7 @@ The repository also commits these three built files under `php/assets/`. jsDeliv
 
 PHP projects can install `framework-cloud/embed` from a release archive with a Composer package repository:
 
-```json
+```json title="composer.json"
 {
     "repositories": [
         {
@@ -65,7 +65,7 @@ A clone used as a Composer path repository also works, as the Drupal and Statami
 
 `GET /.well-known/framework.json` lists a server's embed endpoints:
 
-```json
+```json title="Discovery document"
 {"framework": {"embed": {
   "version": 1,
   "resolve": "https://framework.pub/api/embed/v1/resolve",
@@ -76,7 +76,7 @@ A clone used as a Composer path repository also works, as the Drupal and Statami
 
 Reader pages of embeddable artifacts link to the embed document and the oEmbed response for their version:
 
-```html
+```html title="Reader page head"
 <link rel="alternate" type="application/json+oembed" href="https://framework.pub/api/oembed?url=…" title="…">
 <link rel="alternate" type="application/vnd.framework.embed+json" href="https://framework.pub/api/embed/v1/artifacts/{key}/versions/{n}">
 ```
@@ -154,7 +154,7 @@ Every renderer output is one `<figure class="fw-embed fw-embed--{kind}">`. "Mark
 
 **Variable tips.** A coefficient term mapped in `data.terms`, or a data table column header with a label or summary, renders as a button followed immediately by its popover:
 
-```html
+```html title="Variable tip"
 <th scope="row"><button type="button" class="fw-embed__term" popovertarget="fw-embed-tip-{key}-{version}-{n}">speciesChinstrap</button><span class="fw-embed__tip" id="fw-embed-tip-{key}-{version}-{n}" popover=""><span class="fw-embed__tip-block"><span class="fw-embed__tip-name">species = Chinstrap</span><span class="fw-embed__tip-label">Penguin species</span><span class="fw-embed__tip-detail">Compared with Adelie. 68 of 342 rows.</span></span></span></th>
 ```
 
@@ -166,7 +166,7 @@ The `popover` attribute opens the tip on click or tap without JavaScript. `enhan
 
 **Stored documents.** `<framework-artifact>` renders a document from a direct child `<script type="application/json">` without a network request:
 
-```html
+```html title="Stored document"
 <framework-artifact src="https://framework.pub/d/KEY/versions/1">
   <script type="application/json">{"schema":"framework.embed/v1", …}</script>
 </framework-artifact>
@@ -193,7 +193,7 @@ FrameworkEmbed.enhanceOutput(container);
 
 A page that imports the ES module calls the setup functions directly:
 
-```js
+```js title="ES module"
 import { configure, defineElement, enhanceCharts, enhanceCopy, enhanceOutput, enhanceTips, expandDetailsForPrint } from './framework-embed.js';
 
 configure({ hosts: ['framework.pub', 'framework.example.org'] });
