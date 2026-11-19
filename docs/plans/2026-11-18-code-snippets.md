@@ -1,6 +1,6 @@
 # Code snippets
 
-Status: approved 2026-11-18. Phase 1 shipped 2026-11-18: the Cloud kind, reader, and output toggle, and framework-embed 0.5.0. Next: phase 2, the R and Stata clients.
+Status: approved 2026-11-18. Phase 1 shipped 2026-11-18: the Cloud kind, reader, and output toggle, and framework-embed 0.5.0. Phase 2 shipped 2026-11-18: the R and Stata clients, in framework 2.0.14 and Framework for Stata 0.3.5. Next: phase 3, Python notebooks.
 
 A code snippet artifact carries a chunk's code and the printed text output a notebook reader saw under it. It is published from the notebook run, so a blog post that embeds it shows the code that produced the results beside it. The first user is the "bayesian-social-statistics" series on academic.page, which embeds artifacts through framework-embed and links each post to its full Quarto notebook.
 
@@ -79,7 +79,7 @@ Cloud enforces these on every snippet, whatever the client did:
 - ANSI escape sequences become styled segments (see "Plain and styled text"). Line endings become `\n`. Trailing blank lines are trimmed.
 - Unknown fields are dropped. Unknown block types, including images, reject the document, so a client bug fails at publish and does not show a broken embed.
 
-Clients truncate first with the same limits, so a long print does not upload megabytes only to be cut.
+Clients do not truncate. Cloud alone applies the limits.
 
 ### Plain and styled text
 
@@ -207,7 +207,7 @@ publish_snippet("fit-bayes", folded = TRUE, links = list(notebook = "https://…
 
 `library(framework)` under knitr installs wrappers around knitr's output hooks (`source`, `output`, `message`, `warning`, `error`). The `plot` hook is left alone, so plots stay in the rendered notebook and out of the snippet. Each wrapper records its piece for the current chunk label and passes the piece through unchanged. The record therefore holds what knitr rendered: `results = "hide"`, `echo = FALSE`, `message = FALSE`, and `warning = FALSE` already applied. `publish_snippet(label)` publishes that chunk's record from any later chunk. Hooks attach when the package loads, so the labelled chunk must come after `library(framework)`.
 
-knitr adds the comment prefix (`options$comment`, `## ` by default) before it calls the output hook (`knitr:::sew.character`). The wrapper strips that prefix, so the snippet does not carry `## ` on every line. `results = "asis"` output is recorded as plain text. Quarto installs its own hooks before the first chunk, and the wrappers wrap those. This needs a test under both `quarto render` and `rmarkdown::render()`. `width` is `getOption("width")` at the chunk.
+knitr adds the comment prefix (`options$comment`, `## ` by default) before it calls the output hook (`knitr:::sew.character`). The wrapper strips that prefix, so the snippet does not carry `## ` on every line. `results = "asis"` output never reaches the output hook in HTML output, so it is not recorded. Quarto installs its own hooks before the first chunk, and the wrappers wrap those. This needs a test under both `quarto render` and `rmarkdown::render()`. `width` is `getOption("width")` at the chunk.
 
 Outside a render, as when a chunk runs in the editor, no hooks fire. `publish_snippet()` then publishes nothing and says why. It never re-runs the chunk.
 
@@ -234,7 +234,7 @@ fw_snippet end, folded
 
 The command follows the package's `fw_` naming (`fw_publish`, `fw_table`). `fw_snippet begin` opens a named SMCL log (`log using …, name(fw_snippet) smcl`) beside the user's own log. `end` closes it, splits it, and publishes. Stata already echoes each command above its output, so the client splits the log at command lines (`{com}. `), with continuation lines (`> `) kept with their command. Command text becomes a code block's `text`, with the `. ` prompt removed. The SMCL between commands becomes an output block's `smcl`, unchanged. Cloud translates it (see "SMCL"). The `fw_snippet end` line is dropped. The splitting is Mata in a new `fw_snippet.mata`, and stays a line-level job. Publishing reuses `fw_publish`'s backends (core curl, the `fw` CLI, or the Python bridge), so it needs no Python.
 
-Cloud makes an output block an `error` block when its first printed text is `{err}`, so the client does not judge it. `width` is `c(linesize)`. `source.lines` comes from the do-file when `c(filename)` and the line numbers are available, and is left out otherwise.
+Cloud makes an output block an `error` block when its first printed text is `{err}`, so the client does not judge it. `width` is `c(linesize)`. Stata exposes no running do-file (`c(filename)` is the last dataset), so `fw_snippet end` searches the project's do-files for `fw_snippet begin <label>` and records the file and the lines between the markers. When several do-files match, the file is left out; `file()` names it.
 
 A snippet nested inside another, or a `begin` without an `end`, fails with a message. A do-file that stops with an error between `begin` and `end` leaves the log open. The next `fw_snippet begin` closes it first.
 
@@ -304,7 +304,7 @@ Approved 2026-11-18:
 
 1. Cloud builds highlight tokens and styled segments. Renderers never highlight or parse SMCL or ANSI.
 2. Snippets keep versions. Unchanged snippets add no version. The API answers `200` with `unchanged: true`.
-3. Clients send `repository` only when the user passes it or sets it in `settings.yml`. Commit and file go by default.
+3. Clients send `repository` only when the user passes it or sets `publish.repository` in `settings.yml`. Commit and file go by default.
 4. Stata output keeps its SMCL styles.
 
 ## Implementation notes
