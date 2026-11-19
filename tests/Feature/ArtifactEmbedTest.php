@@ -379,17 +379,23 @@ class ArtifactEmbedTest extends TestCase
         URL::forceScheme('https');
         $this->travelTo('2026-11-16T12:00:00Z');
         $fixtures = [
-            'r-glm-logit' => ['r-glm-logit.json', 'Transmission model', 'Manual transmission by weight and horsepower, from mtcars.'],
-            'r-tibble' => ['r-tibble.json', 'Penguin measurements', null],
-            'r-ttest-welch' => ['r-ttest-welch.json', 'Tooth growth by supplement', null],
-            'r-ggplot' => ['r-ggplot.svg', 'Fuel economy by weight', null],
-            'python-altair' => ['python-altair.vl.json', 'Tips by bill', null],
-            'page' => ['<!doctype html><html><head><title>Annual report</title></head><body><h1>Annual report</h1></body></html>', 'Annual report', 'Rendered Quarto report.'],
+            'r-glm-logit' => ['r-glm-logit.json', 'Transmission model', 'Manual transmission by weight and horsepower, from mtcars.', null],
+            'r-tibble' => ['r-tibble.json', 'Penguin measurements', null, null],
+            'r-ttest-welch' => ['r-ttest-welch.json', 'Tooth growth by supplement', null, null],
+            'r-ggplot' => ['r-ggplot.svg', 'Fuel economy by weight', null, null],
+            'python-altair' => ['python-altair.vl.json', 'Tips by bill', null, null],
+            // A ggplot published with its phiz plot description: a live chart with the figure as its fallback
+            'r-ggplot-live' => ['r-ggplot.svg', 'Fuel economy by weight', null, 'r-ggplot.phiz.json'],
+            'page' => ['<!doctype html><html><head><title>Annual report</title></head><body><h1>Annual report</h1></body></html>', 'Annual report', 'Rendered Quarto report.', null],
         ];
         $directory = base_path('tests/fixtures/embeds');
         is_dir($directory) || mkdir($directory, 0755, true);
-        foreach ($fixtures as $name => [$source, $title, $description]) {
-            $version = $this->publish($source, ['slug' => $name, 'title' => $title, 'description' => $description, 'visibility' => 'public']);
+        foreach ($fixtures as $name => [$source, $title, $description, $plot]) {
+            $input = ['slug' => $name, 'title' => $title, 'description' => $description, 'visibility' => 'public'];
+            if ($plot !== null) {
+                $input['plot_description'] = UploadedFile::fake()->createWithContent('figure.phiz.json', file_get_contents(base_path("tests/fixtures/artifacts/{$plot}")));
+            }
+            $version = $this->publish($source, $input);
             $key = substr(str_pad(preg_replace('/[^a-z0-9]/', '', $name), 16, '0'), 0, 16);
             $version->document->forceFill(['key' => $key])->save();
             $version = $version->fresh(['document.project.user']);

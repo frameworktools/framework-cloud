@@ -78,7 +78,7 @@ Implementation notes:
 - `kind` is one of `model`, `table`, `test`, `image`, `vega-lite`, `page`. Renderers treat an unknown kind as `page`.
 - `data` is set for `model`, `table`, and `test`: the normalized representation from `ArtifactRepresentation::parse` (tables capped at 10, columns at 50, with `truncated`, `row_count`, `column_count`, `precision_note`). Each table carries its first 25 rows, the number renderers show. `row_count`, `column_count`, and the column summaries describe the whole table. A table cut to 25 rows has `truncated: true`, and so does the representation. An embed document for a typical artifact stays well under 200 KB.
 - `spec` is set for `vega-lite`: the Vega-Lite specification, data inlined. Only self-contained specs embed. A spec that loads data by URL (`url` under `data`, a `lookup` source, or a `datasets` entry), uses an image mark's `url` channel, or sets `href` embeds as `page`.
-- `image` is `{"url", "content_type", "width", "height"}`. It is set for `image`, and it may be set for other kinds later as a fallback. `width` and `height` may be null.
+- `image` is `{"url", "content_type", "width", "height"}`. It is set for `image`, and for a `vega-lite` figure compiled from a phiz plot description (`figure.phiz.json`), where it is the fallback. `width` and `height` may be null.
 - `page` covers HTML documents, Quarto sites, PDFs, data files, and anything else. Renderers show a link card: title, description, author, and the attribution link.
 - `author` and `description` may be null. `author` is set only when the owner's profile is public. Fields may be added within `v1`; renderers ignore fields they don't know.
 - `alt` is a one-sentence text description for screen readers and image alt text.

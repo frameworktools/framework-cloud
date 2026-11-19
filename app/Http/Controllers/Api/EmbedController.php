@@ -60,14 +60,14 @@ class EmbedController extends Controller
     }
 
     /**
-     * An image artifact's figure. Where the content Worker serves files, this
+     * An image artifact's figure, also the fallback of a figure drawn live. Where the content Worker serves files, this
      * answers with a redirect to a signed Worker link, so the bytes never pass
      * through the app; the URL in the embed document stays stable.
      */
     public function image(string $key, int $number): JsonResponse|RedirectResponse|StreamedResponse
     {
         $version = ArtifactEmbed::byKey($key)?->findVersion($number);
-        if ($version === null || ArtifactEmbed::kind($version) !== 'image') {
+        if ($version === null || ! ArtifactEmbed::hasImage($version)) {
             return self::notFound();
         }
         if (ContentWorker::enabled($version)) {

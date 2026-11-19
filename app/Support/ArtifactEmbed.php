@@ -116,9 +116,12 @@ class ArtifactEmbed
         } else {
             $codeOnly = false;
         }
-        $spec = $kind === 'vega-lite' ? ArtifactPreview::vegaLiteSpec($version) : null;
-        $image = $kind === 'image' ? ['url' => self::imageUrl($version), 'content_type' => self::contentType($version)] + self::imageSize($version) : null;
+        // A figure with a plot description draws live, with its image as the fallback
+        $described = $kind === 'vega-lite' && self::hasImage($version);
+        $spec = $kind === 'vega-lite' ? ($described ? PlotDescription::embedSpec($version) : ArtifactPreview::vegaLiteSpec($version)) : null;
+        $image = $kind === 'image' || $described ? ['url' => self::imageUrl($version), 'content_type' => self::contentType($version)] + self::imageSize($version) : null;
         $title = $document->title ?: $document->slug;
+        $alt = $described && ($text = PlotDescription::text($version)) !== null ? $text : EmbedAlt::for($kind, $title, $data);
         // The option rides on both links, so a site that fetches again keeps it
         $option = $codeOnly ? '?output=none' : '';
         $url = self::pageUrl($version).$option;
@@ -131,7 +134,7 @@ class ArtifactEmbed
             'kind' => $kind,
             'title' => $title,
             'description' => filled($document->description) ? $document->description : null,
-            'alt' => EmbedAlt::for($kind, $title, $data),
+            'alt' => $alt,
             'url' => $url,
             'embed_url' => self::embedUrl($version).$option,
             'published_at' => ($version->created_at ?? $document->updated_at)?->toIso8601ZuluString(),
@@ -158,7 +161,7 @@ class ArtifactEmbed
         return $data;
     }
 
-    /** model, table, test, code_snippet, image, vega-lite, or page. */
+    /** model, table, test, code_snippet, image, vega-lite, or page. A figure with a usable plot description is vega-lite. */
     public static function kind(DocumentVersion $version): string
     {
         $preview = ArtifactPreview::forVersion($version);
@@ -167,9 +170,16 @@ class ArtifactEmbed
             'representation' => in_array($preview['kind'] ?? null, ['model', 'table', 'test'], true) ? $preview['kind'] : 'page',
             ArtifactSnippet::KIND => ArtifactSnippet::KIND,
             'chart' => self::selfContained(ArtifactPreview::vegaLiteSpec($version)) ? 'vega-lite' : 'page',
-            'image' => ! $version->isBundle() && in_array(self::contentType($version), self::IMAGE_TYPES, true) ? 'image' : 'page',
+            'image' => ! self::hasImage($version) ? 'page' : (PlotDescription::embedSpec($version) !== null ? 'vega-lite' : 'image'),
             default => 'page',
         };
+    }
+
+    /** Whether the version is a single figure an embed may show through <img>: image artifacts, and described figures as their fallback. */
+    public static function hasImage(DocumentVersion $version): bool
+    {
+        return ArtifactPreview::forVersion($version)['type'] === 'image'
+            && ! $version->isBundle() && in_array(self::contentType($version), self::IMAGE_TYPES, true);
     }
 
     /**

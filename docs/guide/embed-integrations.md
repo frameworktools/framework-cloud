@@ -134,8 +134,8 @@ An embed document uses the `framework.embed/v1` schema:
 |---|---|
 | `kind` | `model`, `table`, `test`, `code_snippet`, `image`, `vega-lite`, or `page`. Renderers treat unknown values as `page`. |
 | `data` | The `framework.artifact/v1` representation for `model`, `table`, `test`, and `code_snippet`. See [Artifact representation](artifact-representation.md). |
-| `spec` | Vega-Lite specification for `vega-lite`. Only charts with inline data embed as `vega-lite`. Charts that load external URLs for data, images, or links embed as `page`. |
-| `image` | Object with `url`, `content_type`, `width`, and `height` for `image`. `width` and `height` may be `null`. |
+| `spec` | Vega-Lite specification for `vega-lite`. Only charts with inline data embed as `vega-lite`. Charts that load external URLs for data, images, or links embed as `page`. A figure published with a phiz plot description embeds its compiled chart, without a background, colors, or fonts for the page's text and axes. |
+| `image` | Object with `url`, `content_type`, `width`, and `height` for `image`. A `vega-lite` document of a figure published with a plot description also has `image`, the figure itself, as its fallback. Otherwise `image` is `null` for `vega-lite`. `width` and `height` may be `null`. |
 | `key`, `version`, `latest_version` | The artifact's key, this document's version number, and the newest version number. A stored integration can compare `version` with `latest_version` to offer an update. |
 | `alt` | One-sentence text description for screen readers and image alt text. |
 | `url` | Reader page URL for this version. |

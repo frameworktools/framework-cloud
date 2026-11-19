@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Document;
 use App\Models\DocumentVersion;
+use App\Support\PlotDescription;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
@@ -97,9 +98,9 @@ class MoveArtifactsCommand extends Command
             return $disk->allFiles($version->disk_path);
         }
 
-        $sidecar = $version->representationPath();
+        $sidecars = array_filter([$version->representationPath(), PlotDescription::path($version)], fn (?string $path) => $path !== null && $disk->exists($path));
 
-        return array_values(array_filter([$version->disk_path, $sidecar !== null && $disk->exists($sidecar) ? $sidecar : null]));
+        return array_values([$version->disk_path, ...$sidecars]);
     }
 
     private function copy(string $from, string $to, string $file): void

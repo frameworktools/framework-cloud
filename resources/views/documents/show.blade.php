@@ -53,6 +53,8 @@
     @php
         $embedded = request()->boolean('embed');
         $structured = in_array($preview['type'], ['representation', 'chart', 'image', 'code_snippet'], true);
+        // A figure published with a plot description draws as a live chart
+        $liveFigure = $preview['type'] === 'image' && \App\Support\PlotDescription::spec($version) !== null;
     @endphp
     @unless ($embedded)
     <header class="border-b border-slate-200 bg-white px-4 {{ $structured ? 'py-4 sm:px-6' : 'py-2.5' }} dark:border-slate-700 dark:bg-slate-800">
@@ -92,7 +94,7 @@
         <div class="px-4 {{ $structured ? 'sm:px-6' : '' }}"><p class="py-3 text-sm text-slate-600 dark:text-slate-300 {{ $structured ? 'mx-auto max-w-4xl' : '' }}">{{ $document->description }}</p></div>
     @endif
     @endunless
-    @if ($preview['type'] === 'image')
+    @if ($preview['type'] === 'image' && ! $liveFigure)
         <main class="grow overflow-auto {{ $embedded ? 'bg-white px-4 py-6 sm:px-8 sm:py-8' : 'p-4 sm:p-6' }}">
             {{-- Figures assume a white background, so they sit on a white card in both themes --}}
             <figure class="mx-auto {{ $embedded ? 'w-full' : 'w-fit' }} max-w-full bg-white {{ $embedded ? '' : 'rounded-xl border border-slate-200 p-3 shadow-sm dark:border-slate-700' }}">
@@ -269,7 +271,7 @@
                 <x-artifact-snippet :snippet="$preview" :document="$document" :output-shown="request()->query('output') !== 'none'" />
             </div>
         </main>
-    @elseif ($preview['type'] === 'chart')
+    @elseif ($preview['type'] === 'chart' || $liveFigure)
         <main class="grow overflow-auto p-4 sm:p-6">
             <figure class="mx-auto {{ $embedded ? '' : 'max-w-4xl' }} rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
                 <iframe data-chart-frame data-src="{{ $version->chartUrl() }}" sandbox="allow-scripts" referrerpolicy="no-referrer" title="{{ $document->title }}" class="h-96 w-full border-0"></iframe>

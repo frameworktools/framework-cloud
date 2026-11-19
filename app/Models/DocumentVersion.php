@@ -6,6 +6,7 @@ use App\Support\ArtifactContentAccess;
 use App\Support\ChartPage;
 use App\Support\ContentHost;
 use App\Support\ContentWorker;
+use App\Support\PlotDescription;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -166,6 +167,6 @@ class DocumentVersion extends Model
 
             return;
         }
-        $disk->delete(array_filter([$this->disk_path, $this->representationPath(), ChartPage::path($this)]));
+        $disk->delete(array_filter([$this->disk_path, $this->representationPath(), PlotDescription::path($this), ChartPage::path($this)]));
     }
 }

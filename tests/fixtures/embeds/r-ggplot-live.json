@@ -1,0 +1,381 @@
+{
+    "schema": "framework.embed/v1",
+    "key": "rggplotlive00000",
+    "version": 1,
+    "latest_version": 1,
+    "kind": "vega-lite",
+    "title": "Fuel economy by weight",
+    "description": null,
+    "alt": "Fuel economy falls with weight across 32 cars.",
+    "url": "https://framework.pub/@ada/admissions/r-ggplot-live/versions/1",
+    "embed_url": "https://framework.pub/api/embed/v1/artifacts/rggplotlive00000/versions/1",
+    "published_at": "2026-11-16T12:00:00Z",
+    "author": {
+        "name": "Ada Example",
+        "url": "https://framework.pub/@ada"
+    },
+    "provider": {
+        "name": "Framework",
+        "url": "https://framework.pub"
+    },
+    "attribution": {
+        "text": "Framework",
+        "url": "https://framework.pub/@ada/admissions/r-ggplot-live/versions/1"
+    },
+    "data": null,
+    "spec": {
+        "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+        "description": "Fuel economy falls with weight across 32 cars.",
+        "data": {
+            "values": [
+                {
+                    "wt": 2.62,
+                    "mpg": 21,
+                    "cyl": "6"
+                },
+                {
+                    "wt": 2.875,
+                    "mpg": 21,
+                    "cyl": "6"
+                },
+                {
+                    "wt": 2.32,
+                    "mpg": 22.8,
+                    "cyl": "4"
+                },
+                {
+                    "wt": 3.215,
+                    "mpg": 21.4,
+                    "cyl": "6"
+                },
+                {
+                    "wt": 3.44,
+                    "mpg": 18.7,
+                    "cyl": "8"
+                },
+                {
+                    "wt": 3.46,
+                    "mpg": 18.1,
+                    "cyl": "6"
+                },
+                {
+                    "wt": 3.57,
+                    "mpg": 14.3,
+                    "cyl": "8"
+                },
+                {
+                    "wt": 3.19,
+                    "mpg": 24.4,
+                    "cyl": "4"
+                },
+                {
+                    "wt": 3.15,
+                    "mpg": 22.8,
+                    "cyl": "4"
+                },
+                {
+                    "wt": 3.44,
+                    "mpg": 19.2,
+                    "cyl": "6"
+                },
+                {
+                    "wt": 3.44,
+                    "mpg": 17.8,
+                    "cyl": "6"
+                },
+                {
+                    "wt": 4.07,
+                    "mpg": 16.4,
+                    "cyl": "8"
+                },
+                {
+                    "wt": 3.73,
+                    "mpg": 17.3,
+                    "cyl": "8"
+                },
+                {
+                    "wt": 3.78,
+                    "mpg": 15.2,
+                    "cyl": "8"
+                },
+                {
+                    "wt": 5.25,
+                    "mpg": 10.4,
+                    "cyl": "8"
+                },
+                {
+                    "wt": 5.424,
+                    "mpg": 10.4,
+                    "cyl": "8"
+                },
+                {
+                    "wt": 5.345,
+                    "mpg": 14.7,
+                    "cyl": "8"
+                },
+                {
+                    "wt": 2.2,
+                    "mpg": 32.4,
+                    "cyl": "4"
+                },
+                {
+                    "wt": 1.615,
+                    "mpg": 30.4,
+                    "cyl": "4"
+                },
+                {
+                    "wt": 1.835,
+                    "mpg": 33.9,
+                    "cyl": "4"
+                },
+                {
+                    "wt": 2.465,
+                    "mpg": 21.5,
+                    "cyl": "4"
+                },
+                {
+                    "wt": 3.52,
+                    "mpg": 15.5,
+                    "cyl": "8"
+                },
+                {
+                    "wt": 3.435,
+                    "mpg": 15.2,
+                    "cyl": "8"
+                },
+                {
+                    "wt": 3.84,
+                    "mpg": 13.3,
+                    "cyl": "8"
+                },
+                {
+                    "wt": 3.845,
+                    "mpg": 19.2,
+                    "cyl": "8"
+                },
+                {
+                    "wt": 1.935,
+                    "mpg": 27.3,
+                    "cyl": "4"
+                },
+                {
+                    "wt": 2.14,
+                    "mpg": 26,
+                    "cyl": "4"
+                },
+                {
+                    "wt": 1.513,
+                    "mpg": 30.4,
+                    "cyl": "4"
+                },
+                {
+                    "wt": 3.17,
+                    "mpg": 15.8,
+                    "cyl": "8"
+                },
+                {
+                    "wt": 2.77,
+                    "mpg": 19.7,
+                    "cyl": "6"
+                },
+                {
+                    "wt": 3.57,
+                    "mpg": 15,
+                    "cyl": "8"
+                },
+                {
+                    "wt": 2.78,
+                    "mpg": 21.4,
+                    "cyl": "4"
+                }
+            ]
+        },
+        "width": "container",
+        "height": 320,
+        "layer": [
+            {
+                "data": {
+                    "values": [
+                        {
+                            "wt": 1.513,
+                            "ymin": 26.9,
+                            "ymax": 32.8
+                        },
+                        {
+                            "wt": 2.5,
+                            "ymin": 23.4,
+                            "ymax": 26.6
+                        },
+                        {
+                            "wt": 3.5,
+                            "ymin": 18,
+                            "ymax": 20.8
+                        },
+                        {
+                            "wt": 4.5,
+                            "ymin": 12.1,
+                            "ymax": 16.6
+                        },
+                        {
+                            "wt": 5.424,
+                            "ymin": 7.6,
+                            "ymax": 13.6
+                        }
+                    ]
+                },
+                "mark": {
+                    "type": "area",
+                    "opacity": 0.4
+                },
+                "encoding": {
+                    "x": {
+                        "field": "wt",
+                        "type": "quantitative",
+                        "title": "Weight (1,000 lbs)",
+                        "scale": {
+                            "zero": false
+                        }
+                    },
+                    "y": {
+                        "field": "ymin",
+                        "type": "quantitative",
+                        "title": "Miles per gallon",
+                        "scale": {
+                            "zero": false
+                        }
+                    },
+                    "y2": {
+                        "field": "ymax"
+                    }
+                }
+            },
+            {
+                "data": {
+                    "values": [
+                        {
+                            "wt": 1.513,
+                            "mpg": 29.2
+                        },
+                        {
+                            "wt": 2.5,
+                            "mpg": 24
+                        },
+                        {
+                            "wt": 3.5,
+                            "mpg": 18.6
+                        },
+                        {
+                            "wt": 4.5,
+                            "mpg": 13.3
+                        },
+                        {
+                            "wt": 5.424,
+                            "mpg": 8.3
+                        }
+                    ]
+                },
+                "mark": {
+                    "type": "line",
+                    "strokeWidth": 1,
+                    "color": "#3366FF"
+                },
+                "encoding": {
+                    "x": {
+                        "field": "wt",
+                        "type": "quantitative",
+                        "title": "Weight (1,000 lbs)",
+                        "scale": {
+                            "zero": false
+                        }
+                    },
+                    "y": {
+                        "field": "mpg",
+                        "type": "quantitative",
+                        "title": "Miles per gallon",
+                        "scale": {
+                            "zero": false
+                        }
+                    }
+                }
+            },
+            {
+                "mark": {
+                    "type": "point",
+                    "filled": true
+                },
+                "encoding": {
+                    "x": {
+                        "field": "wt",
+                        "type": "quantitative",
+                        "title": "Weight (1,000 lbs)",
+                        "scale": {
+                            "zero": false
+                        }
+                    },
+                    "y": {
+                        "field": "mpg",
+                        "type": "quantitative",
+                        "title": "Miles per gallon",
+                        "scale": {
+                            "zero": false
+                        }
+                    },
+                    "color": {
+                        "field": "cyl",
+                        "type": "nominal",
+                        "title": "Cylinders"
+                    }
+                }
+            }
+        ],
+        "config": {
+            "axis": {
+                "labelFontSize": 11.7,
+                "titleFontSize": 14.7,
+                "titleFontWeight": "normal",
+                "grid": true,
+                "domain": false
+            },
+            "legend": {
+                "labelFontSize": 11.7,
+                "titleFontSize": 14.7,
+                "titleFontWeight": "normal",
+                "labelLimit": 320
+            },
+            "header": {
+                "labelFontSize": 11.7,
+                "titleFontSize": 14.7
+            },
+            "axisQuantitative": {
+                "tickCount": 5
+            },
+            "axisTemporal": {
+                "tickCount": 6
+            },
+            "style": {
+                "phiz-band": {
+                    "opacity": 0.4
+                }
+            },
+            "title": {
+                "fontSize": 17.6,
+                "subtitleFontSize": 14.7,
+                "anchor": "start",
+                "fontWeight": "normal"
+            },
+            "range": {
+                "category": [
+                    "#F8766D",
+                    "#00BA38",
+                    "#619CFF"
+                ]
+            }
+        }
+    },
+    "image": {
+        "url": "https://framework.pub/api/embed/v1/artifacts/rggplotlive00000/versions/1/image",
+        "content_type": "image/svg+xml",
+        "width": 672,
+        "height": 480
+    }
+}

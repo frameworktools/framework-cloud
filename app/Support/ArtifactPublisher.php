@@ -35,6 +35,8 @@ class ArtifactPublisher
             'visibility' => ['sometimes', Rule::in(['public', 'unlisted', 'private'])],
             'password' => ['sometimes', 'nullable', 'string', 'min:8', 'max:200'],
             'kind' => ['sometimes', Rule::in(self::KINDS)],
+            // A phiz plot description of an SVG or PNG figure, stored beside it as figure.phiz.json
+            'plot_description' => ['sometimes', 'nullable', 'prohibits:bundle', 'file', 'max:'.intdiv(PlotDescription::MAX_BYTES, 1024)],
         ];
     }
 
@@ -68,6 +70,15 @@ class ArtifactPublisher
                     throw new RuntimeException('Could not store the artifact.');
                 }
                 $stored = ['source_path' => null, 'disk_path' => $path, 'entrypoint' => null, 'size_bytes' => $upload->getSize(), 'manifest' => [['path' => $filename, 'size_bytes' => $upload->getSize(), 'content_type' => $type]]];
+                if (isset($input['plot_description'])) {
+                    if (! in_array(strtolower(trim(explode(';', $type)[0])), PlotDescription::FIGURE_TYPES, true)) {
+                        throw ValidationException::withMessages(['plot_description' => 'A plot description accompanies an SVG or PNG figure.']);
+                    }
+                    // Kept as sent: phiz checks it when it compiles, and a refused one leaves the figure an image
+                    if (! Storage::disk($disk)->putFileAs($prefix, $input['plot_description'], PlotDescription::FILENAME)) {
+                        throw new RuntimeException('Could not store the plot description.');
+                    }
+                }
                 // A CSV or TSV also gets a typed table with column summaries; without one it still publishes
                 if (DataFile::isTabular($filename, $type)) {
                     $representation = DataFile::representation($upload->getRealPath(), DataFile::delimiter($filename, $type), $filename);
@@ -160,6 +171,7 @@ class ArtifactPublisher
             // The page's preview and chart are built now, once, not when someone first opens it
             try {
                 ArtifactPreview::forVersion($version);
+                PlotDescription::spec($version);
                 ChartPage::store($version);
             } catch (Throwable $e) {
                 report($e);
@@ -205,8 +217,11 @@ class ArtifactPublisher
                     $stored['storage_disk'] = config('framework.artifacts_disk', 'local');
                     $files = $version->isBundle() ? Storage::disk($version->disk())->allFiles($version->disk_path) : [$version->disk_path];
                     $sidecar = $version->representationPath();
-                    if ($sidecar !== null && Storage::disk($version->disk())->exists($sidecar)) {
-                        $files[] = $sidecar;
+                    $description = PlotDescription::path($version);
+                    foreach ([$sidecar, $description] as $extra) {
+                        if ($extra !== null && Storage::disk($version->disk())->exists($extra)) {
+                            $files[] = $extra;
+                        }
                     }
                     if ($files === []) {
                         throw new RuntimeException('The source artifact has no stored files.');
@@ -215,6 +230,7 @@ class ArtifactPublisher
                         $destination = match (true) {
                             $version->isBundle() => $prefix.substr($file, strlen($version->disk_path)),
                             $file === $sidecar => $prefix.'/'.DocumentVersion::REPRESENTATION,
+                            $file === $description => $prefix.'/'.PlotDescription::FILENAME,
                             default => $stored['disk_path'],
                         };
                         $stream = Storage::disk($version->disk())->readStream($file);

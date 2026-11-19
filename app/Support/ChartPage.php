@@ -27,14 +27,20 @@ class ChartPage
     public static function path(DocumentVersion $version): ?string
     {
         return $version->isBundle() || ! $version->disk_path || ! str_ends_with($version->disk_path, '/content')
-            || ! ArtifactPreview::isVegaLite($version->original_filename)
+            || (! ArtifactPreview::isVegaLite($version->original_filename) && PlotDescription::path($version) === null)
             ? null : dirname($version->disk_path).'/'.self::FILENAME;
+    }
+
+    /** The spec the page draws: a Vega-Lite file's, or a figure's compiled plot description, with phiz's theme. */
+    public static function spec(DocumentVersion $version): ?array
+    {
+        return ArtifactPreview::isVegaLite($version->original_filename) ? ArtifactPreview::vegaLiteSpec($version) : PlotDescription::spec($version);
     }
 
     /** The page's HTML, or null when the spec isn't a chart. */
     public static function render(DocumentVersion $version, bool $dark = false): ?string
     {
-        $spec = ArtifactPreview::vegaLiteSpec($version);
+        $spec = self::spec($version);
         if ($spec === null) {
             return null;
         }

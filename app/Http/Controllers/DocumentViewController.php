@@ -166,14 +166,14 @@ class DocumentViewController extends Controller
     }
 
     /**
-     * A Vega-Lite chart, drawn in an opaque sandbox: a specification can run Vega expressions and name data
-     * URLs, so it gets no access to this origin and no network beyond the pinned chart libraries.
+     * A Vega-Lite chart, or a figure's compiled plot description, drawn in an opaque sandbox: a specification can run
+     * Vega expressions and name data URLs, so it gets no access to this origin and no network beyond the pinned chart libraries.
      */
     public function chart(Request $request, string $key, int $number, string $access): Response|RedirectResponse
     {
         $version = $this->version($this->byKey($key), $number);
         abort_unless(ArtifactContentAccess::accepts($version, $access), 403);
-        abort_unless(ArtifactPreview::isVegaLite($version->original_filename) && ! $version->isBundle() && ! $version->usesExternalUrl(), 404);
+        abort_unless(ChartPage::path($version) !== null && ! $version->usesExternalUrl(), 404);
         // Links issued before chart pages were stored: send them to the stored page
         if (ContentWorker::enabled($version) && ChartPage::ensure($version)) {
             return redirect()->away(ContentWorker::chart($version, ChartPage::path($version)).($request->boolean('dark') ? '?dark=1' : ''))
