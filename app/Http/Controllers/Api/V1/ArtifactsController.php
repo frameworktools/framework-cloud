@@ -10,6 +10,7 @@ use App\Models\McpConnection;
 use App\Models\Project;
 use App\Models\User;
 use App\Support\ArtifactPublisher;
+use App\Support\PlotDescription;
 use App\Support\Share;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -90,6 +91,7 @@ class ArtifactsController extends Controller
             'filename' => ['required', 'string', 'max:255', 'not_regex:/[\\/\\\\]|^\\.+$/'],
             'content' => ['required_without:content_base64', 'prohibits:content_base64', 'string', 'max:'.self::MAX_PUBLISH_BYTES],
             'content_base64' => ['required_without:content', 'string', 'max:'.(int) ceil(self::MAX_PUBLISH_BYTES * 4 / 3 + 4)],
+            'plot_description' => ['sometimes', 'nullable'],
         ] + $this->optionRules());
 
         $bytes = $data['content'] ?? base64_decode($data['content_base64'], true);
@@ -101,9 +103,34 @@ class ArtifactsController extends Controller
         }
 
         $connection = $this->agent($request);
-        $version = $this->publish($project, $data['filename'], $bytes, $data, $connection);
+        $description = $this->plotDescription($data['plot_description'] ?? null, 'plot_description');
+        $version = $this->publish($project, $data['filename'], $bytes, $data, $connection, $description);
 
         return response()->json($this->published($version), $version->unchanged ? 200 : 201);
+    }
+
+    /**
+     * A figure's phiz plot description sent in a call: its JSON text, or the object itself. phiz checks it when it
+     * compiles; here it only has to be one JSON object of a size Cloud keeps.
+     */
+    private function plotDescription(mixed $value, string $field): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+        $text = is_array($value) ? json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION) : $value;
+        if (! is_string($text)) {
+            throw ValidationException::withMessages([$field => 'Send the plot description as JSON text or an object.']);
+        }
+        if (strlen($text) > PlotDescription::MAX_BYTES) {
+            throw ValidationException::withMessages([$field => 'The plot description is over '.intdiv(PlotDescription::MAX_BYTES, 1_048_576).' MB.']);
+        }
+        $decoded = json_decode($text, true);
+        if (! is_array($decoded) || array_is_list($decoded)) {
+            throw ValidationException::withMessages([$field => 'A plot description is a JSON object, such as the figure.phiz.json Framework writes beside a ggplot.']);
+        }
+
+        return $text;
     }
 
     /**
@@ -116,6 +143,7 @@ class ArtifactsController extends Controller
         $data = $request->validate([
             'project' => ['sometimes', 'nullable', 'string', 'max:120'],
             'filename' => ['required', 'string', 'max:255', 'not_regex:/[\\/\\\\]|^\\.+$/'],
+            'plot_description_filename' => ['sometimes', 'nullable', 'string', 'max:255', 'not_regex:/[\\/\\\\]|^\\.+$/'],
         ] + $this->optionRules());
 
         $token = Str::random(48);
@@ -128,12 +156,17 @@ class ArtifactsController extends Controller
             'expires_at' => now()->addMinutes(30),
         ]);
         $url = route('api.uploads.store', ['token' => $token]);
+        // A figure with its plot description goes as a form with both files; anything else as the raw body.
+        $description = $data['plot_description_filename'] ?? null;
+        $command = $description === null
+            ? "curl -sS --fail-with-body -X PUT -H 'Content-Type: application/octet-stream' --data-binary @".escapeshellarg($data['filename'])." '".$url."'"
+            : 'curl -sS --fail-with-body -F '.escapeshellarg('file=@'.$data['filename']).' -F '.escapeshellarg('plot_description=@'.$description.';type=application/json')." '".$url."'";
 
         return response()->json([
             'upload_url' => $url,
             'expires_at' => $upload->expires_at->toIso8601String(),
             'max_bytes' => self::MAX_UPLOAD_BYTES,
-            'command' => "curl -sS --fail-with-body -X PUT -H 'Content-Type: application/octet-stream' --data-binary @".escapeshellarg($data['filename'])." '".$url."'",
+            'command' => $command,
             'note' => 'Run the command from the folder with the file, or replace the path after @. The link works once. '
                 .'If a sandbox blocks '.parse_url($url, PHP_URL_HOST).', as Claude\'s does by default, tell the user to add '
                 .parse_url($url, PHP_URL_HOST).' exactly to Settings, Capabilities, allowed websites, and to start a new chat. Or give them the command to run.',
@@ -147,10 +180,14 @@ class ArtifactsController extends Controller
         abort_if($upload === null || $upload->used_at !== null || $upload->expires_at->isPast(), 404, 'This upload link has expired or was already used. Ask for a new one.');
         abort_unless($upload->project?->user?->canPublish(), 402, 'Publishing to '.config('app.name').' is part of a paid plan.');
 
-        $bytes = $request->getContent();
+        // The raw file as the body, or a form with the file and, for a figure, its plot description.
+        $form = $request->file('file');
+        $bytes = $form instanceof UploadedFile ? (string) file_get_contents($form->getRealPath()) : $request->getContent();
         if ($bytes === '') {
             throw ValidationException::withMessages(['file' => 'Send the file as the request body.']);
         }
+        $sent = $request->file('plot_description');
+        $description = $this->plotDescription($sent instanceof UploadedFile ? (string) file_get_contents($sent->getRealPath()) : null, 'plot_description');
         if (strlen($bytes) > self::MAX_UPLOAD_BYTES) {
             throw ValidationException::withMessages(['file' => 'Files over 50 MB are too large to publish.']);
         }
@@ -161,7 +198,7 @@ class ArtifactsController extends Controller
 
         $options = $upload->options;
         try {
-            $version = $this->publish($upload->project, $options['filename'], $bytes, $options, $upload->connection);
+            $version = $this->publish($upload->project, $options['filename'], $bytes, $options, $upload->connection, $description);
         } catch (\Throwable $exception) {
             // A failed publish leaves the link usable, so the file can be fixed and sent again
             $upload->forceFill(['used_at' => null])->save();
@@ -210,7 +247,7 @@ class ArtifactsController extends Controller
     }
 
     /** @param  array<string, mixed>  $options */
-    private function publish(Project $project, string $filename, string $bytes, array $options, ?McpConnection $connection): DocumentVersion
+    private function publish(Project $project, string $filename, string $bytes, array $options, ?McpConnection $connection, ?string $description = null): DocumentVersion
     {
         abort_unless($project->user?->canPublish(), 402, 'Publishing to '.config('app.name').' is part of a paid plan.');
 
@@ -223,6 +260,12 @@ class ArtifactsController extends Controller
         $input[$bundle ? 'bundle' : 'file'] = $upload;
         if (! $bundle) {
             unset($input['entrypoint']);
+        }
+        $descriptionPath = null;
+        if ($description !== null) {
+            $descriptionPath = tempnam(sys_get_temp_dir(), 'plot-description-');
+            file_put_contents($descriptionPath, $description);
+            $input['plot_description'] = new UploadedFile($descriptionPath, PlotDescription::FILENAME, 'application/json', null, true);
         }
         $slug = Str::slug($input['slug'] ?? pathinfo($bundle ? $input['entrypoint'] : $filename, PATHINFO_FILENAME)) ?: 'artifact';
         // New artifacts published this way start private
@@ -237,6 +280,9 @@ class ArtifactsController extends Controller
             return app(ArtifactPublisher::class)->publish($project, $input);
         } finally {
             @unlink($path);
+            if ($descriptionPath !== null) {
+                @unlink($descriptionPath);
+            }
         }
     }
 

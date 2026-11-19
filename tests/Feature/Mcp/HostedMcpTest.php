@@ -14,11 +14,13 @@ use App\Models\Skill;
 use App\Models\User;
 use App\Support\AccountDeletion;
 use App\Support\ArtifactPublisher;
+use App\Support\PlotDescription;
 use Database\Seeders\BlueprintSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Exceptions;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Inertia\Testing\AssertableInertia;
@@ -535,6 +537,46 @@ class HostedMcpTest extends TestCase
         $this->assertSame('Claude', $version->provenance['agent']);
 
         $this->call('PUT', $url, [], [], [], ['HTTP_ACCEPT' => 'application/json'], 'again')->assertNotFound();
+    }
+
+    public function test_an_agent_publishes_a_figure_with_its_plot_description(): void
+    {
+        $user = $this->owner();
+        $token = $this->connect($user, McpConnection::ACCESS_FULL);
+        $svg = (string) file_get_contents(base_path('tests/fixtures/artifacts/r-ggplot.svg'));
+        $description = (string) file_get_contents(base_path('tests/fixtures/artifacts/r-ggplot.phiz.json'));
+
+        $figure = $this->tool($token, 'artifacts_publish', ['project' => 'penguin-study', 'filename' => 'figure.svg',
+            'content' => $svg, 'artifact' => 'fuel', 'plot_description' => $description]);
+        $this->assertFalse($figure['error'], json_encode($figure));
+        $version = Document::where('slug', 'fuel')->sole()->latestVersion();
+        $this->assertNotNull(PlotDescription::spec($version));
+        $this->assertJsonStringEqualsJsonString($description, (string) Storage::disk(config('framework.artifacts_disk', 'local'))->get(PlotDescription::path($version)));
+
+        $notJson = $this->tool($token, 'artifacts_publish', ['project' => 'penguin-study', 'filename' => 'figure.svg', 'content' => $svg, 'plot_description' => '[1, 2]']);
+        $this->assertTrue($notJson['error']);
+        $this->assertStringContainsString('JSON object', json_encode($notJson['body']));
+        $notFigure = $this->tool($token, 'artifacts_publish', ['project' => 'penguin-study', 'filename' => 'notes.md', 'content' => '# x', 'plot_description' => $description]);
+        $this->assertTrue($notFigure['error']);
+    }
+
+    public function test_an_upload_link_sends_a_figure_and_its_plot_description_together(): void
+    {
+        $user = $this->owner();
+        $token = $this->connect($user, McpConnection::ACCESS_FULL);
+
+        $link = $this->tool($token, 'artifacts_upload', ['filename' => 'figure.svg', 'plot_description_filename' => 'figure.phiz.json', 'artifact' => 'fuel']);
+        $this->assertFalse($link['error'], json_encode($link));
+        $this->assertStringContainsString("-F 'file=@figure.svg'", $link['body']['command']);
+        $this->assertStringContainsString("-F 'plot_description=@figure.phiz.json;type=application/json'", $link['body']['command']);
+
+        app('auth')->forgetGuards();
+        $this->post($link['body']['upload_url'], [
+            'file' => UploadedFile::fake()->createWithContent('figure.svg', (string) file_get_contents(base_path('tests/fixtures/artifacts/r-ggplot.svg'))),
+            'plot_description' => UploadedFile::fake()->createWithContent('figure.phiz.json', (string) file_get_contents(base_path('tests/fixtures/artifacts/r-ggplot.phiz.json'))),
+        ], ['Accept' => 'application/json'])->assertCreated()->assertJsonPath('slug', 'fuel')->assertJsonPath('kind', 'image');
+
+        $this->assertNotNull(PlotDescription::spec(Document::where('slug', 'fuel')->sole()->latestVersion()));
     }
 
     public function test_an_upload_link_expires_and_rejects_empty_files(): void

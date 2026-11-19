@@ -200,7 +200,7 @@ class ToolCatalog
                 'rename' => ['artifact' => 'slug'],
                 'body' => self::publishBody(),
                 'title' => 'Publish an artifact',
-                'description' => 'Publish a small saved file as an artifact, sent in the call: an HTML file as a notebook, a PNG or SVG as a figure, a CSV as a table, a PDF, Markdown, or a framework.artifact/v1 model JSON. Text goes in content, binary in content_base64. Use this only for files of a few hundred KB at most. For larger files, or a file on disk, use artifacts_upload instead. A project is optional. Publishing the same name again adds a version at the same link. New artifacts start private.',
+                'description' => 'Publish a small saved file as an artifact, sent in the call: an HTML file as a notebook, a PNG or SVG as a figure, a CSV as a table, a PDF, Markdown, or a framework.artifact/v1 model JSON. Text goes in content, binary in content_base64. A figure can bring its phiz plot description (figure.phiz.json) in plot_description, which makes it a live chart. Use this only for files of a few hundred KB at most. For larger files, or a file on disk, use artifacts_upload instead. A project is optional. Publishing the same name again adds a version at the same link. New artifacts start private.',
             ],
             'artifacts_delete' => [
                 'level' => self::FULL, 'method' => 'DELETE', 'path' => '/artifacts/{artifact}',
@@ -214,7 +214,7 @@ class ToolCatalog
                 'rename' => ['artifact' => 'slug'],
                 'body' => self::uploadBody(),
                 'title' => 'Get an upload link',
-                'description' => 'For a file on disk or too large to send in a call, up to 50 MB: returns a one-time upload link and a curl command that publishes the file when run. If you can run commands, run it yourself; otherwise give it to the user. A rendered Quarto site goes as a zip with its entrypoint. A project is optional. The link expires in 30 minutes. New artifacts start private.',
+                'description' => 'For a file on disk or too large to send in a call, up to 50 MB: returns a one-time upload link and a curl command that publishes the file when run. If you can run commands, run it yourself; otherwise give it to the user. A rendered Quarto site goes as a zip with its entrypoint. For a figure with a phiz plot description beside it (figure.phiz.json), pass plot_description_filename. A project is optional. The link expires in 30 minutes. New artifacts start private.',
             ],
             'artifacts_link' => [
                 'level' => self::FULL, 'method' => 'POST', 'path' => '/projects/{project}/linked-artifacts',
@@ -418,7 +418,8 @@ class ToolCatalog
     private static function uploadBody(): array
     {
         $body = self::publishBody();
-        unset($body['properties']['content'], $body['properties']['content_base64']);
+        unset($body['properties']['content'], $body['properties']['content_base64'], $body['properties']['plot_description']);
+        $body['properties']['plot_description_filename'] = ['type' => 'string', 'description' => 'For an SVG or PNG figure: its phiz plot description file on disk, such as figure.phiz.json. The command then sends both files.'];
         $body['properties']['filename']['description'] = 'The file name with its extension, as it is on disk, such as analysis.html or site.zip. The extension sets the kind.';
 
         return $body;
@@ -440,6 +441,7 @@ class ToolCatalog
                 'visibility' => ['type' => 'string', 'enum' => ['private', 'unlisted', 'public'], 'description' => 'Who can open it. New artifacts start private. Ask the user before choosing public.'],
                 'password' => ['type' => 'string', 'minLength' => 8],
                 'kind' => ['type' => 'string', 'enum' => ArtifactPublisher::KINDS, 'description' => 'Overrides the kind read from the file name. A code_snippet is a framework.artifact/v1 JSON file of code and printed output.'],
+                'plot_description' => ['type' => 'string', 'description' => 'For an SVG or PNG figure: its phiz plot description as JSON text, such as the figure.phiz.json Framework writes beside a published ggplot. Cloud draws the figure as a live chart and keeps the image as the fallback.'],
             ],
             'required' => ['filename'],
         ];
