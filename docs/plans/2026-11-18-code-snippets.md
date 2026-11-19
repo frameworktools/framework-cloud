@@ -1,6 +1,6 @@
 # Code snippets
 
-Status: approved 2026-11-18. Phase 1 shipped 2026-11-18: the Cloud kind, reader, and output toggle, and framework-embed 0.5.0. Phase 2 shipped 2026-11-18: the R and Stata clients, in framework 2.0.14 and Framework for Stata 0.3.5. Next: phase 3, Python notebooks.
+Status: approved 2026-11-18. Phase 1 shipped 2026-11-18: the Cloud kind, reader, and output toggle, and framework-embed 0.5.0. Phase 2 shipped 2026-11-18: the R and Stata clients, in framework 2.0.14 and Framework for Stata 0.3.5. Phases 3 and 4 shipped 2026-11-18: the `%%fw_snippet` magic and `fw.snippet()` in framework-py 0.1.0.dev27, and `fw snippet publish` in fw 0.7.0.
 
 A code snippet artifact carries a chunk's code and the printed text output a notebook reader saw under it. It is published from the notebook run, so a blog post that embeds it shows the code that produced the results beside it. The first user is the "bayesian-social-statistics" series on academic.page, which embeds artifacts through framework-embed and links each post to its full Quarto notebook.
 
@@ -257,6 +257,8 @@ print(model.summary())
 ```
 
 The cell magic runs the cell in the user namespace, shows its outputs as normal, and publishes the cell's code and outputs: stdout, stderr (as `message`), the `text/plain` form of results and displays, and the exception if one is raised. An output that carries an image type (a matplotlib figure, for example) is skipped whole, so its `<Figure size 640x480 with 1 Axes>` text does not appear either. A data frame shown as an HTML table is recorded as its `text/plain` form, which is what `print()` shows. The exception is re-raised after publishing. `%%fw_snippet` is dropped from the published code. This works in Jupyter, VS Code, and Quarto's Jupyter engine. framework-py has no IPython code today. `load_ipython_extension` imports IPython lazily, so the package does not depend on it.
+
+The magic shows its publishing status as a display output marked `{"framework": {"role": "snippet-status"}}` in its metadata, and `fw snippet publish` skips outputs with that mark. `%load_ext framework` turns on Framework's messages. Without a notebook path from VS Code or Jupyter (`JPY_SESSION_NAME`), the magic searches the working folder's notebooks for `%%fw_snippet LABEL`. A Quarto cell names its lines; an `.ipynb` cell does not.
 
 Executed notebooks publish without running:
 
