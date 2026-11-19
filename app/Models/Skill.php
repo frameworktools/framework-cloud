@@ -109,12 +109,29 @@ class Skill extends Model
         $entry['bundle'] = SkillBundle::files($version, $variant);
         $entry['sync'] = ['skill_id' => $this->sync_id, 'version' => $version->version,
             'hash' => SkillBundle::hash($entry['bundle']), 'variant' => $variant, 'server' => url('/')];
+        if (config('framework.skill_known_hashes')) {
+            $entry['sync']['known_hashes'] = $this->knownHashes($variant);
+        }
 
         if (! empty($version->files)) {
             $entry['files'] = $version->files;
         }
 
         return $entry;
+    }
+
+    /**
+     * The bundle hash of every version for one variant, oldest first and
+     * without repeats. A client that finds one of these on disk with no lock
+     * record knows the copy is unedited. Uses the loaded versions when
+     * present, so a caller can eager-load them; otherwise one query.
+     *
+     * @return list<string>
+     */
+    public function knownHashes(string $variant): array
+    {
+        return $this->versions->map(fn (SkillVersion $v) => SkillBundle::hash(SkillBundle::files($v, $variant)))
+            ->unique()->values()->all();
     }
 
     /**

@@ -8,6 +8,7 @@ use App\Models\SkillTag;
 use App\Models\User;
 use App\Support\SkillBundle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
@@ -163,5 +164,65 @@ class SkillSyncTest extends TestCase
         $head = Skill::where('sync_id', $first['skill_id'])->first()->latestVersion;
         $this->assertStringContainsString('R edit', $head->contentFor('r'));
         $this->assertStringContainsString('Python edit', $head->contentFor('python'));
+    }
+
+    /** Three versions: R changes at v2, Python at v3. */
+    private function historied(User $user): array
+    {
+        $skill = Skill::create(['user_id' => $user->id, 'key' => 'historied', 'name' => 'Historied']);
+        $versions = [
+            $skill->publishVersion(['content' => 'R one', 'variants' => ['python' => 'Python one']]),
+            $skill->publishVersion(['content' => 'R two', 'variants' => ['python' => 'Python one']]),
+            $skill->publishVersion(['content' => 'R two', 'variants' => ['python' => 'Python two']]),
+        ];
+        $hashes = fn (string $variant) => array_map(fn ($v) => SkillBundle::hash(SkillBundle::files($v, $variant)), $versions);
+
+        return [$skill, $hashes('r'), $hashes('python')];
+    }
+
+    public function test_snapshots_list_every_hash_the_variant_has_had(): void
+    {
+        $this->actingAs($user = User::factory()->create());
+        [$skill, $r, $python] = $this->historied($user);
+        $known = ['r' => [$r[0], $r[1]], 'python' => [$python[0], $python[2]]];
+        $this->assertSame([], array_intersect($known['r'], $known['python']));
+
+        foreach (['r', 'python'] as $variant) {
+            $url = "/api/v1/skills/sync/{$skill->sync_id}?variant={$variant}";
+            $this->getJson($url)->assertOk()->assertJsonPath('known_hashes', $known[$variant]);
+            // An older version, or one found by hash, still lists the whole history
+            $this->getJson("{$url}&version=1")->assertOk()->assertJsonPath('version', 1)->assertJsonPath('known_hashes', $known[$variant]);
+            $this->getJson("{$url}&hash={$known[$variant][0]}")->assertOk()->assertJsonPath('version', 1)->assertJsonPath('known_hashes', $known[$variant]);
+        }
+
+        // A push's snapshot adds the version it made
+        $next = $this->bundle('R three');
+        $this->push($next, $skill->sync_id, 3)->assertOk()->assertJsonPath('version', 4)
+            ->assertJsonPath('known_hashes', [...$known['r'], SkillBundle::hash($next)]);
+    }
+
+    public function test_known_hashes_load_the_versions_once(): void
+    {
+        [$skill, $r] = $this->historied(User::factory()->create());
+        $fresh = Skill::find($skill->id);
+        DB::enableQueryLog();
+        $this->assertSame([$r[0], $r[1]], $fresh->knownHashes('r'));
+        $fresh->knownHashes('python');
+        $this->assertCount(1, DB::getQueryLog());
+
+        $loaded = Skill::with('versions')->find($skill->id);
+        DB::flushQueryLog();
+        $loaded->knownHashes('r');
+        $this->assertCount(0, DB::getQueryLog());
+    }
+
+    public function test_setup_layers_carry_known_hashes_only_when_enabled(): void
+    {
+        [$skill, $r, $python] = $this->historied(User::factory()->create());
+        $this->assertArrayNotHasKey('known_hashes', $skill->layerEntry('r')['sync']);
+
+        config(['framework.skill_known_hashes' => true]);
+        $this->assertSame([$r[0], $r[1]], $skill->layerEntry('r')['sync']['known_hashes']);
+        $this->assertSame([$python[0], $python[2]], $skill->layerEntry('python')['sync']['known_hashes']);
     }
 }

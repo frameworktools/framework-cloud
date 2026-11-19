@@ -29,6 +29,7 @@ Framework Cloud reads runtime configuration from environment variables, typicall
 | `FW_SPEC_PARITY` | `false` | Emits structured Stata packages, Stata graph schemes, and Matplotlib styles in resolved project layers for newer `fw` and `framework-py` clients. |
 | `FW_SPEC_TOOLS` | `true` | Emits the `tools`, `settings_layout`, and `core_files` keys in resolved project layers. Set `false` while users run clients older than `fw` 0.3, such as `fw` 0.2, which reject these keys. |
 | `FW_SPEC_WORKFLOWS` | `true` | Emits `scaffold.workflow` and the `script` notebook format in resolved project layers. Set `false` while users run clients that predate workflows. |
+| `FW_SKILL_KNOWN_HASHES` | `false` | Emits `sync.known_hashes` on each Cloud skill in resolved project layers: every bundle hash of the skill's language variant, for skills lock v2 clients. Requires layer schemas that allow the key. Released `fw` and `framework-py` reject it. |
 | `FW_HOMEPAGE_EXAMPLE_URL` | none | Public artifact shown as the homepage's worked example, published by `fw:homepage-example`. Unset, the homepage shows a preview image. |
 | `FW_STARTER_REPOSITORY` | none | Public starter repository (`owner/name`) shown on the homepage's GitHub card. |
 | `TRUSTED_PROXIES` | loopback | Reverse proxies trusted for `X-Forwarded-*` headers: `cloudflare`, `*`, or comma-separated IPs and CIDRs. |

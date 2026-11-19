@@ -39,6 +39,8 @@ class SkillSyncController extends Controller
             $version = $skill->versions->first(fn ($v) => SkillBundle::hash(SkillBundle::files($v, $variant)) === $hash);
             abort_unless($version, 409, 'The installed source version is unavailable.');
         }
+        // The snapshot's known hashes reuse this skill's versions
+        $version->setRelation('skill', $skill);
 
         return response()->json($this->snapshot($version, $variant));
     }
@@ -180,7 +182,8 @@ class SkillSyncController extends Controller
         $visible = $parent && ! $parent->trashed() && $parent->isVisibleTo(auth()->user() instanceof User ? auth()->user() : null);
 
         return ['schema' => 1, 'skill_id' => $skill->sync_id, 'version' => $version->version,
-            'variant' => $variant, 'hash' => SkillBundle::hash($files), 'bundle' => $files,
+            'variant' => $variant, 'hash' => SkillBundle::hash($files), 'known_hashes' => $skill->knownHashes($variant),
+            'bundle' => $files,
             'system' => $skill->isSystem(), 'name' => $skill->name,
             'parent' => $visible ? ['skill_id' => $parent->sync_id, 'version' => $source->version] : null];
     }

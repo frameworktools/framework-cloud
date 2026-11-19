@@ -32,6 +32,13 @@ return [
     // names in .framework/packages/stata.txt.
     'spec_parity' => (bool) env('FW_SPEC_PARITY', false),
 
+    // sync.known_hashes on each Cloud skill in a setup layer: every bundle
+    // hash the skill's variant has had, for skills lock v2. The pinned layer
+    // schemas and released clients forbid extra sync keys, so turn this on
+    // only after the framework package schemas add it and are synced here.
+    // The sync API's snapshot carries known_hashes either way.
+    'skill_known_hashes' => (bool) env('FW_SKILL_KNOWN_HASHES', false),
+
     /*
     |--------------------------------------------------------------------------
     | Documents storage

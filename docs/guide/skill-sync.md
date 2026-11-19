@@ -50,6 +50,10 @@ Downloading a skill for the first time requires an explicit skill ID (`skill_id`
 
 Only one local sync process runs at a time. If a sync process terminates unexpectedly, verify that no sync is active before deleting `.framework/skills.sync.lock`.
 
+## Known hashes
+
+Cloud skill snapshots list `known_hashes`: the bundle hash of every version of the skill in the requested variant, oldest first, without repeats. A local copy with one of these hashes is unedited, even without a lockfile record. Snapshots come from `GET /api/v1/skills/sync/{id}` and from push responses. When the server sets `FW_SKILL_KNOWN_HASHES`, project setup layers carry the same list in each Cloud skill's `sync.known_hashes`.
+
 ## File limits
 
 Each skill allows up to 256 files, 4 MB per file, and 16 MB total. File paths allow ASCII letters, digits, periods, underscores, and hyphens. Symlinks, parent-directory traversals, `.git` metadata, `.env` files, private keys, and generated caches are excluded or rejected. `SKILL.md` must be a regular non-executable UTF-8 file of at most 64 KB.
