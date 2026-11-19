@@ -31,6 +31,7 @@ class GuideController extends Controller
     public function searchIndex(Request $request): JsonResponse
     {
         return response()->json(SearchIndex::payload(cloud: $request->root()))
-            ->header('Cache-Control', 'public, max-age=300');
+            ->header('Cache-Control', 'public, max-age=300')
+            ->header('X-Robots-Tag', 'noindex');
     }
 }

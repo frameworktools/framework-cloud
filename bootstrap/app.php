@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsureAdmin;
 use App\Http\Middleware\EnsurePasswordsEnabled;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\RedirectWwwHost;
 use App\Http\Middleware\ServeBuiltAssetsThroughTunnels;
 use App\Http\Middleware\ServeContentHost;
 use App\Http\Middleware\SingleUserMode;
@@ -42,6 +43,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Every request, API and MCP included: the content host serves only published files, without cookies
         $middleware->prepend(ServeContentHost::class);
+
+        // www.<app host> serves the same pages; send it to the app host
+        $middleware->prepend(RedirectWwwHost::class);
 
         $middleware->web(append: [
             ServeBuiltAssetsThroughTunnels::class,

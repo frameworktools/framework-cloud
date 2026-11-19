@@ -3,6 +3,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    {{-- The signed-in app and the sign-in forms. Public pages are Blade views. --}}
+    <meta name="robots" content="noindex">
     <link rel="icon" type="image/png" href="/images/favicon.png">
     <x-theme-script />
     {{-- The page's own chunk too, so it loads alongside app.js instead of after it --}}

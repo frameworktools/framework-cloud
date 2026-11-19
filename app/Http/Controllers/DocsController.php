@@ -78,7 +78,8 @@ class DocsController extends Controller
         $this->site($product);
 
         return response()->json(SearchIndex::payload($product))
-            ->header('Cache-Control', 'public, max-age=300');
+            ->header('Cache-Control', 'public, max-age=300')
+            ->header('X-Robots-Tag', 'noindex');
     }
 
     public function image(string $path, string $product): BinaryFileResponse
