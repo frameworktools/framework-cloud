@@ -10,11 +10,11 @@
 # Each tool is pinned to a commit. Change the pins here and rebuild to move
 # them; all three are public repositories under github.com/frameworktools.
 
-ARG FW_REF=9b22d38b8e4067fe378b77d7e43f03f0046ed1eb
+ARG FW_REF=2e9f55c4a62740df3b5490420ce208ead99a83ba
 # The release FW_REF is tagged as, so fw --version reports it
-ARG FW_VERSION=0.8.0
-ARG FRAMEWORK_REF=b802721207d0f9f318301b008bc1c39c104620dc
-ARG FRAMEWORK_PY_REF=78c7f927b9ed2b09cbd04b3b3c36bb3a30767d21
+ARG FW_VERSION=0.8.1
+ARG FRAMEWORK_REF=4a25eb712f30d733b54370a968629bb28ec7f092
+ARG FRAMEWORK_PY_REF=c398c92fe200cfe2314cdd01d0747e2271c1131d
 
 # 1. fw, built from source at its pin
 FROM golang:1.27 AS fw
