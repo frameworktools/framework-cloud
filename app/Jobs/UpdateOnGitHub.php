@@ -65,7 +65,10 @@ class UpdateOnGitHub implements ShouldQueue
 
             return;
         } catch (RequestException $e) {
-            $this->fail('GitHub returned an error: '.($e->response->json('message') ?? $e->response->status()));
+            $message = $e->response->json('message');
+            $this->fail($e->response->status() === 403 && $message === 'Resource not accessible by integration'
+                ? 'The Framework app on GitHub lacks the Pull requests permission. Approve its updated permissions in GitHub under Settings > Applications, then try again.'
+                : 'GitHub returned an error: '.($message ?? $e->response->status()));
 
             return;
         }

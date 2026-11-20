@@ -270,6 +270,8 @@ class SetupController extends Controller
                     'workflows' => 'write',
                     'actions' => 'write',
                     'pages' => 'write',
+                    // Update on GitHub opens a pull request
+                    'pull_requests' => 'write',
                     'metadata' => 'read',
                     'emails' => 'read',
                 ],

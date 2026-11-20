@@ -152,6 +152,7 @@ class ServerSetupTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->where('github.manifest.json.default_permissions.workflows', 'write')
                 ->where('github.manifest.json.default_permissions.pages', 'write')
+                ->where('github.manifest.json.default_permissions.pull_requests', 'write')
                 ->where('github.manifest.json.default_events', ['workflow_run'])
                 ->where('github.manifest.json.callback_urls', [route('github.callback')]));
         $state = session('github_manifest_state');

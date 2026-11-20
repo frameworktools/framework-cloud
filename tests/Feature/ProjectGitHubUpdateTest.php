@@ -84,10 +84,10 @@ class ProjectGitHubUpdateTest extends TestCase
      * @param  array<string, string>  $lastCommits  path => message of the last commit that touched it
      * @param  list<array<string, mixed>>  $pulls  open pull requests
      */
-    private function fake(array $repo, array $lastCommits = [], array $pulls = []): void
+    private function fake(array $repo, array $lastCommits = [], array $pulls = [], int $pullsStatus = 200): void
     {
         $zip = self::zip(self::BUILT);
-        Http::fake(function (HttpRequest $r) use ($repo, $lastCommits, $pulls, $zip) {
+        Http::fake(function (HttpRequest $r) use ($repo, $lastCommits, $pulls, $pullsStatus, $zip) {
             $url = $r->url();
             $path = parse_url($url, PHP_URL_PATH);
             parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
@@ -102,7 +102,8 @@ class ProjectGitHubUpdateTest extends TestCase
                     : Http::response([], 404),
                 $path === '/repos/lab/course/commits' => Http::response(isset($lastCommits[$query['path'] ?? ''])
                     ? [['sha' => 'c1', 'commit' => ['message' => $lastCommits[$query['path']]]]] : []),
-                $path === '/repos/lab/course/pulls' && $r->method() === 'GET' => Http::response($pulls),
+                $path === '/repos/lab/course/pulls' && $r->method() === 'GET' => $pullsStatus === 200
+                    ? Http::response($pulls) : Http::response(['message' => 'Resource not accessible by integration'], $pullsStatus),
                 $path === '/repos/lab/course/pulls' => Http::response(['number' => 7, 'html_url' => 'https://github.com/lab/course/pull/7'], 201),
                 str_starts_with($path, '/repos/lab/course/pulls/') => Http::response(['number' => 4, 'html_url' => 'https://github.com/lab/course/pull/4']),
                 str_starts_with($path, '/repos/lab/course/git/ref/heads/') => Http::response(['object' => ['sha' => 'head1']]),
@@ -171,6 +172,18 @@ class ProjectGitHubUpdateTest extends TestCase
             && str_contains($r['body'], '`settings.yml`') && str_contains($r['body'], '**Setup changes:** packages.'));
         // Never the default branch
         Http::assertNotSent(fn (HttpRequest $r) => str_ends_with($r->url(), '/git/refs/heads/main') && $r->method() === 'PATCH');
+    }
+
+    public function test_an_app_without_the_pull_requests_permission_says_so(): void
+    {
+        $project = $this->project();
+        $repo = ['settings.yml' => "default:\n  packages: []\n"] + $this->scaffolded();
+        $this->fake($repo, ['settings.yml' => 'Scaffold with Framework'], pullsStatus: 403);
+
+        $project = $this->runUpdate($project);
+
+        $this->assertSame('failed', $project->github_update['status']);
+        $this->assertStringContainsString('lacks the Pull requests permission', $project->github_update['error']);
     }
 
     public function test_an_open_update_pull_request_is_updated(): void
