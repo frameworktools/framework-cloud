@@ -55,18 +55,19 @@ class BlueprintSeeder extends Seeder
 
     /**
      * What each system blueprint supports. Presentation and Course are built
-     * on Quarto, so they need it; the rest take any workflow their languages
-     * have. Stata has only Scripts only.
+     * on Quarto, so they need it. App blueprints have no notebooks, so they
+     * take Scripts only, which brings no Quarto or Jupyter. The rest take any
+     * workflow their languages have. Stata has only Scripts only.
      */
     private const COMPATIBILITY = [
         'project' => ['languages' => ['r', 'python', 'stata'], 'workflows' => ['quarto', 'jupyter', 'scripts']],
         'project_sensitive' => ['languages' => ['r', 'python', 'stata'], 'workflows' => ['quarto', 'jupyter', 'scripts']],
         'presentation' => ['languages' => ['r', 'python'], 'workflows' => ['quarto'], 'requires_tools' => ['quarto']],
         'course' => ['languages' => ['r', 'python'], 'workflows' => ['quarto'], 'requires_tools' => ['quarto']],
-        'shiny' => ['languages' => ['r'], 'workflows' => ['quarto', 'jupyter', 'scripts']],
-        'plumber' => ['languages' => ['r'], 'workflows' => ['quarto', 'jupyter', 'scripts']],
-        'shiny_python' => ['languages' => ['python'], 'workflows' => ['quarto', 'jupyter', 'scripts']],
-        'fastapi' => ['languages' => ['python'], 'workflows' => ['quarto', 'jupyter', 'scripts']],
+        'shiny' => ['languages' => ['r'], 'workflows' => ['scripts']],
+        'plumber' => ['languages' => ['r'], 'workflows' => ['scripts']],
+        'shiny_python' => ['languages' => ['python'], 'workflows' => ['scripts']],
+        'fastapi' => ['languages' => ['python'], 'workflows' => ['scripts']],
         'bare' => ['languages' => ['r', 'python', 'stata'], 'workflows' => ['quarto', 'jupyter', 'scripts']],
     ];
 
@@ -294,14 +295,19 @@ class BlueprintSeeder extends Seeder
 
             // uv for Python projects (left out of R and Stata ones). The
             // workflow brings Quarto or Jupyter, so the blueprint doesn't.
-            // App blueprints bring the package set their starter files use.
+            // App blueprints bring the packages their starter files use: a
+            // package set when it matches them, else their own list.
             $pieces = collect(['uv'])->concat($sets)->concat($definition['package_sets'] ?? [])->map($latest);
+            $own = array_filter([
+                'skills' => $single ? array_fill_keys($single, ['package' => true]) : null,
+                'packages' => isset($definition['packages']) ? ['default_packages' => $definition['packages']] : null,
+            ]);
 
             $blueprint = Blueprint::updateOrCreate(['user_id' => null, 'key' => $key], $attributes + ['is_system' => true]);
             $blueprint->publish(
                 $structureVersion,
                 $pieces->pluck('id')->all(),
-                $single ? ['skills' => array_fill_keys($single, ['package' => true])] : [],
+                $own,
                 null,
                 self::COMPATIBILITY[$key] ?? [],
             );

@@ -265,4 +265,33 @@ class ProjectGitHubUpdateTest extends TestCase
         // One at a time
         $this->actingAs($user)->post("/projects/{$project->id}/github/update")->assertSessionHasErrors('github');
     }
+
+    public function test_the_api_reports_and_requests_the_update_after_a_package_change(): void
+    {
+        Queue::fake();
+        $project = $this->project();
+        Http::fake(['api.github.com/user/installations*' => Http::response(['installations' => [
+            ['id' => 2, 'account' => ['login' => 'lab', 'type' => 'Organization'], 'repository_selection' => 'all'],
+        ]])]);
+        $token = $project->user->createToken('t')->plainTextToken;
+
+        $this->withToken($token)->getJson("/api/v1/projects/{$project->slug}")->assertJsonPath('github.update_available', false);
+
+        $revision = $this->withToken($token)->getJson("/api/v1/projects/setup?project={$project->slug}")->assertOk()->json('revision');
+        $this->withToken($token)->postJson("/api/v1/projects/setup/packages?project={$project->slug}", [
+            'base_revision' => $revision, 'packages' => [['name' => 'janitor']],
+        ])->assertOk();
+        $this->withToken($token)->getJson("/api/v1/projects/{$project->slug}")->assertJsonPath('github.update_available', true);
+
+        $this->withToken($token)->postJson("/api/v1/projects/{$project->slug}/github/update")
+            ->assertStatus(202)
+            ->assertJsonPath('repository', 'lab/course')
+            ->assertJsonPath('update.status', 'pending');
+        Queue::assertPushed(UpdateOnGitHub::class, fn ($job) => $job->project->is($project));
+        $this->withToken($token)->getJson("/api/v1/projects/{$project->slug}")->assertJsonPath('github.update.status', 'pending');
+
+        // One at a time
+        $this->withToken($token)->postJson("/api/v1/projects/{$project->slug}/github/update")
+            ->assertStatus(422)->assertJsonPath('errors.github.0', 'An update is already under way.');
+    }
 }

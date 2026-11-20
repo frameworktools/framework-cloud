@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Jobs\ScaffoldOnGitHub;
+use App\Jobs\UpdateOnGitHub;
 use App\Models\Project;
 use App\Models\User;
 use App\Services\GitHub\GitHub;
@@ -90,12 +91,27 @@ class ProjectRepositoryController extends Controller
         $github['name'] ??= $project->slug;
         $target = RepositoryTarget::for($project->user, $github, ProjectLayers::isSensitive(ProjectLayers::for($project)['layers'] ?? []));
 
-        $project->update(['scaffold_status' => 'pending', 'scaffold_error' => null, 'scaffold_run_url' => null]);
-        ScaffoldOnGitHub::dispatch($project, $target['org'], $target['name'], $target['private']);
+        ScaffoldOnGitHub::start($project, $target);
 
-        return response()->json([
-            'repository' => ($target['org'] ?? $github['owner']).'/'.$target['name'],
-        ] + self::scaffoldState($project->fresh()), 202);
+        return response()->json(self::scaffoldState($project->fresh()), 202);
+    }
+
+    /**
+     * POST /projects/{slug}/github/update: Update on GitHub. Opens a pull
+     * request with Framework's files built from the current setup (settings
+     * files and skills), or updates the open one. Built on the queue;
+     * GET /projects/{slug} reports it as github.update.
+     */
+    public function update(Request $request, string $slug): JsonResponse
+    {
+        $project = $this->project($request, $slug);
+
+        if ($problem = UpdateOnGitHub::problem($project)) {
+            throw ValidationException::withMessages(['github' => $problem]);
+        }
+        UpdateOnGitHub::start($project);
+
+        return response()->json(['repository' => $project->github_repo, 'update' => $project->github_update], 202);
     }
 
     /** POST /projects/{slug}/github: link the project to a repository that already exists. */
@@ -285,7 +301,8 @@ class ProjectRepositoryController extends Controller
             'scaffold_status' => $project->scaffold_status,
             'scaffold_error' => $project->scaffold_error,
             'scaffold_run_url' => $project->scaffold_run_url,
-            'repository' => $project->github_repo,
+            // Before the job creates it, the repository it will create
+            'repository' => $project->github_repo ?? $project->scaffold_repo,
         ];
     }
 

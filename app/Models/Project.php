@@ -114,6 +114,13 @@ class Project extends Model
         return $this->github_repo ? "https://github.com/{$this->github_repo}" : null;
     }
 
+    /** Update on GitHub is offered: the setup changed after it last went to the repository. */
+    public function githubUpdateAvailable(): bool
+    {
+        return $this->github_repo && in_array($this->scaffold_status, ['done', null], true) && $this->setup_updated_at
+            && (! $this->github_setup_applied_at || $this->github_setup_applied_at->lt($this->setup_updated_at));
+    }
+
     public function documents(): HasMany
     {
         return $this->hasMany(Document::class);

@@ -97,6 +97,8 @@ class ProjectLayersController extends Controller
             }
         }
         $version = $project->blueprintVersion;
+        // While the scaffold is queued, the repository it will create
+        $repo = $project->github_repo ?? ($project->scaffold_status === 'pending' ? $project->scaffold_repo : null);
 
         return response()->json([
             'slug' => $project->slug,
@@ -111,17 +113,21 @@ class ProjectLayersController extends Controller
             'share' => Share::for($project),
             'adopted' => $project->adopted_at !== null,
             'blueprint' => $version ? ['key' => $version->blueprint->handle, 'version' => $version->version] : null,
-            'github' => $project->github_repo ? [
-                'repository' => $project->github_repo,
-                'url' => "https://github.com/{$project->github_repo}",
-                'private' => (bool) $project->github_private,
+            'github' => $repo ? [
+                'repository' => $repo,
+                'url' => "https://github.com/{$repo}",
+                'private' => $project->github_repo ? (bool) $project->github_private : null,
                 'scaffold_status' => $project->scaffold_status,
                 'scaffold_error' => $project->scaffold_error,
                 'scaffold_run_url' => $project->scaffold_run_url,
                 // Set while GitHub Pages publishes the repository's published/ folder
                 'pages_url' => $project->pages_url,
+                // The setup changed since it last went to the repository: projects_github_update sends it
+                'update_available' => $project->githubUpdateAvailable(),
+                // The latest Update on GitHub: status, pr_url, changed files, or error
+                'update' => $project->github_update,
             ] : null,
-            // Also set while a repository is being created, before github is
+            // Also set when creating the repository failed
             'scaffold' => ProjectRepositoryController::scaffoldState($project),
             'spec_received_at' => $project->spec_received_at?->toIso8601String(),
             'created_at' => $project->created_at?->toIso8601String(),

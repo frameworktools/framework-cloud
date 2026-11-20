@@ -116,6 +116,7 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::get('/projects/{slug}/scaffold', [ProjectRepositoryController::class, 'scaffoldStatus']);
     Route::post('/projects/{slug}/scaffold', [ProjectRepositoryController::class, 'scaffold'])->middleware('throttle:20,1');
     Route::post('/projects/{slug}/github', [ProjectRepositoryController::class, 'link'])->middleware('throttle:20,1');
+    Route::post('/projects/{slug}/github/update', [ProjectRepositoryController::class, 'update'])->middleware('throttle:20,1');
     Route::get('/projects/{slug}/files', [ProjectRepositoryController::class, 'files'])->middleware('throttle:60,1');
     Route::post('/projects/{slug}/files', [ProjectRepositoryController::class, 'write'])->middleware('throttle:60,1');
     Route::post('/projects/{slug}/files/uploads', [ProjectRepositoryController::class, 'createUpload'])->middleware('throttle:60,1');

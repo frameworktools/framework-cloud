@@ -18,6 +18,9 @@ use Illuminate\Support\Collection;
 class ProjectLayers
 {
     /** Folders that only R projects use */
+    /** The tidyverse packages the framework R package adds to every project's packages unless a layer removes them */
+    private const R_DEFAULT_TIDYVERSE = ['dplyr', 'ggplot2', 'tidyr', 'stringr', 'readr', 'purrr', 'tibble', 'forcats', 'lubridate'];
+
     private const R_FOLDERS = ['notebooks', 'scripts', 'functions', 'outputs_notebooks', 'outputs_models', 'outputs_private_models', 'outputs_public_models'];
 
     /**
@@ -237,9 +240,15 @@ class ProjectLayers
         // The project's language: the last layer that sets one
         $language = collect($layers)->pluck('layer.language')->filter()->last();
         if ($language === 'r') {
+            $removed = ['glue', 'here', 'lme4'];
+            // An app's starter files use none of the tidyverse R attaches by default
+            $type = collect($layers)->firstWhere('kind', 'base')['layer']['type'] ?? null;
+            if (isset(Project::LANGUAGE_TYPES[$type])) {
+                $removed = [...$removed, ...self::R_DEFAULT_TIDYVERSE];
+            }
             // Just above the base structure, which stays first, and beneath every chosen layer
             array_splice($layers, min(1, count($layers)), 0, [['kind' => 'settings', 'key' => 'framework package defaults', 'layer' => [
-                'packages' => ['default_packages' => ['glue' => null, 'here' => null, 'lme4' => null]],
+                'packages' => ['default_packages' => array_fill_keys($removed, null)],
             ]]]);
         }
 

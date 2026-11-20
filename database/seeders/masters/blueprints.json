@@ -163,11 +163,17 @@
         }
       }
     },
-    "package_sets": [
-      "shiny-r"
-    ],
+    "packages": {
+      "shiny": {
+        "source": "cran",
+        "auto_attach": false
+      },
+      "bslib": {
+        "source": "cran",
+        "auto_attach": false
+      }
+    },
     "skills": [
-      "framework-workflow",
       "framework-packages"
     ]
   },
@@ -198,11 +204,13 @@
         }
       }
     },
-    "package_sets": [
-      "plumber-r"
-    ],
+    "packages": {
+      "plumber": {
+        "source": "cran",
+        "auto_attach": false
+      }
+    },
     "skills": [
-      "framework-workflow",
       "framework-packages"
     ]
   },
@@ -230,11 +238,21 @@
         }
       }
     },
-    "package_sets": [
-      "shiny-python"
-    ],
+    "packages": {
+      "shiny": {
+        "source": "pypi",
+        "auto_attach": false
+      },
+      "pandas": {
+        "source": "pypi",
+        "auto_attach": false
+      },
+      "numpy": {
+        "source": "pypi",
+        "auto_attach": false
+      }
+    },
     "skills": [
-      "framework-workflow",
       "framework-packages"
     ]
   },
@@ -275,7 +293,6 @@
       "fastapi-python"
     ],
     "skills": [
-      "framework-workflow",
       "framework-packages"
     ]
   },

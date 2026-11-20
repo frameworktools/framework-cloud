@@ -86,6 +86,13 @@ class ProjectRepositoryTest extends TestCase
             ->assertJsonPath('repository', 'lab/course');
 
         Queue::assertPushed(ScaffoldOnGitHub::class, fn ($job) => $job->org === 'lab' && $job->repoName === 'course' && ! $job->private);
+
+        // Before the job creates it, show names the repository it will create
+        $this->withToken($token)->getJson("/api/v1/projects/{$project->slug}")
+            ->assertJsonPath('github.repository', 'lab/course')
+            ->assertJsonPath('github.url', 'https://github.com/lab/course')
+            ->assertJsonPath('github.scaffold_status', 'pending')
+            ->assertJsonPath('scaffold.repository', 'lab/course');
     }
 
     public function test_link_adopts_an_existing_repository(): void

@@ -153,6 +153,15 @@ class Scaffolder
         }
     }
 
+    /** The messages of the commits Framework makes while scaffolding, the workflow's own last */
+    private const COMMIT_MESSAGES = [
+        'Add Framework project layers', 'Add Framework scaffold workflow',
+        'Update Framework project layers', 'Update Framework scaffold workflow',
+        self::SCAFFOLD_MESSAGE,
+    ];
+
+    private const SCAFFOLD_MESSAGE = 'Scaffold with Framework';
+
     /**
      * Record a finished run. On success the one-time workflow is removed. On
      * failure the error comes from the failed step's log, when GitHub has it.
@@ -171,12 +180,60 @@ class Scaffolder
 
         if ($succeeded && $project->user->githubAccount) {
             try {
-                GitHub::for($project->user->githubAccount)
-                    ->deleteFile($project->github_repo, self::WORKFLOW_PATH, 'Remove Framework scaffold workflow');
+                $github = GitHub::for($project->user->githubAccount);
+                if (! $this->squash($github, $project->github_repo)) {
+                    $github->deleteFile($project->github_repo, self::WORKFLOW_PATH, 'Remove Framework scaffold workflow');
+                }
             } catch (RequestException|GitHubNotConnected) {
                 // Harmless to leave: the workflow skips itself once the layers file is gone
             }
         }
+    }
+
+    /**
+     * Replace the commits the scaffold made (the layers, the workflow, and
+     * the workflow's own commit) with one commit of the scaffolded project,
+     * without the workflow. Only when the branch ends in those commits, so
+     * nobody else's work leaves the history. False when it ends otherwise or
+     * GitHub refuses.
+     */
+    private function squash(GitHub $github, string $repo): bool
+    {
+        try {
+            $branch = $github->repository($repo)['default_branch'] ?? null;
+            if (! is_string($branch)) {
+                return false;
+            }
+            $head = $github->branchSha($repo, $branch);
+            $top = $github->commit($repo, $head);
+            if (trim($top['message'] ?? '') !== self::SCAFFOLD_MESSAGE) {
+                return false;
+            }
+
+            // Down the first parents to the first commit Framework didn't make
+            $commit = $top;
+            for ($i = 0; $i < 20; $i++) {
+                $parents = array_column($commit['parents'] ?? [], 'sha');
+                if (count($parents) !== 1) {
+                    return false;
+                }
+                $parent = $github->commit($repo, $parents[0]);
+                if (! in_array(trim($parent['message'] ?? ''), self::COMMIT_MESSAGES, true)) {
+                    // Something pushed meanwhile stays where it is
+                    if ($github->branchSha($repo, $branch) !== $head) {
+                        return false;
+                    }
+                    $github->replaceBranch($repo, $branch, $top, $parents, [self::WORKFLOW_PATH], self::SCAFFOLD_MESSAGE);
+
+                    return true;
+                }
+                $commit = $parent;
+            }
+        } catch (RequestException) {
+            // Fall back to removing the workflow in a commit of its own
+        }
+
+        return false;
     }
 
     /** The failed step and its error lines, or null when GitHub can't say. */

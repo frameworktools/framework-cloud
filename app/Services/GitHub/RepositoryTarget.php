@@ -16,7 +16,7 @@ class RepositoryTarget
     /**
      * @param  array{owner: string, name: string, private?: bool}  $input
      * @param  string  $field  the validation key errors are reported under, such as "github"
-     * @return array{org: ?string, name: string, private: bool}
+     * @return array{org: ?string, name: string, private: bool, repository: string}
      */
     public static function for(User $user, array $input, bool $sensitive, string $field = 'github'): array
     {
@@ -45,6 +45,7 @@ class RepositoryTarget
             'org' => $owner['type'] === 'Organization' ? $owner['login'] : null,
             'name' => $input['name'],
             'private' => $private,
+            'repository' => "{$owner['login']}/{$input['name']}",
         ];
     }
 }

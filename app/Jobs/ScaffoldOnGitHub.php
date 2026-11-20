@@ -22,6 +22,18 @@ class ScaffoldOnGitHub implements ShouldQueue
         public bool $private,
     ) {}
 
+    /**
+     * Queue a scaffold into a new repository. The repository it will create
+     * is recorded first, so the project reports it before the job runs.
+     *
+     * @param  array{org: ?string, name: string, private: bool, repository: string}  $target  from RepositoryTarget::for()
+     */
+    public static function start(Project $project, array $target): void
+    {
+        $project->update(['scaffold_status' => 'pending', 'scaffold_error' => null, 'scaffold_run_url' => null, 'scaffold_repo' => $target['repository']]);
+        self::dispatch($project, $target['org'], $target['name'], $target['private']);
+    }
+
     public function handle(Scaffolder $scaffolder): void
     {
         try {

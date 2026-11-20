@@ -141,13 +141,12 @@ class PiecesController extends Controller
         }
 
         $project = $resolver->createProject($choices['name'], $resolved, $choices['description'] ?? null, [
-            'scaffold_status' => $target ? 'pending' : null,
             // Kept as New project keeps them, so pushes and Edit project resolve the project again from them
             'choices' => ProjectSetup::apiChoices($choices, $resolved),
         ] + $attributes);
 
         if ($target) {
-            ScaffoldOnGitHub::dispatch($project, $target['org'], $target['name'], $target['private']);
+            ScaffoldOnGitHub::start($project, $target);
         }
 
         return response()->json([
@@ -158,7 +157,7 @@ class PiecesController extends Controller
             'adopted' => $project->adopted_at !== null,
             'token' => $project->issuePullToken('fw'),
             'github' => $target ? [
-                'repository' => ($target['org'] ?? $github['owner']).'/'.$target['name'],
+                'repository' => $target['repository'],
                 'scaffold_status' => 'pending',
             ] : null,
         ], 201);

@@ -511,6 +511,63 @@ class GitHubTest extends TestCase
         Http::assertSent(fn ($r) => $r->method() === 'DELETE' && str_ends_with($r->url(), '/contents/.github/workflows/framework-scaffold.yml') && $r['sha'] === 'wf-sha');
     }
 
+    public function test_a_successful_scaffold_leaves_one_commit_above_the_initial_one(): void
+    {
+        $user = $this->connected();
+        $project = $user->projects()->create([
+            'name' => 'S', 'slug' => 's', 'github_repo' => 'ada/s', 'github_repo_id' => 900, 'scaffold_status' => 'running',
+        ]);
+        $commits = [
+            'c4' => ['message' => "Scaffold with Framework\n", 'parents' => ['c3']],
+            'c3' => ['message' => 'Add Framework scaffold workflow', 'parents' => ['c2']],
+            'c2' => ['message' => 'Add Framework project layers', 'parents' => ['c1']],
+            'c1' => ['message' => 'Initial commit', 'parents' => []],
+        ];
+        $person = ['name' => 'Framework Cloud', 'email' => 'bot@example.com', 'date' => '2026-11-20T12:00:00Z'];
+        Http::fake([
+            'api.github.com/repos/ada/s' => Http::response(['default_branch' => 'main']),
+            'api.github.com/repos/ada/s/git/ref/heads/main' => Http::response(['object' => ['sha' => 'c4']]),
+            'api.github.com/repos/ada/s/git/commits/*' => fn (HttpRequest $r) => Http::response([
+                'sha' => $sha = basename($r->url()), 'message' => $commits[$sha]['message'], 'tree' => ['sha' => "tree-{$sha}"],
+                'parents' => array_map(fn ($p) => ['sha' => $p], $commits[$sha]['parents']), 'author' => $person, 'committer' => $person,
+            ]),
+            'api.github.com/repos/ada/s/git/trees' => Http::response(['sha' => 'tree-new'], 201),
+            'api.github.com/repos/ada/s/git/commits' => Http::response(['sha' => 'c5'], 201),
+            'api.github.com/repos/ada/s/git/refs/heads/main' => Http::response(['object' => ['sha' => 'c5']]),
+        ]);
+
+        app(Scaffolder::class)->finish($project, 'success', 'https://github.com/ada/s/actions/runs/1');
+
+        Http::assertSent(fn ($r) => str_ends_with($r->url(), '/git/trees') && $r['base_tree'] === 'tree-c4'
+            && $r['tree'] === [['path' => Scaffolder::WORKFLOW_PATH, 'mode' => '100644', 'type' => 'blob', 'sha' => null]]);
+        Http::assertSent(fn ($r) => $r->method() === 'POST' && str_ends_with($r->url(), '/git/commits')
+            && $r['parents'] === ['c1'] && $r['tree'] === 'tree-new' && $r['message'] === 'Scaffold with Framework' && $r['author'] === $person);
+        Http::assertSent(fn ($r) => $r->method() === 'PATCH' && $r['sha'] === 'c5' && $r['force'] === true);
+        Http::assertNotSent(fn ($r) => $r->method() === 'DELETE');
+        $this->assertSame('done', $project->fresh()->scaffold_status);
+    }
+
+    public function test_a_scaffold_with_a_commit_on_top_keeps_its_history(): void
+    {
+        $user = $this->connected();
+        $project = $user->projects()->create([
+            'name' => 'S', 'slug' => 's', 'github_repo' => 'ada/s', 'github_repo_id' => 900, 'scaffold_status' => 'running',
+        ]);
+        Http::fake([
+            'api.github.com/repos/ada/s' => Http::response(['default_branch' => 'main']),
+            'api.github.com/repos/ada/s/git/ref/heads/main' => Http::response(['object' => ['sha' => 'c5']]),
+            'api.github.com/repos/ada/s/git/commits/c5' => Http::response(['sha' => 'c5', 'message' => 'Add analysis', 'parents' => [['sha' => 'c4']]]),
+            'api.github.com/repos/ada/s/contents/*' => fn (HttpRequest $r) => $r->method() === 'GET'
+                ? Http::response(['type' => 'file', 'sha' => 'wf-sha', 'size' => 10, 'content' => ''])
+                : Http::response([], 200),
+        ]);
+
+        app(Scaffolder::class)->finish($project, 'success', 'https://github.com/ada/s/actions/runs/1');
+
+        Http::assertNotSent(fn ($r) => $r->method() === 'PATCH');
+        Http::assertSent(fn ($r) => $r->method() === 'DELETE' && str_ends_with($r->url(), '/contents/'.Scaffolder::WORKFLOW_PATH));
+    }
+
     public function test_revoking_the_app_forgets_the_tokens(): void
     {
         $user = $this->connected();

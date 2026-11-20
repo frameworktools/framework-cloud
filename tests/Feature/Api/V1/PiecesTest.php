@@ -5,6 +5,7 @@ namespace Tests\Feature\Api\V1;
 use App\Models\Blueprint;
 use App\Models\Facet;
 use App\Models\User;
+use App\Support\DefaultsPreview;
 use App\Support\Layer;
 use App\Support\ProjectDefaults;
 use Database\Seeders\BlueprintSeeder;
@@ -73,27 +74,42 @@ class PiecesTest extends TestCase
         $this->assertSame(['key' => 'framework/project', 'version' => 1], $envelope['source']['blueprint']);
     }
 
-    public function test_app_blueprints_bring_their_starter_files_and_package_set(): void
+    public function test_app_blueprints_bring_their_starter_files_and_only_the_packages_they_use(): void
     {
         $token = $this->token();
         $apps = [
-            'framework/shiny' => ['r', 'framework/shiny-r', 'app.R', 'shiny'],
-            'framework/plumber' => ['r', 'framework/plumber-r', 'plumber.R', 'plumber'],
-            'framework/shiny_python' => ['python', 'framework/shiny-python', 'app.py', 'shiny'],
-            'framework/fastapi' => ['python', 'framework/fastapi-python', 'app/main.py', 'fastapi'],
+            'framework/shiny' => ['r', 'app.R', ['bslib', 'shiny']],
+            'framework/plumber' => ['r', 'plumber.R', ['plumber']],
+            'framework/shiny_python' => ['python', 'app.py', ['numpy', 'pandas', 'shiny']],
+            'framework/fastapi' => ['python', 'app/main.py', ['fastapi', 'httpx', 'pydantic', 'pytest', 'uvicorn']],
         ];
 
-        foreach ($apps as $blueprint => [$language, $set, $file, $package]) {
-            $envelope = $this->withToken($token)->postJson('/api/v1/resolve', ['name' => 'Demo', 'blueprint' => $blueprint, 'language' => $language, 'workflow' => 'scripts'])
+        foreach ($apps as $blueprint => [$language, $file, $packages]) {
+            $envelope = $this->withToken($token)->postJson('/api/v1/resolve', ['name' => 'Demo', 'blueprint' => $blueprint])
                 ->assertOk()->json();
 
             $this->assertSame([], Layer::envelopeProblems($envelope), $blueprint);
-            $this->assertContains($set, array_column($envelope['layers'], 'key'), $blueprint);
-            $structure = $envelope['layers'][0]['layer'];
-            $this->assertArrayHasKey($file, $structure['files'], $blueprint);
-            $set = collect($envelope['layers'])->firstWhere('key', $set)['layer'];
-            $this->assertArrayHasKey($package, $set['packages']['default_packages'], $blueprint);
+            $this->assertArrayHasKey($file, $envelope['layers'][0]['layer']['files'], $blueprint);
+            $spec = DefaultsPreview::merge($envelope['layers']);
+            $this->assertSame($language, $spec['language'], $blueprint);
+            // No notebooks, so no Quarto or Jupyter
+            $this->assertSame('scripts', $spec['scaffold']['workflow'] ?? null, $blueprint);
+            $this->assertFalse($spec['tools']['quarto'] ?? false, $blueprint);
+            $this->assertNotContains('framework-workflow', array_keys(array_filter($spec['skills'] ?? [])), $blueprint);
+            // Above R's own defaults, which the tidyverse comes from, nulls remove them
+            $listed = array_keys(array_filter($spec['packages']['default_packages'] ?? []));
+            sort($listed);
+            $this->assertSame($packages, $listed, $blueprint);
+            if ($language === 'r') {
+                $defaults = collect($envelope['layers'])->firstWhere('key', 'framework package defaults')['layer']['packages']['default_packages'];
+                $this->assertArrayHasKey('dplyr', $defaults, $blueprint);
+                $this->assertNull($defaults['dplyr'], $blueprint);
+            }
         }
+
+        // The standard project keeps R's tidyverse
+        $envelope = $this->withToken($token)->postJson('/api/v1/resolve', ['name' => 'Demo', 'blueprint' => 'framework/project', 'language' => 'r'])->assertOk()->json();
+        $this->assertArrayNotHasKey('dplyr', collect($envelope['layers'])->firstWhere('key', 'framework package defaults')['layer']['packages']['default_packages']);
 
         // An R app can't be made as a Python project
         $this->withToken($token)->postJson('/api/v1/resolve', ['name' => 'Demo', 'blueprint' => 'framework/shiny', 'language' => 'python'])

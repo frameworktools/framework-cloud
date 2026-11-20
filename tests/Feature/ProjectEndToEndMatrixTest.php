@@ -60,7 +60,8 @@ class ProjectEndToEndMatrixTest extends TestCase
                 }
             }
         }
-        $this->assertCount(44, $cases);
+        // App blueprints take the Scripts workflow only
+        $this->assertCount(34, $cases);
         if ($directory) {
             file_put_contents($directory.'/matrix.json', json_encode($cases, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
         }

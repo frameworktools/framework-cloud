@@ -236,8 +236,7 @@ class ProjectsController extends Controller
                 'error' => $p->scaffold_error,
                 'pages_url' => $p->pages_url,
                 // Update on GitHub: offered once the setup changed after it last went to the repository
-                'update_available' => in_array($p->scaffold_status, ['done', null], true) && $p->setup_updated_at
-                    && (! $p->github_setup_applied_at || $p->github_setup_applied_at->lt($p->setup_updated_at)),
+                'update_available' => $p->githubUpdateAvailable(),
                 'update' => $p->github_update,
                 // Before the job creates the repository, and when creating it failed
             ] : (in_array($p->scaffold_status, ['pending', 'running', 'failed'], true) ? ['status' => $p->scaffold_status, 'error' => $p->scaffold_error] : null),
@@ -350,12 +349,11 @@ class ProjectsController extends Controller
         }
 
         $project = $resolver->createProject($validated['name'], $resolved, $validated['description'] ?? null, [
-            'scaffold_status' => $github ? 'pending' : null,
             'choices' => self::storedChoices($validated),
         ]);
 
         if ($github) {
-            ScaffoldOnGitHub::dispatch($project, $github['org'], $github['name'], $github['private']);
+            ScaffoldOnGitHub::start($project, $github);
 
             return to_route('projects.show', $project->slug);
         }
@@ -798,8 +796,7 @@ class ProjectsController extends Controller
 
         $target = RepositoryTarget::for($request->user(), $github, ProjectLayers::isSensitive(ProjectLayers::for($project)['layers'] ?? []));
 
-        $project->update(['scaffold_status' => 'pending', 'scaffold_error' => null, 'scaffold_run_url' => null]);
-        ScaffoldOnGitHub::dispatch($project, $target['org'], $target['name'], $target['private']);
+        ScaffoldOnGitHub::start($project, $target);
 
         return back();
     }
@@ -813,26 +810,10 @@ class ProjectsController extends Controller
     {
         $project = $request->user()->projects()->listed()->whereNotNull('github_repo')->findOrFail($project);
 
-        if (in_array($project->scaffold_status, ['pending', 'running', 'failed'], true)) {
-            return back()->withErrors(['github' => 'Finish creating the repository first.']);
+        if ($problem = UpdateOnGitHub::problem($project)) {
+            return back()->withErrors(['github' => $problem]);
         }
-        if (in_array($project->github_update['status'] ?? null, ['pending', 'running'], true)) {
-            return back()->withErrors(['github' => 'An update is already under way.']);
-        }
-        if (! ProjectZip::enabled()) {
-            return back()->withErrors(['github' => 'This server is not set up to build project files.']);
-        }
-        $account = $request->user()->githubAccount;
-        if (! $account) {
-            return back()->withErrors(['github' => 'Connect GitHub in settings first.']);
-        }
-        $owner = Str::before($project->github_repo, '/');
-        if (! collect(Installations::for($account) ?? [])->contains(fn (array $o) => strcasecmp($o['login'], $owner) === 0)) {
-            return back()->withErrors(['github' => Installations::missingOn($owner)]);
-        }
-
-        $project->update(['github_update' => ['status' => 'pending']]);
-        UpdateOnGitHub::dispatch($project);
+        UpdateOnGitHub::start($project);
 
         return back();
     }

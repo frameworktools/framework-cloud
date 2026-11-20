@@ -5,6 +5,7 @@ namespace App\Services\GitHub;
 use App\Models\GitHubAccount;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Http;
 
 /**
@@ -176,6 +177,48 @@ class GitHub
     public function branchSha(string $repo, string $branch): string
     {
         return $this->get("/repos/{$repo}/git/ref/heads/".rawurlencode($branch))->json('object.sha');
+    }
+
+    /**
+     * A commit from the Git data API: its message, tree, parents, author,
+     * and committer.
+     *
+     * @return array<string, mixed>
+     */
+    public function commit(string $repo, string $sha): array
+    {
+        return $this->get("/repos/{$repo}/git/commits/{$sha}")->json();
+    }
+
+    /**
+     * Point a branch at a new commit with $commit's files, less $delete,
+     * whose parents are $parents. The branch is moved even when the new
+     * commit doesn't descend from it, so the commits above $parents leave
+     * the branch's history. Returns the new commit's sha.
+     *
+     * @param  array<string, mixed>  $commit  from commit()
+     * @param  list<string>  $parents
+     * @param  list<string>  $delete  paths to leave out
+     */
+    public function replaceBranch(string $repo, string $branch, array $commit, array $parents, array $delete, string $message): string
+    {
+        $tree = $commit['tree']['sha'];
+        if ($delete) {
+            $tree = $this->send('post', "/repos/{$repo}/git/trees", [
+                'base_tree' => $tree,
+                'tree' => array_map(fn (string $path) => ['path' => $path, 'mode' => '100644', 'type' => 'blob', 'sha' => null], $delete),
+            ])->json('sha');
+        }
+        $sha = $this->send('post', "/repos/{$repo}/git/commits", [
+            'message' => $message,
+            'tree' => $tree,
+            'parents' => $parents,
+            'author' => Arr::only($commit['author'], ['name', 'email', 'date']),
+            'committer' => Arr::only($commit['committer'], ['name', 'email', 'date']),
+        ])->json('sha');
+        $this->send('patch', "/repos/{$repo}/git/refs/heads/".rawurlencode($branch), ['sha' => $sha, 'force' => true]);
+
+        return $sha;
     }
 
     public function createBranch(string $repo, string $branch, string $sha): void

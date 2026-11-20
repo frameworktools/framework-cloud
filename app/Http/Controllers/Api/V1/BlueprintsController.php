@@ -30,7 +30,8 @@ class BlueprintsController extends Controller
                 'key' => $b->handle,
                 'name' => $b->name,
                 'description' => $b->description,
-                'language' => $b->language ?? 'r',
+                // The one language it takes, such as python for FastAPI, else its own
+                'language' => self::language($b),
                 'type' => $b->latestVersion->base?->layer['type'] ?? 'bare',
                 'version' => $b->latestVersion->version,
                 'visibility' => $b->visibility,
@@ -48,6 +49,14 @@ class BlueprintsController extends Controller
             ]);
 
         return response()->json(['blueprints' => $blueprints]);
+    }
+
+    /** A blueprint's language: the only one it supports, else the one it records, else R. */
+    public static function language(Blueprint $blueprint): string
+    {
+        $languages = $blueprint->latestVersion?->compatibility()['languages'] ?? [];
+
+        return count($languages) === 1 ? $languages[0] : ($blueprint->language ?? 'r');
     }
 
     private function handles(Blueprint $blueprint, string $kind): array

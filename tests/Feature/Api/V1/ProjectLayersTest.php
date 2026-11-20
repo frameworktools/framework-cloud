@@ -209,6 +209,10 @@ class ProjectLayersTest extends TestCase
         $this->assertNotContains('Theirs', $blueprints->pluck('name'));
         $this->assertSame('project', $blueprints->firstWhere('name', 'Mine')['type']);
         $this->assertTrue($blueprints->firstWhere('key', 'framework/project')['system']);
+        // A blueprint for one language names it
+        $this->assertSame('python', $blueprints->firstWhere('key', 'framework/fastapi')['language']);
+        $this->assertSame('python', $blueprints->firstWhere('key', 'framework/shiny_python')['language']);
+        $this->assertSame('r', $blueprints->firstWhere('key', 'framework/shiny')['language']);
     }
 
     /* tests/fixtures/spec.v1.json: a spec the framework R package (c74051f) wrote for a sensitive project */

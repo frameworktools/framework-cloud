@@ -42,7 +42,7 @@ class ToolCatalog
             'projects_show' => [
                 'level' => self::READ, 'method' => 'GET', 'path' => '/projects/{slug}', 'path_params' => $project,
                 'title' => 'Show a project',
-                'description' => 'One project: its blueprint, its GitHub repository and Pages site, its scaffold status (scaffold), whether it is active, its public download link with share (a short link and QR code images for slides), and when it was created.',
+                'description' => 'One project: its blueprint, its GitHub repository and Pages site, its scaffold status (scaffold), whether its repository has the current setup (github.update_available, github.update), whether it is active, its public download link with share (a short link and QR code images for slides), and when it was created. While a scaffold is queued, github names the repository it will create.',
             ],
             'projects_create' => [
                 'level' => self::FULL, 'method' => 'POST', 'path' => '/projects',
@@ -97,7 +97,7 @@ class ToolCatalog
                 // The tool's own dry_run shows the request; preview is the endpoint's dry_run
                 'rename' => ['preview' => 'dry_run'],
                 'title' => 'Update a project\'s packages',
-                'description' => 'Set the project\'s package list: packages are added or changed, and missing ones removed only with remove. Changes this project only, never its blueprint or package sets, and offers Update on GitHub. Computers get the change with pull_all() or fw pull. Run it with preview first and get the user\'s go-ahead.',
+                'description' => 'Set the project\'s package list: packages are added or changed, and missing ones removed only with remove. Changes this project\'s setup on Framework Cloud only, never its blueprint or package sets. Its GitHub repository keeps its files: projects_github_update opens a pull request with the new settings files. Computers get the change with pull_all() or fw pull. Run it with preview first and get the user\'s go-ahead.',
             ],
             'projects_data_show' => [
                 'level' => self::READ, 'method' => 'GET', 'path' => '/projects/data',
@@ -139,6 +139,11 @@ class ToolCatalog
                 ], 'required' => []],
                 'title' => 'Scaffold a project on GitHub',
                 'description' => 'Retry a failed GitHub scaffold, or create and scaffold the repository for a project that has none (pass github). Scaffolding runs on GitHub Actions and takes a few minutes; follow it with projects_show (scaffold.scaffold_status: pending, running, done, or failed, with scaffold_error and scaffold_run_url).',
+            ],
+            'projects_github_update' => [
+                'level' => self::FULL, 'method' => 'POST', 'path' => '/projects/{slug}/github/update', 'path_params' => $project,
+                'title' => 'Update a project\'s GitHub repository',
+                'description' => 'Open a pull request on the project\'s repository with Framework\'s files built from its current setup: settings files and skills. An open Framework pull request is updated instead. Notebooks, scripts, and data stay as they are. It is built on the queue; projects_show reports it as github.update (status, pr_url, changed). Use it after projects_setup_packages_update when github.update_available is true.',
             ],
             'projects_github_link' => [
                 'level' => self::FULL, 'method' => 'POST', 'path' => '/projects/{slug}/github', 'path_params' => $project,
