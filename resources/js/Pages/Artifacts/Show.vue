@@ -102,9 +102,27 @@ function fit(event) {
 }
 onBeforeUnmount(() => observer?.disconnect());
 
-// Settings
-const details = useForm({ title: props.artifact.title, description: props.artifact.description || '' });
-const saveDetails = () => details.patch(base, { preserveScroll: true, onSuccess: () => details.defaults() });
+// Title and description edit in place and save when the field is left
+const titleDraft = ref(props.artifact.title);
+const descriptionDraft = ref(props.artifact.description || '');
+const detailStatus = ref('');
+function saveDetail(field, value, saved) {
+    if (value === saved) return;
+    detailStatus.value = 'Saving…';
+    router.patch(base, { [field]: value }, {
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess: () => { detailStatus.value = 'Saved'; setTimeout(() => { if (detailStatus.value === 'Saved') detailStatus.value = ''; }, 2000); },
+        onError: (errors) => { detailStatus.value = errors[field] || 'Could not save.'; },
+    });
+}
+function saveTitle() {
+    const value = titleDraft.value.trim();
+    if (value === '') { titleDraft.value = props.artifact.title; return; }
+    titleDraft.value = value;
+    saveDetail('title', value, props.artifact.title);
+}
+const saveDescription = () => saveDetail('description', descriptionDraft.value.trim() || null, props.artifact.description || null);
 
 // Embed contents: what other sites receive. The artifact's own page shows everything. Each switch saves as it flips.
 const display = ref(Object.fromEntries((props.artifact.display || []).map(option => [option.key, option.value])));
@@ -187,7 +205,11 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public', privat
                 <UiBreadcrumbs inline trailing :items="breadcrumbItems" class="mb-3" />
                 <header class="flex flex-wrap items-start gap-x-6 gap-y-4">
                     <div class="min-w-0 flex-1 basis-72">
-                        <h1 class="break-words text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">{{ artifact.title }}</h1>
+                        <h1 class="sr-only">{{ artifact.title }}</h1>
+                        <label for="artifact-title" class="sr-only">Title</label>
+                        <input id="artifact-title" v-model="titleDraft" maxlength="200" title="Edit the title"
+                            class="-mx-2 -my-1 w-[calc(100%+1rem)] rounded-lg border-0 bg-transparent px-2 py-1 text-2xl font-semibold tracking-tight text-slate-900 outline-none hover:bg-slate-800/5 focus:bg-white focus:ring-2 focus:ring-sky-600 dark:text-white dark:hover:bg-white/5 dark:focus:bg-slate-900"
+                            @keydown.enter.prevent="$event.target.blur()" @keydown.escape="titleDraft = artifact.title; $event.target.blur()" @blur="saveTitle" />
                         <p class="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500 dark:text-slate-400">
                             <span>{{ kind.label }}</span><span aria-hidden="true">·</span>
                             <span>{{ sharingText[artifact.visibility] || artifact.visibility }}</span>
@@ -200,6 +222,7 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public', privat
                                 </Link>
                             </template>
                             <span v-if="project.is_home && !linkedProjects.length">No project</span>
+                            <span v-if="detailStatus" aria-live="polite" :class="detailStatus === 'Saved' ? 'text-emerald-700 dark:text-emerald-400' : ''">· {{ detailStatus }}</span>
                         </p>
                     </div>
                     <div class="flex shrink-0 items-center gap-2">
@@ -257,7 +280,10 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public', privat
                     </aside>
                     <div class="min-w-0 lg:order-1">
                     <UiCallout v-if="external" class="mb-6" :heading="artifact.location">Files and access are managed at the publishing destination. Framework Cloud stores publication metadata only.</UiCallout>
-                    <p v-if="artifact.description" class="mb-6 max-w-2xl whitespace-pre-line text-sm text-slate-600 dark:text-slate-300">{{ artifact.description }}</p>
+                    <label for="artifact-description" class="sr-only">Description</label>
+                    <textarea id="artifact-description" v-model="descriptionDraft" rows="2" maxlength="10000" placeholder="Add a description"
+                        class="-mx-2 mb-6 block w-[calc(100%+1rem)] max-w-2xl resize-none rounded-lg border-0 bg-transparent px-2 py-1 text-sm text-slate-600 outline-none [field-sizing:content] placeholder:text-slate-400 hover:bg-slate-800/5 focus:bg-white focus:ring-2 focus:ring-sky-600 dark:text-slate-300 dark:hover:bg-white/5 dark:focus:bg-slate-900"
+                        @blur="saveDescription" />
                     <dl class="flex flex-wrap gap-x-10 gap-y-4 text-sm">
                         <div><dt class="text-slate-500 dark:text-slate-400">Versions</dt><dd class="mt-0.5 font-medium text-slate-800 dark:text-white">{{ versions.length }}</dd></div>
                         <div v-if="!external"><dt class="text-slate-500 dark:text-slate-400">Views</dt><dd class="mt-0.5 font-medium text-slate-800 dark:text-white">{{ artifact.views?.toLocaleString() ?? 0 }}</dd></div>
@@ -312,17 +338,7 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public', privat
                 <!-- Sharing -->
                 <!-- Settings -->
                 <div v-else class="max-w-2xl space-y-8 pt-8">
-                    <form class="space-y-6" @submit.prevent="saveDetails">
-                        <UiSection title="Details" description="Readers see the title and description on the artifact’s page." />
-                        <UiInput v-model="details.title" label="Title" placeholder="Main findings" required :error="details.errors.title" />
-                        <UiTextarea v-model="details.description" label="Description" optional :rows="3" placeholder="Data, methods, and context for this result" :error="details.errors.description" />
-                        <div class="flex items-center gap-3">
-                            <UiButton type="submit" :disabled="details.processing">Save</UiButton>
-                            <span v-if="details.recentlySuccessful" class="text-sm text-emerald-700 dark:text-emerald-400">Saved</span>
-                        </div>
-                    </form>
                     <template v-if="!external">
-                        <UiSeparator />
                         <form class="space-y-6" @submit.prevent="saveSharing">
                             <UiSection title="Password" description="Readers need it to open the artifact. Embeds don't work while it has one." />
                             <p v-if="artifact.password_protected && !passwordChanging" class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300"><LockClosedIcon class="size-4 text-slate-400" aria-hidden="true" />Protected with a password</p>
