@@ -135,7 +135,9 @@ class ArtifactPublisher
             if (! $bundle && ArtifactPreview::isVegaLite($filename)) {
                 $representationKind = 'chart';
             }
-            $stored += ['content_type' => $type, 'original_filename' => $filename, 'storage_disk' => $disk, 'kind' => $input['kind'] ?? $representationKind ?? $this->kind($type, $filename)];
+            // A client that can't tell a DAG from any other file sends file or text; a valid DAG is a dag all the same
+            $kind = $representationKind === ArtifactDag::KIND && in_array($input['kind'] ?? null, [null, 'file', 'text'], true) ? ArtifactDag::KIND : ($input['kind'] ?? null);
+            $stored += ['content_type' => $type, 'original_filename' => $filename, 'storage_disk' => $disk, 'kind' => $kind ?? $representationKind ?? $this->kind($type, $filename)];
 
             $unchanged = false;
             $version = DB::transaction(function () use ($project, $slug, $stored, $input, $snippet, &$unchanged) {

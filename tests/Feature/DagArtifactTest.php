@@ -173,6 +173,12 @@ class DagArtifactTest extends TestCase
         $this->assertStringStartsWith('M ', $response->json('data.dag.edges.0.path'));
     }
 
+    public function test_a_dag_sent_as_a_plain_file_is_still_a_dag(): void
+    {
+        $this->assertSame('dag', $this->publish('smoking.dagitty', self::DAGITTY, ['kind' => 'file'])->document->kind);
+        $this->assertSame('dag', $this->publish('dag.json', json_encode($this->dag()), ['kind' => 'text', 'slug' => 'json-dag'])->document->kind);
+    }
+
     public function test_kind_dag_on_a_json_file_that_is_not_one_is_refused(): void
     {
         $this->expectException(ValidationException::class);
