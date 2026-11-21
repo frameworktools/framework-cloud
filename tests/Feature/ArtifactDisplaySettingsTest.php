@@ -53,28 +53,29 @@ class ArtifactDisplaySettingsTest extends TestCase
         return $this->getJson('/api/embed/v1/artifacts/'.$version->document->key)->assertOk()->json();
     }
 
-    public function test_every_setting_is_on_until_turned_off(): void
+    public function test_a_dag_embeds_as_its_drawing_alone_until_its_sections_are_turned_on(): void
     {
         $version = $this->publish('dag.json', json_encode(self::DAG));
 
         $this->assertNull($version->document->display);
         $embed = $this->embed($version);
-        $this->assertSame('Age confounds smoking and cancer.', $embed['description']);
-        $this->assertArrayHasKey('analysis', $embed['data']);
-        $this->assertArrayHasKey('code', $embed['data']);
+        $this->assertNull($embed['description']);
+        $this->assertSame(['dag'], array_keys(array_intersect_key($embed['data'], array_flip(['dag', 'analysis', 'dagitty', 'code']))));
         $this->assertArrayNotHasKey('display', $embed['data']);
+        $this->assertArrayNotHasKey('display', $embed);
+        $this->assertNotNull($embed['title']);
     }
 
     public function test_a_package_sets_what_a_dag_embed_shows(): void
     {
-        $version = $this->publish('dag.json', json_encode(self::DAG), ['display' => '{"analysis": false, "code": false, "legend": false, "description": false}']);
+        $version = $this->publish('dag.json', json_encode(self::DAG), ['display' => '{"analysis": true, "code": true, "description": true, "legend": false}']);
 
-        $this->assertSame(['analysis' => false, 'code' => false, 'legend' => false, 'description' => false], $version->document->display);
+        $this->assertSame(['analysis' => true, 'code' => true, 'description' => true, 'legend' => false], $version->document->display);
         $embed = $this->embed($version);
-        $this->assertNull($embed['description']);
-        $this->assertArrayNotHasKey('analysis', $embed['data']);
-        $this->assertArrayNotHasKey('code', $embed['data']);
-        $this->assertArrayHasKey('dagitty', $embed['data']);
+        $this->assertSame('Age confounds smoking and cancer.', $embed['description']);
+        $this->assertArrayHasKey('analysis', $embed['data']);
+        $this->assertArrayHasKey('code', $embed['data']);
+        $this->assertArrayNotHasKey('dagitty', $embed['data']);
         $this->assertSame(['legend' => false], $embed['data']['display']);
         // The reader page still shows everything
         $this->get($version->document->publicUrl())->assertOk()->assertSee('Adjustment sets')->assertSee('dagify');
@@ -82,12 +83,12 @@ class ArtifactDisplaySettingsTest extends TestCase
 
     public function test_a_later_publish_changes_only_the_settings_it_names(): void
     {
-        $this->publish('dag.json', json_encode(self::DAG), ['display' => ['analysis' => false, 'code' => false]]);
-        $version = $this->publish('dag.json', json_encode(self::DAG), ['display' => ['code' => true]]);
-        $this->assertSame(['analysis' => false], $version->document->fresh()->display);
+        $this->publish('dag.json', json_encode(self::DAG), ['display' => ['analysis' => true, 'code' => true]]);
+        $version = $this->publish('dag.json', json_encode(self::DAG), ['display' => ['code' => false]]);
+        $this->assertSame(['analysis' => true, 'code' => false], $version->document->fresh()->display);
 
         $version = $this->publish('dag.json', json_encode(self::DAG));
-        $this->assertSame(['analysis' => false], $version->document->fresh()->display);
+        $this->assertSame(['analysis' => true, 'code' => false], $version->document->fresh()->display);
     }
 
     public function test_unknown_settings_and_other_values_are_refused_and_nothing_is_stored(): void
@@ -117,13 +118,16 @@ class ArtifactDisplaySettingsTest extends TestCase
         $this->assertSame(['title', 'description', 'author', 'credit', 'legend', 'analysis', 'dagitty', 'code'], $options->keys()->all());
         $this->assertSame('R code', $options['code']['label']);
 
-        $this->actingAs($this->user)->patch('/published/'.$document->id, ['display' => ['dagitty' => false, 'title' => true]])->assertRedirect();
-        $this->assertSame(['dagitty' => false], $document->fresh()->display);
-        $this->actingAs($this->user)->patch('/published/'.$document->id, ['display' => ['dagitty' => true]])->assertRedirect();
-        $this->assertNull($document->fresh()->display);
+        // A DAG's sections start off; its title, legend, and link back start on
+        $this->assertSame([true, false, true, true, true, false, false, false], $options->pluck('value')->all());
+
+        $this->actingAs($this->user)->patch('/published/'.$document->id, ['display' => ['dagitty' => true, 'title' => true]])->assertRedirect();
+        $this->assertSame(['dagitty' => true, 'title' => true], $document->fresh()->display);
+        $this->actingAs($this->user)->patch('/published/'.$document->id, ['display' => ['dagitty' => false]])->assertRedirect();
+        $this->assertSame(['dagitty' => false, 'title' => true], $document->fresh()->display);
 
         $this->actingAs($this->user)->get('/artifacts/'.$document->id)->assertOk()
-            ->assertInertia(fn ($page) => $page->where('artifact.display.7.label', 'R code')->where('artifact.display.7.value', true));
+            ->assertInertia(fn ($page) => $page->where('artifact.display.7.label', 'R code')->where('artifact.display.7.value', false));
     }
 
     public function test_a_dag_without_code_offers_no_code_setting(): void
@@ -160,5 +164,24 @@ class ArtifactDisplaySettingsTest extends TestCase
         $this->assertNull($static['spec']);
         // Without a static image, a chart stays a chart
         $this->assertSame('vega-lite', ArtifactDisplay::apply(['image' => null] + $chart, ['interactive' => false])['kind']);
+    }
+
+    public function test_publishing_returns_the_link_to_embed(): void
+    {
+        $version = $this->publish('dag.json', json_encode(self::DAG), ['visibility' => 'public']);
+        $document = $version->document;
+        $this->assertStringContainsString('/go/', ArtifactEmbed::embedLink($document));
+
+        $document->update(['visibility' => 'unlisted']);
+        $this->assertSame($document->shareUrl(), ArtifactEmbed::embedLink($document->fresh()));
+
+        $document->update(['visibility' => 'private']);
+        $this->assertNull(ArtifactEmbed::embedLink($document->fresh()));
+
+        // The project publish API answers with it
+        $token = $this->project->createToken('publish', [Project::PULL_ABILITY])->plainTextToken;
+        $this->withToken($token)->post('/api/v1/documents', ['slug' => 'api-dag', 'visibility' => 'unlisted',
+            'file' => UploadedFile::fake()->createWithContent('model.dagitty', 'x -> y')], ['Accept' => 'application/json'])
+            ->assertCreated()->assertJsonPath('embed_link', fn ($link) => is_string($link) && str_contains($link, '/d/'));
     }
 }

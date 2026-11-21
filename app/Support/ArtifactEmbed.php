@@ -39,6 +39,19 @@ class ArtifactEmbed
             && $document->project !== null;
     }
 
+    /**
+     * The link to paste into a site that takes Framework embeds: a public
+     * artifact's short link, else its own link. Null when it can't be embedded.
+     */
+    public static function embedLink(Document $document): ?string
+    {
+        if (! self::embeddable($document)) {
+            return null;
+        }
+
+        return Share::for($document)['short_url'] ?? $document->shareUrl();
+    }
+
     public static function byKey(string $key): ?Document
     {
         $document = Document::where('key', $key)->whereHas('project')->with('project.user')->first();

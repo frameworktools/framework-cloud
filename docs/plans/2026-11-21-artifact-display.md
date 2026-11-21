@@ -6,7 +6,7 @@ Framework Cloud owns what an embedded artifact shows. Each artifact has display 
 
 ## Settings
 
-Every setting is on by default. An artifact stores only what differs, in `documents.display` (JSON, keys to booleans), and the settings apply to every version.
+Settings are on by default, except that a DAG embeds as its drawing alone: its `description`, `analysis`, `dagitty`, and `code` start off. An artifact stores the settings set for it, in `documents.display` (JSON, keys to booleans), and they apply to every version.
 
 | Key | Kinds | Label | Off means |
 |---|---|---|---|
@@ -34,6 +34,10 @@ Cloud leaves out what a setting turns off: `title`, `description`, and `author` 
 The reader page shows everything. The settings shape what other sites receive.
 
 Stored embeds keep the document they fetched until the author fetches it again. Newest-version documents are cached for 5 minutes and version documents for an hour.
+
+## Publish answer
+
+Both publish APIs answer with `embed_link`: the link to paste into a site that takes Framework embeds. That is a public artifact's short link, or an unlisted artifact's own link. It is `null` when the artifact can't be embedded (private, or with a password). The packages print it after they publish.
 
 ## Setting them
 

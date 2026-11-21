@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Project;
+use App\Support\ArtifactEmbed;
 use App\Support\ArtifactPublisher;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -53,6 +54,8 @@ class DocumentsController extends Controller
             'readable_url' => $readableUrl,
             'version_url' => $readableUrl ? $document->readableUrl($version->number) : $version->url(),
             'raw_url' => $document->rawUrl(),
+            // The link to paste into a blog or site that takes Framework embeds, when it can be embedded
+            'embed_link' => ArtifactEmbed::embedLink($document),
             'notice' => $document->isReadable() && ! $readableUrl
                 ? 'Public. Set a handle in Account > Account details to get a readable URL. Until then, share the link above.'
                 : null,

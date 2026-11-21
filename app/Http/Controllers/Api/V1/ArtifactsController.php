@@ -9,6 +9,7 @@ use App\Models\DocumentVersion;
 use App\Models\McpConnection;
 use App\Models\Project;
 use App\Models\User;
+use App\Support\ArtifactEmbed;
 use App\Support\ArtifactPublisher;
 use App\Support\PlotDescription;
 use App\Support\Share;
@@ -291,7 +292,8 @@ class ArtifactsController extends Controller
     {
         $document = $version->document->load('project.user', 'linkedProjects:id,slug');
 
-        return $this->summary($document) + ['version' => $version->number, 'version_url' => $version->url(), 'unchanged' => $version->unchanged];
+        return $this->summary($document) + ['version' => $version->number, 'version_url' => $version->url(), 'unchanged' => $version->unchanged,
+            'embed_link' => ArtifactEmbed::embedLink($document)];
     }
 
     /** @return array<string, array<int, mixed>> */

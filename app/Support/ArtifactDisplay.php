@@ -9,8 +9,9 @@ use JsonException;
 /**
  * What an embedded artifact shows. Framework Cloud owns these settings: the
  * owner sets them on the artifact's Settings tab, packages set them when they
- * publish, and embed documents carry only what they allow. Every setting is on
- * by default; an artifact stores only those that differ (documents.display).
+ * publish, and embed documents carry only what they allow. Settings are on
+ * by default, except where a kind turns them off (a DAG embeds as its drawing
+ * alone); an artifact stores the settings set for it (documents.display).
  * See docs/plans/2026-11-21-artifact-display.md.
  */
 class ArtifactDisplay
@@ -32,6 +33,17 @@ class ArtifactDisplay
         'code' => ['kinds' => ['dag'], 'label' => 'Source code', 'help' => 'The code that built the graph, with a copy button.'],
         'interactive' => ['kinds' => ['vega-lite'], 'label' => 'Interactive chart', 'help' => 'Off, the static image shows instead.'],
     ];
+
+    /** Settings a kind starts with off: a DAG embeds as its drawing, its sections a choice. */
+    private const OFF_BY_DEFAULT = [
+        'dag' => ['description', 'analysis', 'dagitty', 'code'],
+    ];
+
+    /** Whether a setting is on for an embed kind, as set or by default. */
+    public static function isOn(string $kind, string $key, ?array $display): bool
+    {
+        return $display[$key] ?? ! in_array($key, self::OFF_BY_DEFAULT[$kind] ?? [], true);
+    }
 
     /** @return list<string> */
     public static function keys(): array
@@ -66,7 +78,7 @@ class ArtifactDisplay
             if ($key === 'code') {
                 $label = (ArtifactDag::LANGUAGES[$data['code']['language'] ?? ''] ?? 'Source').' code';
             }
-            $out[] = ['key' => $key, 'label' => $label, 'help' => $setting['help'], 'value' => ($display[$key] ?? true) !== false];
+            $out[] = ['key' => $key, 'label' => $label, 'help' => $setting['help'], 'value' => self::isOn($kind, $key, $display)];
         }
 
         return $out;
@@ -124,7 +136,7 @@ class ArtifactDisplay
 
     /**
      * The stored settings after a change: keys the change names take its
-     * values, and settings back at their default are dropped.
+     * values, on or off, since a kind's default may be either.
      *
      * @param  array<string, bool>|null  $stored
      * @param  array<string, bool>  $change
@@ -132,7 +144,7 @@ class ArtifactDisplay
      */
     public static function merge(?array $stored, array $change): ?array
     {
-        $merged = array_filter(array_merge($stored ?? [], $change), fn (bool $value) => $value === false);
+        $merged = array_merge($stored ?? [], $change);
 
         return $merged === [] ? null : $merged;
     }
@@ -140,10 +152,9 @@ class ArtifactDisplay
     /** An embed document with what the settings turn off left out. */
     public static function apply(array $document, ?array $display): array
     {
-        $off = fn (string $key) => ($display[$key] ?? true) === false;
-        if (! $display) {
-            return $document;
-        }
+        // Defaults follow the kind the artifact embeds as, before a chart may turn static
+        $kind = $document['kind'];
+        $off = fn (string $key) => ! self::isOn($kind, $key, $display);
         if ($off('title') && $document['kind'] !== 'page') {
             $document['title'] = null;
         }

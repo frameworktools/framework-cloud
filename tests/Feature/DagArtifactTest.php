@@ -161,7 +161,8 @@ class DagArtifactTest extends TestCase
 
     public function test_the_embed_document_carries_the_drawing_and_the_code(): void
     {
-        $version = $this->publish('dag.json', json_encode($this->dag()), ['visibility' => 'unlisted']);
+        // A DAG's sections start off in embeds; this one turns them on
+        $version = $this->publish('dag.json', json_encode($this->dag()), ['visibility' => 'unlisted', 'display' => ['dagitty' => true, 'code' => true, 'analysis' => true]]);
 
         $response = $this->getJson('/api/embed/v1/artifacts/'.$version->document->key)->assertOk();
         $response->assertJsonPath('kind', 'dag')
