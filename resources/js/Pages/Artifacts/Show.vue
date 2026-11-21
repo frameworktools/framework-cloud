@@ -1,6 +1,6 @@
 <script setup>
 import UiRadioCards from '@/Components/UiRadioCards.vue';
-import ShareQr from '@/Components/ShareQr.vue';
+import ShareQrBody from '@/Components/ShareQrBody.vue';
 import ShareDialog from '@/Components/ShareDialog.vue';
 import { ask } from '@/confirm.js';
 import { pageClass } from '@/ui.js';
@@ -20,7 +20,7 @@ import UiSeparator from '@/Components/UiSeparator.vue';
 import UiLink from '@/Components/UiLink.vue';
 import UiCallout from '@/Components/UiCallout.vue';
 import { artifactKind } from '@/report-artifacts.js';
-import { EyeIcon, ArrowTopRightOnSquareIcon, LockClosedIcon, TrashIcon, CheckIcon, PencilSquareIcon } from '@heroicons/vue/20/solid';
+import { EyeIcon, ArrowTopRightOnSquareIcon, LockClosedIcon, TrashIcon, CheckIcon, PencilSquareIcon, ChevronDownIcon } from '@heroicons/vue/20/solid';
 import { ClipboardDocumentIcon, CodeBracketIcon, Square2StackIcon, Square3Stack3DIcon } from '@heroicons/vue/24/outline';
 
 const props = defineProps({ share: { type: Object, default: null }, artifact: Object, project: Object, versions: Array, usedIn: Array, mergeSources: Array, handle: String, linkedProjects: { type: Array, default: () => [] }, linkableProjects: { type: Array, default: () => [] } });
@@ -278,9 +278,16 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public', privat
                             <UiSwitch v-for="option in artifact.display" :key="option.key" :model-value="display[option.key]" :label="option.label" :description="option.help" @update:model-value="value => saveDisplay(option.key, value)" />
                             <p class="h-4 text-xs" :class="displayStatus === 'Saved' ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'" aria-live="polite">{{ displayStatus }}</p>
                         </section>
-                        <details class="group border-t border-slate-800/10 pt-4 dark:border-white/15">
-                            <summary class="cursor-pointer list-none text-sm font-medium text-slate-800 dark:text-white">QR code</summary>
-                            <div class="mt-3"><ShareQr :share="share" unavailable="Private artifacts have no QR code. Choose Anyone with the link or Public above." /></div>
+                        <details open class="group border-t border-slate-800/10 pt-4 dark:border-white/15">
+                            <summary class="flex cursor-pointer list-none items-center justify-between text-sm font-medium text-slate-800 dark:text-white [&::-webkit-details-marker]:hidden">
+                                QR code
+                                <ChevronDownIcon class="size-4 text-slate-400 transition-transform group-open:rotate-180" aria-hidden="true" />
+                            </summary>
+                            <div class="mt-3 space-y-3">
+                                <p class="text-xs text-slate-500 dark:text-slate-400">For a slide or handout. The short link is easy to type.</p>
+                                <ShareQrBody v-if="share" :share="share" />
+                                <p v-else class="text-xs text-slate-500 dark:text-slate-400">Private artifacts have no QR code. Choose Anyone with the link or Public above.</p>
+                            </div>
                         </details>
                     </aside>
                     <div class="min-w-0 lg:order-1">
