@@ -182,6 +182,7 @@ class ArtifactDisplaySettingsTest extends TestCase
         $token = $this->project->createToken('publish', [Project::PULL_ABILITY])->plainTextToken;
         $this->withToken($token)->post('/api/v1/documents', ['slug' => 'api-dag', 'visibility' => 'unlisted',
             'file' => UploadedFile::fake()->createWithContent('model.dagitty', 'x -> y')], ['Accept' => 'application/json'])
-            ->assertCreated()->assertJsonPath('embed_link', fn ($link) => is_string($link) && str_contains($link, '/d/'));
+            ->assertCreated()->assertJsonPath('embed_link', fn ($link) => is_string($link) && str_contains($link, '/d/'))
+            ->assertJsonPath('artifact_url', fn ($link) => (bool) preg_match('#/artifacts/[0-9]+$#', $link));
     }
 }

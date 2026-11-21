@@ -293,7 +293,7 @@ class ArtifactsController extends Controller
         $document = $version->document->load('project.user', 'linkedProjects:id,slug');
 
         return $this->summary($document) + ['version' => $version->number, 'version_url' => $version->url(), 'unchanged' => $version->unchanged,
-            'embed_link' => ArtifactEmbed::embedLink($document)];
+            'embed_link' => ArtifactEmbed::embedLink($document), 'artifact_url' => route('artifacts.show', $document->id)];
     }
 
     /** @return array<string, array<int, mixed>> */

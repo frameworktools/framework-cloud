@@ -37,7 +37,7 @@ Stored embeds keep the document they fetched until the author fetches it again. 
 
 ## Publish answer
 
-Both publish APIs answer with `embed_link`: the link to paste into a site that takes Framework embeds. That is a public artifact's short link, or an unlisted artifact's own link. It is `null` when the artifact can't be embedded (private, or with a password). The packages print it after they publish.
+Both publish APIs answer with `embed_link`: the link to paste into a site that takes Framework embeds. That is a public artifact's short link, or an unlisted artifact's own link. It is `null` when the artifact can't be embedded (private, or with a password). They also answer with `artifact_url`, the artifact's page on Framework Cloud, which its owner opens to share it, set what embeds show, and edit it. The packages print that page after they publish.
 
 ## Setting them
 

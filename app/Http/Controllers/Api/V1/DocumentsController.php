@@ -56,6 +56,8 @@ class DocumentsController extends Controller
             'raw_url' => $document->rawUrl(),
             // The link to paste into a blog or site that takes Framework embeds, when it can be embedded
             'embed_link' => ArtifactEmbed::embedLink($document),
+            // The artifact's page on this server, for its owner: sharing, embed settings, and editing
+            'artifact_url' => route('artifacts.show', $document->id),
             'notice' => $document->isReadable() && ! $readableUrl
                 ? 'Public. Set a handle in Account > Account details to get a readable URL. Until then, share the link above.'
                 : null,
