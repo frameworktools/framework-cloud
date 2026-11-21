@@ -39,11 +39,15 @@ class ArtifactPublisher
             'kind' => ['sometimes', Rule::in(self::KINDS)],
             // A phiz plot description of an SVG or PNG figure, stored beside it as figure.phiz.json
             'plot_description' => ['sometimes', 'nullable', 'prohibits:bundle', 'file', 'max:'.intdiv(PlotDescription::MAX_BYTES, 1024)],
+            // What its embeds show, as a JSON object of setting names to true or false (ArtifactDisplay)
+            'display' => ['sometimes', 'nullable'],
         ];
     }
 
     public function publish(Project $project, array $input): DocumentVersion
     {
+        // Checked first, so a bad setting stores nothing
+        $display = ArtifactDisplay::parse($input['display'] ?? null);
         $bundle = isset($input['bundle']);
         $upload = $bundle ? $input['bundle'] : $input['file'];
         $filename = basename(str_replace('\\', '/', $upload->getClientOriginalName()));
@@ -140,7 +144,7 @@ class ArtifactPublisher
             $stored += ['content_type' => $type, 'original_filename' => $filename, 'storage_disk' => $disk, 'kind' => $kind ?? $representationKind ?? $this->kind($type, $filename)];
 
             $unchanged = false;
-            $version = DB::transaction(function () use ($project, $slug, $stored, $input, $snippet, &$unchanged) {
+            $version = DB::transaction(function () use ($project, $slug, $stored, $input, $snippet, $display, &$unchanged) {
                 PublishingQuota::check($project, (int) $stored['size_bytes']);
                 Project::whereKey($project->id)->lockForUpdate()->firstOrFail();
                 // Publishing again under a deleted artifact's name brings it back from the Trash
@@ -163,6 +167,9 @@ class ArtifactPublisher
                 $document->fill($stored + ['key' => $document->key ?? Document::newKey(), 'title' => $input['title'] ?? $document->title ?? self::titleFromSlug($slug)]);
                 if (array_key_exists('description', $input)) {
                     $document->description = $input['description'];
+                }
+                if ($display !== null) {
+                    $document->display = ArtifactDisplay::merge($document->display, $display);
                 }
                 $document->visibility = Document::visibilityFor($document->visibility, $input);
                 // Existing external publications must first be migrated through settings.

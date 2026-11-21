@@ -50,7 +50,7 @@ class Document extends Model
 
     protected function casts(): array
     {
-        return ['manifest' => 'array', 'merged_at' => 'datetime'];
+        return ['manifest' => 'array', 'merged_at' => 'datetime', 'display' => 'array'];
     }
 
     public function isPasswordProtected(): bool

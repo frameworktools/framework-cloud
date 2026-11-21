@@ -3,6 +3,7 @@
 namespace App\Mcp;
 
 use App\Models\McpConnection;
+use App\Support\ArtifactDisplay;
 use App\Support\ArtifactPublisher;
 use App\Support\ProjectData;
 use App\Support\ProjectDefaults;
@@ -446,6 +447,7 @@ class ToolCatalog
                 'visibility' => ['type' => 'string', 'enum' => ['private', 'unlisted', 'public'], 'description' => 'Who can open it. New artifacts start private. Ask the user before choosing public.'],
                 'password' => ['type' => 'string', 'minLength' => 8],
                 'kind' => ['type' => 'string', 'enum' => ArtifactPublisher::KINDS, 'description' => 'Overrides the kind read from the file name. A code_snippet is a framework.artifact/v1 JSON file of code and printed output. A dag is a .dagitty file of DAGitty model text, or framework.artifact/v1 JSON that carries it.'],
+                'display' => ['type' => 'object', 'additionalProperties' => ['type' => 'boolean'], 'description' => 'What embeds of the artifact show, as setting names to true or false. Every setting is on unless set false; settings not named keep their value. Settings: '.implode(', ', ArtifactDisplay::keys()).'. For example {"analysis": false} hides a DAG\'s adjustment sets.'],
                 'plot_description' => ['type' => 'string', 'description' => 'For an SVG or PNG figure: its phiz plot description as JSON text, such as the figure.phiz.json Framework writes beside a published ggplot. Cloud draws the figure as a live chart and keeps the image as the fallback.'],
             ],
             'required' => ['filename'],

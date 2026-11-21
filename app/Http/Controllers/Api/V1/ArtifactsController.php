@@ -47,7 +47,7 @@ class ArtifactsController extends Controller
 
     private const TEXT_TYPES = ['application/json', 'text/csv', 'text/tab-separated-values', 'text/markdown', 'text/plain'];
 
-    private const OPTIONS = ['slug', 'title', 'description', 'visibility', 'password', 'kind', 'entrypoint'];
+    private const OPTIONS = ['slug', 'title', 'description', 'visibility', 'password', 'kind', 'entrypoint', 'display'];
 
     /** GET /artifacts, or /projects/{slug}/artifacts: the account's artifacts, or a project's own and linked ones. */
     public function index(Request $request, ?string $slug = null): JsonResponse
@@ -299,7 +299,7 @@ class ArtifactsController extends Controller
     {
         return [
             'entrypoint' => ['sometimes', 'nullable', 'string', 'max:255', 'not_regex:/\\.\\.|^\\/|\\\\/'],
-        ] + array_intersect_key(ArtifactPublisher::rules(), array_flip(['slug', 'title', 'description', 'visibility', 'password', 'kind']));
+        ] + array_intersect_key(ArtifactPublisher::rules(), array_flip(['slug', 'title', 'description', 'visibility', 'password', 'kind', 'display']));
     }
 
     /** The connected agent behind this request's token, if it is one. */

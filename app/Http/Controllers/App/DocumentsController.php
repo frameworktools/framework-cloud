@@ -8,6 +8,8 @@ use App\Models\Document;
 use App\Models\DocumentVersion;
 use App\Models\Project;
 use App\Models\Report;
+use App\Support\ArtifactDisplay;
+use App\Support\ArtifactEmbed;
 use App\Support\ArtifactPublisher;
 use App\Support\PublishDrivers;
 use App\Support\PublishingQuota;
@@ -97,6 +99,7 @@ class DocumentsController extends Controller
                 'bundle' => $document->entrypoint !== null,
                 'published_at' => $document->created_at, 'updated_at' => $document->updated_at,
                 'merged_into' => $document->merged_into_id ? Document::find($document->merged_into_id)?->only('id', 'title') : null,
+                'display' => ArtifactEmbed::displayOptions($document),
             ],
             'project' => $document->project->only('id', 'name', 'slug', 'is_home'),
             // Its short link and QR code, unless it's private
@@ -158,9 +161,15 @@ class DocumentsController extends Controller
             'title' => ['sometimes', 'string', 'max:200'],
             'description' => ['sometimes', 'nullable', 'string', 'max:10000'],
             'password' => ['sometimes', 'nullable', 'string', 'min:8', 'max:200'],
+            'display' => ['sometimes', 'array'],
         ]);
-        DB::transaction(function () use ($request, $document, $validated) {
+        $display = array_key_exists('display', $validated) ? ArtifactDisplay::parse($validated['display']) : null;
+        unset($validated['display']);
+        DB::transaction(function () use ($request, $document, $validated, $display) {
             $document = $this->lockedDocument($request, $document);
+            if ($display !== null) {
+                $validated['display'] = ArtifactDisplay::merge($document->display, $display);
+            }
             if (($document->driver ?? 'cloud') !== 'cloud' && array_intersect(array_keys($validated), ['readable', 'visibility', 'password'])) {
                 throw ValidationException::withMessages(['visibility' => 'Access is managed at the publishing destination.']);
             }

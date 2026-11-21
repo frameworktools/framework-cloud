@@ -127,7 +127,8 @@ class ArtifactEmbed
         $option = $codeOnly ? '?output=none' : '';
         $url = self::pageUrl($version).$option;
 
-        return [
+        // The owner's display settings decide what other sites receive
+        return ArtifactDisplay::apply([
             'schema' => self::SCHEMA,
             'key' => $document->key,
             'version' => $version->number,
@@ -145,7 +146,26 @@ class ArtifactEmbed
             'data' => $kind === 'page' ? null : self::compact($data),
             'spec' => $spec,
             'image' => $image,
-        ];
+        ], $document->display);
+    }
+
+    /**
+     * The display settings this artifact offers, for its newest version's kind
+     * and content, with their values.
+     *
+     * @return list<array{key: string, label: string, help: string, value: bool}>
+     */
+    public static function displayOptions(Document $document): array
+    {
+        $version = ($document->driver ?? 'cloud') === 'cloud' ? $document->latestVersion() : null;
+        if ($version === null) {
+            return [];
+        }
+        $kind = self::kind($version);
+        $preview = ArtifactPreview::forVersion($version);
+        $data = in_array($preview['type'], ['representation', ArtifactSnippet::KIND, ArtifactDag::KIND], true) ? $preview : null;
+
+        return ArtifactDisplay::options($kind, $data, $kind === 'vega-lite' && self::hasImage($version), $document->display);
     }
 
     /**

@@ -11,6 +11,7 @@ import UiBreadcrumbs from '@/Components/UiBreadcrumbs.vue';
 import UiButton from '@/Components/UiButton.vue';
 import UiInput from '@/Components/UiInput.vue';
 import UiTextarea from '@/Components/UiTextarea.vue';
+import UiSwitch from '@/Components/UiSwitch.vue';
 import UiSelect from '@/Components/UiSelect.vue';
 import UiTabs from '@/Components/UiTabs.vue';
 import UiTable from '@/Components/UiTable.vue';
@@ -105,6 +106,10 @@ onBeforeUnmount(() => observer?.disconnect());
 // Settings
 const details = useForm({ title: props.artifact.title, description: props.artifact.description || '' });
 const saveDetails = () => details.patch(base, { preserveScroll: true, onSuccess: () => details.defaults() });
+
+// Embed contents: what other sites receive. The artifact's own page shows everything.
+const display = useForm({ display: Object.fromEntries((props.artifact.display || []).map(option => [option.key, option.value])) });
+const saveDisplay = () => display.patch(base, { preserveScroll: true, onSuccess: () => display.defaults() });
 
 // Sharing
 const sharing = useForm({ visibility: props.artifact.visibility ?? (props.artifact.readable ? 'public' : 'unlisted'), password: '', removePassword: false });
@@ -301,6 +306,20 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public', privat
                             <span v-if="details.recentlySuccessful" class="text-sm text-emerald-700 dark:text-emerald-400">Saved</span>
                         </div>
                     </form>
+                    <template v-if="artifact.display?.length">
+                        <UiSeparator />
+                        <form class="space-y-6" @submit.prevent="saveDisplay">
+                            <UiSection title="Embed contents" description="What sites that embed this artifact show. Its own page shows everything." />
+                            <div class="space-y-4">
+                                <UiSwitch v-for="option in artifact.display" :key="option.key" v-model="display.display[option.key]" :label="option.label" :description="option.help" />
+                            </div>
+                            <p v-if="display.errors.display" class="text-sm text-red-600">{{ display.errors.display }}</p>
+                            <div class="flex items-center gap-3">
+                                <UiButton type="submit" :disabled="display.processing || !display.isDirty">Save</UiButton>
+                                <span v-if="display.recentlySuccessful" class="text-sm text-emerald-700 dark:text-emerald-400">Saved</span>
+                            </div>
+                        </form>
+                    </template>
                     <UiSeparator />
                     <section class="space-y-4">
                         <UiSection title="Projects" :description="project.is_home
