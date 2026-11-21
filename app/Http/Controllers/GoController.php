@@ -49,16 +49,34 @@ class GoController extends Controller
     public function qr(Request $request, string $code, string $format): Response
     {
         $link = ShortLink::lookup($code);
-        abort_unless($link?->linkable && Share::shareable($link->linkable), 404);
+        abort_unless($link?->linkable && Share::shareable($link->linkable) && Share::public($link->linkable), 404);
+        $name = Str::slug((string) ($link->linkable->title ?? $link->linkable->name ?? $link->code)) ?: $link->code;
 
+        return $this->qrResponse($link->url(), $format, $request->boolean('download') ? $name : null);
+    }
+
+    /**
+     * GET /qr?url=…&format=…: the QR code of an unlisted thing's own link.
+     * Signed by Share::for, so it draws only links this server handed out.
+     */
+    public function qrFor(Request $request): Response
+    {
+        $format = $request->query('format');
+        abort_unless(in_array($format, ['svg', 'png'], true) && is_string($url = $request->query('url')), 404);
+        $name = $request->boolean('download') ? (Str::slug((string) $request->query('name')) ?: 'share') : null;
+
+        return $this->qrResponse($url, $format, $name);
+    }
+
+    private function qrResponse(string $url, string $format, ?string $downloadName): Response
+    {
         $body = $format === 'png'
-            ? (new GDLibRenderer(1024, 4))->render(Encoder::encode($link->url(), ErrorCorrectionLevel::M()))
-            : (new Writer(new ImageRenderer(new RendererStyle(1024, 4), new SvgImageBackEnd)))->writeString($link->url());
+            ? (new GDLibRenderer(1024, 4))->render(Encoder::encode($url, ErrorCorrectionLevel::M()))
+            : (new Writer(new ImageRenderer(new RendererStyle(1024, 4), new SvgImageBackEnd)))->writeString($url);
 
-        $headers = ['Content-Type' => $format === 'png' ? 'image/png' : 'image/svg+xml', 'Cache-Control' => 'public, max-age=3600'];
-        if ($request->boolean('download')) {
-            $name = Str::slug((string) ($link->linkable->title ?? $link->linkable->name ?? $link->code)) ?: $link->code;
-            $headers['Content-Disposition'] = "attachment; filename=\"{$name}-qr.{$format}\"";
+        $headers = ['Content-Type' => $format === 'png' ? 'image/png' : 'image/svg+xml', 'Cache-Control' => 'private, max-age=3600'];
+        if ($downloadName !== null) {
+            $headers['Content-Disposition'] = "attachment; filename=\"{$downloadName}-qr.{$format}\"";
         }
 
         return response($body, 200, $headers);
@@ -68,6 +86,7 @@ class GoController extends Controller
     {
         $link = ShortLink::lookup($typed);
 
-        return $link?->linkable && Share::shareable($link->linkable) ? $link->linkable->shareUrl() : null;
+        // Only public things answer to a short code; one made before they turned unlisted or private is retired
+        return $link?->linkable && Share::shareable($link->linkable) && Share::public($link->linkable) ? $link->linkable->shareUrl() : null;
     }
 }

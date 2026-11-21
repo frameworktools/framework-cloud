@@ -91,11 +91,38 @@ class ShortLinkTest extends TestCase
         $this->actingAs($owner)->getJson("/share/report/{$report->id}")->assertOk()->assertJsonPath('share', null);
         $this->actingAs($owner)->postJson("/share/report/{$report->id}", ['visibility' => 'private'])->assertStatus(422);
 
+        // Unlisted: its own link, not a short code anyone could guess
         $this->actingAs($owner)->postJson("/share/report/{$report->id}", ['visibility' => 'unlisted'])->assertOk()
-            ->assertJsonPath('visibility', 'unlisted')->assertJsonPath('share.short', fn ($s) => str_contains($s, '/go/'));
+            ->assertJsonPath('visibility', 'unlisted')->assertJsonPath('share.code', null)
+            ->assertJsonPath('share.short', fn ($s) => ! str_contains($s, '/go/'));
         $this->assertSame('unlisted', $report->fresh()->visibility);
+
+        $this->actingAs($owner)->postJson("/share/report/{$report->id}", ['visibility' => 'public'])->assertOk()
+            ->assertJsonPath('share.short', fn ($s) => str_contains($s, '/go/'));
 
         // Someone else's
         $this->actingAs(User::factory()->create())->postJson("/share/report/{$report->id}", ['visibility' => 'public'])->assertNotFound();
+    }
+
+    public function test_an_unlisted_thing_has_no_short_code_and_its_qr_code_holds_its_own_link(): void
+    {
+        $report = $this->report();
+        $report->update(['visibility' => 'public']);
+        $code = Share::for($report)['code'];
+        $this->get("/go/{$code}")->assertRedirect();
+
+        // Turned unlisted: the old code retires, and the share is its own link
+        $report->update(['visibility' => 'unlisted']);
+        $this->get("/go/{$code}")->assertNotFound();
+        $this->get("/go/{$code}/qr.svg")->assertNotFound();
+        $share = Share::for($report->fresh());
+        $this->assertNull($share['code']);
+        $this->assertSame($report->shareUrl(), $share['short_url']);
+        $this->get($share['qr_svg'])->assertOk()->assertHeader('Content-Type', 'image/svg+xml');
+        $this->assertStringContainsString('attachment;', $this->get($share['qr_png_download'])->assertOk()->headers->get('Content-Disposition'));
+
+        // The QR route draws only links this server signed
+        $this->get('/qr?url='.urlencode('https://evil.example/phish').'&format=svg')->assertForbidden();
+        $this->get(str_replace(urlencode($report->shareUrl()), urlencode('https://evil.example/phish'), $share['qr_svg']))->assertForbidden();
     }
 }

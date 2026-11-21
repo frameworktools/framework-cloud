@@ -14,6 +14,7 @@ Every artifact link form works when embedding:
 - `https://framework.pub/d/{key}/versions/{n}` for a specific version
 - `https://framework.pub/@{handle}/{project}/{slug}` for the readable URL of a public artifact
 - `https://framework.pub/@{handle}/{project}/{slug}/versions/{n}` for a specific version at a readable URL
+- `https://framework.pub/go/{code}`, a public artifact's short link, for the newest version
 
 Turn on **Pin to version** in the **Embed** tab to copy a versioned link or HTML snippet that stays on the current version when you publish updates. When version pinning is off, live embeds and HTML snippets follow the newest version. Editors and blocks that save a copy of the artifact with the page always pin the version that was current when inserted.
 

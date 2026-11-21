@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\Document;
 use App\Models\DocumentVersion;
+use App\Models\ShortLink;
 use App\Models\User;
 use App\Support\Dags\ArtifactDag;
 use App\Support\Snippets\ArtifactSnippet;
@@ -62,7 +63,8 @@ class ArtifactEmbed
     /**
      * The artifact and version a pasted link names, or null. Accepted forms:
      * /d/{key}, /d/{key}/versions/{n}, /@{handle}/{project}/{slug}, and its
-     * /versions/{n} form, on this server's host only.
+     * /versions/{n} form, and a public artifact's short link, /go/{code}, on
+     * this server's host only.
      *
      * A snippet link may add ?output=none for its code alone.
      *
@@ -78,6 +80,10 @@ class ArtifactEmbed
         if (preg_match('#^/d/([A-Za-z0-9]+)(?:/versions/([0-9]{1,9}))?$#D', $path, $m)) {
             $document = self::byKey($m[1]);
             $number = isset($m[2]) ? (int) $m[2] : null;
+        } elseif (preg_match('#^/go/([A-Za-z0-9-]{1,80})$#D', $path, $m)) {
+            // A short link names a public artifact; anything else it once named doesn't embed
+            $linkable = ShortLink::lookup($m[1])?->linkable;
+            $document = $linkable instanceof Document && Share::public($linkable) ? self::byKey($linkable->key) : null;
         } elseif (preg_match('#^/@([a-z0-9][a-z0-9-]*)/([A-Za-z0-9_-]+)/([A-Za-z0-9_-]+)(?:/versions/([0-9]{1,9}))?$#D', $path, $m)) {
             $document = self::byReadable($m[1], $m[2], $m[3]);
             $number = isset($m[4]) ? (int) $m[4] : null;

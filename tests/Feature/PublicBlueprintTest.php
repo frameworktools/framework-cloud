@@ -63,7 +63,7 @@ class PublicBlueprintTest extends TestCase
 
     public function test_a_public_blueprint_page_shows_what_a_project_gets_and_presents_a_short_link(): void
     {
-        $blueprint = $this->own('unlisted');
+        $blueprint = $this->own('public');
         $url = $blueprint->publicUrl();
 
         $this->assertNotNull($url);
@@ -75,6 +75,11 @@ class PublicBlueprintTest extends TestCase
 
         $link = ShortLink::for($blueprint);
         $this->get("/go/{$link->code}")->assertRedirect($url);
+
+        // Unlisted: the page still opens from its own link, but the short code, which anyone could guess, retires
+        $blueprint->update(['visibility' => 'unlisted']);
+        $this->get(parse_url($url, PHP_URL_PATH))->assertOk()->assertDontSee('/go/', false);
+        $this->get("/go/{$link->code}")->assertNotFound();
 
         // Made private again: the page and the short link stop working
         $blueprint->update(['visibility' => 'private']);

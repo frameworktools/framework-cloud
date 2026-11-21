@@ -38,7 +38,7 @@ The packages are not yet on npm, Packagist, or drupal.org. Each [release](https:
 | `framework-embed.js` | ES module with the same exports. Importing it registers no custom element and adds no event listeners. |
 | `framework-embed-<version>.zip` | WordPress plugin |
 
-The repository also commits these three built files under `php/assets/`. jsDelivr serves them at a pinned tag, such as `https://cdn.jsdelivr.net/gh/frameworktools/framework-embed@v0.8.3/php/assets/framework-embed.js`. GitHub Pages serves the latest release under unversioned names at `https://frameworktools.github.io/framework-embed/`. The **HTML** snippet in the **Embed** tab loads its files from there.
+The repository also commits these three built files under `php/assets/`. jsDelivr serves them at a pinned tag, such as `https://cdn.jsdelivr.net/gh/frameworktools/framework-embed@v0.8.4/php/assets/framework-embed.js`. GitHub Pages serves the latest release under unversioned names at `https://frameworktools.github.io/framework-embed/`. The **HTML** snippet in the **Embed** tab loads its files from there.
 
 PHP projects can install `framework-cloud/embed` from a release archive with a Composer package repository:
 
@@ -49,13 +49,13 @@ PHP projects can install `framework-cloud/embed` from a release archive with a C
             "type": "package",
             "package": {
                 "name": "framework-cloud/embed",
-                "version": "0.8.3",
-                "dist": {"type": "zip", "url": "https://github.com/frameworktools/framework-embed/archive/refs/tags/v0.8.3.zip"},
+                "version": "0.8.4",
+                "dist": {"type": "zip", "url": "https://github.com/frameworktools/framework-embed/archive/refs/tags/v0.8.4.zip"},
                 "autoload": {"psr-4": {"Framework\\Embed\\": "php/src/"}}
             }
         }
     ],
-    "require": {"framework-cloud/embed": "0.8.3"}
+    "require": {"framework-cloud/embed": "0.8.4"}
 }
 ```
 

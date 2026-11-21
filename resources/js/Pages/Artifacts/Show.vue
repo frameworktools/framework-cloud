@@ -141,6 +141,8 @@ function saveDisplay(key, value) {
         onFinish: () => { clearTimeout(displayTimer); displayTimer = setTimeout(() => { if (displayStatus.value === 'Saved') displayStatus.value = ''; }, 2000); },
     });
 }
+// A public artifact's short link is the one to hand out; an unlisted one shares its own link, which can't be guessed
+const shareLink = computed(() => props.share?.short_url ?? props.artifact.url);
 const embeddable = computed(() => props.artifact.visibility !== 'private' && !props.artifact.password_protected);
 
 // Access: who can open it. Saves as it changes.
@@ -260,8 +262,8 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public', privat
                         <div class="space-y-2">
                             <p class="text-sm font-medium text-slate-800 dark:text-white">Link</p>
                             <div class="flex items-center gap-2">
-                                <code class="min-w-0 flex-1 truncate rounded-lg bg-slate-800/5 px-3 py-2 text-xs text-slate-700 dark:bg-white/10 dark:text-slate-300">{{ artifact.url }}</code>
-                                <UiButton variant="ghost" size="sm" @click="copy('share', artifact.url)">{{ copied === 'share' ? 'Copied' : 'Copy' }}</UiButton>
+                                <code class="min-w-0 flex-1 truncate rounded-lg bg-slate-800/5 px-3 py-2 text-xs text-slate-700 dark:bg-white/10 dark:text-slate-300">{{ shareLink }}</code>
+                                <UiButton variant="ghost" size="sm" @click="copy('share', shareLink)">{{ copied === 'share' ? 'Copied' : 'Copy' }}</UiButton>
                             </div>
                             <p v-if="access === 'public' && !artifact.readable_url && !handle" class="text-xs text-slate-500 dark:text-slate-400">A readable link needs a handle. <UiLink href="/account/account">Set one</UiLink>.</p>
                         </div>

@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Support\ArtifactPublisher;
 use App\Support\Dags\ArtifactDag;
 use App\Support\Dags\DagittyParser;
+use App\Support\Share;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -105,8 +106,8 @@ class DagArtifactTest extends TestCase
                 $this->assertLessThanOrEqual($dag['height'], $a['y'] + $a['height']);
                 $this->assertSame(0, $a['width'] % 2, 'Labels center on whole pixels');
                 foreach (array_slice($nodes, $i + 1) as $b) {
-                    $apart = $a['x'] + $a['width'] <= $b['x'] || $b['x'] + $b['width'] <= $a['x']
-                        || $a['y'] + $a['height'] <= $b['y'] || $b['y'] + $b['height'] <= $a['y'];
+                    $apart = $b['x'] >= $a['x'] + $a['width'] || $a['x'] >= $b['x'] + $b['width']
+                        || $b['y'] >= $a['y'] + $a['height'] || $a['y'] >= $b['y'] + $b['height'];
                     $this->assertTrue($apart, "{$a['name']} overlaps {$b['name']}");
                 }
             }
@@ -183,5 +184,18 @@ class DagArtifactTest extends TestCase
     {
         $this->expectException(ValidationException::class);
         $this->publish('dag.json', json_encode(['schema' => 'framework.artifact/v1', 'kind' => 'dag']), ['kind' => 'dag']);
+    }
+
+    public function test_a_public_artifacts_short_link_embeds_and_an_unlisted_ones_does_not(): void
+    {
+        $version = $this->publish('smoking.dagitty', self::DAGITTY, ['visibility' => 'public']);
+        $code = Share::for($version->document)['code'];
+        $short = rtrim(config('app.url'), '/').'/go/'.$code;
+
+        $this->getJson('/api/embed/v1/resolve?url='.urlencode($short))->assertOk()->assertJsonPath('kind', 'dag')
+            ->assertJsonPath('key', $version->document->key);
+
+        $version->document->update(['visibility' => 'unlisted']);
+        $this->getJson('/api/embed/v1/resolve?url='.urlencode($short))->assertNotFound();
     }
 }
