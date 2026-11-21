@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Models\DocumentVersion;
 use App\Support\Dags\ArtifactDag;
 use App\Support\Dags\DagittyParser;
+use App\Support\Dags\DagLayout;
 use App\Support\Snippets\ArtifactSnippet;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
@@ -88,7 +89,10 @@ class ArtifactPreview
 
     private static function cacheKey(string $what, DocumentVersion $version): string
     {
-        return "artifact-{$what}:{$version->id}:".md5($version->disk().':'.$version->disk_path);
+        // A DAG's preview holds its layout: a new layout version redraws published DAGs
+        $layout = $what === 'preview' && $version->kind === ArtifactDag::KIND ? ':layout'.DagLayout::VERSION : '';
+
+        return "artifact-{$what}:{$version->id}{$layout}:".md5($version->disk().':'.$version->disk_path);
     }
 
     private static function build(DocumentVersion $version): array

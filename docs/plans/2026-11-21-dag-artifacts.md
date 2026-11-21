@@ -47,7 +47,7 @@ Limits: 100 nodes, 400 edges, 64 KB of DAGitty text, 400 lines of code, 50 adjus
 
 Cloud lays the graph out once, when it normalizes it, so renderers draw from data alone and the JS and PHP renderers stay identical.
 
-- With `pos` on every node, positions are scaled until no two node boxes overlap.
+- With `pos` on every node, each axis scales on its own. Rows: the two closest sit 64 px apart, center to center, and boxes stacked in one column clear each other. Columns: boxes that share a row keep 40 px between them. With no shared row, x scales at least half as much as y. A tight row therefore no longer stretches the drawing's height. `DagLayout::VERSION` is part of a DAG preview's cache key, so a new layout redraws published DAGs.
 - Otherwise the layout is layered left to right: a node's column is its longest directed path from a source, and rows are ordered by barycenter sweeps.
 - Node boxes fit their label in a monospace font (0.6em per character at 14px), capped at 32 characters with an ellipsis.
 - Edges run between box edges. A straight edge that would cross another box bends. Bidirected edges always bend, dashed, with heads at both ends. Each edge is an SVG path string and its heads are closed paths.

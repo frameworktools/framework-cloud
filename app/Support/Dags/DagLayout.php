@@ -33,9 +33,12 @@ class DagLayout
     private const ROW_STEP = 64;
 
     /** Least space between boxes placed from pos attributes */
-    private const GAP_X = 48;
+    private const GAP_X = 40;
 
-    private const GAP_Y = 40;
+    private const GAP_Y = 24;
+
+    /** Bumped when a layout change should redraw published DAGs */
+    public const VERSION = 2;
 
     private const HEAD_LENGTH = 9;
 
@@ -179,8 +182,11 @@ class DagLayout
                 return null;
             }
         }
-        $scale = 0.0;
+        // Each axis scales on its own, so a tight row doesn't stretch the drawing's height.
+        // Rows: the closest two sit ROW_STEP apart, center to center.
         $count = count($nodes);
+        $pairs = [];
+        $minDy = INF;
         for ($i = 0; $i < $count; $i++) {
             for ($j = $i + 1; $j < $count; $j++) {
                 [$a, $b] = [$nodes[$i], $nodes[$j]];
@@ -189,16 +195,32 @@ class DagLayout
                 if ($dx < 1e-9 && $dy < 1e-9) {
                     return null;
                 }
-                // Clear apart along whichever axis needs less stretching
-                $needX = $dx > 1e-9 ? (($sizes[$a['name']][0] + $sizes[$b['name']][0]) / 2 + self::GAP_X) / $dx : INF;
-                $needY = $dy > 1e-9 ? (($sizes[$a['name']][1] + $sizes[$b['name']][1]) / 2 + self::GAP_Y) / $dy : INF;
-                $scale = max($scale, min($needX, $needY));
+                if ($dy > 1e-9) {
+                    $minDy = min($minDy, $dy);
+                }
+                $pairs[] = [$a['name'], $b['name'], $dx, $dy];
             }
         }
-        $scale = $scale > 0 ? $scale : 1.0;
+        $sy = is_finite($minDy) ? self::ROW_STEP / $minDy : 1.0;
+        // Boxes stacked in one column must clear each other vertically
+        foreach ($pairs as [$a, $b, $dx, $dy]) {
+            if ($dx < 1e-9) {
+                $sy = max($sy, (($sizes[$a][1] + $sizes[$b][1]) / 2 + self::GAP_Y) / $dy);
+            }
+        }
+        // Columns: boxes that share a row, or nearly, must clear each other horizontally
+        $sx = 0.0;
+        foreach ($pairs as [$a, $b, $dx, $dy]) {
+            $rowsApart = $dy * $sy >= ($sizes[$a][1] + $sizes[$b][1]) / 2 + self::GAP_Y;
+            if (! $rowsApart && $dx > 1e-9) {
+                $sx = max($sx, (($sizes[$a][0] + $sizes[$b][0]) / 2 + self::GAP_X) / $dx);
+            }
+        }
+        // With no shared rows, keep the drawing's proportions, and never squash it far below them
+        $sx = max($sx, $sy / 2);
         $centers = [];
         foreach ($nodes as $node) {
-            $centers[$node['name']] = [$node['pos'][0] * $scale, $node['pos'][1] * $scale];
+            $centers[$node['name']] = [$node['pos'][0] * $sx, $node['pos'][1] * $sy];
         }
 
         return $centers;
@@ -326,6 +348,7 @@ class DagLayout
             $heads[] = self::head($a, $control ?? $b);
             $a = self::back($a, $control ?? $b, self::HEAD_LENGTH - 1);
         }
+
         return ['from' => $edge['from'], 'to' => $edge['to'], 'type' => $edge['type'], 'points' => [$a, $control, $b], 'heads' => $heads, 'bend' => $bend];
     }
 
@@ -394,6 +417,7 @@ class DagLayout
         [$ux, $uy] = [$dx / $length, $dy / $length];
         $baseX = $tip[0] - $ux * self::HEAD_LENGTH;
         $baseY = $tip[1] - $uy * self::HEAD_LENGTH;
+
         return [
             [$tip[0], $tip[1]],
             [$baseX - $uy * self::HEAD_HALF_WIDTH, $baseY + $ux * self::HEAD_HALF_WIDTH],

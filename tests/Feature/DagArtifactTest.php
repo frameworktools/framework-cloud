@@ -199,4 +199,15 @@ class DagArtifactTest extends TestCase
         $version->document->update(['visibility' => 'unlisted']);
         $this->getJson('/api/embed/v1/resolve?url='.urlencode($short))->assertNotFound();
     }
+
+    public function test_a_tight_row_does_not_stretch_the_drawing_tall(): void
+    {
+        // Two wide labels close together on one row, and a row far below: rows sit 64 px apart, not as far as the row's width needs
+        $dag = ArtifactDag::fromDagitty('dag { "Parents\' ability (unobserved)" [pos="0,0"] "Child\'s ability (unobserved)" [pos="0.4,0"] "Adult SES" [pos="0,3"] "Parents\' ability (unobserved)" -> "Child\'s ability (unobserved)" -> "Adult SES" }')['dag'];
+
+        $this->assertLessThanOrEqual(120, $dag['height']);
+        [$a, $b] = $dag['nodes'];
+        $this->assertGreaterThanOrEqual(40, $b['x'] - ($a['x'] + $a['width']), 'Boxes on a row keep 40 px between them');
+        $this->assertSame(64, $dag['nodes'][2]['y'] - $a['y']);
+    }
 }
