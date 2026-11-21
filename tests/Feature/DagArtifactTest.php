@@ -128,7 +128,7 @@ class DagArtifactTest extends TestCase
             ->assertSee('class="dag-graph', false)
             ->assertSee('dag-node dag-node--exposure', false)
             ->assertSee('Download smoking.dagitty')
-            ->assertSee('Copy code')
+            ->assertSee('>Copy<', false)
             ->assertSee('Causal diagram of 3 variables and 3 arrows. Exposure: smoking. Outcome: cancer.');
     }
 

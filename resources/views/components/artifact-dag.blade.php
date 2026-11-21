@@ -85,7 +85,7 @@
                     <span class="font-medium text-slate-700 dark:text-slate-200">{{ $panel['label'] }}</span>
                     <button type="button" data-copy-code class="{{ $button }}">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-3.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-9.201a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75" /></svg>
-                        <span data-copy-label>Copy code</span>
+                        <span data-copy-label>Copy</span>
                     </button>
                 </figcaption>
                 <pre class="snippet-code overflow-x-auto bg-slate-50 px-4 py-3 font-mono text-[0.8125rem] leading-relaxed whitespace-pre text-slate-800 dark:bg-slate-900 dark:text-slate-200" data-code><code class="block">{!! StyledText::html($panel['lines']) !!}</code></pre>
@@ -107,7 +107,7 @@
                 } catch {
                     label.textContent = 'Copy failed';
                 }
-                setTimeout(() => { label.textContent = 'Copy code'; }, 2000);
+                setTimeout(() => { label.textContent = 'Copy'; }, 2000);
             });
         });
     })();

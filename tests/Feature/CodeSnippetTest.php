@@ -69,7 +69,7 @@ class CodeSnippetTest extends TestCase
 
         $this->assertSame('code_snippet', $version->document->kind);
         $page = $this->get($version->document->publicUrl())->assertOk();
-        $page->assertSee('Copy code')->assertSee('Download JSON')
+        $page->assertSee('>Copy<', false)->assertSee('Download JSON')
             ->assertSee('02-partial-pooling.qmd · fit-bayes')->assertSee('Lines 41–43')
             ->assertSee('<span class="t-fn">brm</span>', false)
             ->assertSee('Output, 20 lines')
