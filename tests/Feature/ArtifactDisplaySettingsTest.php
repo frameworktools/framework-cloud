@@ -114,7 +114,7 @@ class ArtifactDisplaySettingsTest extends TestCase
         $document = $version->document;
 
         $options = collect(ArtifactEmbed::displayOptions($document))->keyBy('key');
-        $this->assertSame(['title', 'description', 'author', 'legend', 'analysis', 'dagitty', 'code'], $options->keys()->all());
+        $this->assertSame(['title', 'description', 'author', 'credit', 'legend', 'analysis', 'dagitty', 'code'], $options->keys()->all());
         $this->assertSame('R code', $options['code']['label']);
 
         $this->actingAs($this->user)->patch('/published/'.$document->id, ['display' => ['dagitty' => false, 'title' => true]])->assertRedirect();
@@ -123,7 +123,7 @@ class ArtifactDisplaySettingsTest extends TestCase
         $this->assertNull($document->fresh()->display);
 
         $this->actingAs($this->user)->get('/artifacts/'.$document->id)->assertOk()
-            ->assertInertia(fn ($page) => $page->where('artifact.display.6.label', 'R code')->where('artifact.display.6.value', true));
+            ->assertInertia(fn ($page) => $page->where('artifact.display.7.label', 'R code')->where('artifact.display.7.value', true));
     }
 
     public function test_a_dag_without_code_offers_no_code_setting(): void
@@ -144,6 +144,9 @@ class ArtifactDisplaySettingsTest extends TestCase
         $this->assertArrayNotHasKey('terms', $applied['data']);
         $this->assertNull($applied['title']);
         $this->assertNull($applied['author']);
+        $this->assertArrayNotHasKey('display', $applied);
+        // The link back goes as a flag, since renderers would otherwise link the artifact's URL
+        $this->assertSame(['credit' => false], ArtifactDisplay::apply($model, ['credit' => false])['display']);
 
         $table = ['kind' => 'table', 'title' => 'T', 'description' => null, 'author' => null, 'data' => ['tables' => [['columns' => [['name' => 'a', 'label' => 'A', 'summary' => ['count' => 3]]]]]]];
         $this->assertSame([['name' => 'a', 'label' => 'A']], ArtifactDisplay::apply($table, ['column_summaries' => false])['data']['tables'][0]['columns']);

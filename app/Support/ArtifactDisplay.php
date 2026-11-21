@@ -20,6 +20,7 @@ class ArtifactDisplay
         'title' => ['kinds' => ['model', 'table', 'test', 'code_snippet', 'dag', 'image', 'vega-lite'], 'label' => 'Title', 'help' => 'The title above the artifact.'],
         'description' => ['kinds' => '*', 'label' => 'Description', 'help' => 'The description under the artifact.'],
         'author' => ['kinds' => '*', 'label' => 'Author', 'help' => 'Your name, when your profile is public.'],
+        'credit' => ['kinds' => '*', 'label' => 'Link back', 'help' => 'A link to the artifact on this server, beside its title.'],
         'details' => ['kinds' => ['model', 'test'], 'label' => 'Details', 'help' => 'Fit statistics and other tables, in a closed section.'],
         'variable_tips' => ['kinds' => ['model'], 'label' => 'Variable tips', 'help' => 'Each term’s variable, label, and summary in a tip.'],
         'column_summaries' => ['kinds' => ['table'], 'label' => 'Column summaries', 'help' => 'Each column’s summary in a tip on its header.'],
@@ -56,6 +57,9 @@ class ArtifactDisplay
                 continue;
             }
             $label = $setting['label'];
+            if ($key === 'credit') {
+                $label = 'Link to '.ArtifactEmbed::providerName();
+            }
             if ($key === 'details') {
                 $label = $kind === 'test' ? 'Test details' : 'Model details';
             }
@@ -148,6 +152,10 @@ class ArtifactDisplay
         }
         if ($off('author')) {
             $document['author'] = null;
+        }
+        // The link back can't be left out of the data alone: renderers fall back to the artifact's URL
+        if ($off('credit')) {
+            $document['display'] = ['credit' => false];
         }
         // A chart turned static is its own fallback image
         if ($off('interactive') && $document['kind'] === 'vega-lite' && is_array($document['image'] ?? null)) {

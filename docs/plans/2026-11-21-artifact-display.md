@@ -13,6 +13,7 @@ Every setting is on by default. An artifact stores only what differs, in `docume
 | `title` | all but page | Title | No title above the artifact. |
 | `description` | all | Description | No description. |
 | `author` | all | Author | No author name. |
+| `credit` | all | Link to {server} | No link back to the artifact. |
 | `details` | model, test | Model details, Test details | No details section. |
 | `variable_tips` | model | Variable tips | No tips on terms. `variables` and `terms` are left out. |
 | `column_summaries` | table | Column summaries | Column summaries are left out of tips. |
@@ -28,7 +29,7 @@ Every setting is on by default. An artifact stores only what differs, in `docume
 
 ## Contract
 
-Cloud leaves out what a setting turns off: `title`, `description`, and `author` become `null`, and the data the section would draw (`analysis`, `dagitty`, `code`, `variables` and `terms`, column summaries, snippet links) is dropped. Turning `interactive` off sends the figure as `image`. Two settings need the renderer, since their content also feeds what stays: `data.display.details: false` (model and test) and `data.display.legend: false` (dag). framework-embed 0.8.0 reads them; older renderers show the section.
+Cloud leaves out what a setting turns off: `title`, `description`, and `author` become `null`, and the data the section would draw (`analysis`, `dagitty`, `code`, `variables` and `terms`, column summaries, snippet links) is dropped. Turning `interactive` off sends the figure as `image`. Three settings need the renderer: `data.display.details: false` (model and test) and `data.display.legend: false` (dag), whose content also feeds what stays, and `display.credit: false` at the top of the document, since renderers otherwise link the artifact's URL. framework-embed 0.8.0 reads the first two and 0.8.2 the third; older renderers show the part.
 
 The reader page shows everything. The settings shape what other sites receive.
 

@@ -46,7 +46,6 @@ const chosenFile = computed(() => props.artifact.original_filename
 const tabs = computed(() => [
     { label: 'Overview', value: 'overview' },
     { label: 'Versions', value: 'versions', count: props.versions.length },
-    ...(!external.value ? [{ label: 'Sharing', value: 'sharing' }] : []),
     { label: 'Settings', value: 'settings' },
 ]);
 const initial = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '').get('tab');
@@ -67,7 +66,7 @@ const size = (bytes) => {
 const date = (value) => value ? new Date(value).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
 // The share dialog, opened on its Embed view: the link and HTML for other sites
 const shareTarget = ref(null);
-const openEmbed = () => { shareTarget.value = { type: 'artifact', id: props.artifact.id, title: props.artifact.title, view: 'embed', onSettings: () => { tab.value = 'sharing'; } }; };
+const openEmbed = () => { shareTarget.value = { type: 'artifact', id: props.artifact.id, title: props.artifact.title, view: 'embed', onSettings: () => { tab.value = 'overview'; } }; };
 
 const copied = ref(null);
 async function copy(key, url) {
@@ -107,16 +106,43 @@ onBeforeUnmount(() => observer?.disconnect());
 const details = useForm({ title: props.artifact.title, description: props.artifact.description || '' });
 const saveDetails = () => details.patch(base, { preserveScroll: true, onSuccess: () => details.defaults() });
 
-// Embed contents: what other sites receive. The artifact's own page shows everything.
-const display = useForm({ display: Object.fromEntries((props.artifact.display || []).map(option => [option.key, option.value])) });
-const saveDisplay = () => display.patch(base, { preserveScroll: true, onSuccess: () => display.defaults() });
+// Embed contents: what other sites receive. The artifact's own page shows everything. Each switch saves as it flips.
+const display = ref(Object.fromEntries((props.artifact.display || []).map(option => [option.key, option.value])));
+const displayStatus = ref('');
+let displayTimer = null;
+function saveDisplay(key, value) {
+    display.value[key] = value;
+    displayStatus.value = 'Saving…';
+    router.patch(base, { display: { [key]: value } }, {
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess: () => { displayStatus.value = 'Saved'; },
+        onError: (errors) => { display.value[key] = !value; displayStatus.value = errors.display || 'Could not save.'; },
+        onFinish: () => { clearTimeout(displayTimer); displayTimer = setTimeout(() => { if (displayStatus.value === 'Saved') displayStatus.value = ''; }, 2000); },
+    });
+}
+const embeddable = computed(() => props.artifact.visibility !== 'private' && !props.artifact.password_protected);
 
-// Sharing
+// Access: who can open it. Saves as it changes.
+const access = ref(props.artifact.visibility ?? (props.artifact.readable ? 'public' : 'unlisted'));
+const accessStatus = ref('');
+function saveAccess(value) {
+    const previous = access.value;
+    access.value = value;
+    accessStatus.value = 'Saving…';
+    router.patch(base, { visibility: value }, {
+        preserveScroll: true,
+        onSuccess: () => { accessStatus.value = 'Saved'; setTimeout(() => { if (accessStatus.value === 'Saved') accessStatus.value = ''; }, 2000); },
+        onError: (errors) => { access.value = previous; accessStatus.value = errors.visibility || 'Could not save.'; },
+    });
+}
+
+// Password
 const sharing = useForm({ visibility: props.artifact.visibility ?? (props.artifact.readable ? 'public' : 'unlisted'), password: '', removePassword: false });
 const passwordChanging = ref(false);
 async function saveSharing() {
     sharing.transform(data => {
-        const payload = { visibility: data.visibility };
+        const payload = {};
         if (data.removePassword) payload.password = null;
         else if (data.password) payload.password = data.password;
         return payload;
@@ -177,12 +203,6 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public', privat
                         </p>
                     </div>
                     <div class="flex shrink-0 items-center gap-2">
-                        <UiButton v-if="hasUrl" variant="ghost" @click="copy('share', artifact.url)">
-                            <component :is="copied === 'share' ? CheckIcon : ClipboardDocumentIcon" class="text-slate-500 dark:text-slate-400" aria-hidden="true" />{{ copied === 'share' ? 'Copied' : 'Copy link' }}
-                        </UiButton>
-                        <UiButton v-if="!external" variant="ghost" @click="openEmbed">
-                            <CodeBracketIcon class="text-slate-500 dark:text-slate-400" aria-hidden="true" />Embed
-                        </UiButton>
                         <UiButton v-if="hasUrl" variant="primary" :href="artifact.url" external><ArrowTopRightOnSquareIcon aria-hidden="true" />View</UiButton>
                     </div>
                 </header>
@@ -194,7 +214,48 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public', privat
                 <UiTabs v-model="tab" :tabs="tabs" label="Artifact sections" class="mt-8" />
 
                 <!-- Overview -->
-                <div v-if="tab === 'overview'" class="pt-8">
+                <div v-if="tab === 'overview'" class="pt-8 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-10">
+                    <!-- Sharing is what people come here for, so it sits beside the preview, not behind a tab -->
+                    <aside v-if="!external" class="mb-10 space-y-6 lg:sticky lg:top-6 lg:order-2 lg:mb-0" aria-label="Share">
+                        <h2 class="text-base font-medium text-slate-900 dark:text-white">Share</h2>
+                        <div class="space-y-2">
+                            <UiSelect :model-value="access" label="Access" @update:model-value="saveAccess">
+                                <option value="private">Private, only you</option>
+                                <option value="unlisted">Anyone with the link</option>
+                                <option value="public">Public, with a readable link</option>
+                            </UiSelect>
+                            <p class="text-xs" :class="accessStatus === 'Saved' ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'" aria-live="polite">
+                                <template v-if="accessStatus">{{ accessStatus }}</template>
+                                <template v-else-if="artifact.password_protected"><LockClosedIcon class="inline size-3.5 align-[-2px]" aria-hidden="true" /> Password protected. <button type="button" class="underline underline-offset-2" @click="tab = 'settings'">Change it in Settings</button>.</template>
+                            </p>
+                        </div>
+                        <div class="space-y-2">
+                            <p class="text-sm font-medium text-slate-800 dark:text-white">Link</p>
+                            <div class="flex items-center gap-2">
+                                <code class="min-w-0 flex-1 truncate rounded-lg bg-slate-800/5 px-3 py-2 text-xs text-slate-700 dark:bg-white/10 dark:text-slate-300">{{ artifact.url }}</code>
+                                <UiButton variant="ghost" size="sm" @click="copy('share', artifact.url)">{{ copied === 'share' ? 'Copied' : 'Copy' }}</UiButton>
+                            </div>
+                            <p v-if="access === 'public' && !artifact.readable_url && !handle" class="text-xs text-slate-500 dark:text-slate-400">A readable link needs a handle. <UiLink href="/account/account">Set one</UiLink>.</p>
+                        </div>
+                        <div class="space-y-2">
+                            <p class="text-sm font-medium text-slate-800 dark:text-white">Embed</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">{{ embeddable ? 'Paste the link into a blog or site that takes Framework embeds, or copy the HTML.' : 'Embeds work when anyone with the link can open it and it has no password.' }}</p>
+                            <UiButton variant="ghost" size="sm" :disabled="!embeddable" @click="openEmbed"><CodeBracketIcon class="text-slate-500 dark:text-slate-400" aria-hidden="true" />Get embed code</UiButton>
+                        </div>
+                        <section v-if="artifact.display?.length" class="space-y-4 border-t border-slate-800/10 pt-6 dark:border-white/15" aria-label="Embed contents">
+                            <div>
+                                <h3 class="text-sm font-medium text-slate-800 dark:text-white">Embed contents</h3>
+                                <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">What embeds on other sites show. The artifact’s own page shows everything.</p>
+                            </div>
+                            <UiSwitch v-for="option in artifact.display" :key="option.key" :model-value="display[option.key]" :label="option.label" :description="option.help" @update:model-value="value => saveDisplay(option.key, value)" />
+                            <p class="h-4 text-xs" :class="displayStatus === 'Saved' ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'" aria-live="polite">{{ displayStatus }}</p>
+                        </section>
+                        <details class="group border-t border-slate-800/10 pt-4 dark:border-white/15">
+                            <summary class="cursor-pointer list-none text-sm font-medium text-slate-800 dark:text-white">QR code</summary>
+                            <div class="mt-3"><ShareQr :share="share" unavailable="Private artifacts have no QR code. Choose Anyone with the link or Public above." /></div>
+                        </details>
+                    </aside>
+                    <div class="min-w-0 lg:order-1">
                     <UiCallout v-if="external" class="mb-6" :heading="artifact.location">Files and access are managed at the publishing destination. Framework Cloud stores publication metadata only.</UiCallout>
                     <p v-if="artifact.description" class="mb-6 max-w-2xl whitespace-pre-line text-sm text-slate-600 dark:text-slate-300">{{ artifact.description }}</p>
                     <dl class="flex flex-wrap gap-x-10 gap-y-4 text-sm">
@@ -214,13 +275,14 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public', privat
                     </dl>
                     <!-- Two rules with a sliver of page between them, and a light shadow, lift the preview off the page.
                          It reaches out past the column so what it shows lines up with the tabs above. -->
-                    <div v-if="!external" class="-mx-4 mt-8 rounded-[1.375rem] p-1.5 sm:-mx-[30px] shadow-lg ring-1 shadow-slate-900/[0.06] ring-slate-900/10 dark:shadow-black/20 dark:ring-white/10">
+                    <div v-if="!external" class="-mx-4 mt-8 rounded-[1.375rem] p-1.5 sm:-mx-[30px] lg:mx-0 shadow-lg ring-1 shadow-slate-900/[0.06] ring-slate-900/10 dark:shadow-black/20 dark:ring-white/10">
                     <div class="overflow-hidden rounded-2xl bg-white ring-1 ring-slate-900/10 dark:bg-slate-950 dark:ring-white/15">
                         <div class="flex items-center justify-between gap-3 border-b border-slate-800/10 py-3 pr-5 pl-4 sm:pl-6 dark:border-white/10">
                             <p class="flex items-center gap-2 text-sm"><EyeIcon class="size-4 text-slate-400" aria-hidden="true" /><span class="font-semibold text-slate-900 dark:text-white">Preview</span><span class="text-slate-500 dark:text-slate-400">Newest version, as readers see it</span></p>
                             <a v-if="hasUrl" :href="artifact.url" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">Open<ArrowTopRightOnSquareIcon class="size-4" aria-hidden="true" /></a>
                         </div>
                         <iframe v-if="!external" :src="previewUrl" :title="`Preview of ${artifact.title}`" class="block h-[calc(100dvh-10rem)] min-h-[32rem] w-full border-0 bg-white dark:bg-slate-950" @load="fit" />
+                    </div>
                     </div>
                     </div>
                 </div>
@@ -248,53 +310,6 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public', privat
                 </div>
 
                 <!-- Sharing -->
-                <form v-else-if="tab === 'sharing' && !external" class="max-w-xl space-y-6 pt-6" @submit.prevent="saveSharing">
-                    <UiRadioCards v-model="sharing.visibility" name="artifact-reader-access" legend="Reader access" stacked
-                        :options="[{ value: 'private', label: 'Private, only you' }, { value: 'unlisted', label: 'Anyone with the link' }, { value: 'public', label: 'Public, with a readable link' }]" />
-                    <p class="text-sm text-slate-500 dark:text-slate-400">Private artifacts need your sign-in. Anyone with the link can open the others. Public artifacts also get a readable address.</p>
-                    <p v-if="sharing.errors.visibility" role="alert" class="text-sm text-red-600 dark:text-red-400">{{ sharing.errors.visibility }}</p>
-                    <UiSeparator />
-                    <section aria-label="Links" class="space-y-3">
-                        <h2 class="text-sm font-medium text-slate-900 dark:text-white">Links</h2>
-                        <div class="space-y-4">
-                            <div>
-                                <p class="text-sm font-medium text-slate-800 dark:text-white">Share link</p>
-                                <div class="mt-2 flex items-center gap-2">
-                                    <code class="min-w-0 flex-1 truncate rounded-lg bg-slate-800/5 px-3 py-2 text-xs text-slate-700 dark:bg-white/10 dark:text-slate-300">{{ artifact.private_url }}</code>
-                                    <UiButton variant="ghost" size="sm" @click="copy('private', artifact.private_url)">{{ copied === 'private' ? 'Copied' : 'Copy' }}</UiButton>
-                                </div>
-                            </div>
-                            <div>
-                                <p class="text-sm font-medium text-slate-800 dark:text-white">Readable link</p>
-                                <div v-if="artifact.readable_url" class="mt-2 flex items-center gap-2">
-                                    <code class="min-w-0 flex-1 truncate rounded-lg bg-slate-800/5 px-3 py-2 text-xs text-slate-700 dark:bg-white/10 dark:text-slate-300">{{ artifact.readable_url }}</code>
-                                    <UiButton variant="ghost" size="sm" @click="copy('readable', artifact.readable_url)">{{ copied === 'readable' ? 'Copied' : 'Copy' }}</UiButton>
-                                </div>
-                                <p v-else-if="artifact.readable && !handle" class="mt-1 text-sm text-slate-500 dark:text-slate-400">Needs a handle. <UiLink href="/account/account">Set one in your account</UiLink>.</p>
-                                <p v-else class="mt-1 text-sm text-slate-500 dark:text-slate-400">Turns on when the artifact is public.</p>
-                            </div>
-                        </div>
-                    </section>
-                    <ShareQr :share="share" unavailable="It's private, so it has no QR code. Choose Anyone with the link or Public above and save." />
-                    <UiSeparator />
-                    <section aria-label="Password">
-                        <h2 v-if="artifact.password_protected" class="mb-3 text-sm font-medium text-slate-900 dark:text-white">Password</h2>
-                        <div class="space-y-4">
-                            <p v-if="artifact.password_protected && !passwordChanging" class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300"><LockClosedIcon class="size-4 text-slate-400" aria-hidden="true" />Protected with a password</p>
-                            <UiInput v-if="passwordChanging || !artifact.password_protected" v-model="sharing.password" type="password" :label="artifact.password_protected ? 'New password' : 'Password'" optional
-                                autocomplete="new-password" :description="artifact.password_protected ? 'At least 8 characters. Replacing it signs out readers who entered the old password.' : 'At least 8 characters. Readers will need it to open this artifact.'" :error="sharing.errors.password" />
-                            <div v-if="artifact.password_protected" class="flex flex-wrap gap-2">
-                                <UiButton v-if="!passwordChanging" variant="ghost" size="sm" @click="passwordChanging = true">Change password</UiButton>
-                                <label class="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300"><input v-model="sharing.removePassword" type="checkbox" class="rounded border-slate-300">Remove the password</label>
-                            </div>
-                        </div>
-                    </section>
-                    <div class="flex items-center gap-3">
-                        <UiButton type="submit" :disabled="sharing.processing">{{ sharing.processing ? 'Saving…' : 'Save sharing' }}</UiButton>
-                        <span v-if="sharing.recentlySuccessful" class="text-sm text-emerald-700 dark:text-emerald-400">Saved</span>
-                    </div>
-                </form>
-
                 <!-- Settings -->
                 <div v-else class="max-w-2xl space-y-8 pt-8">
                     <form class="space-y-6" @submit.prevent="saveDetails">
@@ -306,17 +321,20 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public', privat
                             <span v-if="details.recentlySuccessful" class="text-sm text-emerald-700 dark:text-emerald-400">Saved</span>
                         </div>
                     </form>
-                    <template v-if="artifact.display?.length">
+                    <template v-if="!external">
                         <UiSeparator />
-                        <form class="space-y-6" @submit.prevent="saveDisplay">
-                            <UiSection title="Embed contents" description="What sites that embed this artifact show. Its own page shows everything." />
-                            <div class="space-y-4">
-                                <UiSwitch v-for="option in artifact.display" :key="option.key" v-model="display.display[option.key]" :label="option.label" :description="option.help" />
+                        <form class="space-y-6" @submit.prevent="saveSharing">
+                            <UiSection title="Password" description="Readers need it to open the artifact. Embeds don't work while it has one." />
+                            <p v-if="artifact.password_protected && !passwordChanging" class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300"><LockClosedIcon class="size-4 text-slate-400" aria-hidden="true" />Protected with a password</p>
+                            <UiInput v-if="passwordChanging || !artifact.password_protected" v-model="sharing.password" type="password" :label="artifact.password_protected ? 'New password' : 'Password'" optional
+                                autocomplete="new-password" :description="artifact.password_protected ? 'At least 8 characters. Replacing it signs out readers who entered the old password.' : 'At least 8 characters.'" :error="sharing.errors.password" />
+                            <div v-if="artifact.password_protected" class="flex flex-wrap gap-2">
+                                <UiButton v-if="!passwordChanging" variant="ghost" size="sm" @click="passwordChanging = true">Change password</UiButton>
+                                <label class="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300"><input v-model="sharing.removePassword" type="checkbox" class="rounded border-slate-300">Remove the password</label>
                             </div>
-                            <p v-if="display.errors.display" class="text-sm text-red-600">{{ display.errors.display }}</p>
                             <div class="flex items-center gap-3">
-                                <UiButton type="submit" :disabled="display.processing || !display.isDirty">Save</UiButton>
-                                <span v-if="display.recentlySuccessful" class="text-sm text-emerald-700 dark:text-emerald-400">Saved</span>
+                                <UiButton type="submit" :disabled="sharing.processing || (!sharing.password && !sharing.removePassword)">Save password</UiButton>
+                                <span v-if="sharing.recentlySuccessful" class="text-sm text-emerald-700 dark:text-emerald-400">Saved</span>
                             </div>
                         </form>
                     </template>
