@@ -20,7 +20,7 @@ import UiSeparator from '@/Components/UiSeparator.vue';
 import UiLink from '@/Components/UiLink.vue';
 import UiCallout from '@/Components/UiCallout.vue';
 import { artifactKind } from '@/report-artifacts.js';
-import { EyeIcon, ArrowTopRightOnSquareIcon, LockClosedIcon, TrashIcon, CheckIcon } from '@heroicons/vue/20/solid';
+import { EyeIcon, ArrowTopRightOnSquareIcon, LockClosedIcon, TrashIcon, CheckIcon, PencilSquareIcon } from '@heroicons/vue/20/solid';
 import { ClipboardDocumentIcon, CodeBracketIcon, Square2StackIcon, Square3Stack3DIcon } from '@heroicons/vue/24/outline';
 
 const props = defineProps({ share: { type: Object, default: null }, artifact: Object, project: Object, versions: Array, usedIn: Array, mergeSources: Array, handle: String, linkedProjects: { type: Array, default: () => [] }, linkableProjects: { type: Array, default: () => [] } });
@@ -104,6 +104,8 @@ onBeforeUnmount(() => observer?.disconnect());
 
 // Title and description edit in place and save when the field is left
 const titleDraft = ref(props.artifact.title);
+const titleInput = ref(null);
+const descriptionInput = ref(null);
 const descriptionDraft = ref(props.artifact.description || '');
 const detailStatus = ref('');
 function saveDetail(field, value, saved) {
@@ -207,9 +209,12 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public', privat
                     <div class="min-w-0 flex-1 basis-72">
                         <h1 class="sr-only">{{ artifact.title }}</h1>
                         <label for="artifact-title" class="sr-only">Title</label>
-                        <input id="artifact-title" v-model="titleDraft" maxlength="200" title="Edit the title"
-                            class="-mx-2 -my-1 w-[calc(100%+1rem)] rounded-lg border-0 bg-transparent px-2 py-1 text-2xl font-semibold tracking-tight text-slate-900 outline-none hover:bg-slate-800/5 focus:bg-white focus:ring-2 focus:ring-sky-600 dark:text-white dark:hover:bg-white/5 dark:focus:bg-slate-900"
+                        <div class="group/title -mx-2 -my-1 flex items-center gap-1">
+                        <input id="artifact-title" ref="titleInput" v-model="titleDraft" maxlength="200" :size="Math.max(titleDraft.length, 4)"
+                            class="min-w-0 max-w-full rounded-lg [field-sizing:content] border-0 bg-transparent px-2 py-1 text-2xl font-semibold tracking-tight text-slate-900 outline-none hover:bg-slate-800/5 focus:bg-white focus:ring-2 focus:ring-sky-600 dark:text-white dark:hover:bg-white/5 dark:focus:bg-slate-900"
                             @keydown.enter.prevent="$event.target.blur()" @keydown.escape="titleDraft = artifact.title; $event.target.blur()" @blur="saveTitle" />
+                        <UiButton variant="subtle" size="xs" square aria-label="Edit the title" class="shrink-0 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200" @click="titleInput.focus(); titleInput.select()"><PencilSquareIcon aria-hidden="true" /></UiButton>
+                        </div>
                         <p class="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500 dark:text-slate-400">
                             <span>{{ kind.label }}</span><span aria-hidden="true">·</span>
                             <span>{{ sharingText[artifact.visibility] || artifact.visibility }}</span>
@@ -281,9 +286,12 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public', privat
                     <div class="min-w-0 lg:order-1">
                     <UiCallout v-if="external" class="mb-6" :heading="artifact.location">Files and access are managed at the publishing destination. Framework Cloud stores publication metadata only.</UiCallout>
                     <label for="artifact-description" class="sr-only">Description</label>
-                    <textarea id="artifact-description" v-model="descriptionDraft" rows="2" maxlength="10000" placeholder="Add a description"
-                        class="-mx-2 mb-6 block w-[calc(100%+1rem)] max-w-2xl resize-none rounded-lg border-0 bg-transparent px-2 py-1 text-sm text-slate-600 outline-none [field-sizing:content] placeholder:text-slate-400 hover:bg-slate-800/5 focus:bg-white focus:ring-2 focus:ring-sky-600 dark:text-slate-300 dark:hover:bg-white/5 dark:focus:bg-slate-900"
+                    <div class="-mx-2 mb-6 flex max-w-2xl items-start gap-1">
+                    <textarea id="artifact-description" ref="descriptionInput" v-model="descriptionDraft" rows="1" maxlength="10000" placeholder="Add a description"
+                        class="block min-w-40 max-w-full resize-none rounded-lg border-0 bg-transparent px-2 py-1 text-sm text-slate-600 outline-none [field-sizing:content] placeholder:text-slate-400 hover:bg-slate-800/5 focus:bg-white focus:ring-2 focus:ring-sky-600 dark:text-slate-300 dark:hover:bg-white/5 dark:focus:bg-slate-900"
                         @blur="saveDescription" />
+                    <UiButton variant="subtle" size="xs" square aria-label="Edit the description" class="mt-0.5 shrink-0 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200" @click="descriptionInput.focus()"><PencilSquareIcon aria-hidden="true" /></UiButton>
+                    </div>
                     <dl class="flex flex-wrap gap-x-10 gap-y-4 text-sm">
                         <div><dt class="text-slate-500 dark:text-slate-400">Versions</dt><dd class="mt-0.5 font-medium text-slate-800 dark:text-white">{{ versions.length }}</dd></div>
                         <div v-if="!external"><dt class="text-slate-500 dark:text-slate-400">Views</dt><dd class="mt-0.5 font-medium text-slate-800 dark:text-white">{{ artifact.views?.toLocaleString() ?? 0 }}</dd></div>
