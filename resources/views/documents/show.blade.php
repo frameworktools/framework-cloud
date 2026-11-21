@@ -52,7 +52,7 @@
 <body class="flex h-full flex-col bg-white dark:bg-slate-950">
     @php
         $embedded = request()->boolean('embed');
-        $structured = in_array($preview['type'], ['representation', 'chart', 'image', 'code_snippet'], true);
+        $structured = in_array($preview['type'], ['representation', 'chart', 'image', 'code_snippet', 'dag'], true);
         // A figure published with a plot description draws as a live chart
         $liveFigure = $preview['type'] === 'image' && \App\Support\PlotDescription::spec($version) !== null;
     @endphp
@@ -85,7 +85,7 @@
                 </select>
             @endif
             @unless ($structured)<a href="{{ $version->contentUrl() }}" class="text-sky-600 hover:underline dark:text-sky-400">Open original</a>@endunless
-            <a href="{{ $version->downloadUrl() }}" class="text-sky-600 hover:underline dark:text-sky-400">Download {{ ($preview['type'] === 'representation' && empty($preview['data_file'])) || $preview['type'] === 'code_snippet' ? 'JSON' : ($version->original_filename ?? 'artifact') }}</a>
+            <a href="{{ $version->downloadUrl() }}" class="text-sky-600 hover:underline dark:text-sky-400">Download {{ ($preview['type'] === 'representation' && empty($preview['data_file'])) || $preview['type'] === 'code_snippet' || ($preview['type'] === 'dag' && ! \App\Support\Dags\ArtifactDag::isDagittyFile($version->original_filename)) ? 'JSON' : ($version->original_filename ?? 'artifact') }}</a>
         </div>
         </div>
     </header>
@@ -269,6 +269,12 @@
         <main class="grow overflow-auto p-4 sm:p-6">
             <div class="mx-auto {{ $embedded ? '' : 'max-w-4xl' }}">
                 <x-artifact-snippet :snippet="$preview" :document="$document" :output-shown="request()->query('output') !== 'none'" />
+            </div>
+        </main>
+    @elseif ($preview['type'] === 'dag')
+        <main class="grow overflow-auto p-4 sm:p-6">
+            <div class="mx-auto {{ $embedded ? '' : 'max-w-4xl' }}">
+                <x-artifact-dag :dag="$preview" />
             </div>
         </main>
     @elseif ($preview['type'] === 'chart' || $liveFigure)

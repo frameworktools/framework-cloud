@@ -862,6 +862,149 @@ framework-artifact {
 .fw-embed__tip-detail {
   color: color-mix(in srgb, var(--fw-embed-tip-fg) 78%, transparent);
 }
+:where(.fw-embed) {
+  --fw-embed-dag-exposure: #047857;
+  --fw-embed-dag-outcome: #0369a1;
+}
+@media (prefers-color-scheme: dark) {
+  :where(.fw-embed) {
+    --fw-embed-dag-exposure: #34d399;
+    --fw-embed-dag-outcome: #38bdf8;
+  }
+}
+:where([data-theme=light], .light) :where(.fw-embed) {
+  --fw-embed-dag-exposure: #047857;
+  --fw-embed-dag-outcome: #0369a1;
+}
+:where([data-theme=dark], .dark) :where(.fw-embed) {
+  --fw-embed-dag-exposure: #34d399;
+  --fw-embed-dag-outcome: #38bdf8;
+}
+.fw-embed__dag {
+  min-width: 0;
+  overflow-x: auto;
+}
+.fw-embed__dag-graph {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  overflow: visible;
+}
+.fw-embed__dag-graph text {
+  font-family: var(--fw-embed-mono);
+  font-size: 14px;
+  text-anchor: middle;
+  dominant-baseline: central;
+  fill: currentColor;
+}
+.fw-embed__dag-edge {
+  fill: none;
+  stroke: var(--fw-embed-muted);
+  stroke-width: 1.5;
+}
+.fw-embed__dag-edge--bidirected {
+  stroke-dasharray: 5 4;
+}
+.fw-embed__dag-head {
+  fill: var(--fw-embed-muted);
+}
+.fw-embed__dag-node rect {
+  fill: color-mix(in srgb, currentColor 3%, transparent);
+  stroke: color-mix(in srgb, currentColor 45%, transparent);
+  stroke-width: 1.25;
+}
+.fw-embed__dag-node--exposure rect {
+  fill: color-mix(in srgb, var(--fw-embed-dag-exposure) 10%, transparent);
+  stroke: var(--fw-embed-dag-exposure);
+}
+.fw-embed__dag-node--exposure text {
+  fill: var(--fw-embed-dag-exposure);
+}
+.fw-embed__dag-node--outcome rect {
+  fill: color-mix(in srgb, var(--fw-embed-dag-outcome) 10%, transparent);
+  stroke: var(--fw-embed-dag-outcome);
+}
+.fw-embed__dag-node--outcome text {
+  fill: var(--fw-embed-dag-outcome);
+}
+.fw-embed__dag-node--adjusted rect {
+  fill: color-mix(in srgb, currentColor 10%, transparent);
+  stroke: currentColor;
+  stroke-width: 2;
+}
+.fw-embed__dag-node--latent rect {
+  stroke-dasharray: 4 3;
+}
+.fw-embed__dag-node--latent text {
+  fill: var(--fw-embed-muted);
+}
+.fw-embed__dag-node--selected rect {
+  stroke-width: 2.5;
+}
+.fw-embed__dag-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.25em 1em;
+  margin: 0.75em 0 0;
+  font-size: calc(0.75em / 0.875);
+  color: var(--fw-embed-muted);
+}
+.fw-embed__dag-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+}
+.fw-embed__dag-key::before {
+  content: "";
+  width: 1em;
+  height: 0.7em;
+  box-sizing: border-box;
+  border: 1.25px solid color-mix(in srgb, currentColor 70%, transparent);
+  border-radius: 3px;
+}
+.fw-embed__dag-key--exposure::before {
+  border-color: var(--fw-embed-dag-exposure);
+  background: color-mix(in srgb, var(--fw-embed-dag-exposure) 10%, transparent);
+}
+.fw-embed__dag-key--outcome::before {
+  border-color: var(--fw-embed-dag-outcome);
+  background: color-mix(in srgb, var(--fw-embed-dag-outcome) 10%, transparent);
+}
+.fw-embed__dag-key--adjusted::before {
+  border-width: 2px;
+  border-color: var(--fw-embed-fg, currentColor);
+}
+.fw-embed__dag-key--latent::before {
+  border-style: dashed;
+}
+.fw-embed__dag-key--selected::before {
+  border-width: 2.5px;
+}
+.fw-embed__dag-list {
+  margin: 0.5em 0 0;
+  padding: 0 0 0 1.25em;
+  font-size: calc(0.8125em / 0.875);
+}
+.fw-embed__dag-list > li + li {
+  margin-top: 0.25em;
+}
+.fw-embed__dag-result {
+  margin: 0.5em 0 0;
+  font-size: calc(0.8125em / 0.875);
+}
+.fw-embed__dag-list .fw-embed__var,
+.fw-embed__details > .fw-embed__note .fw-embed__var {
+  font-family: var(--fw-embed-mono);
+  font-size: 0.95em;
+}
+.fw-embed__details > .fw-embed__note {
+  margin-top: 1.125em;
+}
+.fw-embed__details > .fw-embed__snippet + .fw-embed__snippet {
+  margin-top: 0.75em;
+}
 @media print {
   .fw-embed {
     break-inside: avoid;
@@ -897,5 +1040,11 @@ framework-artifact {
   .fw-embed__output {
     overflow: visible;
     white-space: pre-wrap;
+  }
+  .fw-embed__dag {
+    overflow: visible;
+  }
+  .fw-embed__dag-graph {
+    min-width: 0 !important;
   }
 }

@@ -38,7 +38,7 @@ The packages are not yet on npm, Packagist, or drupal.org. Each [release](https:
 | `framework-embed.js` | ES module with the same exports. Importing it registers no custom element and adds no event listeners. |
 | `framework-embed-<version>.zip` | WordPress plugin |
 
-The repository also commits these three built files under `php/assets/`. jsDelivr serves them at a pinned tag, such as `https://cdn.jsdelivr.net/gh/frameworktools/framework-embed@v0.6.0/php/assets/framework-embed.js`. GitHub Pages serves the latest release under unversioned names at `https://frameworktools.github.io/framework-embed/`. The **HTML** snippet in the **Embed** tab loads its files from there.
+The repository also commits these three built files under `php/assets/`. jsDelivr serves them at a pinned tag, such as `https://cdn.jsdelivr.net/gh/frameworktools/framework-embed@v0.7.0/php/assets/framework-embed.js`. GitHub Pages serves the latest release under unversioned names at `https://frameworktools.github.io/framework-embed/`. The **HTML** snippet in the **Embed** tab loads its files from there.
 
 PHP projects can install `framework-cloud/embed` from a release archive with a Composer package repository:
 
@@ -49,13 +49,13 @@ PHP projects can install `framework-cloud/embed` from a release archive with a C
             "type": "package",
             "package": {
                 "name": "framework-cloud/embed",
-                "version": "0.6.0",
-                "dist": {"type": "zip", "url": "https://github.com/frameworktools/framework-embed/archive/refs/tags/v0.6.0.zip"},
+                "version": "0.7.0",
+                "dist": {"type": "zip", "url": "https://github.com/frameworktools/framework-embed/archive/refs/tags/v0.7.0.zip"},
                 "autoload": {"psr-4": {"Framework\\Embed\\": "php/src/"}}
             }
         }
     ],
-    "require": {"framework-cloud/embed": "0.6.0"}
+    "require": {"framework-cloud/embed": "0.7.0"}
 }
 ```
 
@@ -132,8 +132,8 @@ An embed document uses the `framework.embed/v1` schema:
 
 | Field | Contents |
 |---|---|
-| `kind` | `model`, `table`, `test`, `code_snippet`, `image`, `vega-lite`, or `page`. Renderers treat unknown values as `page`. |
-| `data` | The `framework.artifact/v1` representation for `model`, `table`, `test`, and `code_snippet`. See [Artifact representation](artifact-representation.md). |
+| `kind` | `model`, `table`, `test`, `code_snippet`, `dag`, `image`, `vega-lite`, or `page`. Renderers treat unknown values as `page`. |
+| `data` | The `framework.artifact/v1` representation for `model`, `table`, `test`, `code_snippet`, and `dag`. See [Artifact representation](artifact-representation.md). |
 | `spec` | Vega-Lite specification for `vega-lite`. Only charts with inline data embed as `vega-lite`. Charts that load external URLs for data, images, or links embed as `page`. A figure published with a phiz plot description embeds its compiled chart, without a background, colors, or fonts for the page's text and axes. |
 | `image` | Object with `url`, `content_type`, `width`, and `height` for `image`. A `vega-lite` document of a figure published with a plot description also has `image`, the figure itself, as its fallback. Otherwise `image` is `null` for `vega-lite`. `width` and `height` may be `null`. |
 | `key`, `version`, `latest_version` | The artifact's key, this document's version number, and the newest version number. A stored integration can compare `version` with `latest_version` to offer an update. |
@@ -163,6 +163,8 @@ The `popover` attribute opens the tip on click or tap without JavaScript. `enhan
 **Charts.** A `vega-lite` document renders as `<div class="fw-embed__chart" data-fw-embed-chart>` holding the specification in `<script type="application/json">` and a fallback paragraph with a link. `enhanceCharts` replaces the fallback with the chart.
 
 **Code snippets.** A `code_snippet` document renders as `<div class="fw-embed__snippet">`: a header, code in `<pre class="fw-embed__code">`, and each block of output, messages, warnings, or errors in `<div class="fw-embed__block">`. Framework Cloud sends styled text as `[classes, text]` segments, and the renderers wrap styled segments of code and output in `<span>` elements with `fw-t-` classes. Snippets with non-code blocks include an output toggle. The **Copy code** button and the toggle ship with the `hidden` attribute. `enhanceCopy` and `enhanceOutput` show them and handle clicks. When the output starts hidden, each `.fw-embed__block` also carries `hidden`, and only the toggle shows it.
+
+**DAGs.** A `dag` document renders as `<div class="fw-embed__dag">` holding an inline SVG drawn from the layout Framework Cloud sends, and a legend of the roles present. An **Analysis** disclosure lists adjustment sets and testable implications, and a **Code** disclosure holds the DAGitty text and the code that built the graph, each in a `.fw-embed__snippet` panel with a **Copy code** button that `enhanceCopy` shows.
 
 **Stored documents.** `<framework-artifact>` renders a document from a direct child `<script type="application/json">` without a network request:
 

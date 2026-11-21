@@ -445,7 +445,7 @@ class ToolCatalog
                 'description' => ['type' => 'string'],
                 'visibility' => ['type' => 'string', 'enum' => ['private', 'unlisted', 'public'], 'description' => 'Who can open it. New artifacts start private. Ask the user before choosing public.'],
                 'password' => ['type' => 'string', 'minLength' => 8],
-                'kind' => ['type' => 'string', 'enum' => ArtifactPublisher::KINDS, 'description' => 'Overrides the kind read from the file name. A code_snippet is a framework.artifact/v1 JSON file of code and printed output.'],
+                'kind' => ['type' => 'string', 'enum' => ArtifactPublisher::KINDS, 'description' => 'Overrides the kind read from the file name. A code_snippet is a framework.artifact/v1 JSON file of code and printed output. A dag is a .dagitty file of DAGitty model text, or framework.artifact/v1 JSON that carries it.'],
                 'plot_description' => ['type' => 'string', 'description' => 'For an SVG or PNG figure: its phiz plot description as JSON text, such as the figure.phiz.json Framework writes beside a published ggplot. Cloud draws the figure as a live chart and keeps the image as the fallback.'],
             ],
             'required' => ['filename'],

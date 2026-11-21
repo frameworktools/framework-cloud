@@ -3,6 +3,8 @@
 namespace App\Support;
 
 use App\Models\DocumentVersion;
+use App\Support\Dags\ArtifactDag;
+use App\Support\Dags\DagittyParser;
 use App\Support\Snippets\ArtifactSnippet;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
@@ -119,10 +121,14 @@ class ArtifactPreview
         if ($version->kind === 'data') {
             return ['type' => 'download', 'message' => 'Download this data file to open it in R, Python, Stata, or a spreadsheet.'];
         }
+        $json = $type === 'application/json' || str_ends_with(strtolower($version->original_filename ?? ''), '.json');
+        // DAGitty text draws as its graph
+        if (! $version->isBundle() && (ArtifactDag::isDagittyFile($version->original_filename) || ($version->kind === ArtifactDag::KIND && ! $json))) {
+            return self::dagitty($version);
+        }
         if (! str_starts_with($type, 'text/') && ! in_array($type, ['application/json', 'application/xml'])) {
             return ['type' => 'download'];
         }
-        $json = $type === 'application/json' || str_ends_with(strtolower($version->original_filename ?? ''), '.json');
         $limit = $json ? ArtifactRepresentation::MAX_BYTES : self::MAX_BYTES;
         $stream = Storage::disk($version->disk())->readStream($version->entryPath());
         if (! is_resource($stream)) {
@@ -145,11 +151,14 @@ class ArtifactPreview
             if (($representation['kind'] ?? null) === ArtifactSnippet::KIND) {
                 return ['type' => ArtifactSnippet::KIND] + $representation;
             }
+            if (($representation['kind'] ?? null) === ArtifactDag::KIND) {
+                return ['type' => ArtifactDag::KIND] + $representation;
+            }
             if ($representation !== null) {
                 return ['type' => 'representation'] + $representation;
             }
             if (strlen($content) > ArtifactRepresentation::MAX_BYTES
-                || in_array($version->kind, ['table', 'model', ArtifactSnippet::KIND])
+                || in_array($version->kind, ['table', 'model', ArtifactSnippet::KIND, ArtifactDag::KIND])
                 || preg_match('/"schema"\s*:/', $content)) {
                 return ['type' => 'download', 'message' => 'This artifact representation cannot be previewed. Download the original file to inspect it.'];
             }
@@ -178,5 +187,25 @@ class ArtifactPreview
         }
 
         return ['type' => 'table', 'rows' => array_slice($rows, 0, 100), 'truncated' => $truncated];
+    }
+
+    private static function dagitty(DocumentVersion $version): array
+    {
+        $stream = Storage::disk($version->disk())->readStream($version->entryPath());
+        if (! is_resource($stream)) {
+            self::$readFailed = true;
+
+            return ['type' => 'download'];
+        }
+        try {
+            $content = stream_get_contents($stream, DagittyParser::MAX_BYTES + 1);
+        } finally {
+            fclose($stream);
+        }
+        try {
+            return ['type' => ArtifactDag::KIND] + ArtifactDag::fromDagitty((string) $content);
+        } catch (\InvalidArgumentException) {
+            return ['type' => 'download', 'message' => 'This DAG cannot be drawn. Download the DAGitty file to open it.'];
+        }
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Support\Dags\ArtifactDag;
 use App\Support\Snippets\ArtifactSnippet;
 use DateTimeImmutable;
 use InvalidArgumentException;
@@ -28,6 +29,13 @@ class ArtifactRepresentation
     {
         if (strlen($json) > self::MAX_BYTES) {
             return null;
+        }
+        if (ArtifactDag::claims($json)) {
+            try {
+                return ArtifactDag::fromJson($json);
+            } catch (InvalidArgumentException) {
+                // Not a valid DAG; read it as any other representation
+            }
         }
         if (ArtifactSnippet::claims($json)) {
             try {

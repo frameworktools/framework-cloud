@@ -109,6 +109,40 @@ html.dark { color-scheme: dark; }
 .dark .snippet-code .t-var { color: #ffa657; }
 .dark .snippet-code .t-op { color: #8b949e; }
 .dark .snippet-code .t-com { color: #8b949e; }
+/* DAG artifacts: boxes and arrows drawn from Cloud's layout, roles in dagitty's colors */
+.dag-graph text { font: 14px var(--font-mono); text-anchor: middle; dominant-baseline: central; fill: var(--color-slate-800); }
+.dag-graph .dag-edge { fill: none; stroke: var(--color-slate-500); stroke-width: 1.5; }
+.dag-graph .dag-edge--bidirected { stroke-dasharray: 5 4; }
+.dag-graph .dag-head { fill: var(--color-slate-500); }
+.dag-graph .dag-node rect { fill: var(--color-white); stroke: var(--color-slate-400); stroke-width: 1.25; }
+.dag-graph .dag-node--exposure rect { fill: var(--color-emerald-50); stroke: var(--color-emerald-600); }
+.dag-graph .dag-node--exposure text { fill: var(--color-emerald-900); }
+.dag-graph .dag-node--outcome rect { fill: var(--color-sky-50); stroke: var(--color-sky-600); }
+.dag-graph .dag-node--outcome text { fill: var(--color-sky-900); }
+.dag-graph .dag-node--adjusted rect { fill: var(--color-slate-100); stroke: var(--color-slate-700); stroke-width: 2; }
+.dag-graph .dag-node--latent rect { stroke-dasharray: 4 3; }
+.dag-graph .dag-node--latent text { fill: var(--color-slate-500); }
+.dag-graph .dag-node--selected rect { stroke-width: 2.5; }
+.dark .dag-graph text { fill: var(--color-slate-200); }
+.dark .dag-graph .dag-edge { stroke: var(--color-slate-400); }
+.dark .dag-graph .dag-head { fill: var(--color-slate-400); }
+.dark .dag-graph .dag-node rect { fill: var(--color-slate-900); stroke: var(--color-slate-500); }
+.dark .dag-graph .dag-node--exposure rect { fill: color-mix(in oklab, var(--color-emerald-500) 15%, var(--color-slate-950)); stroke: var(--color-emerald-400); }
+.dark .dag-graph .dag-node--exposure text { fill: var(--color-emerald-200); }
+.dark .dag-graph .dag-node--outcome rect { fill: color-mix(in oklab, var(--color-sky-500) 15%, var(--color-slate-950)); stroke: var(--color-sky-400); }
+.dark .dag-graph .dag-node--outcome text { fill: var(--color-sky-200); }
+.dark .dag-graph .dag-node--adjusted rect { fill: var(--color-slate-800); stroke: var(--color-slate-300); }
+.dark .dag-graph .dag-node--latent text { fill: var(--color-slate-400); }
+.dag-swatch { display: inline-block; width: 0.875rem; height: 0.625rem; border-radius: 3px; border: 1.25px solid var(--color-slate-400); background: var(--color-white); }
+.dag-swatch--exposure { background: var(--color-emerald-50); border-color: var(--color-emerald-600); }
+.dag-swatch--outcome { background: var(--color-sky-50); border-color: var(--color-sky-600); }
+.dag-swatch--adjusted { background: var(--color-slate-100); border: 2px solid var(--color-slate-700); }
+.dag-swatch--latent { border-style: dashed; }
+.dag-swatch--selected { border-width: 2.5px; }
+.dark .dag-swatch { background: var(--color-slate-900); border-color: var(--color-slate-500); }
+.dark .dag-swatch--exposure { border-color: var(--color-emerald-400); }
+.dark .dag-swatch--outcome { border-color: var(--color-sky-400); }
+.dark .dag-swatch--adjusted { background: var(--color-slate-800); border-color: var(--color-slate-300); }
 .snippet-output .t-res, .snippet-output .t-inp, .snippet-output .t-bold { font-weight: 600; }
 .snippet-output .t-res { color: var(--color-slate-950); }
 .dark .snippet-output .t-res { color: var(--color-white); }

@@ -5,6 +5,8 @@ namespace App\Support;
 use App\Models\Document;
 use App\Models\DocumentVersion;
 use App\Models\Project;
+use App\Support\Dags\ArtifactDag;
+use App\Support\Dags\DagittyParser;
 use App\Support\Snippets\ArtifactSnippet;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -18,7 +20,7 @@ use Throwable;
 
 class ArtifactPublisher
 {
-    public const KINDS = ['html', 'image', 'chart', 'table', 'data', 'model', 'test', 'text', 'pdf', 'file', ArtifactSnippet::KIND];
+    public const KINDS = ['html', 'image', 'chart', 'table', 'data', 'model', 'test', 'text', 'pdf', 'file', ArtifactSnippet::KIND, ArtifactDag::KIND];
 
     public const VERSION_FIELDS = ['disk_path', 'entrypoint', 'content_type', 'size_bytes', 'kind', 'original_filename', 'manifest', 'storage_disk', 'source_path'];
 
@@ -94,9 +96,28 @@ class ArtifactPublisher
             if (($input['kind'] ?? null) === ArtifactSnippet::KIND && ! $json) {
                 throw ValidationException::withMessages(['file' => 'A code snippet is published as a JSON file.']);
             }
-            if ($json && $upload->getSize() <= ArtifactRepresentation::MAX_BYTES) {
+            // A DAG is checked strictly too: DAGitty text, or JSON that carries it
+            $dagFile = ! $bundle && ($input['kind'] ?? null) === ArtifactDag::KIND && ! $json;
+            if (! $bundle && (ArtifactDag::isDagittyFile($filename) || $dagFile)) {
+                if ($upload->getSize() > DagittyParser::MAX_BYTES) {
+                    throw ValidationException::withMessages(['file' => 'DAGitty code can be at most 64 KB.']);
+                }
+                try {
+                    ArtifactDag::fromDagitty((string) file_get_contents($upload->getRealPath()));
+                } catch (InvalidArgumentException $e) {
+                    throw ValidationException::withMessages(['file' => $e->getMessage()]);
+                }
+                $representationKind = ArtifactDag::KIND;
+            } elseif ($json && $upload->getSize() <= ArtifactRepresentation::MAX_BYTES) {
                 $content = (string) file_get_contents($upload->getRealPath());
-                if (($input['kind'] ?? null) === ArtifactSnippet::KIND || ArtifactSnippet::claims($content)) {
+                if (($input['kind'] ?? null) === ArtifactDag::KIND || ArtifactDag::claims($content)) {
+                    try {
+                        ArtifactDag::fromJson($content);
+                    } catch (InvalidArgumentException $e) {
+                        throw ValidationException::withMessages(['file' => $e->getMessage()]);
+                    }
+                    $representationKind = ArtifactDag::KIND;
+                } elseif (($input['kind'] ?? null) === ArtifactSnippet::KIND || ArtifactSnippet::claims($content)) {
                     try {
                         $snippet = ArtifactSnippet::fromJson($content);
                     } catch (InvalidArgumentException $e) {
@@ -108,6 +129,8 @@ class ArtifactPublisher
                 }
             } elseif (($input['kind'] ?? null) === ArtifactSnippet::KIND) {
                 throw ValidationException::withMessages(['file' => 'A code snippet can be at most 2 MB.']);
+            } elseif (($input['kind'] ?? null) === ArtifactDag::KIND) {
+                throw ValidationException::withMessages(['file' => 'A DAG can be at most 1 MB.']);
             }
             if (! $bundle && ArtifactPreview::isVegaLite($filename)) {
                 $representationKind = 'chart';

@@ -26,6 +26,7 @@ class EmbedAlt
             'table' => $data ? self::table($data) : null,
             'test' => $data ? self::test($data) : null,
             'code_snippet' => $data ? Snippets\ArtifactSnippet::alt($data) : null,
+            'dag' => $data ? Dags\ArtifactDag::alt($data) : null,
             default => null,
         };
 

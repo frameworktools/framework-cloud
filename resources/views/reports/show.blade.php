@@ -113,7 +113,7 @@
                             $url = $block['url'] ?? null;
                             $frameUrl = $url ? $url.(str_contains($url, '?') ? '&' : '?').'embed=1' : null;
                             $kindLabel = ['html' => 'Document', 'pdf' => 'PDF', 'image' => 'Figure', 'chart' => 'Interactive chart', 'table' => 'Table', 'data' => 'Data',
-                                'model' => 'Model', 'test' => 'Hypothesis test', 'code_snippet' => 'Code snippet', 'text' => 'Text file', 'file' => 'File'][$artifactKind] ?? null;
+                                'model' => 'Model', 'test' => 'Hypothesis test', 'code_snippet' => 'Code snippet', 'dag' => 'DAG', 'text' => 'Text file', 'file' => 'File'][$artifactKind] ?? null;
                         @endphp
                         <figure class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
                             <div class="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 px-5 py-5 dark:border-slate-800">

@@ -1,5 +1,5 @@
 import {
-    DocumentTextIcon, PhotoIcon, PresentationChartLineIcon, TableCellsIcon, VariableIcon, BeakerIcon, DocumentIcon, CircleStackIcon, CodeBracketIcon,
+    DocumentTextIcon, PhotoIcon, PresentationChartLineIcon, TableCellsIcon, VariableIcon, BeakerIcon, DocumentIcon, CircleStackIcon, CodeBracketIcon, ShareIcon,
 } from '@heroicons/vue/20/solid';
 
 // What each artifact kind is called and drawn with in the report builder
@@ -13,6 +13,7 @@ const kinds = {
     model: { label: 'Model', icon: VariableIcon },
     test: { label: 'Hypothesis test', icon: BeakerIcon },
     code_snippet: { label: 'Code snippet', icon: CodeBracketIcon },
+    dag: { label: 'DAG', icon: ShareIcon },
     text: { label: 'Text file', icon: DocumentIcon },
     file: { label: 'File', icon: DocumentIcon },
 };
