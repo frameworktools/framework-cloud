@@ -26,7 +26,7 @@ export function embedSnippet({ src, href, title }) {
 
 // The vendored files' version, and a hash of their content for their URLs (from vite.config.js), so a new
 // copy is never served from a browser's or Cloudflare's cache
-export const EMBED_VERSION = '0.11.0';
+export const EMBED_VERSION = '0.11.1';
 const EMBED_HASH = typeof __FRAMEWORK_EMBED_HASH__ === 'undefined' ? EMBED_VERSION : __FRAMEWORK_EMBED_HASH__;
 
 let renderer = null;
