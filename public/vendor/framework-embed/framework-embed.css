@@ -1107,18 +1107,31 @@ framework-artifact {
   transform: translateY(-70%) rotate(45deg);
 }
 .fw-embed__tree--clipped {
+  --fw-embed-tree-fade:
+    linear-gradient(
+      to bottom,
+      #000 calc(100% - 3.75em),
+      transparent);
   max-height: calc(0.75em + 12 * 1.25em + 1px);
   overflow: hidden;
   -webkit-mask-image:
-    linear-gradient(
-      to bottom,
-      #000 calc(100% - 3.75em),
-      transparent);
+    var(--fw-embed-tree-fade),
+    linear-gradient(#000 0 0),
+    linear-gradient(#000 0 0);
   mask-image:
-    linear-gradient(
-      to bottom,
-      #000 calc(100% - 3.75em),
-      transparent);
+    var(--fw-embed-tree-fade),
+    linear-gradient(#000 0 0),
+    linear-gradient(#000 0 0);
+  -webkit-mask-clip:
+    padding-box,
+    padding-box,
+    border-box;
+  mask-clip:
+    padding-box,
+    padding-box,
+    border-box;
+  -webkit-mask-composite: source-over, xor;
+  mask-composite: add, exclude;
 }
 .fw-embed__tree + .fw-embed__more {
   display: block;
