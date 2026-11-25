@@ -110,21 +110,25 @@ html.dark { color-scheme: dark; }
 .dark .snippet-code .t-op { color: #8b949e; }
 .dark .snippet-code .t-com { color: #8b949e; }
 /* DAG artifacts: boxes and arrows drawn from Cloud's layout, roles in dagitty's colors */
-/* Project structure trees (docs/plans/2026-11-25-structure-artifacts.md) */
-.tree-list { margin: 0 0 0 0.4rem; padding: 0 0 0 0.9rem; list-style: none; border-left: 1px solid color-mix(in oklab, var(--color-slate-800) 12%, transparent); }
-.tree-row { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 0.75rem; padding: 0 0.375rem; margin-left: -0.375rem; border-radius: 0.25rem; }
-.tree summary.tree-row { cursor: pointer; list-style: none; }
+/* Project structure trees (docs/plans/2026-11-25-structure-artifacts.md); matches framework-embed's fw-embed__tree */
+.tree-row { display: flex; align-items: baseline; column-gap: 1.5ch; padding: 0 0.375rem; margin: 0 -0.375rem; border-radius: 0.25rem; white-space: pre; }
+.tree-name { flex: none; min-width: var(--tree-names, 24ch); }
+.tree-guide { color: var(--color-slate-300); }
+.tree-row--root .tree-name, .tree-row--dir .tree-name { font-weight: 600; color: var(--color-slate-900); }
+.tree-crumb { font-weight: 400; color: var(--color-slate-500); }
+.tree summary.tree-row { cursor: pointer; list-style: none; position: relative; }
 .tree summary.tree-row::-webkit-details-marker { display: none; }
-.tree summary.tree-row::before { content: "▸"; width: 0.75rem; margin-left: -0.9rem; color: var(--color-slate-400); }
-.tree details[open] > summary.tree-row::before { content: "▾"; }
-.tree-name { white-space: nowrap; }
+.tree summary.tree-row .tree-guide::after { content: "▸"; margin-left: -1ch; color: var(--color-slate-400); }
+.tree details[open] > summary.tree-row .tree-guide::after { content: "▾"; }
+.tree summary.tree-row .tree-guide { display: inline-block; }
 .tree-row--muted .tree-name { color: var(--color-slate-400); }
 .tree-row--highlight { background: color-mix(in oklab, var(--color-sky-500) 12%, transparent); }
-.tree-badge { font-family: var(--font-sans); font-size: 0.75rem; color: var(--color-slate-500); }
-.tree-note { font-family: var(--font-sans); font-size: 0.8125rem; color: var(--color-slate-500); }
-.dark .tree-list { border-left-color: color-mix(in oklab, white 15%, transparent); }
+.tree-badge, .tree-note { font-family: var(--font-sans); font-size: 0.8125rem; color: var(--color-slate-500); white-space: normal; }
+.tree-badge { font-size: 0.75rem; }
+.dark .tree-guide { color: var(--color-slate-700); }
+.dark .tree-row--root .tree-name, .dark .tree-row--dir .tree-name { color: var(--color-slate-100); }
 .dark .tree-row--muted .tree-name { color: var(--color-slate-500); }
-.dark .tree-badge, .dark .tree-note { color: var(--color-slate-400); }
+.dark .tree-badge, .dark .tree-note, .dark .tree-crumb { color: var(--color-slate-400); }
 .dark .tree-row--highlight { background: color-mix(in oklab, var(--color-sky-400) 18%, transparent); }
 .dag-graph text { font: 14px var(--font-mono); text-anchor: middle; dominant-baseline: central; fill: var(--color-slate-800); }
 .dag-graph .dag-edge { fill: none; stroke: var(--color-slate-500); stroke-width: 1.5; }

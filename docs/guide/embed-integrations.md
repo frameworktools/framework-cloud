@@ -166,6 +166,8 @@ The `popover` attribute opens the tip on click or tap without JavaScript. `enhan
 
 **DAGs.** A `dag` document renders as `<div class="fw-embed__dag">` holding an inline SVG drawn from the layout Framework Cloud sends, and a legend of the roles present. An **Analysis** disclosure lists adjustment sets and testable implications, and a **Code** disclosure holds the DAGitty text and the code that built the graph, each in a `.fw-embed__snippet` panel with a **Copy** button that `enhanceCopy` shows.
 
+**Project structures.** A `tree` document renders as `<div class="fw-embed__tree">`: a row per file and closed or open `<details class="fw-embed__tree-dir">` per folder, drawn with box-drawing guides. Notes line up in one column after the widest name. Ignored and private stubs carry a `.fw-embed__tree-badge` such as `ignored · *.rds · 4 files`, with the rule's source in its `title`. Folders open and close without JavaScript.
+
 **Stored documents.** `<framework-artifact>` renders a document from a direct child `<script type="application/json">` without a network request:
 
 ```html title="Stored document"

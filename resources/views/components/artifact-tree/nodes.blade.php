@@ -1,4 +1,4 @@
-@props(['children'])
+@props(['children', 'prefix'])
 @php
     use App\Support\Trees\ArtifactTree;
 
@@ -8,7 +8,8 @@
             $parts[] = 'private';
         }
         if (isset($node['ignored'])) {
-            $parts[] = $node['type'] === 'ignored' ? 'ignored' : 'ignored · '.$node['ignored']['rule'];
+            $parts[] = 'ignored';
+            $parts[] = $node['ignored']['rule'];
         }
         if (isset($node['hidden'])) {
             $parts[] = ArtifactTree::fileCount($node['hidden']);
@@ -16,31 +17,25 @@
 
         return $parts === [] ? null : implode(' · ', $parts);
     };
+    $last = count($children) - 1;
 @endphp
-<ul class="tree-list">
-    @foreach ($children as $node)
-        @php
-            $stub = isset($node['hidden']);
-            $label = $badge($node);
-            $source = isset($node['ignored']) ? ArtifactTree::ruleSource($node['ignored']) : null;
-            $row = 'tree-row'.($stub || $node['type'] === 'ignored' ? ' tree-row--muted' : '').(isset($node['highlight']) ? ' tree-row--highlight' : '');
-        @endphp
-        <li>
-            @if ($node['type'] === 'dir' && ! $stub && $node['children'] !== [])
-                <details @if ($node['open']) open @endif>
-                    <summary class="{{ $row }}">
-                        <span class="tree-name">{{ $node['name'] }}/</span>
-                        @isset($node['note'])<span class="tree-note">{{ $node['note'] }}</span>@endisset
-                    </summary>
-                    <x-artifact-tree.nodes :children="$node['children']" />
-                </details>
-            @else
-                <div class="{{ $row }}">
-                    <span class="tree-name">{{ $node['name'] }}{{ $node['type'] === 'dir' ? '/' : '' }}</span>
-                    @if ($label)<span class="tree-badge" @if ($source) title="{{ $source }}" @endif>{{ $label }}</span>@endif
-                    @isset($node['note'])<span class="tree-note">{{ $node['note'] }}</span>@endisset
-                </div>
-            @endif
-        </li>
-    @endforeach
-</ul>
+@foreach ($children as $index => $node)
+    @php
+        $end = $index === $last;
+        $folder = $node['type'] === 'dir' && ! isset($node['hidden']) && $node['children'] !== [];
+        // A folder that opens leaves the guide's last cell for its marker
+        $guide = $prefix.($end ? '└─' : '├─').($folder ? '  ' : '─ ');
+        $label = $badge($node);
+        $source = isset($node['ignored']) ? ArtifactTree::ruleSource($node['ignored']) : null;
+        $row = 'tree-row'.(isset($node['hidden']) || $node['type'] === 'ignored' ? ' tree-row--muted' : '').($folder ? ' tree-row--dir' : '').(isset($node['highlight']) ? ' tree-row--highlight' : '');
+        $name = $node['name'].($node['type'] === 'dir' ? '/' : '');
+    @endphp
+    @if ($folder)
+        <details class="tree-dir" @if ($node['open']) open @endif>
+            <summary class="{{ $row }}"><span class="tree-name"><span class="tree-guide" aria-hidden="true">{{ $guide }}</span>{{ $name }}</span>@isset($node['note'])<span class="tree-note">{{ $node['note'] }}</span>@endisset</summary>
+            <x-artifact-tree.nodes :children="$node['children']" :prefix="$prefix.($end ? '    ' : '│   ')" />
+        </details>
+    @else
+        <div class="{{ $row }}"><span class="tree-name"><span class="tree-guide" aria-hidden="true">{{ $guide }}</span>{{ $name }}</span>@if ($label)<span class="tree-badge" @if ($source) title="{{ $source }}" @endif>{{ $label }}</span>@endif @isset($node['note'])<span class="tree-note">{{ $node['note'] }}</span>@endisset</div>
+    @endif
+@endforeach

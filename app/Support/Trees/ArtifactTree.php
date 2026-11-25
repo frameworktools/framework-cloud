@@ -313,7 +313,7 @@ class ArtifactTree
         return $hidden >= self::MAX_HIDDEN ? number_format(self::MAX_HIDDEN).'+ files' : number_format($hidden).' '.($hidden === 1 ? 'file' : 'files');
     }
 
-    /** Where a rule comes from, for a title: ".gitignore line 7", "global excludes". */
+    /** Where a rule comes from, for a title: ".gitignore line 7", "global excludes file". */
     public static function ruleSource(array $rule): ?string
     {
         $source = $rule['source'] ?? null;
@@ -321,12 +321,27 @@ class ArtifactTree
             return null;
         }
         $source = match ($source) {
-            'global' => 'global excludes',
+            'global' => 'global excludes file',
             'info/exclude' => '.git/info/exclude',
             default => $source,
         };
 
         return isset($rule['line']) ? $source.' line '.$rule['line'] : $source;
+    }
+
+    /** The widest guide and name in characters, capped at 48: the note column lines up after it. */
+    public static function nameWidth(array $data): int
+    {
+        $widest = mb_strlen($data['tree']['root']) + 1;
+        $walk = function (array $children, int $depth) use (&$walk, &$widest): void {
+            foreach ($children as $child) {
+                $widest = max($widest, ($depth + 1) * 4 + mb_strlen($child['name']) + ($child['type'] === 'dir' ? 1 : 0));
+                $walk($child['children'] ?? [], $depth + 1);
+            }
+        };
+        $walk($data['tree']['children'], 0);
+
+        return min($widest, 48);
     }
 
     private static function any(array $children, callable $test): bool
