@@ -22,7 +22,7 @@ use Throwable;
  */
 class ShareImage
 {
-    public const VERSION = 2;
+    public const VERSION = 3;
 
     public const WIDTH = 1200;
 
@@ -36,9 +36,15 @@ class ShareImage
     /** Figures larger than this are not read for a preview. */
     private const MAX_FIGURE_BYTES = 20_971_520;
 
-    private const SANS = "'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif";
+    // Installed on the server (infra: deploy-framework-pub.yml --tags fonts; the self-host image copies them in)
+    private const SANS = "'IBM Plex Sans', 'DejaVu Sans', sans-serif";
 
-    private const MONO = "'DejaVu Sans Mono', Menlo, monospace";
+    private const SERIF = "'IBM Plex Serif', 'DejaVu Serif', serif";
+
+    private const MONO = "'JetBrains Mono', 'DejaVu Sans Mono', monospace";
+
+    /** Kinds whose title card reads like a paper, in the serif. */
+    private const PAPERS = ['html', 'notebook', 'report', 'book', 'pdf', 'text'];
 
     private const ROLE_COLORS = [
         'exposure' => ['#ecfdf5', '#059669', '#064e3b'],
@@ -49,7 +55,8 @@ class ShareImage
     /** Whether link previews may show this artifact: anyone with the link can open it, without a password. */
     public static function available(Document $document): bool
     {
-        return ($document->driver ?? 'cloud') === 'cloud' && in_array($document->visibility, ['public', 'unlisted'], true)
+        // Drawing needs Imagick; without it, previews show the site's image
+        return extension_loaded('imagick') && ($document->driver ?? 'cloud') === 'cloud' && in_array($document->visibility, ['public', 'unlisted'], true)
             && ! $document->isPasswordProtected() && $document->merged_into_id === null;
     }
 
@@ -126,12 +133,14 @@ class ShareImage
         $document = $version->document;
         $title = $document->title ?: $document->slug;
         $titleSize = $body === null ? 60 : 46;
-        // Bold sans averages about 0.64 em a character
-        $lines = self::wrap($title, $body === null ? 3 : 2, (int) floor((self::WIDTH - 2 * self::PAD) / ($titleSize * 0.64)));
+        $paper = $body === null && in_array($version->kind ?? $document->kind, self::PAPERS, true);
+        $family = $paper ? self::SERIF : self::SANS;
+        // Plex SemiBold averages about 0.58 em a character
+        $lines = self::wrap($title, $body === null ? 3 : 2, (int) floor((self::WIDTH - 2 * self::PAD) / ($titleSize * 0.58)));
         $out = '';
         $y = $body === null ? 190 : 108;
         foreach ($lines as $line) {
-            $out .= self::text(self::PAD, $y, $line, $titleSize, '#0f172a', self::SANS, 'bold');
+            $out .= self::text(self::PAD, $y, $line, $titleSize, '#0f172a', $family, '600');
             $y += (int) round($titleSize * 1.18);
         }
         // The kind line sits under the last title line, and the body under it
@@ -148,20 +157,15 @@ class ShareImage
             $out .= sprintf('<g transform="translate(%.1f %.1f) scale(%.4f)">%s</g>', $x, $top, $scale, $fragment);
         }
         $out .= sprintf('<rect x="0" y="%d" width="%d" height="1" fill="#e2e8f0"/>', self::HEIGHT - 58, self::WIDTH);
-        $out .= self::text(self::PAD, self::HEIGHT - 22, ArtifactEmbed::providerName(), 22, '#0369a1', self::SANS, 'bold');
+        $out .= self::text(self::PAD, self::HEIGHT - 22, ArtifactEmbed::providerName(), 22, '#0369a1', self::SANS, '600');
 
         return [sprintf('<svg xmlns="http://www.w3.org/2000/svg" width="%1$d" height="%2$d" viewBox="0 0 %1$d %2$d"><rect width="%1$d" height="%2$d" fill="#ffffff"/>%3$s</svg>', self::WIDTH, self::HEIGHT, $out), $bodyTop];
     }
 
-    /** "DAG · Mobility study · Ada Lovelace" */
+    /** The kind alone: "DAG". */
     private static function meta(DocumentVersion $version): string
     {
-        $document = $version->document;
-        $owner = $document->project?->user;
-        $parts = [self::kindLabel($version), $document->project?->is_home ? null : $document->project?->name,
-            $owner && $owner->profile_public ? $owner->name : null];
-
-        return self::clip(implode(' · ', array_filter($parts)), 80);
+        return self::kindLabel($version);
     }
 
     public static function kindLabel(DocumentVersion $version): string
@@ -252,7 +256,7 @@ class ShareImage
         $out = '';
         foreach ($rows as $index => [$text, $note, $bold]) {
             $y = ($index + 1) * $height;
-            $out .= self::text(0, $y, self::clip($text, 46), $size, '#1e293b', self::MONO, $bold ? 'bold' : 'normal', 'start', true);
+            $out .= self::text(0, $y, self::clip($text, 46), $size, '#1e293b', self::MONO, $bold ? '600' : 'normal', 'start', true);
             if ($note !== null) {
                 $out .= self::text($nameWidth * $size * 0.6, $y, '# '.self::clip($note, 36), $size, '#64748b', self::MONO, 'normal', 'start', true);
             }
@@ -305,7 +309,7 @@ class ShareImage
         }
         $out = '';
         foreach (array_values($header) as $index => $cell) {
-            $out .= self::text($x[$index], 26, self::clip((string) $cell, 18), $size, '#0f172a', self::SANS, 'bold');
+            $out .= self::text($x[$index], 26, self::clip((string) $cell, 18), $size, '#0f172a', self::SANS, '600');
         }
         $out .= sprintf('<rect x="0" y="40" width="%.1f" height="1.5" fill="#cbd5e1"/>', $at - 36);
         foreach ($rows as $r => $row) {
@@ -383,7 +387,8 @@ class ShareImage
 
     private static function text(float $x, float $y, string $text, int $size, string $fill, string $family, string $weight = 'normal', string $anchor = 'start', bool $preserve = false): string
     {
-        return sprintf('<text x="%.1f" y="%.1f" font-family="%s" font-size="%d" font-weight="%s" fill="%s" text-anchor="%s"%s>%s</text>',
+        // An explicit upright style: without it the matcher can pick a family's italic face
+        return sprintf('<text x="%.1f" y="%.1f" font-family="%s" font-size="%d" font-weight="%s" font-style="normal" fill="%s" text-anchor="%s"%s>%s</text>',
             $x, $y, self::e($family), $size, $weight, $fill, $anchor, $preserve ? ' xml:space="preserve"' : '', self::e($text));
     }
 

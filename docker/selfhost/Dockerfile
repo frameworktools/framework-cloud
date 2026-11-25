@@ -36,8 +36,14 @@ LABEL org.opencontainers.image.title="Framework Cloud" \
       org.opencontainers.image.licenses="MIT" \
       org.opencontainers.image.version="${VERSION}"
 
-RUN install-php-extensions pdo_pgsql intl zip bcmath pcntl exif opcache \
+RUN install-php-extensions pdo_pgsql intl zip bcmath pcntl exif opcache imagick \
     && cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+
+# Link-preview images of shared artifacts (App\Support\ShareImage) are SVG drawn
+# through ImageMagick and librsvg: IBM Plex for text, JetBrains Mono for code
+RUN apk add --no-cache imagemagick-svg librsvg fontconfig font-jetbrains-mono
+COPY docker/selfhost/fonts /usr/share/fonts/ibm-plex
+RUN fc-cache -f
 
 COPY docker/selfhost/php.ini "$PHP_INI_DIR/conf.d/zz-framework-cloud.ini"
 
