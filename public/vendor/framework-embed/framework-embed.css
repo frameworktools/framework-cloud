@@ -1005,12 +1005,16 @@ framework-artifact {
 .fw-embed__details > .fw-embed__snippet + .fw-embed__snippet {
   margin-top: 0.75em;
 }
+.fw-embed__tree-panel {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--fw-embed-border);
+  border-radius: 0.5em;
+}
 .fw-embed__tree {
   min-width: 0;
   overflow-x: auto;
   padding: 0.75em 0.875em;
-  border: 1px solid var(--fw-embed-border);
-  border-radius: 0.5em;
   font-family: var(--fw-embed-code);
   font-size: calc(0.8125em / 0.875);
   font-variant-ligatures: none;
@@ -1107,54 +1111,42 @@ framework-artifact {
   transform: translateY(-70%) rotate(45deg);
 }
 .fw-embed__tree--clipped {
-  --fw-embed-tree-fade:
+  max-height: calc(0.75em + 12 * 1.25em);
+  overflow: hidden;
+  -webkit-mask-image:
     linear-gradient(
       to bottom,
       #000 calc(100% - 3.75em),
       transparent);
-  max-height: calc(0.75em + 12 * 1.25em + 1px);
-  overflow: hidden;
-  -webkit-mask-image:
-    var(--fw-embed-tree-fade),
-    linear-gradient(#000 0 0),
-    linear-gradient(#000 0 0);
   mask-image:
-    var(--fw-embed-tree-fade),
-    linear-gradient(#000 0 0),
-    linear-gradient(#000 0 0);
-  -webkit-mask-clip:
-    padding-box,
-    padding-box,
-    border-box;
-  mask-clip:
-    padding-box,
-    padding-box,
-    border-box;
-  -webkit-mask-composite: source-over, xor;
-  mask-composite: add, exclude;
+    linear-gradient(
+      to bottom,
+      #000 calc(100% - 3.75em),
+      transparent);
 }
-.fw-embed__tree + .fw-embed__more {
+.fw-embed__tree-panel > .fw-embed__more {
   display: block;
   width: max-content;
-  margin: 0.5em 0 0;
-  padding: 0.125em 0.5em;
-  border: 1px solid var(--fw-embed-border);
-  border-radius: 0.375em;
+  margin: 0;
+  padding: 0.125em calc(0.875em * 0.8125 / 0.75) 0.75em;
+  border: 0;
   background: none;
   color: var(--fw-embed-muted);
   font: inherit;
   font-size: calc(0.75em / 0.875);
   cursor: pointer;
 }
-.fw-embed__tree + .fw-embed__more:hover {
+.fw-embed__tree-panel > .fw-embed__more:hover {
   color: var(--fw-embed-fg, inherit);
-  border-color: var(--fw-embed-muted);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
 }
-.fw-embed__tree + .fw-embed__more:focus-visible {
+.fw-embed__tree-panel > .fw-embed__more:focus-visible {
   outline: 2px solid var(--fw-embed-accent);
-  outline-offset: 2px;
+  outline-offset: -2px;
+  border-radius: 0.375em;
 }
-.fw-embed__tree + .fw-embed__more[hidden] {
+.fw-embed__tree-panel > .fw-embed__more[hidden] {
   display: none;
 }
 @media print {
@@ -1199,6 +1191,7 @@ framework-artifact {
   .fw-embed__dag-graph {
     min-width: 0 !important;
   }
+  .fw-embed__tree-panel,
   .fw-embed__tree {
     overflow: visible;
   }
@@ -1207,7 +1200,7 @@ framework-artifact {
     -webkit-mask-image: none;
     mask-image: none;
   }
-  .fw-embed__tree + .fw-embed__more {
+  .fw-embed__tree-panel > .fw-embed__more {
     display: none;
   }
   .fw-embed__tree-row--highlight {
