@@ -1005,6 +1005,107 @@ framework-artifact {
 .fw-embed__details > .fw-embed__snippet + .fw-embed__snippet {
   margin-top: 0.75em;
 }
+.fw-embed__tree {
+  min-width: 0;
+  overflow-x: auto;
+  padding: 0.75em 0.875em;
+  border: 1px solid var(--fw-embed-border);
+  border-radius: 0.5em;
+  font-family: var(--fw-embed-code);
+  font-size: calc(0.8125em / 0.875);
+  font-variant-ligatures: none;
+  line-height: 1.6;
+}
+.fw-embed__tree-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0 2ch;
+  margin: 0 -0.875em;
+  padding: 0 0.875em;
+}
+.fw-embed__tree-name {
+  flex: none;
+  min-width: var(--fw-embed-tree-names, auto);
+  white-space: pre;
+}
+.fw-embed__tree-guide {
+  color: color-mix(in srgb, currentColor 35%, transparent);
+  font-weight: 400;
+}
+.fw-embed__tree-row--root > .fw-embed__tree-name,
+.fw-embed__tree-row--dir > .fw-embed__tree-name {
+  font-weight: 600;
+}
+.fw-embed__tree-crumb {
+  color: var(--fw-embed-muted);
+  font-weight: 400;
+}
+.fw-embed__tree-note {
+  flex: 1 1 auto;
+  min-width: 16ch;
+  color: var(--fw-embed-muted);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.fw-embed__tree-row--stub > .fw-embed__tree-name {
+  color: var(--fw-embed-muted);
+  font-weight: 400;
+}
+.fw-embed__tree-badge {
+  flex: none;
+  padding: 0 0.5em;
+  border: 1px solid var(--fw-embed-border);
+  border-radius: 999px;
+  font-size: 0.85em;
+  line-height: 1.5;
+  color: var(--fw-embed-muted);
+  white-space: nowrap;
+}
+.fw-embed__tree-badge[title] {
+  cursor: help;
+}
+.fw-embed__tree-row--highlight {
+  background: color-mix(in srgb, var(--fw-embed-accent) 12%, transparent);
+}
+.fw-embed__tree-row--highlight > .fw-embed__tree-name {
+  font-weight: 600;
+}
+.fw-embed__tree-dir > summary {
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.fw-embed__tree-dir > summary::-webkit-details-marker {
+  display: none;
+}
+.fw-embed__tree-dir > summary:hover {
+  background: color-mix(in srgb, currentColor 5%, transparent);
+}
+.fw-embed__tree-dir > summary.fw-embed__tree-row--highlight:hover {
+  background: color-mix(in srgb, var(--fw-embed-accent) 18%, transparent);
+}
+.fw-embed__tree-dir > summary:focus-visible {
+  outline: 2px solid var(--fw-embed-accent);
+  outline-offset: -2px;
+}
+.fw-embed__tree-dir > summary .fw-embed__tree-guide {
+  position: relative;
+}
+.fw-embed__tree-dir > summary .fw-embed__tree-guide::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: calc(1.5ch - 0.2em);
+  width: 0.4em;
+  height: 0.4em;
+  border-right: 1.5px solid var(--fw-embed-muted);
+  border-bottom: 1.5px solid var(--fw-embed-muted);
+  transform: translateY(-50%) rotate(-45deg);
+  transition: transform 0.15s ease;
+}
+.fw-embed__tree-dir[open] > summary .fw-embed__tree-guide::after {
+  transform: translateY(-70%) rotate(45deg);
+}
 @media print {
   .fw-embed {
     break-inside: avoid;
@@ -1046,5 +1147,12 @@ framework-artifact {
   }
   .fw-embed__dag-graph {
     min-width: 0 !important;
+  }
+  .fw-embed__tree {
+    overflow: visible;
+  }
+  .fw-embed__tree-row--highlight {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
 }
