@@ -335,7 +335,7 @@ class ArtifactTree
         $widest = mb_strlen($data['tree']['root']) + 1;
         $walk = function (array $children, int $depth) use (&$walk, &$widest): void {
             foreach ($children as $child) {
-                $widest = max($widest, ($depth + 1) * 4 + mb_strlen($child['name']) + ($child['type'] === 'dir' ? 1 : 0));
+                $widest = max($widest, ($depth + 1) * 4 + mb_strlen($child['name']) + ($child['type'] === 'dir' ? 3 : 0));
                 $walk($child['children'] ?? [], $depth + 1);
             }
         };

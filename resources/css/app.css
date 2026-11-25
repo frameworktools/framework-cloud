@@ -118,13 +118,12 @@ html.dark { color-scheme: dark; }
 .tree-crumb { font-weight: 400; color: var(--color-slate-500); }
 .tree summary.tree-row { cursor: pointer; list-style: none; position: relative; }
 .tree summary.tree-row::-webkit-details-marker { display: none; }
-.tree summary.tree-row .tree-guide::after { content: "▸"; margin-left: -1ch; color: var(--color-slate-400); }
-.tree details[open] > summary.tree-row .tree-guide::after { content: "▾"; }
-.tree summary.tree-row .tree-guide { display: inline-block; }
+/* The chevron follows the folder's name: right while closed, down while open */
+.tree summary.tree-row > .tree-name::after { content: ""; display: inline-block; width: 0.4em; height: 0.4em; margin-left: 0.6em; border-right: 1.5px solid var(--color-slate-400); border-bottom: 1.5px solid var(--color-slate-400); transform: translateY(-0.15em) rotate(-45deg); transition: transform 0.15s ease; }
+.tree details[open] > summary.tree-row > .tree-name::after { transform: translateY(-0.25em) rotate(45deg); }
 .tree-row--muted .tree-name { color: var(--color-slate-400); }
 .tree-row--highlight { background: color-mix(in oklab, var(--color-sky-500) 12%, transparent); }
-.tree-badge, .tree-note { font-family: var(--font-sans); font-size: 0.8125rem; color: var(--color-slate-500); white-space: normal; }
-.tree-badge { font-size: 0.75rem; }
+.tree-badge, .tree-note { color: var(--color-slate-500); white-space: normal; }
 .dark .tree-guide { color: var(--color-slate-700); }
 .dark .tree-row--root .tree-name, .dark .tree-row--dir .tree-name { color: var(--color-slate-100); }
 .dark .tree-row--muted .tree-name { color: var(--color-slate-500); }

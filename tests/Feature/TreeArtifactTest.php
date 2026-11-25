@@ -149,8 +149,8 @@ class TreeArtifactTest extends TestCase
         $this->assertSame('tree', $version->document->kind);
         $this->get($version->document->publicUrl())->assertOk()
             ->assertSee('my-project/')
-            ->assertSee('Reusable functions')
-            ->assertSee('ignored · data/raw/ · 2 files')->assertSee('├─', false)
+            ->assertSee('# Reusable functions')
+            ->assertSee('# ignored · data/raw/ · 2 files')->assertSee('├─', false)
             ->assertSee('private · 1 file')
             ->assertSee('title=".gitignore line 2"', false)
             ->assertSee('tree-row--highlight', false)
