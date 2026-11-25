@@ -153,6 +153,12 @@ class FlattenVersionsTest extends TestCase
         $this->withToken($token)->postJson('/api/v1/artifacts/artifact-dag/flatten')->assertOk()
             ->assertJson(['artifact' => 'artifact-dag', 'version' => 1, 'removed' => 1]);
 
+        // A project token flattens its own project's artifacts
+        $mine = $this->publish('tree', 2);
+        $this->withToken($this->project->issuePullToken())->postJson('/api/v1/artifacts/artifact-tree/flatten')->assertOk()->assertJsonPath('removed', 1);
+        $elsewhere = Project::factory()->for($this->user)->create(['slug' => 'elsewhere']);
+        $this->withToken($elsewhere->issuePullToken())->postJson('/api/v1/artifacts/artifact-html/flatten')->assertNotFound();
+
         $other = $this->publish('table', 2);
         $this->actingAs($this->user)->post("/published/{$other->id}/flatten")->assertRedirect()->assertSessionHas('status', 'versions-flattened');
         $this->assertSame([1], $other->versions()->pluck('number')->all());

@@ -224,12 +224,13 @@ class ArtifactsController extends Controller
     /**
      * POST /artifacts/{artifact}/flatten: keep the newest version as version 1
      * and delete the others for good, files and all. Old version links go to
-     * the latest. Needs an account token.
+     * the latest. An account token, or a project token for its own project's artifacts.
      */
     public function flatten(Request $request, string $artifact): JsonResponse
     {
-        $this->user($request);
-        $document = $this->find($request, $artifact, $request->query('project'), owned: true);
+        $actor = $request->user();
+        $project = $actor instanceof Project ? $actor->slug : $request->query('project');
+        $document = $this->find($request, $artifact, $project, owned: true);
         $result = app(ArtifactFlattener::class)->flatten($document);
         $version = $document->fresh()->latestVersion();
 
