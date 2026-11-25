@@ -86,7 +86,7 @@ Publishing a model summary uploads summary statistics rather than observation-le
 Open an artifact's management page from **Artifacts** in the sidebar or from a project's **Artifacts** tab. Each artifact page links to its project and provides four tabs:
 
 - **Overview** previews the reader view alongside file size, view counts, and linked collections or reports.
-- **Versions** lists every version with individual links and deletion controls.
+- **Versions** lists every version with individual links and deletion controls, and flattens the history to one version.
 - **Sharing** configures visibility, readable URLs, and password protection.
 - **Settings** edits the title and description, links additional projects, merges version histories, and moves the artifact to Trash.
 
@@ -119,6 +119,8 @@ https://framework.pub/d/q7w2k9m4x8c1v5b3n6z0p2rt/versions/2
 ```
 
 Deleting a version disables its URL. Deleting the latest version promotes the preceding version to current. Version numbers are never reused. Deleting the sole remaining version takes down the artifact.
+
+**Flatten versions** on the **Versions** tab keeps the newest version as version 1 and deletes every older version permanently, including versions in Trash, with their files. Old version URLs, readable version URLs, raw files, downloads, and embeds redirect to the latest version. Collection entries and report blocks pinned to any version pin version 1. The next upload continues numbering after the highest old version. Flattening applies to every artifact kind except external publications, whose versions remain at their destination. The API endpoint is `POST /api/v1/artifacts/{slug}/flatten`, with `?project=` when several projects share the slug. The MCP tool is `artifacts_flatten`.
 
 On an artifact's **Settings** tab, **Artifact merging** appends another artifact's versions from the same project when you select a source artifact and click **Merge versions**. The source artifact keeps its own links and versions, while future uploads target the destination artifact and merged versions inherit the destination's sharing settings. Merging combines version histories without combining document text or model estimates.
 

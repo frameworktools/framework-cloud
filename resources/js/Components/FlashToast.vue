@@ -10,6 +10,7 @@ const messages = {
     'artifact-merged': 'Versions merged.',
     'document-deleted': 'Artifact taken down.',
     'version-deleted': 'Version deleted.',
+    'versions-flattened': 'Versions flattened.',
     'report-published': 'Report published.',
     'skill-imported': 'Skill imported.',
     'facet-imported': 'Imported.',

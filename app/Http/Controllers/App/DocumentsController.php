@@ -10,6 +10,7 @@ use App\Models\Project;
 use App\Models\Report;
 use App\Support\ArtifactDisplay;
 use App\Support\ArtifactEmbed;
+use App\Support\ArtifactFlattener;
 use App\Support\ArtifactPublisher;
 use App\Support\PublishDrivers;
 use App\Support\PublishingQuota;
@@ -200,6 +201,14 @@ class DocumentsController extends Controller
         app(ArtifactPublisher::class)->merge($target, $source);
 
         return back()->with('status', 'artifact-merged');
+    }
+
+    /** Keep the newest version as version 1 and delete the rest for good; old version links go to the latest. */
+    public function flatten(Request $request, int $document): RedirectResponse
+    {
+        app(ArtifactFlattener::class)->flatten($this->documents($request)->findOrFail($document));
+
+        return back()->with('status', 'versions-flattened');
     }
 
     public function destroy(Request $request, int $document): RedirectResponse

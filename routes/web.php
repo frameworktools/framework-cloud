@@ -170,6 +170,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('published/{document}', [DocumentsController::class, 'destroy']);
     Route::patch('published/{document}', [DocumentsController::class, 'update']);
     Route::post('published/{document}/merge', [DocumentsController::class, 'merge']);
+    Route::post('published/{document}/flatten', [DocumentsController::class, 'flatten']);
     Route::delete('published/{document}/versions/{number}', [DocumentsController::class, 'destroyVersion'])->whereNumber('number');
     Route::post('projects/{project}/artifacts', [DocumentsController::class, 'store'])->whereNumber('project')->middleware('throttle:20,1');
     Route::get('collections', [CollectionsController::class, 'index'])->name('collections.all');

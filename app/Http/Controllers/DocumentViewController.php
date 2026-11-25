@@ -39,7 +39,9 @@ class DocumentViewController extends Controller
 
     public function showVersion(string $key, int $number): Response|RedirectResponse
     {
-        return $this->page($this->byKey($key), $number);
+        $document = $this->byKey($key);
+
+        return $this->toLatest($document, $number, fn () => $document->publicUrl()) ?? $this->page($document, $number);
     }
 
     public function readable(string $handle, string $project, string $slug): Response|RedirectResponse
@@ -49,7 +51,9 @@ class DocumentViewController extends Controller
 
     public function readableVersion(string $handle, string $project, string $slug, int $number): Response|RedirectResponse
     {
-        return $this->page($this->byReadable($handle, $project, $slug), $number, readable: true);
+        $document = $this->byReadable($handle, $project, $slug);
+
+        return $this->toLatest($document, $number, fn () => $document->readableUrl()) ?? $this->page($document, $number, readable: true);
     }
 
     public function raw(string $key): StreamedResponse|RedirectResponse
@@ -59,7 +63,9 @@ class DocumentViewController extends Controller
 
     public function versionRaw(string $key, int $number): StreamedResponse|RedirectResponse
     {
-        return $this->serveEntry($this->version($this->byKey($key), $number));
+        $document = $this->byKey($key);
+
+        return $this->toLatest($document, $number, fn () => route('documents.raw', ['key' => $key])) ?? $this->serveEntry($this->version($document, $number));
     }
 
     /**
@@ -73,7 +79,9 @@ class DocumentViewController extends Controller
 
     public function versionAsset(string $key, int $number, string $path): StreamedResponse|RedirectResponse
     {
-        return $this->serveAsset($this->version($this->byKey($key), $number), $path);
+        $document = $this->byKey($key);
+
+        return $this->toLatest($document, $number, fn () => route('documents.asset', ['key' => $key, 'path' => $path])) ?? $this->serveAsset($this->version($document, $number), $path);
     }
 
     /** Bearer access stays in the path so relative module and fetch URLs inherit it. */
@@ -135,7 +143,9 @@ class DocumentViewController extends Controller
 
     public function versionDownload(string $key, int $number): StreamedResponse|RedirectResponse
     {
-        return $this->serveDownload($this->version($this->byKey($key), $number));
+        $document = $this->byKey($key);
+
+        return $this->toLatest($document, $number, fn () => route('documents.download', ['key' => $key])) ?? $this->serveDownload($this->version($document, $number));
     }
 
     private function serveDownload(DocumentVersion $version): StreamedResponse|RedirectResponse
@@ -241,6 +251,12 @@ class DocumentViewController extends Controller
             ->whereHas('project', fn ($q) => $q->where('user_id', $user->id)->where('slug', $project))
             ->with('project.user')
             ->firstOrFail();
+    }
+
+    /** A link to a version that flattening removed goes to the latest version. */
+    private function toLatest(Document $document, int $number, callable $latest): ?RedirectResponse
+    {
+        return $document->flattenedAway($number) ? redirect()->to($latest(), 301) : null;
     }
 
     private function version(Document $document, int $number): DocumentVersion

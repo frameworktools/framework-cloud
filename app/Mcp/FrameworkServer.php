@@ -39,6 +39,7 @@ Tools for reading one Framework Cloud account's projects and published results, 
 - Blueprints are reusable project setups. To design one: read the parts with blueprints_options (and blueprints_show for a built-in to start from), propose choices, show the user the files with blueprints_preview, and create it with blueprints_create once they agree. Then projects_create can start a project from it.
 - Skills are agent instructions (SKILL.md). skills_show reads one; skills_create and skills_update change the account's own. Built-in skills (framework/...) can't be changed; create your own from their text instead. Read a skill before updating it, and pass its version as expected_version.
 - projects_delete, artifacts_delete, reports_delete, and skills_delete move things to the Trash, where the user can restore them. Delete only when the user asks, and say what you will delete first. Built-in skills can't be deleted.
+- artifacts_flatten keeps an artifact's newest version as version 1 and deletes the older versions for good, not to the Trash. Flatten only when the user asks, and say first that the older versions can't be restored.
 - These tools cannot run code.
 - Every tool accepts dry_run=true to preview the request without sending it.
 - Errors come back as JSON {error: {status, code, message}}, with errors for validation failures.

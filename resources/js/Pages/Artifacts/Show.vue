@@ -190,6 +190,11 @@ async function destroyVersion(version) {
     if (!await ask(last ? `Delete version ${version.number}? It is the only version, so “${props.artifact.title}” is taken down. You can restore it from the Trash.` : `Delete version ${version.number}? Its links stop working. You can restore it from the Trash.`)) return;
     router.delete(`${base}/versions/${version.number}?then=list`, { preserveScroll: true });
 }
+async function flatten() {
+    const older = props.versions.length - 1;
+    if (!await ask(`Keep version ${props.versions[0].number} as version 1 and delete the ${older} older ${older === 1 ? 'version' : 'versions'} for good? They don't go to the Trash. Links to old versions open the newest one.`)) return;
+    router.post(`${base}/flatten`, {}, { preserveScroll: true });
+}
 async function destroy() {
     if (external.value) {
         if (await ask(`Remove “${props.artifact.title}” from Framework Cloud? Files at the publishing destination stay available.`)) router.delete(`${base}?then=list`);
@@ -332,7 +337,7 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public', privat
 
                 <!-- Versions -->
                 <div v-else-if="tab === 'versions'" class="pt-8">
-                    <p class="mb-4 max-w-2xl text-sm text-slate-500 dark:text-slate-400">Publishing again with the same name adds a version. The main link always opens the newest one; each version also keeps its own link.</p>
+                    <p class="mb-4 max-w-2xl text-sm text-slate-500 dark:text-slate-400">Publishing again with the same name adds a version. The main link always opens the newest one; each version also keeps its own link. Flattening keeps the newest as version 1 and deletes the rest for good.</p>
                     <UiTable label="Versions">
                         <thead><tr><th>Version</th><th>Published</th><th class="numeric">Size</th><th class="max-sm:hidden">Source</th><th class="actions"><span class="sr-only">Actions</span></th></tr></thead>
                         <tbody>
@@ -350,6 +355,9 @@ const sharingText = { unlisted: 'Anyone with the link', public: 'Public', privat
                             </tr>
                         </tbody>
                     </UiTable>
+                    <div v-if="!external && !artifact.merged_into && versions.length > 1" class="mt-4">
+                        <UiButton variant="ghost" size="sm" @click="flatten">Flatten versions</UiButton>
+                    </div>
                 </div>
 
                 <!-- Sharing -->

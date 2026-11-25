@@ -48,7 +48,12 @@ class EmbedController extends Controller
 
     public function showVersion(Request $request, string $key, int $number): JsonResponse
     {
-        $version = ArtifactEmbed::byKey($key)?->findVersion($number);
+        $document = ArtifactEmbed::byKey($key);
+        // A version that flattening removed embeds as the latest, briefly cached like any latest
+        if ($document?->flattenedAway($number)) {
+            return $this->embed($document->latestVersion(), self::LATEST_MAX_AGE, self::codeOnly($request));
+        }
+        $version = $document?->findVersion($number);
 
         return $version ? $this->embed($version, self::VERSION_MAX_AGE, self::codeOnly($request)) : self::notFound();
     }
@@ -66,7 +71,8 @@ class EmbedController extends Controller
      */
     public function image(string $key, int $number): JsonResponse|RedirectResponse|StreamedResponse
     {
-        $version = ArtifactEmbed::byKey($key)?->findVersion($number);
+        $document = ArtifactEmbed::byKey($key);
+        $version = $document?->flattenedAway($number) ? $document->latestVersion() : $document?->findVersion($number);
         if ($version === null || ! ArtifactEmbed::hasImage($version)) {
             return self::notFound();
         }

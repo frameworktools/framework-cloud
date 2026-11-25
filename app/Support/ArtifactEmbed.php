@@ -104,6 +104,10 @@ class ArtifactEmbed
         } else {
             return null;
         }
+        // A version link that flattening removed resolves as the latest
+        if ($number !== null && $document?->flattenedAway($number)) {
+            $number = null;
+        }
         $version = $document === null ? null : ($number === null ? $document->latestVersion() : $document->findVersion($number));
 
         return $version === null ? null : [$version, $number !== null, ArtifactSnippet::wantsCodeOnly(parse_url($url, PHP_URL_QUERY))];

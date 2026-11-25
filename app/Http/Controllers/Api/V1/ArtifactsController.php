@@ -10,6 +10,7 @@ use App\Models\McpConnection;
 use App\Models\Project;
 use App\Models\User;
 use App\Support\ArtifactEmbed;
+use App\Support\ArtifactFlattener;
 use App\Support\ArtifactPublisher;
 use App\Support\PlotDescription;
 use App\Support\Share;
@@ -218,6 +219,26 @@ class ArtifactsController extends Controller
         $document->delete();
 
         return response()->json(['deleted' => $document->slug, 'restore' => route('trash')]);
+    }
+
+    /**
+     * POST /artifacts/{artifact}/flatten: keep the newest version as version 1
+     * and delete the others for good, files and all. Old version links go to
+     * the latest. Needs an account token.
+     */
+    public function flatten(Request $request, string $artifact): JsonResponse
+    {
+        $this->user($request);
+        $document = $this->find($request, $artifact, $request->query('project'), owned: true);
+        $result = app(ArtifactFlattener::class)->flatten($document);
+        $version = $document->fresh()->latestVersion();
+
+        return response()->json([
+            'artifact' => $document->slug,
+            'version' => $version->number,
+            'removed' => $result['removed'],
+            'artifact_url' => route('artifacts.show', $document->id),
+        ]);
     }
 
     /** POST /projects/{slug}/linked-artifacts: list an artifact from elsewhere in the account in this project. */

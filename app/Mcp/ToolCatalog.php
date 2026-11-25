@@ -215,6 +215,13 @@ class ToolCatalog
                 'title' => 'Delete an artifact',
                 'description' => 'Delete an artifact with all its versions. Its links stop working, and reports and collections show it as unavailable. It goes to the Trash in Framework Cloud, with its files, where the user can restore it. Delete only when the user asks, and name what you will delete first. Pass project when several projects have an artifact with this slug.',
             ],
+            'artifacts_flatten' => [
+                'level' => self::FULL, 'method' => 'POST', 'path' => '/artifacts/{artifact}/flatten',
+                'path_params' => ['artifact' => ['type' => 'string', 'description' => 'The artifact slug.']],
+                'query' => $optionalProject,
+                'title' => 'Flatten an artifact\'s versions',
+                'description' => 'Keep an artifact\'s newest version as version 1 and delete every older version for good, with its files; they do not go to the Trash. Links and embeds that name an old version go to the latest, and collections and reports pinned to an old version show version 1. The next publish continues after the highest old number. Works for every artifact kind. Flatten only when the user asks, and say first that older versions cannot be restored. Pass project when several projects have an artifact with this slug.',
+            ],
             'artifacts_upload' => [
                 'level' => self::FULL, 'method' => 'POST', 'path' => '/artifacts/uploads',
                 'rename' => ['artifact' => 'slug'],

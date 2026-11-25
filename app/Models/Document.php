@@ -50,7 +50,7 @@ class Document extends Model
 
     protected function casts(): array
     {
-        return ['manifest' => 'array', 'merged_at' => 'datetime', 'display' => 'array'];
+        return ['manifest' => 'array', 'merged_at' => 'datetime', 'display' => 'array', 'flattened_at' => 'datetime'];
     }
 
     public function isPasswordProtected(): bool
@@ -163,6 +163,13 @@ class Document extends Model
     {
         return $this->versions()->where('number', $number)->first()
             ?? ($number === 1 && ! $this->versions()->withTrashed()->exists() ? $this->implicitVersion() : null);
+    }
+
+    /** Whether a link to this version number goes to the latest version: the number existed before the artifact was flattened. */
+    public function flattenedAway(int $number): bool
+    {
+        return $this->flattened_at !== null && $number >= 1 && $number < (int) $this->next_version_number
+            && ! $this->versions()->where('number', $number)->exists();
     }
 
     private function implicitVersion(): DocumentVersion
