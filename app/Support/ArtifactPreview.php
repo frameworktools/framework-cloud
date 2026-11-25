@@ -7,6 +7,7 @@ use App\Support\Dags\ArtifactDag;
 use App\Support\Dags\DagittyParser;
 use App\Support\Dags\DagLayout;
 use App\Support\Snippets\ArtifactSnippet;
+use App\Support\Trees\ArtifactTree;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 
@@ -158,11 +159,14 @@ class ArtifactPreview
             if (($representation['kind'] ?? null) === ArtifactDag::KIND) {
                 return ['type' => ArtifactDag::KIND] + $representation;
             }
+            if (($representation['kind'] ?? null) === ArtifactTree::KIND) {
+                return ['type' => ArtifactTree::KIND] + $representation;
+            }
             if ($representation !== null) {
                 return ['type' => 'representation'] + $representation;
             }
             if (strlen($content) > ArtifactRepresentation::MAX_BYTES
-                || in_array($version->kind, ['table', 'model', ArtifactSnippet::KIND, ArtifactDag::KIND])
+                || in_array($version->kind, ['table', 'model', ArtifactSnippet::KIND, ArtifactDag::KIND, ArtifactTree::KIND])
                 || preg_match('/"schema"\s*:/', $content)) {
                 return ['type' => 'download', 'message' => 'This artifact representation cannot be previewed. Download the original file to inspect it.'];
             }

@@ -8,6 +8,7 @@ use App\Models\Project;
 use App\Support\Dags\ArtifactDag;
 use App\Support\Dags\DagittyParser;
 use App\Support\Snippets\ArtifactSnippet;
+use App\Support\Trees\ArtifactTree;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -20,7 +21,7 @@ use Throwable;
 
 class ArtifactPublisher
 {
-    public const KINDS = ['html', 'image', 'chart', 'table', 'data', 'model', 'test', 'text', 'pdf', 'file', ArtifactSnippet::KIND, ArtifactDag::KIND];
+    public const KINDS = ['html', 'image', 'chart', 'table', 'data', 'model', 'test', 'text', 'pdf', 'file', ArtifactSnippet::KIND, ArtifactDag::KIND, ArtifactTree::KIND];
 
     public const VERSION_FIELDS = ['disk_path', 'entrypoint', 'content_type', 'size_bytes', 'kind', 'original_filename', 'manifest', 'storage_disk', 'source_path'];
 
@@ -112,6 +113,8 @@ class ArtifactPublisher
                     throw ValidationException::withMessages(['file' => $e->getMessage()]);
                 }
                 $representationKind = ArtifactDag::KIND;
+            } elseif (($input['kind'] ?? null) === ArtifactTree::KIND && ! $json) {
+                throw ValidationException::withMessages(['file' => 'A project structure is published as a JSON file.']);
             } elseif ($json && $upload->getSize() <= ArtifactRepresentation::MAX_BYTES) {
                 $content = (string) file_get_contents($upload->getRealPath());
                 if (($input['kind'] ?? null) === ArtifactDag::KIND || ArtifactDag::claims($content)) {
@@ -121,6 +124,14 @@ class ArtifactPublisher
                         throw ValidationException::withMessages(['file' => $e->getMessage()]);
                     }
                     $representationKind = ArtifactDag::KIND;
+                } elseif (($input['kind'] ?? null) === ArtifactTree::KIND || ArtifactTree::claims($content)) {
+                    // A project structure is checked strictly too
+                    try {
+                        ArtifactTree::fromJson($content);
+                    } catch (InvalidArgumentException $e) {
+                        throw ValidationException::withMessages(['file' => $e->getMessage()]);
+                    }
+                    $representationKind = ArtifactTree::KIND;
                 } elseif (($input['kind'] ?? null) === ArtifactSnippet::KIND || ArtifactSnippet::claims($content)) {
                     try {
                         $snippet = ArtifactSnippet::fromJson($content);
@@ -135,12 +146,14 @@ class ArtifactPublisher
                 throw ValidationException::withMessages(['file' => 'A code snippet can be at most 2 MB.']);
             } elseif (($input['kind'] ?? null) === ArtifactDag::KIND) {
                 throw ValidationException::withMessages(['file' => 'A DAG can be at most 1 MB.']);
+            } elseif (($input['kind'] ?? null) === ArtifactTree::KIND) {
+                throw ValidationException::withMessages(['file' => 'A project structure can be at most 1 MB.']);
             }
             if (! $bundle && ArtifactPreview::isVegaLite($filename)) {
                 $representationKind = 'chart';
             }
             // A client that can't tell a DAG from any other file sends file or text; a valid DAG is a dag all the same
-            $kind = $representationKind === ArtifactDag::KIND && in_array($input['kind'] ?? null, [null, 'file', 'text'], true) ? ArtifactDag::KIND : ($input['kind'] ?? null);
+            $kind = in_array($representationKind, [ArtifactDag::KIND, ArtifactTree::KIND], true) && in_array($input['kind'] ?? null, [null, 'file', 'text'], true) ? $representationKind : ($input['kind'] ?? null);
             $stored += ['content_type' => $type, 'original_filename' => $filename, 'storage_disk' => $disk, 'kind' => $kind ?? $representationKind ?? $this->kind($type, $filename)];
 
             $unchanged = false;

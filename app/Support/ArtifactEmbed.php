@@ -8,6 +8,7 @@ use App\Models\ShortLink;
 use App\Models\User;
 use App\Support\Dags\ArtifactDag;
 use App\Support\Snippets\ArtifactSnippet;
+use App\Support\Trees\ArtifactTree;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 
@@ -130,7 +131,7 @@ class ArtifactEmbed
         $latest = $document->latestVersion()->number;
         $kind = self::kind($version);
         $preview = ArtifactPreview::forVersion($version);
-        $data = in_array($preview['type'], ['representation', ArtifactSnippet::KIND, ArtifactDag::KIND], true) ? array_diff_key($preview, ['type' => true, 'data_file' => true]) : null;
+        $data = in_array($preview['type'], ['representation', ArtifactSnippet::KIND, ArtifactDag::KIND, ArtifactTree::KIND], true) ? array_diff_key($preview, ['type' => true, 'data_file' => true]) : null;
         if ($kind === ArtifactSnippet::KIND) {
             $data = self::snippet($data, $document, $codeOnly);
         } else {
@@ -182,7 +183,7 @@ class ArtifactEmbed
         }
         $kind = self::kind($version);
         $preview = ArtifactPreview::forVersion($version);
-        $data = in_array($preview['type'], ['representation', ArtifactSnippet::KIND, ArtifactDag::KIND], true) ? $preview : null;
+        $data = in_array($preview['type'], ['representation', ArtifactSnippet::KIND, ArtifactDag::KIND, ArtifactTree::KIND], true) ? $preview : null;
 
         return ArtifactDisplay::options($kind, $data, $kind === 'vega-lite' && self::hasImage($version), $document->display);
     }
@@ -201,7 +202,7 @@ class ArtifactEmbed
         return $data;
     }
 
-    /** model, table, test, code_snippet, dag, image, vega-lite, or page. A figure with a usable plot description is vega-lite. */
+    /** model, table, test, code_snippet, dag, tree, image, vega-lite, or page. A figure with a usable plot description is vega-lite. */
     public static function kind(DocumentVersion $version): string
     {
         $preview = ArtifactPreview::forVersion($version);
@@ -210,6 +211,7 @@ class ArtifactEmbed
             'representation' => in_array($preview['kind'] ?? null, ['model', 'table', 'test'], true) ? $preview['kind'] : 'page',
             ArtifactSnippet::KIND => ArtifactSnippet::KIND,
             ArtifactDag::KIND => ArtifactDag::KIND,
+            ArtifactTree::KIND => ArtifactTree::KIND,
             'chart' => self::selfContained(ArtifactPreview::vegaLiteSpec($version)) ? 'vega-lite' : 'page',
             'image' => ! self::hasImage($version) ? 'page' : (PlotDescription::embedSpec($version) !== null ? 'vega-lite' : 'image'),
             default => 'page',

@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Support\Dags\ArtifactDag;
 use App\Support\Snippets\ArtifactSnippet;
+use App\Support\Trees\ArtifactTree;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use JsonException;
@@ -35,6 +36,13 @@ class ArtifactRepresentation
                 return ArtifactDag::fromJson($json);
             } catch (InvalidArgumentException) {
                 // Not a valid DAG; read it as any other representation
+            }
+        }
+        if (ArtifactTree::claims($json)) {
+            try {
+                return ArtifactTree::fromJson($json);
+            } catch (InvalidArgumentException) {
+                // Not a valid tree; read it as any other representation
             }
         }
         if (ArtifactSnippet::claims($json)) {

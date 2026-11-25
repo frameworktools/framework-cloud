@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Support\Dags\ArtifactDag;
+use App\Support\Trees\ArtifactTree;
 use Illuminate\Validation\ValidationException;
 use JsonException;
 
@@ -18,7 +19,7 @@ class ArtifactDisplay
 {
     /** Every setting, with the embed kinds it applies to. Order is the order shown. */
     private const SETTINGS = [
-        'title' => ['kinds' => ['model', 'table', 'test', 'code_snippet', 'dag', 'image', 'vega-lite'], 'label' => 'Title', 'help' => 'The title above the artifact.'],
+        'title' => ['kinds' => ['model', 'table', 'test', 'code_snippet', 'dag', 'tree', 'image', 'vega-lite'], 'label' => 'Title', 'help' => 'The title above the artifact.'],
         'description' => ['kinds' => '*', 'label' => 'Description', 'help' => 'The description under the artifact.'],
         'author' => ['kinds' => '*', 'label' => 'Author', 'help' => 'Your name, when your profile is public.'],
         'credit' => ['kinds' => '*', 'label' => 'Link back', 'help' => 'A link to the artifact on this server, beside its title.'],
@@ -31,12 +32,15 @@ class ArtifactDisplay
         'analysis' => ['kinds' => ['dag'], 'label' => 'Analysis', 'help' => 'Adjustment sets and testable implications.'],
         'dagitty' => ['kinds' => ['dag'], 'label' => 'DAGitty specification', 'help' => 'The model text, with a copy button.'],
         'code' => ['kinds' => ['dag'], 'label' => 'Source code', 'help' => 'The code that built the graph, with a copy button.'],
+        'notes' => ['kinds' => ['tree'], 'label' => 'Notes', 'help' => 'Notes beside files and folders.'],
+        'ignored' => ['kinds' => ['tree'], 'label' => 'Ignored paths', 'help' => 'Paths hidden by .gitignore, with the rule that hides them.'],
         'interactive' => ['kinds' => ['vega-lite'], 'label' => 'Interactive chart', 'help' => 'Off, the static image shows instead.'],
     ];
 
     /** Settings a kind starts with off: a DAG embeds as its drawing, its sections a choice. */
     private const OFF_BY_DEFAULT = [
         'dag' => ['description', 'analysis', 'dagitty', 'code'],
+        'tree' => ['description'],
     ];
 
     /** Whether a setting is on for an embed kind, as set or by default. */
@@ -92,6 +96,8 @@ class ArtifactDisplay
             'links' => ! empty($data['display']['links']),
             'analysis' => isset($data['analysis']['adjustment_sets']) || ! empty($data['analysis']['implications']),
             'code' => isset($data['code']),
+            'notes' => $kind === 'tree' && ArtifactTree::hasNotes($data ?? []),
+            'ignored' => $kind === 'tree' && ArtifactTree::hasIgnored($data ?? []),
             'interactive' => $hasImage,
             default => true,
         };
@@ -212,6 +218,11 @@ class ArtifactDisplay
                     if ($off($key)) {
                         unset($data[$key]);
                     }
+                }
+                break;
+            case 'tree':
+                if ($off('ignored') || $off('notes')) {
+                    $data = ArtifactTree::without($data, $off('ignored'), $off('notes'));
                 }
                 break;
         }

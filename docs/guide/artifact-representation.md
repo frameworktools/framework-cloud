@@ -1,6 +1,6 @@
 # Artifact representation
 
-Models, tables, and hypothesis tests published from the Framework packages for R, Python, and Stata carry a structured representation in the `framework.artifact/v1` schema. Framework Cloud validates and normalizes it when the artifact is published. The `data` field of an embed document holds that normalized representation for the `model`, `table`, `test`, `code_snippet`, and `dag` kinds. Code snippets and DAGs use the same schema with their own fields. See [Code snippets](#code-snippets) and [DAGs](#dags).
+Models, tables, and hypothesis tests published from the Framework packages for R, Python, and Stata carry a structured representation in the `framework.artifact/v1` schema. Framework Cloud validates and normalizes it when the artifact is published. The `data` field of an embed document holds that normalized representation for the `model`, `table`, `test`, `code_snippet`, `dag`, and `tree` kinds. Code snippets, DAGs, and project structures use the same schema with their own fields. See [Code snippets](#code-snippets), [DAGs](#dags), and [Project structures](#project-structures).
 
 [`spec/embed.schema.json`](https://github.com/frameworktools/framework-embed/blob/main/spec/embed.schema.json) defines it formally, and [`SPEC.md`](https://github.com/frameworktools/framework-embed/blob/main/SPEC.md) specifies how the reference renderers display each field. Except for the publish inputs noted under [Code snippets](#code-snippets), this page describes the representation as embed documents deliver it, after normalization. [Embed integrations](embed-integrations.md) covers fetching and rendering documents.
 
@@ -272,6 +272,44 @@ A DAG is a causal diagram with the DAGitty model text that defines it. Publish a
 A graph of another type (`pdag`, `mag`, `pag`), with an undirected edge or a directed cycle, more than 100 nodes or 400 edges, or more than 64 KB of DAGitty text is refused at publish with a message naming the problem. Names in `analysis` that aren't nodes are dropped.
 
 Framework Cloud lays the graph out when it normalizes it. With `pos` on every node, it scales those positions until no boxes overlap. Otherwise it places nodes in columns, left to right, by their longest path from a source. The normalized `dag` holds the drawing's `width` and `height` and each node's box and edge's SVG path, so every renderer draws the same picture. `dagitty` and `code` carry `text` and styled `lines`, as snippet blocks do, and `analysis` adds the graph's `exposures` and `outcomes`. The `dag` section of `SPEC.md` gives the markup.
+
+## Project structures
+
+A project structure is a folder tree with optional notes on its paths. `publish_structure()` in R and Python, `fw_structure` in Stata, and `fw publish --structure` build it from a project's folders. Clients leave out `.git/` and every ignored or private file name before upload. An ignored or private folder becomes a stub with a file count. Ignored files in other folders become one group per `.gitignore` rule.
+
+```json title="Publish input"
+{
+  "schema": "framework.artifact/v1",
+  "kind": "tree",
+  "root": "my-project",
+  "method": "git",
+  "nodes": [
+    {"path": "R", "type": "dir", "note": "Reusable functions"},
+    {"path": "R/clean.R", "type": "file"},
+    {"path": "data/raw", "type": "dir", "ignored": {"rule": "data/raw/", "source": ".gitignore", "line": 1}, "hidden": 12},
+    {"path": "data/private", "type": "dir", "private": true, "hidden": 3},
+    {"path": "outputs", "type": "ignored", "ignored": {"rule": "*.rds", "source": ".gitignore", "line": 2}, "hidden": 4}
+  ],
+  "highlight": ["R/clean.R"]
+}
+```
+
+| Field | Contents |
+|---|---|
+| `root` | The name shown at the top of the tree. Required. |
+| `base` | The published folder's path in the project, or `""` for the project root. Optional. |
+| `method` | How ignored paths were found: `git`, `gitignore` (the root `.gitignore` only), or `none`. Optional. |
+| `nodes` | Paths relative to `root`, in any order, up to 5,000. `type` is `dir`, `file`, or `ignored`. Missing parent folders are added. |
+| Node `note` | Plain text, up to 500 characters. |
+| Node `hidden` | A file count. On a folder, its contents aren't listed. Counts stop at 10,000. |
+| Node `ignored` | `rule` (required), `source` (a path relative to `root`, `global`, or `info/exclude`), and `line`. An `ignored` node is a group of ignored files in the folder `path`, named by its rule. |
+| Node `private`, `depth` | Why a folder is a stub: a private folder, or the client's `depth` limit. |
+| `open` | Folders that start open. Defaults to the top level. |
+| `highlight` | Paths drawn highlighted. Their folders start open. |
+
+A path with `..`, a leading `/`, a backslash, or more than 32 levels is refused at publish, as is a path inside `.git` or inside a stub, and an `open` or `highlight` path that isn't in the tree.
+
+The normalized `tree` nests the nodes: each folder has `name`, `path`, `open`, and sorted `children`: folders, then files, then ignored groups, each by name. `counts` gives the number of folders, files, ignored entries, and hidden files. The `tree` section of `SPEC.md` gives the markup.
 
 ## Limits
 

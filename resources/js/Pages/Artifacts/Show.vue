@@ -40,7 +40,7 @@ const kind = computed(() => artifactKind(props.artifact.kind));
 // R and Python send models, tests, and data frames as a JSON summary they name themselves
 // (model.json); that name means nothing to the person who published, so it isn't shown.
 const chosenFile = computed(() => props.artifact.original_filename
-    && !(['model', 'test', 'table', 'code_snippet', 'dag'].includes(props.artifact.kind) && /\.json$/i.test(props.artifact.original_filename)));
+    && !(['model', 'test', 'table', 'code_snippet', 'dag', 'tree'].includes(props.artifact.kind) && /\.json$/i.test(props.artifact.original_filename)));
 
 // The open tab is kept in the address, so a reload or a shared link lands on it
 const tabs = computed(() => [
