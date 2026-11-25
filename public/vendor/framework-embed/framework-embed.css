@@ -1141,15 +1141,18 @@ framework-artifact {
 }
 .fw-embed__tree-panel > .fw-embed__more::after {
   content: "";
+  flex: none;
+  box-sizing: border-box;
   width: 0.45em;
   height: 0.45em;
   border-right: 1.5px solid currentColor;
   border-bottom: 1.5px solid currentColor;
-  transform: translateY(-0.15em) rotate(45deg);
+  transform-origin: 50% 50%;
+  transform: translateY(-0.12em) rotate(45deg);
   transition: transform 0.15s ease;
 }
 .fw-embed__tree-panel > .fw-embed__more[aria-expanded=true]::after {
-  transform: translateY(0.1em) rotate(-135deg);
+  transform: translateY(0.12em) rotate(225deg);
 }
 .fw-embed__tree-panel > .fw-embed__more:hover {
   text-decoration: underline;
