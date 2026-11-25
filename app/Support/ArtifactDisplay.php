@@ -33,6 +33,7 @@ class ArtifactDisplay
         'dagitty' => ['kinds' => ['dag'], 'label' => 'DAGitty specification', 'help' => 'The model text, with a copy button.'],
         'code' => ['kinds' => ['dag'], 'label' => 'Source code', 'help' => 'The code that built the graph, with a copy button.'],
         'notes' => ['kinds' => ['tree'], 'label' => 'Notes', 'help' => 'Notes beside files and folders.'],
+        'full' => ['kinds' => ['tree'], 'label' => 'Whole tree', 'help' => 'Off, a long tree shows its first rows, with Show more.'],
         'ignored' => ['kinds' => ['tree'], 'label' => 'Ignored paths', 'help' => 'Paths hidden by .gitignore, with the rule that hides them.'],
         'interactive' => ['kinds' => ['vega-lite'], 'label' => 'Interactive chart', 'help' => 'Off, the static image shows instead.'],
     ];
@@ -40,7 +41,7 @@ class ArtifactDisplay
     /** Settings a kind starts with off: a DAG embeds as its drawing, its sections a choice. */
     private const OFF_BY_DEFAULT = [
         'dag' => ['description', 'analysis', 'dagitty', 'code'],
-        'tree' => ['description'],
+        'tree' => ['description', 'full'],
     ];
 
     /** Whether a setting is on for an embed kind, as set or by default. */
@@ -223,6 +224,10 @@ class ArtifactDisplay
             case 'tree':
                 if ($off('ignored') || $off('notes')) {
                     $data = ArtifactTree::without($data, $off('ignored'), $off('notes'));
+                }
+                // Embeds show a long tree's first rows until Show more; on, the whole tree
+                if (! $off('full')) {
+                    $data['display'] = ['full' => true];
                 }
                 break;
         }

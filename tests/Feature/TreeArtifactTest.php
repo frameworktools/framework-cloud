@@ -200,4 +200,15 @@ class TreeArtifactTest extends TestCase
         $this->assertContains('notes', $keys($full));
         $this->assertContains('ignored', $keys($full));
     }
+
+    public function test_whole_tree_is_off_until_the_owner_turns_it_on(): void
+    {
+        $version = $this->publish($this->tree(), ['visibility' => 'unlisted']);
+        $url = '/api/embed/v1/artifacts/'.$version->document->key;
+
+        $this->assertNull($this->getJson($url)->assertOk()->json('data.display'));
+
+        $version->document->update(['display' => ['full' => true]]);
+        $this->getJson($url)->assertOk()->assertJsonPath('data.display.full', true);
+    }
 }

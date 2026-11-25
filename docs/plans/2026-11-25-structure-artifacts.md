@@ -155,8 +155,11 @@ Renderers draw a monospace tree of nested `<details>` (folders) and rows (files)
 | `description` | Description | off |
 | `notes` | Notes | on |
 | `ignored` | Ignored paths | on |
+| `full` | Whole tree | off |
 
 With `ignored` off, ignored stubs and groups are dropped from the embed. Private stubs stay.
+
+With `full` off, an embed whose tree shows more than 15 rows starts cut to 12, fading out, with a **Show more** button. With it on, the embed document carries `display.full: true` and the whole tree shows. The artifact's own page always shows the whole tree.
 
 ## Cloud
 
