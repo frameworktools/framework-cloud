@@ -13,7 +13,7 @@
         // Without a description, a DAG or tree says what it shows ("Causal diagram of 4 variables…")
         $drawnAlt = in_array($preview['type'], ['dag', 'tree'], true) ? \App\Support\EmbedAlt::for($preview['type'], '', $preview).' ' : '';
         $artifactDescription = \App\Support\Seo::describe($document->description)
-            ?? $drawnAlt.\App\Support\ShareImage::kindLabel($version).' from '.$project->name.($owner && $owner->profile_public ? ' by '.$owner->name : '').', published on Framework.';
+            ?? $drawnAlt.\App\Support\ShareImage::kindLabel($version).($project->is_home ? '' : ' from '.$project->name).($owner && $owner->profile_public ? ' by '.$owner->name : '').', published on Framework.';
         $artifactUrl = $isLatest ? $document->shareUrl() : url()->current();
         $artifactType = match ($artifactKind) {
             'table', 'data' => 'Dataset',

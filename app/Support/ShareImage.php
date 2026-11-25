@@ -22,7 +22,7 @@ use Throwable;
  */
 class ShareImage
 {
-    public const VERSION = 1;
+    public const VERSION = 2;
 
     public const WIDTH = 1200;
 
@@ -30,9 +30,7 @@ class ShareImage
 
     private const PAD = 64;
 
-    /** The body's box, under the header and above the footer. */
-    private const BODY_TOP = 196;
-
+    /** The body's box ends above the footer; it starts under the header, which grows with the title. */
     private const BODY_BOTTOM = 548;
 
     /** Figures larger than this are not read for a preview. */
@@ -100,14 +98,14 @@ class ShareImage
         $preview = ArtifactPreview::forVersion($version);
         $figure = $withBody ? self::figure($version) : null;
         $body = $withBody && $figure === null ? self::body($preview) : null;
-        $svg = self::frame($version, $body);
+        [$svg, $bodyTop] = self::frame($version, $body !== null || $figure !== null ? $body ?? [] : null);
 
         $image = new Imagick;
         $image->setBackgroundColor(new ImagickPixel('white'));
         $image->readImageBlob($svg);
         $image->setImageFormat('png');
         if ($figure !== null) {
-            self::place($image, $figure);
+            self::place($image, $figure, $bodyTop);
             $figure->clear();
         }
         $image->stripImage();
@@ -117,8 +115,13 @@ class ShareImage
         return $png;
     }
 
-    /** The card: header, body (an SVG fragment scaled into its box), and footer. */
-    private static function frame(DocumentVersion $version, ?array $body): string
+    /**
+     * The card: header, body (an SVG fragment scaled into its box), and footer,
+     * and where the body starts. An empty $body leaves room for a figure.
+     *
+     * @return array{0: string, 1: int}
+     */
+    private static function frame(DocumentVersion $version, ?array $body): array
     {
         $document = $version->document;
         $title = $document->title ?: $document->slug;
@@ -131,20 +134,23 @@ class ShareImage
             $out .= self::text(self::PAD, $y, $line, $titleSize, '#0f172a', self::SANS, 'bold');
             $y += (int) round($titleSize * 1.18);
         }
-        $out .= self::text(self::PAD, $body === null ? $y + 10 : min($y + 4, 176), self::meta($version), 24, '#64748b', self::SANS);
-        if ($body !== null) {
+        // The kind line sits under the last title line, and the body under it
+        $metaY = $y - (int) round($titleSize * 1.18) + ($body === null ? 64 : 48);
+        $out .= self::text(self::PAD, $metaY, self::meta($version), 24, '#64748b', self::SANS);
+        $bodyTop = $metaY + 36;
+        if ($body !== null && $body !== []) {
             [$fragment, $width, $height] = $body;
             $boxWidth = self::WIDTH - 2 * self::PAD;
-            $boxHeight = self::BODY_BOTTOM - self::BODY_TOP;
+            $boxHeight = self::BODY_BOTTOM - $bodyTop;
             $scale = min($boxWidth / max($width, 1), $boxHeight / max($height, 1), 2.0);
             $x = self::PAD + ($boxWidth - $width * $scale) / 2;
-            $top = self::BODY_TOP + ($boxHeight - $height * $scale) / 2;
+            $top = $bodyTop + ($boxHeight - $height * $scale) / 2;
             $out .= sprintf('<g transform="translate(%.1f %.1f) scale(%.4f)">%s</g>', $x, $top, $scale, $fragment);
         }
         $out .= sprintf('<rect x="0" y="%d" width="%d" height="1" fill="#e2e8f0"/>', self::HEIGHT - 58, self::WIDTH);
         $out .= self::text(self::PAD, self::HEIGHT - 22, ArtifactEmbed::providerName(), 22, '#0369a1', self::SANS, 'bold');
 
-        return sprintf('<svg xmlns="http://www.w3.org/2000/svg" width="%1$d" height="%2$d" viewBox="0 0 %1$d %2$d"><rect width="%1$d" height="%2$d" fill="#ffffff"/>%3$s</svg>', self::WIDTH, self::HEIGHT, $out);
+        return [sprintf('<svg xmlns="http://www.w3.org/2000/svg" width="%1$d" height="%2$d" viewBox="0 0 %1$d %2$d"><rect width="%1$d" height="%2$d" fill="#ffffff"/>%3$s</svg>', self::WIDTH, self::HEIGHT, $out), $bodyTop];
     }
 
     /** "DAG · Mobility study · Ada Lovelace" */
@@ -335,17 +341,17 @@ class ShareImage
         return $figure;
     }
 
-    private static function place(Imagick $card, Imagick $figure): void
+    private static function place(Imagick $card, Imagick $figure, int $bodyTop): void
     {
         $boxWidth = self::WIDTH - 2 * self::PAD;
-        $boxHeight = self::BODY_BOTTOM - self::BODY_TOP;
+        $boxHeight = self::BODY_BOTTOM - $bodyTop;
         $figure->setImageBackgroundColor(new ImagickPixel('white'));
         $figure = $figure->mergeImageLayers(Imagick::LAYERMETHOD_FLATTEN);
         $scale = min($boxWidth / $figure->getImageWidth(), $boxHeight / $figure->getImageHeight(), 2.0);
         $width = max(1, (int) round($figure->getImageWidth() * $scale));
         $height = max(1, (int) round($figure->getImageHeight() * $scale));
         $figure->resizeImage($width, $height, Imagick::FILTER_LANCZOS, 1);
-        $card->compositeImage($figure, Imagick::COMPOSITE_OVER, self::PAD + intdiv($boxWidth - $width, 2), self::BODY_TOP + intdiv($boxHeight - $height, 2));
+        $card->compositeImage($figure, Imagick::COMPOSITE_OVER, self::PAD + intdiv($boxWidth - $width, 2), $bodyTop + intdiv($boxHeight - $height, 2));
     }
 
     /** Up to $max lines of about $chars characters each, the last cut with an ellipsis. */
