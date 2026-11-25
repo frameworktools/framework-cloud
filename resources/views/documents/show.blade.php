@@ -105,7 +105,6 @@
     <iframe sandbox="allow-scripts allow-downloads" referrerpolicy="no-referrer" src="{{ $version->contentUrl() }}" title="{{ $document->title }}" class="w-full grow border-0 bg-white"></iframe>
     @elseif ($preview['type'] === 'table')
         <main class="grow overflow-auto p-6">
-            @if ($preview['truncated'])<p class="mb-3 text-sm text-slate-600 dark:text-slate-300">Preview limited to 100 rows, 50 columns, and 1 MB. Download the artifact to read the full table.</p>@endif
             @php
                 $rows = $preview['rows'];
                 $headers = array_shift($rows) ?? [];
@@ -117,7 +116,7 @@
                 }
                 $table = ['title' => $embedded ? 'Table' : ($document->title ?? 'Table'), 'columns' => $columns, 'rows' => $rows, 'truncated' => $preview['truncated']];
             @endphp
-            <x-artifact-table :table="$table" />
+            <x-artifact-table :table="$table" :full="['url' => $version->downloadUrl(), 'label' => \App\Support\DataFile::delimiter($version->original_filename, $version->content_type) === chr(9) ? 'Download TSV' : 'Download CSV']" />
         </main>
     @elseif ($preview['type'] === 'representation')
         @php
@@ -173,7 +172,7 @@
                     @endif
                 </div>
                 @if ($preview['truncated'] && empty($preview['data_file']))
-                    <p class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">This is a limited preview. Some tables, metrics, source labels, or long values may be shortened or omitted. Download the original JSON for the complete representation.</p>
+                    <p class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">Some tables, metrics, source labels, or long values are shortened or left out here. Download JSON for everything that was published.</p>
                 @endif
 
                 @if ($preview['kind'] === 'test')
@@ -251,7 +250,7 @@
                         $table['title'] = ($table['title'] ?? 'Table') === 'Table' && isset($titles[$table['role'] ?? '']) ? $titles[$table['role']] : ($table['title'] ?? 'Table');
                         if ($embedded && $preview['kind'] === 'table') $table['title'] = 'Table';
                     @endphp
-                    <x-artifact-table :table="$table" :id="'artifact-table-'.$index" :model="$tableKind($table)" />
+                    <x-artifact-table :table="$table" :id="'artifact-table-'.$index" :model="$tableKind($table)" :full="! empty($preview['data_file']) ? ['url' => $version->downloadUrl(), 'label' => \App\Support\DataFile::delimiter($version->original_filename, $version->content_type) === chr(9) ? 'Download TSV' : 'Download CSV'] : null" />
                 @endforeach
 
                 <x-artifact-model-summary :metrics="$metrics" :title="$preview['kind'] === 'model' ? 'Model summary' : 'Summary'" :bayesian="$bayesian" />
@@ -308,7 +307,7 @@
         </main>
     @elseif ($preview['type'] === 'text')
         <main class="grow overflow-auto p-6">
-            @if ($preview['truncated'])<p class="mb-3 text-sm text-slate-600 dark:text-slate-300">Preview limited to 1 MB. Download the artifact to read the full file.</p>@endif
+            @if ($preview['truncated'])<p class="mb-3 text-sm text-slate-600 dark:text-slate-300">Showing the first 1 MB. Download the file to read all of it.</p>@endif
             <pre class="whitespace-pre-wrap break-words rounded bg-white p-4 text-sm text-slate-800">{{ $preview['text'] }}</pre>
         </main>
     @else

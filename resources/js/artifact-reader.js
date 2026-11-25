@@ -167,11 +167,12 @@ export function mountTable(container) {
     previous.addEventListener('click', () => { state.page--; render(); });
     next.addEventListener('click', () => { state.page++; render(); });
     exportButton?.addEventListener('click', () => {
-        const rows = tablePage(table, { ...state, page: 0, pageSize: Math.max(1, table.rows.length) }).rows;
+        // Every row, whatever the search, in the current sort order
+        const rows = tablePage(table, { ...state, query: '', page: 0, pageSize: Math.max(1, table.rows.length) }).rows;
         const url = URL.createObjectURL(new Blob([tableCsv(table, rows)], { type: 'text/csv;charset=utf-8' }));
         const link = document.createElement('a');
         link.href = url;
-        link.download = exportButton.dataset.tableExport === 'preview' ? 'table-preview.csv' : 'table.csv';
+        link.download = 'table.csv';
         link.click();
         setTimeout(() => URL.revokeObjectURL(url), 1000);
     });

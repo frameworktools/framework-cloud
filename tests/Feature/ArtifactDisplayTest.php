@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Project;
 use App\Support\ArtifactPublisher;
+use App\Support\RatioTable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
@@ -35,7 +36,7 @@ class ArtifactDisplayTest extends TestCase
         $response = $this->get($version->url())->assertOk()
             ->assertSee('Coefficient plot')->assertSee('95% confidence interval (Wald t)')->assertSee('data-phiz=', false)->assertSee('vega-embed', false)->assertSee('Observations')
             ->assertSee('R²')->assertSee('Sample and degrees of freedom')->assertSee('Model fit')->assertSee('scope="rowgroup"', false)->assertSee('outcome ~ treatment')->assertSee('CI lower')->assertSee('Decimal places')->assertSee('data-table-precision type="number"', false)
-            ->assertSee('data-table-search-open', false)->assertSee('Search terms')->assertSee('Export CSV')->assertDontSee('Export preview CSV')
+            ->assertSee('data-table-search-open', false)->assertSee('Search terms')->assertSee('Download CSV')->assertDontSee('preview CSV')
             ->assertDontSee('data-table-sort=', false)->assertDontSee('aria-sort=', false)
             ->assertSee('Download JSON')->assertDontSee('Open original')->assertSee('<h1', false)
             ->assertSee('lm()')->assertDontSee('Source details')
@@ -54,7 +55,7 @@ class ArtifactDisplayTest extends TestCase
         $version = app(ArtifactPublisher::class)->publish(Project::factory()->create(), [
             'file' => UploadedFile::fake()->createWithContent('model.json', json_encode($representation)),
         ]);
-        $this->get($version->url())->assertOk()->assertSee('This is a limited preview.')
+        $this->get($version->url())->assertOk()->assertSee('are shortened or left out here')
             ->assertSee('Large integer columns are shown as text')->assertSee('9007199254740993')
             ->assertDontSee('9007199254740992');
     }
@@ -134,10 +135,10 @@ class ArtifactDisplayTest extends TestCase
         $columns = [['name' => 'term', 'type' => 'string'], ['name' => 'estimate', 'type' => 'number'], ['name' => 'std_error', 'type' => 'number'],
             ['name' => 'statistic', 'type' => 'number'], ['name' => 'p_value', 'type' => 'number'], ['name' => 'conf_low', 'type' => 'number'], ['name' => 'conf_high', 'type' => 'number']];
         $table = ['columns' => $columns, 'rows' => [['(Intercept)', 0.0, 0.5, 0.0, 1.0, -1.0, 1.0], ['x', log(2), 0.1, 6.93, 0.002, log(1.5), log(3)]]];
-        $ratio = \App\Support\RatioTable::from($table, 'Odds ratio');
+        $ratio = RatioTable::from($table, 'Odds ratio');
         $this->assertSame(['term', 'odds_ratio', 'std_error', 'statistic', 'p_value', 'conf_low', 'conf_high'], array_column($ratio['columns'], 'name'));
         $this->assertEqualsWithDelta(['x', 2.0, 0.2, 6.93, 0.002, 1.5, 3.0], $ratio['rows'][1], 1e-12);
         $this->assertEqualsWithDelta(['(Intercept)', 1.0, 0.5, 0.0, 1.0, exp(-1), exp(1)], $ratio['rows'][0], 1e-12);
-        $this->assertNull(\App\Support\RatioTable::ratio('Coefficient'));
+        $this->assertNull(RatioTable::ratio('Coefficient'));
     }
 }

@@ -63,10 +63,11 @@ class ArtifactPublishingTest extends TestCase
         // Previews are kept once built; a version's files never change outside a test
         Cache::flush();
         $this->get($table->publicUrl())->assertOk()->assertDontSee('<script>alert(1)</script>', false)
-            ->assertSee('Preview limited to 100 rows')->assertDontSee('term-109');
+            ->assertSee('Showing the first 99 rows')->assertSee('Download CSV')->assertDontSee('term-109')
+            ->assertSee('href="'.e($table->latestVersion()->downloadUrl()).'" download', false);
         $text = $this->publish($project, 'notes.txt', '<script>unsafe</script>'.str_repeat('x', 1_048_576));
         $this->get($text->publicUrl())->assertOk()->assertSee('<pre', false)
-            ->assertSee('&lt;script&gt;unsafe&lt;/script&gt;', false)->assertSee('Preview limited to 1 MB.');
+            ->assertSee('&lt;script&gt;unsafe&lt;/script&gt;', false)->assertSee('Showing the first 1 MB.');
         $model = $this->publish($project, 'model.html', '<html>COEFFICIENTS</html>', ['kind' => 'model']);
         $this->get($model->publicUrl())->assertOk()->assertSee('<iframe', false)->assertDontSee('This artifact is available to download.');
     }

@@ -1,4 +1,4 @@
-@props(['table', 'id' => 'artifact-table', 'model' => false])
+@props(['table', 'id' => 'artifact-table', 'model' => false, 'full' => null])
 @php
     $columns = $table['columns'];
     $rows = $table['rows'];
@@ -18,6 +18,8 @@
         default => \App\Support\ArtifactFormatting::value($value, $index !== null && ($decimal[$index] ?? false)),
     };
     // A label set for display wins, such as Posterior mean on a Bayesian model (see PosteriorTable)
+    // The page holds part of the table; the server has the whole file only for a published CSV or TSV
+    $partial = (bool) ($table['truncated'] ?? false);
     $label = fn ($column) => $model ? ($column['display_label'] ?? \App\Support\ArtifactFormatting::coefficientLabel($column['name'])) : $column['name'];
 @endphp
 <section data-artifact-table data-model-table="{{ $model ? 'true' : 'false' }}" class="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800" aria-labelledby="{{ $id }}-title">
@@ -46,12 +48,14 @@
             </label>
         @endif
     </div>
-    @if ($table['truncated'] ?? false)
+    @if ($partial)
         <p class="border-b border-slate-200 px-4 py-3 text-xs text-slate-600 dark:border-slate-700 dark:text-slate-300">
-            @if ($rowCount > count($rows) && count($columns) === $columnCount)
-                Showing the first {{ number_format(count($rows)) }} of {{ number_format($rowCount) }} rows. Column summaries cover every row; search and sorting apply to the rows shown. Download the original for the complete data.
+            @if ($full)
+                Showing the first {{ number_format(count($rows)) }}@if ($rowCount > count($rows)) of {{ number_format($rowCount) }}@endif rows@if (count($columns) < $columnCount) and {{ count($columns) }} of {{ number_format($columnCount) }} columns@endif. Search and sorting apply to these. {{ $full['label'] }} downloads the whole table.
+            @elseif ($rowCount > count($rows) && count($columns) === $columnCount)
+                Showing the first {{ number_format(count($rows)) }} of {{ number_format($rowCount) }} rows. Search, sorting, and Download CSV use these rows.
             @else
-                Preview contains {{ number_format(count($rows)) }} rows and {{ count($columns) }} columns. Search and sorting apply to these loaded values. Download the original for the complete data.
+                Showing {{ number_format(count($rows)) }} rows and {{ count($columns) }} of {{ number_format($columnCount) }} columns. Search, sorting, and Download CSV use these values.
             @endif
         </p>
     @endif
@@ -102,11 +106,11 @@
                     </div>
                 </div>
             </div>
-            {{-- "Preview" only when the page holds part of the table; otherwise the export is the whole table --}}
-            @if ($table['truncated'] ?? false)
-                <button data-table-export="preview" type="button" class="{{ $controlClass }}" title="Export the loaded rows matching the current search, in the current sort order. Download the original for the complete data.">Export preview CSV</button>
+            {{-- The whole table: the published file when the page holds part of it, otherwise every row on the page --}}
+            @if ($partial && $full)
+                <a href="{{ $full['url'] }}" download class="{{ $controlClass }}" title="The published file, every row">{{ $full['label'] }}</a>
             @else
-                <button data-table-export type="button" class="{{ $controlClass }}" title="Export the rows matching the current search, in the current sort order">Export CSV</button>
+                <button data-table-export type="button" class="{{ $controlClass }}" title="Every row, in the current sort order">Download CSV</button>
             @endif
             <label @if(count($rows) <= 25) hidden @endif class="flex items-center gap-2" for="{{ $id }}-size">Rows per page
                 <select id="{{ $id }}-size" data-table-size class="{{ $controlClass }}"><option>25</option><option>50</option><option>100</option><option>250</option></select>

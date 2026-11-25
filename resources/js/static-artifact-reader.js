@@ -8,7 +8,7 @@ export function safeArtifactUrl(value) {
     return value;
 }
 const numberCell = (value, precision = 3) => { const node = el('td', displayValue(value, precision, typeof value === 'number' && !Number.isInteger(value)), 'fw-number'); if (typeof value === 'number') node.dataset.modelSummaryNumber = String(value); node.title = value === null ? 'Not reported' : String(value); return node; };
-function tableView(table, index, model) {
+function tableView(table, index, model, full = null) {
     const section = el('section', null, 'fw-table'); section.dataset.artifactTable = ''; section.dataset.modelTable = String(model);
     const header = el('header'); const intro = el('div'); const id = `fw-table-${index}`;
     const title = el('h2', table.title || 'Table'); title.id = id; section.setAttribute('aria-labelledby', id);
@@ -25,11 +25,13 @@ function tableView(table, index, model) {
     const controls = el('div', null, 'fw-controls'); const precisionLabel = el('label', 'Decimal places '); const precision = el('input'); precision.type = 'number'; precision.min = '0'; precision.max = '15'; precision.value = '3'; precision.dataset.tablePrecision = ''; precisionLabel.append(precision); controls.append(precisionLabel);
     for (const [caption, marker] of [['−', 'precisionDecrease'], ['+', 'precisionIncrease']]) { const button = el('button', caption); button.type = 'button'; button.dataset[marker] = ''; button.setAttribute('aria-label', caption === '+' ? 'Increase decimal places' : 'Decrease decimal places'); controls.append(button); }
     const partial = table.truncated || table.total_rows > table.rows.length;
-    const csv = el('button', partial ? 'Export preview CSV' : 'Export CSV'); csv.type = 'button'; csv.dataset.tableExport = partial ? 'preview' : ''; controls.append(csv);
+    // The whole table: the published CSV or TSV when the page holds part of it, otherwise every row on the page
+    if (partial && full) { const link = el('a', full.label); link.href = full.url; link.download = ''; controls.append(link); }
+    else { const csv = el('button', 'Download CSV'); csv.type = 'button'; csv.dataset.tableExport = ''; controls.append(csv); }
     const sizeLabel = el('label', 'Rows per page '); const size = el('select'); size.dataset.tableSize = ''; for (const value of [25, 50, 100]) { const option = el('option', value); option.value = String(value); size.append(option); } sizeLabel.append(size); controls.append(sizeLabel);
     for (const [caption, marker] of [['Previous', 'tablePrevious'], ['Next', 'tableNext']]) { const button = el('button', caption); button.type = 'button'; button.dataset[marker] = ''; controls.append(button); }
     footer.append(controls); const data = el('script'); data.type = 'application/json'; data.dataset.tableValues = ''; data.textContent = JSON.stringify(table);
-    section.append(header); if (table.truncated || table.total_rows > table.rows.length) section.append(el('p', 'Limited preview. Search, sorting, and CSV export use the displayed rows. Download the original for all data.', 'fw-notice'));
+    section.append(header); if (partial) section.append(el('p', `Showing the first ${table.rows.length.toLocaleString()} of ${(table.total_rows ?? table.row_count ?? table.rows.length).toLocaleString()} rows. ${full ? `Search and sorting apply to these rows. ${full.label} downloads every row.` : 'Search, sorting, and Download CSV use these rows.'}`, 'fw-notice'));
     section.append(scroll, footer, data);
     const summaries = table.columns.filter(column => column.summary && typeof column.summary === 'object');
     if (!model && summaries.length) {
@@ -97,9 +99,12 @@ export function mountFrameworkReader(container, payload) {
         if (data.kind === 'test' && data.test) container.append(testView(data.test));
         if (data.formula) { const section = el('section'); section.append(el('h2', 'Model formula'), el('pre', data.formula)); container.append(section); }
         const tables = Array.isArray(data.tables) ? data.tables : [];
-        tables.forEach((table, i) => { if (!Array.isArray(table.columns) || !Array.isArray(table.rows)) return; const model = table.role === 'coefficients' || (data.kind === 'model' && /coefficient/i.test(table.title)); container.append(tableView(table, i, model)); if (model) { const plot = forestPlot(table); if (plot) container.append(plot); } });
+        // A published CSV or TSV is the whole table, for a page that holds part of it
+        const source = safeArtifactUrl(manifest.original); const format = source && /\.(csv|tsv)$/i.exec(source.split(/[?#]/)[0])?.[1].toUpperCase();
+        const full = format ? { url: source, label: `Download ${format}` } : null;
+        tables.forEach((table, i) => { if (!Array.isArray(table.columns) || !Array.isArray(table.rows)) return; const model = table.role === 'coefficients' || (data.kind === 'model' && /coefficient/i.test(table.title)); container.append(tableView(table, i, model, table.role === 'data' ? full : null)); if (model) { const plot = forestPlot(table); if (plot) container.append(plot); } });
         if (Array.isArray(data.metrics) && data.metrics.length) { const metrics = metricView(data.metrics); metrics.querySelector('h2').textContent = data.kind === 'model' ? 'Model summary' : 'Summary'; container.append(metrics); }
-        if (data.truncated) container.append(el('p', 'Limited preview. Download the original representation for complete values.', 'fw-notice'));
+        if (data.truncated) container.append(el('p', 'Some tables, metrics, or long values are shortened or left out here. Download the original for everything that was published.', 'fw-notice'));
         return;
     }
     const original = safeArtifactUrl(manifest.original); if (!original) { container.append(el('p', 'The original file is unavailable.')); return; }
