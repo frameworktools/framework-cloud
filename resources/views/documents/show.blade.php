@@ -10,8 +10,10 @@
         $indexable = $isLatest && $document->visibility === 'public' && ! $document->isPasswordProtected() && ! request()->boolean('embed');
         $owner = $project->user;
         $artifactKind = $version->kind ?? $document->kind ?? 'html';
+        // Without a description, a DAG or tree says what it shows ("Causal diagram of 4 variables…")
+        $drawnAlt = in_array($preview['type'], ['dag', 'tree'], true) ? \App\Support\EmbedAlt::for($preview['type'], '', $preview).' ' : '';
         $artifactDescription = \App\Support\Seo::describe($document->description)
-            ?? ucfirst($artifactKind).' from '.$project->name.($owner ? ' by '.$owner->name : '').', published on Framework.';
+            ?? $drawnAlt.\App\Support\ShareImage::kindLabel($version).' from '.$project->name.($owner && $owner->profile_public ? ' by '.$owner->name : '').', published on Framework.';
         $artifactUrl = $isLatest ? $document->shareUrl() : url()->current();
         $artifactType = match ($artifactKind) {
             'table', 'data' => 'Dataset',
@@ -38,7 +40,8 @@
         ];
     @endphp
     <x-share-meta :title="($document->title ?? $document->slug).' · Framework'" :description="$artifactDescription" type="article" :canonical="$artifactUrl" :noindex="! $indexable"
-        :schema="[\App\Support\Seo::organization(), $artifactSchema]" />
+        :schema="[\App\Support\Seo::organization(), $artifactSchema]"
+        :image="\App\Support\ShareImage::available($document) ? ['url' => \App\Support\ShareImage::url($version), 'alt' => \App\Support\ShareImage::alt($version)] : null" />
     @if ($embedLinks ?? null)
         <link rel="alternate" type="application/json+oembed" href="{{ $embedLinks['oembed'] }}" title="{{ $document->title }}">
         <link rel="alternate" type="application/vnd.framework.embed+json" href="{{ $embedLinks['embed'] }}">

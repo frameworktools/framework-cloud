@@ -128,6 +128,9 @@ Route::get('d/{key}/versions/{number}/raw', [DocumentViewController::class, 'ver
     ->whereNumber('number')->name('documents.version.raw');
 Route::get('d/{key}/versions/{number}/download', [DocumentViewController::class, 'versionDownload'])
     ->whereNumber('number')->name('documents.version.download');
+// The picture link previews show, before the asset route below claims the path
+Route::get('d/{key}/versions/{number}/share.png', [DocumentViewController::class, 'shareImage'])
+    ->whereNumber('number')->middleware('throttle:120,1')->name('documents.share-image');
 Route::get('d/{key}/content/{number}/{access}/{path?}', [DocumentViewController::class, 'content'])
     ->whereNumber('number')->where('path', '.*')->name('documents.content');
 Route::get('d/{key}/chart/{number}/{access}', [DocumentViewController::class, 'chart'])

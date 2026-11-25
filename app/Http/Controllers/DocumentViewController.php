@@ -12,6 +12,7 @@ use App\Support\BundleExtractor;
 use App\Support\ChartPage;
 use App\Support\ContentHost;
 use App\Support\ContentWorker;
+use App\Support\ShareImage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -251,6 +252,23 @@ class DocumentViewController extends Controller
             ->whereHas('project', fn ($q) => $q->where('user_id', $user->id)->where('slug', $project))
             ->with('project.user')
             ->firstOrFail();
+    }
+
+    /** The link-preview image: only for an artifact anyone with the link can open without a password. */
+    public function shareImage(string $key, int $number): Response|RedirectResponse
+    {
+        $document = $this->byKey($key);
+        abort_unless(ShareImage::available($document), 404);
+        if ($document->flattenedAway($number)) {
+            return redirect()->to(ShareImage::url($document->latestVersion()), 301);
+        }
+        $version = $document->findVersion($number) ?? abort(404);
+
+        return response(ShareImage::png($version), 200, [
+            'Content-Type' => 'image/png',
+            'Cache-Control' => 'public, max-age=86400',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 
     /** A link to a version that flattening removed goes to the latest version. */
