@@ -29,6 +29,23 @@ class ShareImageTest extends TestCase
         $this->project = Project::factory()->for($user)->create(['slug' => 'smoking', 'name' => 'Smoking study']);
     }
 
+    public function test_site_pages_show_the_framework_image(): void
+    {
+        $this->assertFileExists(public_path('images/og.png'));
+
+        foreach (['/', '/docs', '/docs/self-hosting', '/privacy', '/terms'] as $path) {
+            $this->get($path)
+                ->assertOk()
+                ->assertSee('<meta property="og:image" content="'.rtrim(config('app.url'), '/').'/images/og.png?v='.substr(md5_file(public_path('images/og.png')), 0, 8).'">', false)
+                ->assertSee('<meta name="twitter:card" content="summary_large_image">', false);
+        }
+    }
+
+    public function test_the_homepage_preview_names_framework_and_its_tagline(): void
+    {
+        $this->get('/')->assertSee('<meta property="og:title" content="Framework: Structured workflows for statistics and data science">', false);
+    }
+
     private function publish(string $name, string $content, string $visibility = 'unlisted'): Document
     {
         return app(ArtifactPublisher::class)->publish($this->project, [
