@@ -223,7 +223,10 @@ class DocumentViewController extends Controller
             ? ($readable ? $document->readableUrl() : $document->publicUrl())
             : ($readable ? $document->readableUrl($n) : route('documents.version', ['key' => $document->key, 'number' => $n]));
 
-        Document::whereKey($document->id)->toBase()->increment('views');
+        // Readers count; the owner's own visits, such as the preview on the artifact's page, don't
+        if (auth()->id() !== $document->project?->user_id) {
+            Document::whereKey($document->id)->toBase()->increment('views');
+        }
 
         return response()->view('documents.show', [
             'document' => $document,
