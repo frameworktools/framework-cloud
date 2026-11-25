@@ -1014,7 +1014,7 @@ framework-artifact {
   font-family: var(--fw-embed-code);
   font-size: calc(0.8125em / 0.875);
   font-variant-ligatures: none;
-  line-height: 1.6;
+  line-height: 1.25;
 }
 .fw-embed__tree-row {
   display: flex;
@@ -1057,7 +1057,7 @@ framework-artifact {
   border: 1px solid var(--fw-embed-border);
   border-radius: 999px;
   font-size: 0.85em;
-  line-height: 1.5;
+  line-height: 1.2;
   color: var(--fw-embed-muted);
   white-space: nowrap;
 }
